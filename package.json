@@ -1,0 +1,12 @@
+{
+  "name": "manman-order-search",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "googleapis": "^140.0.0"
+  },
+  "devDependencies": {
+    "vercel": "^44.0.0"
+  }
+}
