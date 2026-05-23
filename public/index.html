@@ -130,7 +130,7 @@
     font-weight: 500;
     color: #222;
     letter-spacing: -0.03em;
-    transition: border-color 0.15s ease;
+    transition: border-color 0.12s ease, box-shadow 0.12s ease, padding 0.12s ease;
     appearance: none;
     -webkit-appearance: none;
   }
@@ -150,7 +150,7 @@
     position: absolute;
     top: 50%;
     right: 12px;
-    transform: translateY(-50%);
+    transform: translateY(-50%) scale(0.96);
     width: 148px;
     height: 104px;
     border: none;
@@ -166,13 +166,14 @@
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transition: opacity 0.2s ease, visibility 0.2s ease;
+    transition: opacity 0.14s ease, visibility 0.14s ease, transform 0.14s ease;
   }
 
   .search-row.active .search-btn {
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
+    transform: translateY(-50%) scale(1);
   }
 
   .message {
@@ -1512,6 +1513,9 @@
 
   .search-row.active .search-input {
     padding-right: 78px;
+  }
+
+  .search-row.is-focused .search-input {
     border-color: #000;
   }
 
@@ -1528,30 +1532,30 @@
   }
 
   .message {
-    margin-top: 14px;
-    font-size: 14px;
+    margin-top: 12px;
+    font-size: 12px;
   }
 
   .results-wrap {
-    margin-top: 26px;
+    margin-top: 22px;
   }
 
   .orders-head {
     padding: 0 10px;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
   }
 
   .orders-title {
-    font-size: 28px;
+    font-size: 24px;
     line-height: 1;
   }
 
   .orders-subtitle {
-    font-size: 16px;
+    font-size: 14px;
   }
 
   .orders-more {
-    font-size: 28px;
+    font-size: 24px;
   }
 
   .orders-swiper {
@@ -1559,7 +1563,7 @@
   }
 
   .orders-swiper .swiper-slide {
-    width: 172px;
+    width: 162px;
   }
 
   .order-thumb-wrap {
@@ -1570,23 +1574,23 @@
     left: 0;
     right: 0;
     bottom: 0;
-    padding: 9px 8px;
+    padding: 8px 7px;
     border-radius: 0;
-    font-size: 17px;
+    font-size: 14px;
     line-height: 1.15;
   }
 
   .order-info {
-    padding: 12px 4px 0;
+    padding: 9px 4px 0;
   }
 
   .order-name {
-    font-size: 16px;
+    font-size: 13px;
     line-height: 1.3;
   }
 
   .order-bottom-row {
-    margin-top: 6px;
+    margin-top: 5px;
     gap: 6px;
   }
 
@@ -1598,12 +1602,12 @@
   .order-qty-inline-num,
   .order-price-num,
   .order-price-won {
-    font-size: 16px;
+    font-size: 13px;
     line-height: 1;
   }
 
   .orders-section + .orders-section {
-    margin-top: 58px;
+    margin-top: 50px;
   }
 
   .orders-section.show-all .orders-grid {
@@ -1611,6 +1615,35 @@
     padding: 0 10px;
     column-gap: 8px;
     row-gap: 26px;
+  }
+
+  .search-loading {
+    min-height: 390px;
+    padding: 84px 20px 0;
+  }
+
+  .search-loading-inner {
+    gap: 14px;
+  }
+
+  .search-loading-stage {
+    width: min(190px, 47.5vw);
+  }
+
+  .search-loading-grandpa {
+    width: min(128px, 32vw);
+  }
+
+  .search-loading-title {
+    font-size: 24px;
+    line-height: 1.3;
+    font-weight: 600;
+  }
+
+  .search-loading-subtitle {
+    font-size: 18px;
+    line-height: 1.4;
+    color: #777;
   }
 }
 
@@ -1745,6 +1778,8 @@ const searchGuideEl = document.getElementById('searchGuide');
   function updateSearchState() {
     const hasValue = keywordInput.value.trim().length > 0;
     const isFocused = document.activeElement === keywordInput;
+
+    searchRow.classList.toggle('is-focused', isFocused);
 
     if (hasValue || isFocused) {
       searchRow.classList.add('active');
