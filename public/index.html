@@ -6,6 +6,7 @@
     href="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.css"
   />
   <script src="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.js"></script>
+  <script src="https://unpkg.com/@panzoom/panzoom@4.6.0/dist/panzoom.min.js"></script>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>🎈 만만마켓 전농점 주문조회 🎈</title>
@@ -26,6 +27,7 @@
     background: #f3f3f3;
     color: #222;
     -webkit-text-size-adjust: 100%;
+    overflow-x: hidden;
   }
 
   body {
@@ -35,6 +37,7 @@
   .page {
     width: 100%;
     padding: 80px 0px 100px;
+    overflow-x: hidden;
   }
 
   .top-stage {
@@ -120,7 +123,7 @@
   .search-input {
     width: 100%;
     height: 124px;
-    border: 2px solid transparent;
+    border: 1.5px solid transparent;
     outline: none;
     border-radius: 999px;
     background: #fff;
@@ -376,7 +379,7 @@
 
   .orders-swiper {
     width: 100%;
-    overflow: visible;
+    overflow: hidden;
     padding: 0 24px;
   }
 
@@ -399,10 +402,10 @@
   .order-thumb-wrap {
     position: relative;
     width: 100%;
-    aspect-ratio: 1.08 / 1;
+    aspect-ratio: 1 / 1;
     overflow: hidden;
     border-radius: 12px;
-    background: #ddd;
+    background: transparent;
   }
 
   .order-thumb {
@@ -950,10 +953,67 @@
   transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
-.pretty-alert-overlay.show {
+  .pretty-alert-overlay.show {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
+}
+
+.image-pinch-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background-color: rgb(0 0 0 / var(--pinch-dim-opacity, 0));
+  visibility: hidden;
+  pointer-events: none;
+  transition: background-color 0.12s ease, visibility 0.12s ease;
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+.image-pinch-overlay.show {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.image-pinch-frame {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+.image-pinch-content {
+  position: fixed;
+  overflow: hidden;
+  background: transparent;
+  transform-origin: center center;
+  will-change: transform;
+  touch-action: none;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+}
+
+.image-pinch-content.is-returning {
+  transition:
+    transform 0.26s cubic-bezier(0.22, 1, 0.36, 1),
+    border-radius 0.26s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.26s ease;
+}
+
+.image-pinch-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+.image-pinch-overlay.is-closing {
+  --pinch-dim-opacity: 0;
 }
 
 .pretty-alert-box {
@@ -1540,11 +1600,11 @@
   }
 
   .grandpa {
-    top: 8px;
+    top: 12px;
     right: 42px;
-    width: 82px;
-    min-width: 82px;
-    max-width: 82px;
+    width: 76px;
+    min-width: 76px;
+    max-width: 76px;
     height: 94px;
     overflow: hidden;
   }
@@ -1554,12 +1614,12 @@
   }
 
   .search-shell {
-    width: calc(100% - 90px);
-    max-width: 310px;
+    width: calc(100% - 80px);
+    max-width: 320px;
   }
 
   .search-input {
-    height: 50px;
+    height: 56px;
     padding: 0 26px;
     font-size: 22px;
     box-shadow: 0 14px 30px rgba(0, 0, 0, 0.08);
@@ -1606,7 +1666,7 @@
   .orders-title {
     font-size: 18px;
     line-height: 1;
-    font-weight: 500;
+    font-weight: 600;
   }
 
   .orders-subtitle {
@@ -1782,6 +1842,7 @@
   let currentOrderItems = [];
   let currentSearchKeyword = '';
   let currentSelectedCustomerLabel = '';
+  let activeImageZoom = null;
 
   const SECTION_KEYS = {
     MY_ORDERS: 'myOrders',
@@ -2515,6 +2576,257 @@ function buildSectionsData(items) {
     });
   }
 
+  function isTouchZoomViewport() {
+    return window.matchMedia('(pointer: coarse), (max-width: 1024px)').matches;
+  }
+
+  function getTouchDistance(touches) {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.hypot(dx, dy);
+  }
+
+  function getTouchCenter(touches) {
+    return {
+      x: (touches[0].clientX + touches[1].clientX) / 2,
+      y: (touches[0].clientY + touches[1].clientY) / 2
+    };
+  }
+
+function getViewportRect() {
+  const vv = window.visualViewport;
+
+  return {
+    left: vv ? vv.offsetLeft : 0,
+    top: vv ? vv.offsetTop : 0,
+    width: vv ? vv.width : window.innerWidth,
+    height: vv ? vv.height : window.innerHeight
+  };
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function lerp(start, end, progress) {
+  return start + ((end - start) * progress);
+}
+
+function getTouchDistance(touches) {
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.hypot(dx, dy);
+}
+
+function getTouchCenter(touches) {
+  return {
+    x: (touches[0].clientX + touches[1].clientX) / 2,
+    y: (touches[0].clientY + touches[1].clientY) / 2
+  };
+}
+
+function getRectCenter(rect) {
+  return {
+    x: rect.left + rect.width / 2,
+    y: rect.top + rect.height / 2
+  };
+}
+
+function isTouchZoomViewport() {
+  return window.matchMedia('(pointer: coarse), (max-width: 1024px)').matches;
+}
+
+function setImageZoomContentRect(content, rect, radius) {
+  content.style.left = `${rect.left}px`;
+  content.style.top = `${rect.top}px`;
+  content.style.width = `${rect.width}px`;
+  content.style.height = `${rect.height}px`;
+  content.style.borderRadius = radius;
+}
+
+function getCoverScaleForViewport(sourceRect) {
+  const viewport = getViewportRect();
+
+  // 1:1 이미지를 화면 전체 영역까지 덮도록 만드는 배율
+  return Math.max(
+    viewport.width / Math.max(sourceRect.width, 1),
+    viewport.height / Math.max(sourceRect.height, 1)
+  );
+}
+
+function openOrderImageZoom(img, sourceWrap, touches = null) {
+  if (activeImageZoom || !img || !touches || touches.length < 2) return;
+
+  const sourceRect = sourceWrap.getBoundingClientRect();
+  const sourceRadius = getComputedStyle(sourceWrap).borderRadius || '0px';
+  const sourceCenter = getRectCenter(sourceRect);
+  const startDistance = getTouchDistance(touches);
+  const startCenter = getTouchCenter(touches);
+  const viewport = getViewportRect();
+
+  const overlay = document.createElement('div');
+  const frame = document.createElement('div');
+  const content = document.createElement('div');
+  const zoomImg = document.createElement('img');
+
+  overlay.className = 'image-pinch-overlay';
+  frame.className = 'image-pinch-frame';
+  content.className = 'image-pinch-content';
+  zoomImg.className = 'image-pinch-img';
+
+  zoomImg.src = img.currentSrc || img.src;
+  zoomImg.alt = img.alt || '';
+  zoomImg.decoding = 'async';
+  zoomImg.draggable = false;
+
+  content.appendChild(zoomImg);
+  frame.appendChild(content);
+  overlay.appendChild(frame);
+  document.body.appendChild(overlay);
+
+  setImageZoomContentRect(content, sourceRect, sourceRadius);
+
+  activeImageZoom = {
+    overlay,
+    frame,
+    content,
+    sourceRect,
+    sourceRadius,
+    sourceCenter,
+    startDistance,
+    startCenter,
+    viewportCenter: {
+      x: viewport.left + viewport.width / 2,
+      y: viewport.top + viewport.height / 2
+    },
+    scale: 1,
+    panX: 0,
+    panY: 0,
+    dimOpacity: 0.08,
+    bodyOverflow: document.body.style.overflow
+  };
+
+  document.body.style.overflow = 'hidden';
+
+  requestAnimationFrame(() => {
+    overlay.classList.add('show');
+    overlay.style.setProperty('--pinch-dim-opacity', '0.08');
+  });
+}
+
+function updateActiveImageZoom(touches) {
+  if (!activeImageZoom || touches.length < 2) return;
+
+  const zoom = activeImageZoom;
+
+  const currentDistance = getTouchDistance(touches);
+  const currentCenter = getTouchCenter(touches);
+  const rawScale = currentDistance / Math.max(zoom.startDistance, 1);
+
+  // 손가락을 벌리면 썸네일에서 화면 전체를 덮는 배율까지 커짐
+  const expandProgress = clamp((rawScale - 1) / 0.48, 0, 1);
+  const coverScale = getCoverScaleForViewport(zoom.sourceRect);
+
+  // 기본 확대: 썸네일 → 화면 전체 cover
+  const baseScale = lerp(1, coverScale, expandProgress);
+
+  // 화면 전체를 덮은 뒤에는 추가 확대
+  const extraScale = rawScale > 1.48
+    ? 1 + ((rawScale - 1.48) * 1.05)
+    : 1;
+
+  const targetScale = clamp(baseScale * extraScale, 1, coverScale * 2.8);
+
+  // 손가락 이동량 그대로 반영
+  const fingerMoveX = currentCenter.x - zoom.startCenter.x;
+  const fingerMoveY = currentCenter.y - zoom.startCenter.y;
+
+  // 확대될수록 화면 중앙으로 자연스럽게 커지되,
+  // 손가락 이동은 그대로 따라가게 함
+  const autoCenterX = lerp(zoom.sourceCenter.x, zoom.viewportCenter.x, expandProgress);
+  const autoCenterY = lerp(zoom.sourceCenter.y, zoom.viewportCenter.y, expandProgress);
+
+  const targetCenterX = autoCenterX + fingerMoveX;
+  const targetCenterY = autoCenterY + fingerMoveY;
+
+  const targetPanX = targetCenterX - zoom.sourceCenter.x;
+  const targetPanY = targetCenterY - zoom.sourceCenter.y;
+
+  // 너무 굼뜨지 않게 보간
+  zoom.scale = zoom.scale + ((targetScale - zoom.scale) * 0.32);
+  zoom.panX = zoom.panX + ((targetPanX - zoom.panX) * 0.36);
+  zoom.panY = zoom.panY + ((targetPanY - zoom.panY) * 0.36);
+
+  zoom.content.style.transform =
+    `translate3d(${zoom.panX}px, ${zoom.panY}px, 0) scale(${zoom.scale})`;
+
+  const targetDimOpacity = lerp(0.08, 0.72, expandProgress);
+  zoom.dimOpacity = zoom.dimOpacity + ((targetDimOpacity - zoom.dimOpacity) * 0.25);
+  zoom.overlay.style.setProperty('--pinch-dim-opacity', zoom.dimOpacity.toFixed(3));
+}
+
+function closeOrderImageZoom() {
+  if (!activeImageZoom) return;
+
+  const zoom = activeImageZoom;
+  activeImageZoom = null;
+
+  zoom.content.classList.add('is-returning');
+  zoom.overlay.classList.add('is-closing');
+  zoom.overlay.style.setProperty('--pinch-dim-opacity', '0');
+
+  // 손 떼면 원래 썸네일 위치로 복귀
+  zoom.content.style.transform = 'translate3d(0, 0, 0) scale(1)';
+  zoom.content.style.borderRadius = zoom.sourceRadius;
+
+  window.setTimeout(() => {
+    zoom.overlay.remove();
+    document.body.style.overflow = zoom.bodyOverflow || '';
+  }, 280);
+}
+
+function handleOrderImagePinchStart(event) {
+  if (!isTouchZoomViewport() || event.touches.length < 2) return;
+
+  const sourceWrap = event.target.closest('.order-thumb-wrap');
+  if (!sourceWrap || !resultsEl.contains(sourceWrap)) return;
+
+  const img = sourceWrap.querySelector('.order-thumb');
+  if (!img) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  openOrderImageZoom(img, sourceWrap, event.touches);
+}
+
+function handleOrderImagePinchMove(event) {
+  if (!activeImageZoom || event.touches.length < 2) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  updateActiveImageZoom(event.touches);
+}
+
+function handleOrderImagePinchEnd() {
+  if (!activeImageZoom) return;
+  closeOrderImageZoom();
+}
+
+function handleOrderImageClick(event) {
+  // 모바일에서는 클릭 확대 안 함. 핀치할 때만 커지게.
+  if (isTouchZoomViewport()) return;
+
+  const sourceWrap = event.target.closest('.order-thumb-wrap');
+  if (!sourceWrap || !resultsEl.contains(sourceWrap)) return;
+
+  const img = sourceWrap.querySelector('.order-thumb');
+  if (!img) return;
+
+  // PC 클릭 확대가 필요하면 별도 구현
+}
+
   function bindOrdersToggle() {
     const buttons = document.querySelectorAll('.orders-more[data-section-key]');
     if (!buttons.length) return;
@@ -2557,6 +2869,12 @@ function buildSectionsData(items) {
   window.addEventListener('resize', () => {
     requestAnimationFrame(updateOrderNameMarquees);
   });
+
+  resultsEl.addEventListener('touchstart', handleOrderImagePinchStart, { passive: false });
+  document.addEventListener('touchmove', handleOrderImagePinchMove, { passive: false });
+  document.addEventListener('touchend', handleOrderImagePinchEnd);
+  document.addEventListener('touchcancel', handleOrderImagePinchEnd);
+  resultsEl.addEventListener('click', handleOrderImageClick);
 
     searchBtn.addEventListener('click', search);
 
