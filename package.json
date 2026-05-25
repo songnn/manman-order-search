@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "googleapis": "^140.0.0"
+    "@supabase/supabase-js": "^2.106.2",
+    "googleapis": "^140.0.0",
+    "ws": "^8.21.0"
   },
   "devDependencies": {
     "vercel": "^44.0.0"
