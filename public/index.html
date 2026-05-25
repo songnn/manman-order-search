@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonts-archive/Paperlogy/Paperlogy.css" type="text/css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonts-archive/TheJamsil/TheJamsil.css" type="text/css">
   <link
     rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.css"
@@ -1768,6 +1769,506 @@
   }
 }
 
+/* ================================
+   Manman Support Help Card
+   - 1:1 문의 깔끔한 도움 카드
+   - 배경 애니메이션 제거 / 텍스트 잘림 없는 부드러운 교체
+================================ */
+
+/* ======================================
+   Support Help Card — Mobile-first
+   Figma: 881:74232 (440px iPhone frame)
+====================================== */
+
+/* === Mobile base === */
+.support-help-wrap {
+  padding: 0 10px;
+  margin-top: 34px;
+  perspective: 1100px;
+}
+
+.support-help-card {
+  --tilt-x: 0deg;
+  --tilt-y: 0deg;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
+  padding: 0;
+  background: #fff;
+  box-shadow:
+    0 2px 4px rgba(0,0,0,0.04),
+    0 8px 24px rgba(0,0,0,0.07),
+    0 1px 0 rgba(255,255,255,0.9) inset;
+  transform:
+    rotateX(var(--tilt-x))
+    rotateY(var(--tilt-y))
+    translate3d(0, 0, 0);
+  transform-style: preserve-3d;
+  will-change: transform;
+  transition: box-shadow 260ms ease;
+  animation: supportCardIntro 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  isolation: isolate;
+}
+
+.support-help-card.is-tilting {
+  box-shadow:
+    0 4px 8px rgba(0,0,0,0.05),
+    0 16px 36px rgba(0,0,0,0.09),
+    0 1px 0 rgba(255,255,255,0.96) inset;
+}
+
+/* Header: 피그마 pad T0 R20 B0 L20, 헤더-카테고리 gap 20 */
+.support-help-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 24px 20px 0;
+  margin-bottom: 20px;
+  transform: translateZ(42px);
+  animation: supportHeaderIn 600ms 120ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.support-help-header-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* 피그마: 14px 600 #0a58b5 */
+.support-help-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0a58b5;
+  letter-spacing: 0;
+  line-height: 1.2;
+  opacity: 0;
+  animation: supportTextFadeUp 500ms 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 피그마: 24px 400 잠실체 */
+.support-help-title {
+  margin: 0;
+  font-family: 'The Jamsil', 'Pretendard', Arial, sans-serif;
+  font-size: 24px;
+  line-height: 1.2;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: #111;
+  word-break: keep-all;
+  opacity: 0;
+  animation: supportTextFadeUp 540ms 280ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 피그마: 50×50 원형 */
+.support-help-avatar-wrap {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  transform: translateZ(56px);
+  animation: supportAvatarIntro 600ms 160ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.support-help-avatar-wrap::before,
+.support-help-avatar-wrap::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: inherit;
+  border: 1.5px solid rgba(10, 88, 181, 0.16);
+  opacity: 0;
+  transform: scale(0.86);
+  pointer-events: none;
+}
+
+.support-help-avatar-wrap::before {
+  animation: supportAvatarRing 9s 1.2s ease-out infinite;
+}
+
+.support-help-avatar-wrap::after {
+  animation: supportAvatarRing 9s 1.8s ease-out infinite;
+}
+
+.support-help-avatar {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+  background: #eaf4ff;
+  box-shadow:
+    0 6px 14px rgba(10, 88, 181, 0.14),
+    0 0 0 1.5px rgba(255,255,255,0.95);
+}
+
+/* 피그마: pad R20 L20, row-gap 16, col-gap 4 */
+.support-help-categories {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  row-gap: 16px;
+  column-gap: 4px;
+  padding: 0 20px;
+  transform: translateZ(36px);
+}
+
+/* 카테고리 아이템 스태거 인트로 */
+.support-help-category-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+  animation: supportCatItemIn 520ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.support-help-category-item:nth-child(1) { animation-delay: 300ms; }
+.support-help-category-item:nth-child(2) { animation-delay: 380ms; }
+.support-help-category-item:nth-child(3) { animation-delay: 460ms; }
+.support-help-category-item:nth-child(4) { animation-delay: 540ms; }
+
+/* 피그마: 48×48 */
+.support-help-category-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.support-help-category-text {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 피그마: 17px 400 잠실체 */
+.support-help-category-main {
+  font-family: 'The Jamsil', 'Pretendard', Arial, sans-serif;
+  font-size: 17px;
+  font-weight: 400;
+  color: #111;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+/* 피그마: 12px 500 */
+.support-help-category-sub {
+  font-size: 12px;
+  font-weight: 500;
+  color: #888;
+  letter-spacing: 0;
+  line-height: 1.3;
+  margin-top: 4px;
+  word-break: keep-all;
+}
+
+/* 피그마: margin = gap(16) + buttonArea paddingTop(10) = 26px
+   sides 10, bottom 10 | height 56 | radius 6 | font 19 | NO shadow */
+.support-help-button {
+  position: relative;
+  z-index: 1;
+  margin: 26px 10px 10px;
+  width: calc(100% - 20px);
+  height: 56px;
+  border: none;
+  border-radius: 6px;
+  background: #ffe812;
+  color: #38201F;
+  font-family: 'Pretendard', Arial, sans-serif;
+  font-size: 19px;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+  overflow: hidden;
+  transform: translateZ(56px);
+  transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1), filter 150ms ease;
+  animation: supportBtnIn 580ms 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* 버튼 shimmer */
+.support-help-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    108deg,
+    transparent 25%,
+    rgba(255,255,255,0.52) 50%,
+    transparent 75%
+  );
+  transform: translateX(-130%);
+  animation: btnShimmer 4s 1.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.support-help-button:active {
+  transform: translateZ(56px) scale(0.974);
+  filter: brightness(0.97);
+}
+
+.support-help-kakao-svg {
+  position: relative;
+  z-index: 1;
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  margin-right: 5px;
+  vertical-align: -6px;
+}
+
+.support-help-button-text {
+  position: relative;
+  z-index: 1;
+  font-weight: 600;
+}
+
+/* === Tablet (641–1024px) === */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .support-help-wrap {
+    padding: 0 20px;
+    margin-top: 44px;
+    perspective: 1200px;
+  }
+
+  .support-help-card {
+    border-radius: 10px;
+    box-shadow:
+      0 3px 6px rgba(0,0,0,0.04),
+      0 12px 32px rgba(0,0,0,0.08),
+      0 1px 0 rgba(255,255,255,0.92) inset;
+  }
+
+  .support-help-card.is-tilting {
+    box-shadow:
+      0 6px 12px rgba(0,0,0,0.05),
+      0 22px 48px rgba(0,0,0,0.10),
+      0 1px 0 rgba(255,255,255,0.96) inset;
+  }
+
+  .support-help-header {
+    padding: 30px 26px 0;
+    margin-bottom: 26px;
+  }
+
+  .support-help-header-text { gap: 7px; }
+
+  .support-help-label { font-size: 15px; }
+
+  .support-help-title { font-size: 26px; }
+
+  .support-help-avatar-wrap {
+    width: 56px;
+    height: 56px;
+    transform: translateZ(62px);
+  }
+
+  .support-help-categories {
+    row-gap: 22px;
+    column-gap: 6px;
+    padding: 0 26px;
+  }
+
+  .support-help-category-item { gap: 12px; }
+
+  .support-help-category-icon {
+    width: 54px;
+    height: 54px;
+    border-radius: 10px;
+  }
+
+  .support-help-category-main { font-size: 18px; }
+
+  .support-help-category-sub { font-size: 13px; }
+
+  .support-help-button {
+    margin: 34px 12px 12px;
+    width: calc(100% - 24px);
+    height: 60px;
+    border-radius: 9px;
+    font-size: 20px;
+    transform: translateZ(62px);
+  }
+
+  .support-help-button:active {
+    transform: translateZ(62px) scale(0.978);
+  }
+
+  .support-help-kakao-svg {
+    width: 24px;
+    height: 24px;
+    vertical-align: -6px;
+  }
+}
+
+/* === Desktop (1025px+) === */
+@media (min-width: 1025px) {
+  .support-help-wrap {
+    padding: 0 24px;
+    margin-top: 56px;
+    perspective: 1400px;
+  }
+
+  .support-help-card {
+    border-radius: 14px;
+    box-shadow:
+      0 4px 8px rgba(0,0,0,0.04),
+      0 16px 40px rgba(0,0,0,0.07),
+      0 1px 0 rgba(255,255,255,0.95) inset;
+  }
+
+  .support-help-card.is-tilting {
+    box-shadow:
+      0 8px 16px rgba(0,0,0,0.05),
+      0 28px 56px rgba(0,0,0,0.09),
+      0 1px 0 rgba(255,255,255,0.97) inset;
+  }
+
+  .support-help-header {
+    padding: 36px 32px 0;
+    margin-bottom: 30px;
+  }
+
+  .support-help-header-text { gap: 8px; }
+
+  .support-help-label { font-size: 16px; }
+
+  .support-help-title { font-size: 28px; }
+
+  .support-help-avatar-wrap {
+    width: 62px;
+    height: 62px;
+    transform: translateZ(70px);
+  }
+
+  .support-help-avatar {
+    box-shadow:
+      0 8px 20px rgba(10, 88, 181, 0.15),
+      0 0 0 1.5px rgba(255,255,255,0.95);
+  }
+
+  .support-help-categories {
+    row-gap: 26px;
+    column-gap: 8px;
+    padding: 0 32px;
+  }
+
+  .support-help-category-item { gap: 14px; }
+
+  .support-help-category-icon {
+    width: 58px;
+    height: 58px;
+    border-radius: 12px;
+  }
+
+  .support-help-category-main { font-size: 19px; }
+
+  .support-help-category-sub { font-size: 14px; }
+
+  .support-help-button {
+    margin: 40px 14px 14px;
+    width: calc(100% - 28px);
+    height: 64px;
+    border-radius: 11px;
+    font-size: 21px;
+    transform: translateZ(70px);
+  }
+
+  .support-help-button:active {
+    transform: translateZ(70px) scale(0.980);
+  }
+
+  .support-help-kakao-svg {
+    width: 26px;
+    height: 26px;
+    margin-right: 6px;
+    vertical-align: -7px;
+  }
+}
+
+/* Desktop hover — icon lift */
+@media (hover: hover) and (min-width: 641px) {
+  .support-help-category-item:hover .support-help-category-icon {
+    transform: scale(1.07) translateY(-2px);
+  }
+}
+
+/* === Keyframes === */
+@keyframes supportCardIntro {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 28px, 0) rotateX(0deg) rotateY(0deg) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) scale(1);
+  }
+}
+
+@keyframes supportHeaderIn {
+  from { opacity: 0; transform: translateZ(42px) translateY(14px); }
+  to   { opacity: 1; transform: translateZ(42px) translateY(0); }
+}
+
+@keyframes supportTextFadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes supportAvatarIntro {
+  from { opacity: 0; transform: translateZ(56px) scale(0.72); }
+  50%  { transform: translateZ(56px) scale(1.06); }
+  to   { opacity: 1; transform: translateZ(56px) scale(1); }
+}
+
+@keyframes supportAvatarRing {
+  0%, 72% { opacity: 0; transform: scale(0.86); }
+  78%     { opacity: 0.32; transform: scale(0.96); }
+  90%     { opacity: 0; transform: scale(1.38); }
+  100%    { opacity: 0; transform: scale(1.38); }
+}
+
+@keyframes supportCatItemIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes supportBtnIn {
+  from { opacity: 0; transform: translateZ(56px) translateY(16px) scale(0.97); }
+  to   { opacity: 1; transform: translateZ(56px) translateY(0) scale(1); }
+}
+
+@keyframes btnShimmer {
+  0%        { transform: translateX(-130%); opacity: 0; }
+  8%        { opacity: 1; }
+  42%, 100% { transform: translateX(130%); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .support-help-card,
+  .support-help-header,
+  .support-help-label,
+  .support-help-title,
+  .support-help-avatar-wrap,
+  .support-help-avatar-wrap::before,
+  .support-help-avatar-wrap::after,
+  .support-help-category-item,
+  .support-help-button,
+  .support-help-button::before {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+  .support-help-card { transform: none !important; }
+}
+
+
 </style>
   </head>
 
@@ -2406,12 +2907,244 @@ function buildSectionsData(items) {
 
     resultsEl.innerHTML = sections.map(section =>
       renderPickupSection(section, sectionItemsMap[section.key] || [])
-    ).join('');
+    ).join('') + renderSupportHelpCard();
 
     initAllSwipers(sections, sectionItemsMap);
     bindOrdersToggle();
+    initSupportHelpCard();
     requestAnimationFrame(updateOrderNameMarquees);
   }
+
+
+  function renderSupportHelpCard() {
+    const managerImageUrl = 'https://res.cloudinary.com/diol40iez/image/upload/v1779637385/ChatGPT_Image_2026%E1%84%82%E1%85%A7%E1%86%AB_5%E1%84%8B%E1%85%AF%E1%86%AF_25%E1%84%8B%E1%85%B5%E1%86%AF_%E1%84%8B%E1%85%A9%E1%84%8C%E1%85%A5%E1%86%AB_12_08_42_utyvl3.png';
+    const kakaoUrl = 'https://open.kakao.com/o/s7MpWOni';
+    const categories = [
+      { icon: 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/893b236a-eec4-4b83-946d-915ef15918e6', main: '픽업 조정', sub: '늦은 픽업 요청' },
+      { icon: 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/80c92456-7871-4a8e-b0c2-88dc8fe26342', main: '주문 확인', sub: '주문 변경 요청' },
+      { icon: 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/233890ec-b8cd-46c9-bbf5-c566789aea54', main: '상품 문의', sub: '소비기한 · 품질 문의' },
+      { icon: 'https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/ca0b4e08-a7d6-46e5-85fd-2567a52d3e2d', main: '이용 문의', sub: '무인매장 이용 · 결제' }
+    ];
+
+    return `
+      <section class="support-help-wrap" aria-label="점장님 1:1 문의 안내">
+        <div class="support-help-card" id="supportHelpCard">
+          <div class="support-help-header">
+            <div class="support-help-header-text">
+              <div class="support-help-label">1:1 문의하기</div>
+              <h2 class="support-help-title">도움이 필요하신가요?</h2>
+            </div>
+            <div class="support-help-avatar-wrap" aria-hidden="true">
+              <img
+                class="support-help-avatar"
+                src="${managerImageUrl}"
+                alt=""
+                loading="lazy"
+                decoding="async"
+              >
+            </div>
+          </div>
+
+          <div class="support-help-categories">
+            ${categories.map(cat => `
+              <div class="support-help-category-item">
+                <img class="support-help-category-icon" src="${cat.icon}" alt="" loading="lazy" decoding="async">
+                <div class="support-help-category-text">
+                  <div class="support-help-category-main">${escapeHtml(cat.main)}</div>
+                  <div class="support-help-category-sub">${escapeHtml(cat.sub)}</div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+
+          <button
+            class="support-help-button"
+            type="button"
+            data-kakao-url="${kakaoUrl}"
+            aria-label="점장님께 1대1 카카오톡 문의하기"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="support-help-kakao-svg" width="24" height="24" aria-hidden="true" viewBox="0 0 256 256"><path fill="#FFE812" d="M256 236c0 11.046-8.954 20-20 20H20c-11.046 0-20-8.954-20-20V20C0 8.954 8.954 0 20 0h216c11.046 0 20 8.954 20 20v216z"/><path fill="#38201F" d="M128 36C70.562 36 24 72.713 24 118c0 29.279 19.466 54.97 48.748 69.477-1.593 5.494-10.237 35.344-10.581 37.689 0 0-.207 1.762.934 2.434s2.483.15 2.483.15c3.272-.457 37.943-24.811 43.944-29.04 5.995.849 12.168 1.29 18.472 1.29 57.438 0 104-36.712 104-82 0-45.287-46.562-82-104-82z"/><path fill="#FFE812" d="M70.5 146.625c-3.309 0-6-2.57-6-5.73V105.25h-9.362c-3.247 0-5.888-2.636-5.888-5.875s2.642-5.875 5.888-5.875h30.724c3.247 0 5.888 2.636 5.888 5.875s-2.642 5.875-5.888 5.875H76.5v35.645c0 3.16-2.691 5.73-6 5.73zM123.112 146.547c-2.502 0-4.416-1.016-4.993-2.65l-2.971-7.778-18.296-.001-2.973 7.783c-.575 1.631-2.488 2.646-4.99 2.646a9.155 9.155 0 0 1-3.814-.828c-1.654-.763-3.244-2.861-1.422-8.52l14.352-37.776c1.011-2.873 4.082-5.833 7.99-5.922 3.919.088 6.99 3.049 8.003 5.928l14.346 37.759c1.826 5.672.236 7.771-1.418 8.532a9.176 9.176 0 0 1-3.814.827c-.001 0 0 0 0 0zm-11.119-21.056L106 108.466l-5.993 17.025h11.986zM138 145.75c-3.171 0-5.75-2.468-5.75-5.5V99.5c0-3.309 2.748-6 6.125-6s6.125 2.691 6.125 6v35.25h12.75c3.171 0 5.75 2.468 5.75 5.5s-2.579 5.5-5.75 5.5H138zM171.334 146.547c-3.309 0-6-2.691-6-6V99.5c0-3.309 2.691-6 6-6s6 2.691 6 6v12.896l16.74-16.74c.861-.861 2.044-1.335 3.328-1.335 1.498 0 3.002.646 4.129 1.772 1.051 1.05 1.678 2.401 1.764 3.804.087 1.415-.384 2.712-1.324 3.653l-13.673 13.671 14.769 19.566a5.951 5.951 0 0 1 1.152 4.445 5.956 5.956 0 0 1-2.328 3.957 5.94 5.94 0 0 1-3.609 1.211 5.953 5.953 0 0 1-4.793-2.385l-14.071-18.644-2.082 2.082v13.091a6.01 6.01 0 0 1-6.002 6.003z"/></svg>
+            <span class="support-help-button-text">1:1 문의하기</span>
+          </button>
+        </div>
+      </section>
+    `;
+  }
+
+  function initSupportHelpCard() {
+    const card = document.getElementById('supportHelpCard');
+    if (!card) return;
+
+    const button = card.querySelector('.support-help-button');
+    if (button) {
+      button.addEventListener('click', () => {
+        const url = button.dataset.kakaoUrl;
+        if (url) window.open(url, '_blank', 'noopener,noreferrer');
+      });
+    }
+
+    setupSupportCardTilt(card);
+  }
+
+  function startSupportRollingText(card) {
+    const windowEl = card.querySelector('.support-rolling-window');
+    const textEl = card.querySelector('.support-rolling-text');
+    if (!windowEl || !textEl) return;
+
+    const items = String(windowEl.dataset.rollingTexts || '')
+      .split('|')
+      .map(item => item.trim())
+      .filter(Boolean);
+
+    if (items.length <= 1) return;
+
+    let index = 0;
+
+    function setNextText() {
+      index = (index + 1) % items.length;
+
+      textEl.classList.remove('is-soft-changing');
+      void textEl.offsetWidth;
+
+      textEl.textContent = items[index];
+      textEl.classList.add('is-soft-changing');
+
+      window.setTimeout(() => {
+        textEl.classList.remove('is-soft-changing');
+      }, 560);
+    }
+
+    window.setInterval(setNextText, 3000);
+  }
+
+  function setupSupportCardTilt(card) {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) return;
+
+    const isMobile = window.matchMedia('(max-width: 640px)').matches;
+    const maxTilt = isMobile ? 8.2 : 6.2;
+
+    let frameId = null;
+    let targetX = 0;
+    let targetY = 0;
+    let currentX = 0;
+    let currentY = 0;
+    let orientationBase = null;
+    let orientationPermissionAsked = false;
+    let lastOrientationAt = 0;
+
+    function renderTilt() {
+      frameId = null;
+
+      currentX += (targetX - currentX) * 0.16;
+      currentY += (targetY - currentY) * 0.16;
+
+      card.style.setProperty('--tilt-x', `${currentX.toFixed(3)}deg`);
+      card.style.setProperty('--tilt-y', `${currentY.toFixed(3)}deg`);
+
+      const keepMoving =
+        Math.abs(targetX - currentX) > 0.015 ||
+        Math.abs(targetY - currentY) > 0.015;
+
+      if (keepMoving) {
+        frameId = requestAnimationFrame(renderTilt);
+      } else if (Math.abs(currentX) < 0.02 && Math.abs(currentY) < 0.02) {
+        card.classList.remove('is-tilting');
+      }
+    }
+
+    function requestRender() {
+      card.classList.add('is-tilting');
+      if (!frameId) frameId = requestAnimationFrame(renderTilt);
+    }
+
+    function setTilt(nextX, nextY) {
+      targetX = clamp(nextX, -maxTilt, maxTilt);
+      targetY = clamp(nextY, -maxTilt, maxTilt);
+      requestRender();
+    }
+
+    function setTiltFromPoint(clientX, clientY) {
+      const rect = card.getBoundingClientRect();
+      const x = ((clientX - rect.left) / rect.width - 0.5) * 2;
+      const y = ((clientY - rect.top) / rect.height - 0.5) * 2;
+
+      setTilt(-y * maxTilt, x * maxTilt);
+    }
+
+    function resetTilt() {
+      targetX = 0;
+      targetY = 0;
+      orientationBase = null;
+      requestRender();
+    }
+
+    function handleOrientation(event) {
+      if (event.beta == null && event.gamma == null) return;
+
+      const now = Date.now();
+      if (now - lastOrientationAt < 34) return;
+      lastOrientationAt = now;
+
+      const beta = Number(event.beta || 0);
+      const gamma = Number(event.gamma || 0);
+
+      if (!orientationBase) {
+        orientationBase = { beta, gamma };
+        return;
+      }
+
+      const deltaBeta = clamp(beta - orientationBase.beta, -24, 24);
+      const deltaGamma = clamp(gamma - orientationBase.gamma, -24, 24);
+
+      const nextX = clamp((-deltaBeta / 24) * maxTilt, -maxTilt, maxTilt);
+      const nextY = clamp((deltaGamma / 24) * maxTilt, -maxTilt, maxTilt);
+
+      setTilt(nextX, nextY);
+    }
+
+    function bindDeviceOrientation() {
+      if (!window.DeviceOrientationEvent) return;
+
+      window.addEventListener('deviceorientation', handleOrientation, { passive: true });
+    }
+
+    function requestDeviceOrientationPermission() {
+      if (orientationPermissionAsked) return;
+      orientationPermissionAsked = true;
+
+      if (
+        window.DeviceOrientationEvent &&
+        typeof window.DeviceOrientationEvent.requestPermission === 'function'
+      ) {
+        window.DeviceOrientationEvent.requestPermission()
+          .then(permissionState => {
+            if (permissionState === 'granted') bindDeviceOrientation();
+          })
+          .catch(() => {});
+      } else {
+        bindDeviceOrientation();
+      }
+    }
+
+    card.addEventListener('pointermove', event => {
+      const hasRecentOrientation = Date.now() - lastOrientationAt < 800;
+      if (hasRecentOrientation) return;
+      setTiltFromPoint(event.clientX, event.clientY);
+    }, { passive: true });
+
+    card.addEventListener('pointerdown', event => {
+      requestDeviceOrientationPermission();
+      setTiltFromPoint(event.clientX, event.clientY);
+    }, { passive: true });
+
+    card.addEventListener('touchstart', requestDeviceOrientationPermission, { passive: true });
+    card.addEventListener('pointerleave', resetTilt);
+    card.addEventListener('pointercancel', resetTilt);
+
+    bindDeviceOrientation();
+  }
+
 
   function renderPickupSection(section, items) {
     const sectionKey = section.key;
