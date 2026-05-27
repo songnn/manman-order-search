@@ -33,7 +33,7 @@ export default async function handler(req, res) {
     const { error: deleteError } = await supabaseAdmin
       .from('order_cache')
       .delete()
-      .eq('store_name', process.env.STORE_NAME)
+      .eq('store_name', process.env.STORE_NAME || '전농래미안크레시티점')
       .neq('sync_run_id', syncRunId);
 
     if (deleteError) throw deleteError;
