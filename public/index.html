@@ -2283,8 +2283,320 @@
 }
 
 
+/* ============================================================
+   Result Topbar — 검색결과 화면의 상단 고정 탑바
+   모바일 우선, safe-area 지원, 빠르고 부드러운 애니메이션
+============================================================ */
+
+.result-topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: #fff;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.09);
+  transform: translateY(-110%);
+  transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.result-topbar.is-visible {
+  transform: translateY(0);
+}
+
+/* 탑바 상단 행: 만만 로고 + 서치필드 */
+.rh-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) 14px 10px;
+}
+
+/* 만만 로고 - 슬라이드+스케일 인 애니메이션 */
+.rh-logo {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateX(-16px) scale(0.82);
+  transition:
+    opacity 0.22s 0.08s ease,
+    transform 0.28s 0.08s cubic-bezier(0.34, 1.56, 0.64, 1);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.result-topbar.is-visible .rh-logo {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+}
+
+.rh-logo svg {
+  height: 26px;
+  width: auto;
+  display: block;
+}
+
+/* 서치 랩 - 우측에서 슬라이드 인 */
+.rh-search-wrap {
+  flex: 1;
+  position: relative;
+  min-width: 0;
+  opacity: 0;
+  transform: translateX(18px);
+  transition:
+    opacity 0.2s 0.04s ease,
+    transform 0.22s 0.04s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.result-topbar.is-visible .rh-search-wrap {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.rh-input {
+  width: 100%;
+  height: 42px;
+  border: 1.5px solid transparent;
+  border-radius: 999px;
+  background: #f3f3f3;
+  padding: 0 78px 0 18px;
+  font-size: 17px;
+  font-weight: 500;
+  color: #222;
+  font-family: 'Pretendard', sans-serif;
+  letter-spacing: -0.03em;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.rh-input:focus {
+  border-color: #000;
+  background: #fff;
+}
+
+.rh-input::placeholder {
+  color: #aaa;
+  font-weight: 400;
+  font-size: 15px;
+}
+
+.rh-btn {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  height: 34px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 999px;
+  background: #0a58b5;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Pretendard', sans-serif;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.1s ease;
+}
+
+.rh-btn:active {
+  opacity: 0.82;
+}
+
+/* 탭 */
+.rh-tabs {
+  display: flex;
+  border-top: 1px solid #ebebeb;
+}
+
+.rh-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 7px 0 9px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: #bbb;
+  transition: color 0.15s ease;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rh-tab.is-active {
+  color: #111;
+  font-weight: 700;
+}
+
+.rh-tab-underline {
+  position: absolute;
+  bottom: 0;
+  left: 18%;
+  right: 18%;
+  height: 2.5px;
+  background: #111;
+  border-radius: 2px;
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.rh-tab.is-active .rh-tab-underline {
+  transform: scaleX(1);
+}
+
+.rh-tab-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rh-tab-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* 탑바가 활성화될 때 페이지 레이아웃 조정 */
+body.has-results {
+  background: #f8f9fa;
+}
+
+body.has-results .page {
+  padding-top: var(--topbar-h, 120px) !important;
+  padding-bottom: 60px;
+  background: #f8f9fa;
+  transition: padding-top 0.24s ease;
+}
+
+body.has-results .results-wrap {
+  margin-top: 0;
+}
+
+/* .top-stage는 JS가 inline style로 애니메이션 처리 */
+.top-stage {
+  transition: max-height 0.22s cubic-bezier(0.4, 0, 1, 1), opacity 0.16s ease;
+}
+
+/* 스케쥴 탭 패널 */
+.schedule-panel-wrap {
+  display: none;
+  background: #f8f9fa;
+  min-height: 50vh;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.schedule-panel-wrap.is-active {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.schedule-panel-icon {
+  font-size: 52px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.schedule-panel-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  letter-spacing: -0.04em;
+}
+
+.schedule-panel-desc {
+  font-size: 15px;
+  font-weight: 400;
+  color: #aaa;
+  letter-spacing: -0.02em;
+  line-height: 1.5;
+}
+
+/* 탭 전환 시 결과 패널 감춤 */
+.results-wrap.tab-hidden {
+  display: none;
+}
+
 </style>
   </head>
+
+<!-- ===== 결과화면 상단 탑바 (검색 후 슬라이드 인) ===== -->
+<div class="result-topbar" id="resultTopbar" aria-hidden="true">
+  <!-- 만만 로고 + 서치필드 행 -->
+  <div class="rh-bar">
+    <!-- 만만 글자 (SVG에서 만만 부분만 추출, viewBox 0 0 267 103) -->
+    <div class="rh-logo" id="rhLogoBtn" role="button" tabindex="0" aria-label="처음 화면으로 돌아가기">
+      <svg viewBox="0 0 267 103" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M46.2166 102.83C41.6137 102.83 37.826 102.405 34.9556 101.556C31.7455 100.622 29.2318 99.0592 27.4823 96.9191C25.8008 94.8639 24.6968 92.2483 24.1872 89.14C23.7287 86.4394 23.5078 83.1953 23.5078 79.4926V61.8453H41.8855V78.8642C41.8855 80.6816 41.9534 82.1083 42.1063 83.1274C42.2252 84.0615 42.463 84.5031 42.5819 84.69C42.6498 84.7749 42.8367 84.8598 42.9895 84.8938C43.3802 85.0127 44.2974 85.1995 46.0808 85.1995H113.392V102.813H46.1996L46.2166 102.83ZM94.9802 75.0426V12.5212C94.9802 3.85895 98.8188 0.15625 107.838 0.15625H128.169V14.1518H118.487C115.226 14.1518 113.324 16.3259 113.324 20.4022V75.0256H94.9802V75.0426Z" fill="#0051A0"/>
+        <path d="M23.3619 52.2149L17.9267 16.6656H8.61902C4.40677 16.6656 0.738018 13.7102 0.109578 9.78667C-0.281074 7.35783 0.381278 4.912 1.96087 3.06065C3.54046 1.2093 5.83346 0.15625 8.2623 0.15625H32.126L37.5612 35.7056H65.6372L69.0851 16.6656H50.7924C46.5801 16.6656 42.9114 13.7102 42.2829 9.78667C41.8923 7.35783 42.5717 4.912 44.1343 3.06065C45.7139 1.2093 48.0069 0.15625 50.4188 0.15625H80.2612C84.7452 0.15625 88.1252 4.21563 87.3269 8.61471L79.4289 52.2319H23.3619V52.2149Z" fill="#0051A0"/>
+        <path d="M184.388 102.83C179.786 102.83 175.998 102.405 173.128 101.556C169.917 100.622 167.404 99.0592 165.654 96.9191C163.973 94.8639 162.869 92.2483 162.359 89.14C161.901 86.4394 161.68 83.1953 161.68 79.4926V61.8453H180.057V78.8642C180.057 80.6816 180.125 82.1083 180.278 83.1274C180.397 84.0615 180.635 84.5031 180.754 84.69C180.822 84.7749 181.009 84.8598 181.161 84.8938C181.552 85.0127 182.469 85.1995 184.253 85.1995H251.564V102.813H184.372L184.388 102.83ZM233.152 75.0426V12.5212C233.152 3.85895 236.991 0.15625 246.01 0.15625H266.34V14.1518H256.659C253.398 14.1518 251.496 16.3259 251.496 20.4022V75.0256H233.152V75.0426Z" fill="#0051A0"/>
+        <path d="M161.534 52.2149L156.099 16.6656H146.791C142.579 16.6656 138.91 13.7102 138.281 9.78667C137.891 7.35783 138.553 4.912 140.133 3.06065C141.712 1.2093 144.005 0.15625 146.434 0.15625H170.298L175.733 35.7056H203.809L207.257 16.6656H188.964C184.752 16.6656 181.083 13.7102 180.455 9.78667C180.064 7.35783 180.744 4.912 182.306 3.06065C183.886 1.2093 186.179 0.15625 188.591 0.15625H218.433C222.917 0.15625 226.297 4.21563 225.499 8.61471L217.601 52.2319H161.534V52.2149Z" fill="#0051A0"/>
+      </svg>
+    </div>
+    <!-- 서치필드 -->
+    <div class="rh-search-wrap">
+      <input
+        id="rhKeyword"
+        class="rh-input"
+        type="text"
+        inputmode="numeric"
+        pattern="[0-9]*"
+        enterkeyhint="search"
+        autocomplete="off"
+        autocapitalize="off"
+        autocorrect="off"
+        spellcheck="false"
+        placeholder="끝 4자리 입력"
+      >
+      <button id="rhSearchBtn" class="rh-btn" type="button">조회</button>
+    </div>
+  </div>
+  <!-- 탭 행 -->
+  <div class="rh-tabs" role="tablist">
+    <button class="rh-tab is-active" id="ordersTab" data-tab="orders" role="tab" aria-selected="true">
+      <div class="rh-tab-icon">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="3" y="5" width="18" height="2.2" rx="1.1" fill="currentColor"/>
+          <rect x="3" y="11" width="18" height="2.2" rx="1.1" fill="currentColor"/>
+          <rect x="3" y="17" width="13" height="2.2" rx="1.1" fill="currentColor"/>
+        </svg>
+      </div>
+      <span>주문조회</span>
+      <div class="rh-tab-underline"></div>
+    </button>
+    <button class="rh-tab" id="scheduleTab" data-tab="schedule" role="tab" aria-selected="false">
+      <div class="rh-tab-icon">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="3" y="5" width="18" height="15" rx="2" stroke="currentColor" stroke-width="2"/>
+          <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/>
+          <line x1="8" y1="3" x2="8" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="16" y1="3" x2="16" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <rect x="6.5" y="13" width="3.5" height="3" rx="0.5" fill="currentColor"/>
+          <rect x="11" y="13" width="3.5" height="3" rx="0.5" fill="currentColor"/>
+        </svg>
+      </div>
+      <span>스케쥴</span>
+      <div class="rh-tab-underline"></div>
+    </button>
+  </div>
+</div>
 
 <div class="pretty-alert-overlay" id="prettyAlert">
   <div class="pretty-alert-box" role="alertdialog" aria-modal="true" aria-labelledby="prettyAlertTitle" aria-describedby="prettyAlertDesc">
@@ -2348,9 +2660,16 @@
         </section>
       </div>
 
-      <section class="results-wrap">
+      <section class="results-wrap" id="ordersPanel">
         <div class="results" id="results"></div>
       </section>
+
+      <!-- 스케쥴 탭 패널 (추후 구현) -->
+      <div class="schedule-panel-wrap" id="schedulePanel">
+        <div class="schedule-panel-icon">📅</div>
+        <div class="schedule-panel-title">스케쥴 준비 중</div>
+        <div class="schedule-panel-desc">곧 이용하실 수 있습니다</div>
+      </div>
     </div>
 
     <script>
@@ -2465,6 +2784,11 @@ function search(selectedCustomerLabel = '') {
 
   currentSearchKeyword = keyword;
   currentSelectedCustomerLabel = selectedCustomerLabel ? decodeURIComponent(selectedCustomerLabel) : '';
+
+  // 결과 로딩 시작 → 탑바 표시 (로딩 중에도 즉시 올라옴)
+  showResultTopbar();
+  // 주문조회 탭이 활성화 상태인지 확인
+  setActiveTab('orders');
 
   hideSearchGuide();
   messageEl.textContent = '';
@@ -3608,7 +3932,13 @@ function handleOrderImageClick(event) {
   keywordInput.addEventListener('blur', () => {
     setTimeout(updateSearchState, 80);
   });
-  keywordInput.addEventListener('input', updateSearchState);
+  keywordInput.addEventListener('input', () => {
+    updateSearchState();
+    // 4자리 숫자 입력 시 자동 조회 (iOS 숫자패드 완료 대응)
+    if (/^\d{4}$/.test(keywordInput.value.trim())) {
+      search();
+    }
+  });
   keywordInput.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
       search();
@@ -3643,6 +3973,9 @@ function handleOrderImageClick(event) {
 
 
 function resetToHome() {
+  // 탑바 숨기기 (애니메이션 포함)
+  hideResultTopbar();
+
   destroyAllSwipers();
 
   currentOrderItems = [];
@@ -3656,6 +3989,7 @@ function resetToHome() {
   };
 
   keywordInput.value = '';
+  rhKeyword.value = '';
   messageEl.textContent = '';
   resultsEl.innerHTML = '';
   updateSearchState();
@@ -3684,6 +4018,156 @@ homeLogoBtn.addEventListener('keydown', e => {
 function getGrandpaLoaderSvgMarkup() {
   return '<img src="/loader-grandpa.svg" alt="" class="grandpa-loader-image" loading="eager" decoding="async">';
 }
+
+/* ============================================================
+   Result Topbar — 탑바/탭 제어 JavaScript
+============================================================ */
+
+const resultTopbar = document.getElementById('resultTopbar');
+const rhKeyword = document.getElementById('rhKeyword');
+const rhSearchBtn = document.getElementById('rhSearchBtn');
+const rhLogoBtn = document.getElementById('rhLogoBtn');
+const ordersTab = document.getElementById('ordersTab');
+const scheduleTab = document.getElementById('scheduleTab');
+const ordersPanel = document.getElementById('ordersPanel');
+const schedulePanelEl = document.getElementById('schedulePanel');
+
+let topbarVisible = false;
+
+function showResultTopbar() {
+  if (topbarVisible) {
+    // 이미 표시된 경우 인풋 값만 동기화
+    rhKeyword.value = keywordInput.value;
+    return;
+  }
+
+  // 인풋 값 동기화
+  rhKeyword.value = keywordInput.value;
+
+  // 탑바 높이를 먼저 측정 (transform으로 off-screen이지만 DOM에 있어 측정 가능)
+  const h = resultTopbar.offsetHeight;
+  document.documentElement.style.setProperty('--topbar-h', `${h}px`);
+
+  // 탑바 표시
+  resultTopbar.setAttribute('aria-hidden', 'false');
+  resultTopbar.classList.add('is-visible');
+  topbarVisible = true;
+
+  // top-stage 접기 (JS로 height 애니메이션)
+  const topStage = document.querySelector('.top-stage');
+  if (topStage) {
+    const currentH = topStage.scrollHeight;
+    topStage.style.maxHeight = currentH + 'px';
+    topStage.style.overflow = 'hidden';
+    topStage.style.opacity = '1';
+    // 다음 프레임에 collapse 시작
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        topStage.style.maxHeight = '0';
+        topStage.style.opacity = '0';
+        topStage.style.pointerEvents = 'none';
+      });
+    });
+  }
+
+  // body 클래스 추가 (페이지 패딩 조정)
+  document.body.classList.add('has-results');
+
+  // 탑바 완전히 렌더된 후 높이 재측정
+  setTimeout(() => {
+    const hFinal = resultTopbar.offsetHeight;
+    document.documentElement.style.setProperty('--topbar-h', `${hFinal}px`);
+  }, 260);
+}
+
+function hideResultTopbar() {
+  if (!topbarVisible) return;
+
+  resultTopbar.setAttribute('aria-hidden', 'true');
+  resultTopbar.classList.remove('is-visible');
+  topbarVisible = false;
+
+  document.body.classList.remove('has-results');
+
+  // top-stage 복원
+  const topStage = document.querySelector('.top-stage');
+  if (topStage) {
+    topStage.style.transition = 'max-height 0.22s ease, opacity 0.18s ease';
+    topStage.style.maxHeight = '700px';
+    topStage.style.opacity = '1';
+    topStage.style.pointerEvents = '';
+    setTimeout(() => {
+      topStage.style.maxHeight = '';
+      topStage.style.overflow = '';
+      topStage.style.transition = '';
+    }, 250);
+  }
+
+  // 탭 초기화
+  setActiveTab('orders');
+}
+
+function setActiveTab(tabName) {
+  if (tabName === 'orders') {
+    ordersTab.classList.add('is-active');
+    ordersTab.setAttribute('aria-selected', 'true');
+    scheduleTab.classList.remove('is-active');
+    scheduleTab.setAttribute('aria-selected', 'false');
+    if (ordersPanel) ordersPanel.classList.remove('tab-hidden');
+    if (schedulePanelEl) {
+      schedulePanelEl.classList.remove('is-active');
+      schedulePanelEl.style.display = 'none';
+    }
+  } else {
+    scheduleTab.classList.add('is-active');
+    scheduleTab.setAttribute('aria-selected', 'true');
+    ordersTab.classList.remove('is-active');
+    ordersTab.setAttribute('aria-selected', 'false');
+    if (ordersPanel) ordersPanel.classList.add('tab-hidden');
+    if (schedulePanelEl) {
+      schedulePanelEl.style.display = '';
+      schedulePanelEl.classList.add('is-active');
+    }
+  }
+}
+
+// 탑바 서치 실행
+function searchFromTopbar() {
+  const val = rhKeyword.value.trim();
+  keywordInput.value = val;
+  search();
+}
+
+// 탑바 버튼 이벤트
+rhSearchBtn.addEventListener('click', searchFromTopbar);
+
+rhKeyword.addEventListener('keydown', e => {
+  if (e.key === 'Enter') searchFromTopbar();
+});
+
+// 탑바 인풋: 4자리 자동조회
+rhKeyword.addEventListener('input', () => {
+  keywordInput.value = rhKeyword.value;
+  if (/^\d{4}$/.test(rhKeyword.value.trim())) {
+    searchFromTopbar();
+  }
+});
+
+// 만만 로고 클릭 → 홈으로
+rhLogoBtn.addEventListener('click', resetToHome);
+rhLogoBtn.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    resetToHome();
+  }
+});
+
+// 탭 클릭
+ordersTab.addEventListener('click', () => setActiveTab('orders'));
+scheduleTab.addEventListener('click', () => setActiveTab('schedule'));
+
+// 초기 스케쥴 패널 숨김
+if (schedulePanelEl) schedulePanelEl.style.display = 'none';
 
 function renderLoadingState() {
   return `
