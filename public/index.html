@@ -2580,35 +2580,89 @@ body.has-results .results-wrap {
 }
 
 .result-tabs-wrap {
+  --tab-index: 0;
   display: none;
+  position: sticky;
+  top: calc(env(safe-area-inset-top, 0px) + 8px);
+  z-index: 120;
   width: calc(100% - 80px);
   max-width: 320px;
   margin: 18px auto 0;
+  padding: 4px;
   border-radius: 999px;
-  background: #fff;
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.06), inset 0 0 0 1px rgba(0, 81, 160, 0.06);
   overflow: hidden;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: box-shadow 180ms ease, transform 180ms ease, background-color 180ms ease;
+  isolation: isolate;
 }
 
 .result-tabs-wrap.is-visible {
   display: flex;
+  animation: resultTabsIn 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.result-tabs-wrap.is-stuck {
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.11), inset 0 0 0 1px rgba(0, 81, 160, 0.08);
+  transform: translateY(2px);
+}
+
+.result-tab-indicator {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  bottom: 4px;
+  width: calc((100% - 8px) / 2);
+  border-radius: 999px;
+  background: #0051a0;
+  box-shadow: 0 8px 18px rgba(0, 81, 160, 0.24);
+  transform: translateX(calc(var(--tab-index) * 100%));
+  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 180ms ease;
+  z-index: 0;
 }
 
 .result-tabs-wrap .rh-tabs {
+  position: relative;
+  z-index: 1;
   width: 100%;
   opacity: 1;
   border-top: none;
 }
 
 .result-tabs-wrap .rh-tab {
+  position: relative;
   padding: 9px 0 10px;
   font-size: 12px;
+  border-radius: 999px;
+  color: #6d7682;
+  transition: color 180ms ease, transform 180ms ease;
+}
+
+.result-tabs-wrap .rh-tab.is-active {
+  color: #fff;
+  font-weight: 700;
+}
+
+.result-tabs-wrap .rh-tab:active {
+  transform: scale(0.98);
 }
 
 .result-tabs-wrap .rh-tab-underline {
-  left: 24%;
-  right: 24%;
-  height: 2px;
+  display: none;
+}
+
+@keyframes resultTabsIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .topbar-motion-ghost {
@@ -2768,6 +2822,7 @@ body.has-results .results-wrap {
       </div>
 
       <div class="result-tabs-wrap" id="resultTabsWrap" aria-hidden="true">
+        <div class="result-tab-indicator" aria-hidden="true"></div>
         <div class="rh-tabs" role="tablist">
           <button class="rh-tab is-active" id="resultOrdersTab" data-tab="orders" role="tab" aria-selected="true">
             <div class="rh-tab-icon">
@@ -2929,7 +2984,7 @@ function search(selectedCustomerLabel = '') {
   currentSelectedCustomerLabel = selectedCustomerLabel ? decodeURIComponent(selectedCustomerLabel) : '';
 
   document.body.classList.add('has-results');
-  showResultTabs();
+  hideResultTabs();
   setActiveTab('orders');
 
   hideSearchGuide();
@@ -2956,6 +3011,7 @@ function search(selectedCustomerLabel = '') {
       const msg = (result && result.message) || '조회에 실패했습니다.';
       messageEl.textContent = msg;
       resultsEl.innerHTML = `<div class="empty" style="margin:24px 20px;">${escapeHtml(msg)}</div>`;
+      hideResultTabs();
       syncSearchGuide();
       return;
     }
@@ -2966,6 +3022,7 @@ function search(selectedCustomerLabel = '') {
       messageEl.textContent = `${result.searched} 끝번호와 일치하는 고객을 선택해 주세요.`;
       resultsEl.innerHTML = renderCustomerSelectionCards(result.candidates || [], result.searched || '');
       bindCustomerSelectionCards();
+      hideResultTabs();
       syncSearchGuide();
       return;
     }
@@ -2975,6 +3032,7 @@ function search(selectedCustomerLabel = '') {
     if (items.length === 0) {
       messageEl.textContent = `"${result.searched}" 검색 결과`;
       resultsEl.innerHTML = '<div class="empty" style="margin:24px 20px;">주문 내역이 없습니다.</div>';
+      showResultTabs();
       syncSearchGuide();
       return;
     }
@@ -2984,6 +3042,7 @@ function search(selectedCustomerLabel = '') {
     const displayCustomerName = currentSelectedCustomerLabel || items[0]?.customerLabel || result.searched || '';
     messageEl.textContent = `${displayCustomerName}님의 주문이 ${items.length}건 있습니다.`;
     renderOrdersSection();
+    showResultTabs();
     syncSearchGuide();
   }
 
@@ -3041,6 +3100,7 @@ function search(selectedCustomerLabel = '') {
   function renderError(error) {
     messageEl.textContent = '오류가 발생했습니다.';
     resultsEl.innerHTML = `<div class="empty">${escapeHtml(error.message || String(error))}</div>`;
+    hideResultTabs();
     syncSearchGuide();
   }
 
@@ -4096,7 +4156,12 @@ function handleOrderImageClick(event) {
 
   window.addEventListener('resize', () => {
     requestAnimationFrame(updateOrderNameMarquees);
+    requestAnimationFrame(updateResultTabsStickyState);
   });
+
+  window.addEventListener('scroll', () => {
+    requestAnimationFrame(updateResultTabsStickyState);
+  }, { passive: true });
 
   resultsEl.addEventListener('touchstart', handleOrderImagePinchStart, { passive: false });
   document.addEventListener('touchmove', handleOrderImagePinchMove, { passive: false });
@@ -4401,16 +4466,34 @@ function showResultTabs() {
   if (!resultTabsWrap) return;
   resultTabsWrap.classList.add('is-visible');
   resultTabsWrap.setAttribute('aria-hidden', 'false');
+  requestAnimationFrame(updateResultTabsStickyState);
 }
 
 function hideResultTabs() {
   if (!resultTabsWrap) return;
   resultTabsWrap.classList.remove('is-visible');
+  resultTabsWrap.classList.remove('is-stuck');
   resultTabsWrap.setAttribute('aria-hidden', 'true');
+}
+
+function updateResultTabsStickyState() {
+  if (!resultTabsWrap || !resultTabsWrap.classList.contains('is-visible')) return;
+
+  const top = getStickyTabTopOffset();
+  const rect = resultTabsWrap.getBoundingClientRect();
+  resultTabsWrap.classList.toggle('is-stuck', rect.top <= top + 2);
+}
+
+function getStickyTabTopOffset() {
+  return 8;
 }
 
 function setActiveTab(tabName) {
   if (!ordersTab || !scheduleTab) return;
+
+  if (resultTabsWrap) {
+    resultTabsWrap.style.setProperty('--tab-index', tabName === 'orders' ? '0' : '1');
+  }
 
   if (tabName === 'orders') {
     ordersTab.classList.add('is-active');
