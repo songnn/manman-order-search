@@ -2294,15 +2294,17 @@
   left: 0;
   right: 0;
   z-index: 200;
-  background: #fff;
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.09);
-  transform: translateY(-110%);
-  transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: transform;
+  /* 항상 Y=0 위치. 배경만 페이드인 */
+  background: rgba(255, 255, 255, 0);
+  box-shadow: none;
+  pointer-events: none;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
 .result-topbar.is-visible {
-  transform: translateY(0);
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.09);
+  pointer-events: auto;
 }
 
 /* 탑바 상단 행: 만만 로고 + 서치필드 */
@@ -2794,8 +2796,9 @@ function search(selectedCustomerLabel = '') {
 
   function renderResult(result) {
     if (!result || !result.ok) {
-      messageEl.textContent = (result && result.message) || '조회에 실패했습니다.';
-      resultsEl.innerHTML = '';
+      const msg = (result && result.message) || '조회에 실패했습니다.';
+      messageEl.textContent = msg;
+      resultsEl.innerHTML = `<div class="empty" style="margin:24px 20px;">${escapeHtml(msg)}</div>`;
       syncSearchGuide();
       return;
     }
@@ -2814,7 +2817,7 @@ function search(selectedCustomerLabel = '') {
 
     if (items.length === 0) {
       messageEl.textContent = `"${result.searched}" 검색 결과`;
-      resultsEl.innerHTML = '<div class="empty">주문 내역이 없습니다.</div>';
+      resultsEl.innerHTML = '<div class="empty" style="margin:24px 20px;">주문 내역이 없습니다.</div>';
       syncSearchGuide();
       return;
     }
@@ -4020,26 +4023,26 @@ function showResultTopbar() {
     rhKeyword.value = keywordInput.value;
     return;
   }
-
-  rhKeyword.value = keywordInput.value;
   topbarVisible = true;
+  rhKeyword.value = keywordInput.value;
 
-  const D = 280; // duration ms
-  const E  = 'cubic-bezier(0.22, 1, 0.36, 1)';   // ease out
-  const ES = 'cubic-bezier(0.34, 1.2, 0.64, 1)';  // spring (로고용)
+  const D  = 300; // ms
+  const E  = 'cubic-bezier(0.22, 1, 0.36, 1)';
+  const ES = 'cubic-bezier(0.34, 1.18, 0.64, 1)'; // spring
 
-  // ── 1. FIRST: 원본 오브젝트 위치 기록 ──────────────────────
+  // ── 1. FIRST: 원본 위치 기록 ────────────────────────────────
   const origShellEl = document.querySelector('.search-shell');
   const origLogoEl  = document.querySelector('.logo-svg');
   const origShellR  = origShellEl ? origShellEl.getBoundingClientRect() : null;
   const origLogoR   = origLogoEl  ? origLogoEl.getBoundingClientRect()  : null;
 
-  // ── 2. 탑바를 visibility:hidden + Y=0으로 배치해 LAST 위치 측정 ──
-  resultTopbar.style.cssText = 'transition:none; transform:translateY(0); visibility:hidden;';
+  // ── 2. 탑바 = 항상 Y=0. visibility:hidden으로 LAST 위치 측정 ─
+  // 탑바는 이미 position:fixed top:0 에 있음. 보이지 않게만 처리
+  resultTopbar.style.cssText = 'visibility:hidden; pointer-events:none;';
   resultTopbar.setAttribute('aria-hidden', 'false');
-  resultTopbar.offsetHeight; // force reflow
+  resultTopbar.offsetHeight;
 
-  const topbarH = resultTopbar.offsetHeight;
+  const topbarH      = resultTopbar.offsetHeight;
   document.documentElement.style.setProperty('--topbar-h', `${topbarH}px`);
 
   const rhWrap = resultTopbar.querySelector('.rh-search-wrap');
@@ -4047,106 +4050,112 @@ function showResultTopbar() {
   const targetShellR = rhWrap ? rhWrap.getBoundingClientRect() : null;
   const targetLogoR  = rhLogo ? rhLogo.getBoundingClientRect()  : null;
 
-  // ── 3. INVERT: 오브젝트를 원본 위치에 배치 ─────────────────
-  // 탑바가 -topbarH에서 시작하므로 dy = origY + topbarH - targetY
+  // ── 3. INVERT: 탑바 Y=0 기준으로 단순 차이값 ────────────────
+  // (탑바가 슬라이드하지 않으므로 보정 없음)
   if (rhWrap && origShellR && targetShellR) {
-    const dx = origShellR.left  - targetShellR.left;
-    const dy = origShellR.top   + topbarH - targetShellR.top;
-    rhWrap.style.cssText = `transition:none; transform:translate(${dx}px,${dy}px); opacity:1;`;
+    const dx = origShellR.left - targetShellR.left;
+    const dy = origShellR.top  - targetShellR.top;
+    rhWrap.style.cssText = `transition:none; transform:translate(${dx.toFixed(1)}px,${dy.toFixed(1)}px); opacity:1; will-change:transform;`;
   } else if (rhWrap) {
-    rhWrap.style.cssText = 'transition:none; opacity:0;';
+    rhWrap.style.cssText = 'opacity:0;';
   }
 
   if (rhLogo && origLogoR && targetLogoR) {
-    // '만만'은 로고 SVG의 왼쪽 52% 부분
+    // 만만 = 로고 왼쪽 52%, 중심점으로 FLIP
     const mmW  = origLogoR.width * 0.52;
     const mmCx = origLogoR.left + mmW / 2;
     const mmCy = origLogoR.top  + origLogoR.height / 2;
     const tCx  = targetLogoR.left + targetLogoR.width  / 2;
     const tCy  = targetLogoR.top  + targetLogoR.height / 2;
     const dx   = mmCx - tCx;
-    const dy   = mmCy + topbarH - tCy;
-    const sx   = mmW            / Math.max(targetLogoR.width,  1);
-    const sy   = origLogoR.height / Math.max(targetLogoR.height, 1);
-    rhLogo.style.cssText = `transition:none; transform:translate(${dx}px,${dy}px) scale(${sx},${sy}); transform-origin:center center; opacity:1;`;
+    const dy   = mmCy - tCy;
+    const sx   = Math.max(0.3, mmW / Math.max(targetLogoR.width, 1));
+    const sy   = Math.max(0.3, origLogoR.height / Math.max(targetLogoR.height, 1));
+    rhLogo.style.cssText = `transition:none; transform:translate(${dx.toFixed(1)}px,${dy.toFixed(1)}px) scale(${sx.toFixed(3)},${sy.toFixed(3)}); transform-origin:center center; opacity:1; will-change:transform;`;
   } else if (rhLogo) {
-    rhLogo.style.cssText = 'transition:none; opacity:0;';
+    rhLogo.style.cssText = 'opacity:0;';
   }
 
-  // ── 4. 탑바를 실제 시작 위치(-topbarH)로 이동 ──────────────
-  resultTopbar.style.cssText = `transition:none; transform:translateY(-${topbarH}px); visibility:visible;`;
-  resultTopbar.offsetHeight; // force reflow
+  // ── 4. 탑바 표시 (visibility 복원, background 투명으로 시작) ─
+  resultTopbar.style.cssText = '';
+  resultTopbar.offsetHeight;
 
-  // ── 5. PLAY: 모든 오브젝트를 동시에 목표 위치로 ────────────
+  // ── 5. PLAY ─────────────────────────────────────────────────
   requestAnimationFrame(() => {
-    // 탑바 슬라이드 인
-    resultTopbar.style.transition = `transform ${D}ms ${E}`;
-    resultTopbar.style.transform  = 'translateY(0)';
+    // 탑바 배경 페이드인 (슬라이드 없음)
     resultTopbar.classList.add('is-visible');
 
-    // 서치 랩: 원본 위치 → 탑바 위치
+    // 서치 랩: 원본 위치 → 탑바 자연 위치
     if (rhWrap) {
       rhWrap.style.transition = `transform ${D}ms ${E}, opacity 0.15s ease`;
       rhWrap.style.transform  = 'translate(0,0)';
       rhWrap.style.opacity    = '1';
     }
 
-    // 로고: 원본 위치+스케일 → 탑바 위치+스케일 (spring)
+    // 로고: 원본 위치·스케일 → 자연 위치 (spring)
     if (rhLogo) {
-      rhLogo.style.transition      = `transform ${D + 20}ms ${ES}, opacity 0.18s ease`;
+      rhLogo.style.transition      = `transform ${D + 30}ms ${ES}, opacity 0.2s ease`;
       rhLogo.style.transform       = 'translate(0,0) scale(1,1)';
       rhLogo.style.transformOrigin = '';
       rhLogo.style.opacity         = '1';
     }
 
-    // top-stage 동시에 접기
+    // top-stage 동시에 위로 접기
     const topStage = document.querySelector('.top-stage');
     if (topStage) {
       const stH = topStage.scrollHeight;
       topStage.style.cssText = `max-height:${stH}px; overflow:hidden; opacity:1;`;
       requestAnimationFrame(() => {
-        topStage.style.transition  = `max-height ${D}ms cubic-bezier(0.4,0,1,1), opacity 0.2s ease`;
-        topStage.style.maxHeight   = '0';
-        topStage.style.opacity     = '0';
+        topStage.style.transition    = `max-height ${D}ms cubic-bezier(0.4,0,1,1), opacity 0.22s ease`;
+        topStage.style.maxHeight     = '0';
+        topStage.style.opacity       = '0';
         topStage.style.pointerEvents = 'none';
       });
+    }
+
+    // 탭 fade in (약간 딜레이)
+    const tabs = resultTopbar.querySelector('.rh-tabs');
+    if (tabs) {
+      tabs.style.cssText = 'opacity:0; transition:none;';
+      setTimeout(() => {
+        tabs.style.transition = 'opacity 0.2s ease';
+        tabs.style.opacity    = '1';
+      }, D * 0.6);
     }
   });
 
   document.body.classList.add('has-results');
+  window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
 function hideResultTopbar() {
   if (!topbarVisible) return;
   topbarVisible = false;
 
-  // 탑바 슬라이드 아웃
-  resultTopbar.style.transition = 'transform 0.24s cubic-bezier(0.22, 1, 0.36, 1)';
-  resultTopbar.style.transform  = 'translateY(-110%)';
+  // 탑바 배경 페이드아웃 (슬라이드 없음)
+  resultTopbar.classList.remove('is-visible');
   resultTopbar.setAttribute('aria-hidden', 'true');
 
   // 내부 요소 인라인 스타일 초기화 (다음 FLIP을 위해)
   const rhWrap = resultTopbar.querySelector('.rh-search-wrap');
   const rhLogo = resultTopbar.querySelector('.rh-logo');
+  const tabs   = resultTopbar.querySelector('.rh-tabs');
   setTimeout(() => {
-    resultTopbar.classList.remove('is-visible');
-    resultTopbar.style.cssText = '';
     if (rhWrap) rhWrap.style.cssText = '';
     if (rhLogo) rhLogo.style.cssText = '';
-  }, 260);
+    if (tabs)   tabs.style.cssText   = '';
+  }, 320);
 
   document.body.classList.remove('has-results');
 
   // top-stage 복원
   const topStage = document.querySelector('.top-stage');
   if (topStage) {
-    topStage.style.transition = 'max-height 0.22s ease, opacity 0.18s ease';
-    topStage.style.maxHeight  = '700px';
-    topStage.style.opacity    = '1';
+    topStage.style.transition    = 'max-height 0.26s ease, opacity 0.2s ease';
+    topStage.style.maxHeight     = '700px';
+    topStage.style.opacity       = '1';
     topStage.style.pointerEvents = '';
-    setTimeout(() => {
-      topStage.style.cssText = '';
-    }, 260);
+    setTimeout(() => { topStage.style.cssText = ''; }, 280);
   }
 
   setActiveTab('orders');
