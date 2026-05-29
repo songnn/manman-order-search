@@ -2313,24 +2313,16 @@
   padding: calc(12px + env(safe-area-inset-top, 0px)) 14px 10px;
 }
 
-/* 만만 로고 - 슬라이드+스케일 인 애니메이션 */
+/* 만만 로고 — JS FLIP 애니메이션으로 제어 */
 .rh-logo {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   cursor: pointer;
-  opacity: 0;
-  transform: translateX(-16px) scale(0.82);
-  transition:
-    opacity 0.22s 0.08s ease,
-    transform 0.28s 0.08s cubic-bezier(0.34, 1.56, 0.64, 1);
+  opacity: 0;          /* JS가 FLIP 후 1로 변경 */
+  will-change: transform;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
-}
-
-.result-topbar.is-visible .rh-logo {
-  opacity: 1;
-  transform: translateX(0) scale(1);
 }
 
 .rh-logo svg {
@@ -2339,21 +2331,13 @@
   display: block;
 }
 
-/* 서치 랩 - 우측에서 슬라이드 인 */
+/* 서치 랩 — JS FLIP 애니메이션으로 제어 */
 .rh-search-wrap {
   flex: 1;
   position: relative;
   min-width: 0;
-  opacity: 0;
-  transform: translateX(18px);
-  transition:
-    opacity 0.2s 0.04s ease,
-    transform 0.22s 0.04s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.result-topbar.is-visible .rh-search-wrap {
-  opacity: 1;
-  transform: translateX(0);
+  opacity: 0;          /* JS가 FLIP 후 1로 변경 */
+  will-change: transform;
 }
 
 .rh-input {
@@ -2785,10 +2769,9 @@ function search(selectedCustomerLabel = '') {
   currentSearchKeyword = keyword;
   currentSelectedCustomerLabel = selectedCustomerLabel ? decodeURIComponent(selectedCustomerLabel) : '';
 
-  // 결과 로딩 시작 → 탑바 표시 (로딩 중에도 즉시 올라옴)
-  showResultTopbar();
-  // 주문조회 탭이 활성화 상태인지 확인
-  setActiveTab('orders');
+  // 결과 로딩 시작 → 탑바 표시 (오류가 fetch를 막지 않도록 try-catch)
+  try { showResultTopbar(); } catch(e) { console.warn('topbar:', e); }
+  try { setActiveTab('orders'); } catch(e) { console.warn('tab:', e); }
 
   hideSearchGuide();
   messageEl.textContent = '';
@@ -3931,18 +3914,16 @@ function handleOrderImageClick(event) {
   keywordInput.addEventListener('focus', updateSearchState);
   keywordInput.addEventListener('blur', () => {
     setTimeout(updateSearchState, 80);
+    // iOS 숫자패드 "완료" 버튼은 blur를 발생시킴 → 4자리면 조회
+    setTimeout(() => {
+      if (/^\d{4}$/.test(keywordInput.value.trim())) {
+        if (document.activeElement !== searchBtn) search();
+      }
+    }, 150);
   });
-  keywordInput.addEventListener('input', () => {
-    updateSearchState();
-    // 4자리 숫자 입력 시 자동 조회 (iOS 숫자패드 완료 대응)
-    if (/^\d{4}$/.test(keywordInput.value.trim())) {
-      search();
-    }
-  });
+  keywordInput.addEventListener('input', updateSearchState);
   keywordInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      search();
-    }
+    if (e.key === 'Enter') search();
   });
 
   window.addEventListener('resize', () => {
@@ -4036,56 +4017,123 @@ let topbarVisible = false;
 
 function showResultTopbar() {
   if (topbarVisible) {
-    // 이미 표시된 경우 인풋 값만 동기화
     rhKeyword.value = keywordInput.value;
     return;
   }
 
-  // 인풋 값 동기화
   rhKeyword.value = keywordInput.value;
-
-  // 탑바 높이를 먼저 측정 (transform으로 off-screen이지만 DOM에 있어 측정 가능)
-  const h = resultTopbar.offsetHeight;
-  document.documentElement.style.setProperty('--topbar-h', `${h}px`);
-
-  // 탑바 표시
-  resultTopbar.setAttribute('aria-hidden', 'false');
-  resultTopbar.classList.add('is-visible');
   topbarVisible = true;
 
-  // top-stage 접기 (JS로 height 애니메이션)
-  const topStage = document.querySelector('.top-stage');
-  if (topStage) {
-    const currentH = topStage.scrollHeight;
-    topStage.style.maxHeight = currentH + 'px';
-    topStage.style.overflow = 'hidden';
-    topStage.style.opacity = '1';
-    // 다음 프레임에 collapse 시작
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        topStage.style.maxHeight = '0';
-        topStage.style.opacity = '0';
-        topStage.style.pointerEvents = 'none';
-      });
-    });
+  const D = 280; // duration ms
+  const E  = 'cubic-bezier(0.22, 1, 0.36, 1)';   // ease out
+  const ES = 'cubic-bezier(0.34, 1.2, 0.64, 1)';  // spring (로고용)
+
+  // ── 1. FIRST: 원본 오브젝트 위치 기록 ──────────────────────
+  const origShellEl = document.querySelector('.search-shell');
+  const origLogoEl  = document.querySelector('.logo-svg');
+  const origShellR  = origShellEl ? origShellEl.getBoundingClientRect() : null;
+  const origLogoR   = origLogoEl  ? origLogoEl.getBoundingClientRect()  : null;
+
+  // ── 2. 탑바를 visibility:hidden + Y=0으로 배치해 LAST 위치 측정 ──
+  resultTopbar.style.cssText = 'transition:none; transform:translateY(0); visibility:hidden;';
+  resultTopbar.setAttribute('aria-hidden', 'false');
+  resultTopbar.offsetHeight; // force reflow
+
+  const topbarH = resultTopbar.offsetHeight;
+  document.documentElement.style.setProperty('--topbar-h', `${topbarH}px`);
+
+  const rhWrap = resultTopbar.querySelector('.rh-search-wrap');
+  const rhLogo = resultTopbar.querySelector('.rh-logo');
+  const targetShellR = rhWrap ? rhWrap.getBoundingClientRect() : null;
+  const targetLogoR  = rhLogo ? rhLogo.getBoundingClientRect()  : null;
+
+  // ── 3. INVERT: 오브젝트를 원본 위치에 배치 ─────────────────
+  // 탑바가 -topbarH에서 시작하므로 dy = origY + topbarH - targetY
+  if (rhWrap && origShellR && targetShellR) {
+    const dx = origShellR.left  - targetShellR.left;
+    const dy = origShellR.top   + topbarH - targetShellR.top;
+    rhWrap.style.cssText = `transition:none; transform:translate(${dx}px,${dy}px); opacity:1;`;
+  } else if (rhWrap) {
+    rhWrap.style.cssText = 'transition:none; opacity:0;';
   }
 
-  // body 클래스 추가 (페이지 패딩 조정)
-  document.body.classList.add('has-results');
+  if (rhLogo && origLogoR && targetLogoR) {
+    // '만만'은 로고 SVG의 왼쪽 52% 부분
+    const mmW  = origLogoR.width * 0.52;
+    const mmCx = origLogoR.left + mmW / 2;
+    const mmCy = origLogoR.top  + origLogoR.height / 2;
+    const tCx  = targetLogoR.left + targetLogoR.width  / 2;
+    const tCy  = targetLogoR.top  + targetLogoR.height / 2;
+    const dx   = mmCx - tCx;
+    const dy   = mmCy + topbarH - tCy;
+    const sx   = mmW            / Math.max(targetLogoR.width,  1);
+    const sy   = origLogoR.height / Math.max(targetLogoR.height, 1);
+    rhLogo.style.cssText = `transition:none; transform:translate(${dx}px,${dy}px) scale(${sx},${sy}); transform-origin:center center; opacity:1;`;
+  } else if (rhLogo) {
+    rhLogo.style.cssText = 'transition:none; opacity:0;';
+  }
 
-  // 탑바 완전히 렌더된 후 높이 재측정
-  setTimeout(() => {
-    const hFinal = resultTopbar.offsetHeight;
-    document.documentElement.style.setProperty('--topbar-h', `${hFinal}px`);
-  }, 260);
+  // ── 4. 탑바를 실제 시작 위치(-topbarH)로 이동 ──────────────
+  resultTopbar.style.cssText = `transition:none; transform:translateY(-${topbarH}px); visibility:visible;`;
+  resultTopbar.offsetHeight; // force reflow
+
+  // ── 5. PLAY: 모든 오브젝트를 동시에 목표 위치로 ────────────
+  requestAnimationFrame(() => {
+    // 탑바 슬라이드 인
+    resultTopbar.style.transition = `transform ${D}ms ${E}`;
+    resultTopbar.style.transform  = 'translateY(0)';
+    resultTopbar.classList.add('is-visible');
+
+    // 서치 랩: 원본 위치 → 탑바 위치
+    if (rhWrap) {
+      rhWrap.style.transition = `transform ${D}ms ${E}, opacity 0.15s ease`;
+      rhWrap.style.transform  = 'translate(0,0)';
+      rhWrap.style.opacity    = '1';
+    }
+
+    // 로고: 원본 위치+스케일 → 탑바 위치+스케일 (spring)
+    if (rhLogo) {
+      rhLogo.style.transition      = `transform ${D + 20}ms ${ES}, opacity 0.18s ease`;
+      rhLogo.style.transform       = 'translate(0,0) scale(1,1)';
+      rhLogo.style.transformOrigin = '';
+      rhLogo.style.opacity         = '1';
+    }
+
+    // top-stage 동시에 접기
+    const topStage = document.querySelector('.top-stage');
+    if (topStage) {
+      const stH = topStage.scrollHeight;
+      topStage.style.cssText = `max-height:${stH}px; overflow:hidden; opacity:1;`;
+      requestAnimationFrame(() => {
+        topStage.style.transition  = `max-height ${D}ms cubic-bezier(0.4,0,1,1), opacity 0.2s ease`;
+        topStage.style.maxHeight   = '0';
+        topStage.style.opacity     = '0';
+        topStage.style.pointerEvents = 'none';
+      });
+    }
+  });
+
+  document.body.classList.add('has-results');
 }
 
 function hideResultTopbar() {
   if (!topbarVisible) return;
-
-  resultTopbar.setAttribute('aria-hidden', 'true');
-  resultTopbar.classList.remove('is-visible');
   topbarVisible = false;
+
+  // 탑바 슬라이드 아웃
+  resultTopbar.style.transition = 'transform 0.24s cubic-bezier(0.22, 1, 0.36, 1)';
+  resultTopbar.style.transform  = 'translateY(-110%)';
+  resultTopbar.setAttribute('aria-hidden', 'true');
+
+  // 내부 요소 인라인 스타일 초기화 (다음 FLIP을 위해)
+  const rhWrap = resultTopbar.querySelector('.rh-search-wrap');
+  const rhLogo = resultTopbar.querySelector('.rh-logo');
+  setTimeout(() => {
+    resultTopbar.classList.remove('is-visible');
+    resultTopbar.style.cssText = '';
+    if (rhWrap) rhWrap.style.cssText = '';
+    if (rhLogo) rhLogo.style.cssText = '';
+  }, 260);
 
   document.body.classList.remove('has-results');
 
@@ -4093,17 +4141,14 @@ function hideResultTopbar() {
   const topStage = document.querySelector('.top-stage');
   if (topStage) {
     topStage.style.transition = 'max-height 0.22s ease, opacity 0.18s ease';
-    topStage.style.maxHeight = '700px';
-    topStage.style.opacity = '1';
+    topStage.style.maxHeight  = '700px';
+    topStage.style.opacity    = '1';
     topStage.style.pointerEvents = '';
     setTimeout(() => {
-      topStage.style.maxHeight = '';
-      topStage.style.overflow = '';
-      topStage.style.transition = '';
-    }, 250);
+      topStage.style.cssText = '';
+    }, 260);
   }
 
-  // 탭 초기화
   setActiveTab('orders');
 }
 
@@ -4145,12 +4190,18 @@ rhKeyword.addEventListener('keydown', e => {
   if (e.key === 'Enter') searchFromTopbar();
 });
 
-// 탑바 인풋: 4자리 자동조회
+// 탑바 인풋: 값 동기화만
 rhKeyword.addEventListener('input', () => {
   keywordInput.value = rhKeyword.value;
-  if (/^\d{4}$/.test(rhKeyword.value.trim())) {
-    searchFromTopbar();
-  }
+});
+
+// iOS 숫자패드 "완료" 버튼 → blur → 4자리면 조회
+rhKeyword.addEventListener('blur', () => {
+  setTimeout(() => {
+    if (/^\d{4}$/.test(rhKeyword.value.trim())) {
+      if (document.activeElement !== rhSearchBtn) searchFromTopbar();
+    }
+  }, 150);
 });
 
 // 만만 로고 클릭 → 홈으로
