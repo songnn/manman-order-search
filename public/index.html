@@ -2341,6 +2341,7 @@
 ============================================================ */
 
 .result-topbar {
+  display: none !important;
   position: fixed;
   top: 0;
   left: 0;
@@ -2522,14 +2523,12 @@ body.has-results {
 }
 
 body.has-results .page {
-  padding-top: var(--topbar-h, 120px) !important;
   padding-bottom: 60px;
   background: #f8f9fa;
-  transition: padding-top 0.24s ease;
 }
 
 body.has-results .results-wrap {
-  margin-top: 0;
+  margin-top: 22px;
 }
 
 /* .top-stage는 JS가 inline style로 애니메이션 처리 */
@@ -2578,6 +2577,38 @@ body.has-results .results-wrap {
 /* 탭 전환 시 결과 패널 감춤 */
 .results-wrap.tab-hidden {
   display: none;
+}
+
+.result-tabs-wrap {
+  display: none;
+  width: calc(100% - 80px);
+  max-width: 320px;
+  margin: 18px auto 0;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.result-tabs-wrap.is-visible {
+  display: flex;
+}
+
+.result-tabs-wrap .rh-tabs {
+  width: 100%;
+  opacity: 1;
+  border-top: none;
+}
+
+.result-tabs-wrap .rh-tab {
+  padding: 9px 0 10px;
+  font-size: 12px;
+}
+
+.result-tabs-wrap .rh-tab-underline {
+  left: 24%;
+  right: 24%;
+  height: 2px;
 }
 
 .topbar-motion-ghost {
@@ -2736,6 +2767,36 @@ body.has-results .results-wrap {
         </section>
       </div>
 
+      <div class="result-tabs-wrap" id="resultTabsWrap" aria-hidden="true">
+        <div class="rh-tabs" role="tablist">
+          <button class="rh-tab is-active" id="resultOrdersTab" data-tab="orders" role="tab" aria-selected="true">
+            <div class="rh-tab-icon">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="3" y="5" width="18" height="2.2" rx="1.1" fill="currentColor"/>
+                <rect x="3" y="11" width="18" height="2.2" rx="1.1" fill="currentColor"/>
+                <rect x="3" y="17" width="13" height="2.2" rx="1.1" fill="currentColor"/>
+              </svg>
+            </div>
+            <span>주문조회</span>
+            <div class="rh-tab-underline"></div>
+          </button>
+          <button class="rh-tab" id="resultScheduleTab" data-tab="schedule" role="tab" aria-selected="false">
+            <div class="rh-tab-icon">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="3" y="5" width="18" height="15" rx="2" stroke="currentColor" stroke-width="2"/>
+                <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/>
+                <line x1="8" y1="3" x2="8" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <line x1="16" y1="3" x2="16" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <rect x="6.5" y="13" width="3.5" height="3" rx="0.5" fill="currentColor"/>
+                <rect x="11" y="13" width="3.5" height="3" rx="0.5" fill="currentColor"/>
+              </svg>
+            </div>
+            <span>스케쥴</span>
+            <div class="rh-tab-underline"></div>
+          </button>
+        </div>
+      </div>
+
       <section class="results-wrap" id="ordersPanel">
         <div class="results" id="results"></div>
       </section>
@@ -2867,9 +2928,9 @@ function search(selectedCustomerLabel = '') {
   currentSearchKeyword = keyword;
   currentSelectedCustomerLabel = selectedCustomerLabel ? decodeURIComponent(selectedCustomerLabel) : '';
 
-  // 결과 로딩 시작 → 탑바 표시 (오류가 fetch를 막지 않도록 try-catch)
-  try { showResultTopbar(); } catch(e) { console.warn('topbar:', e); }
-  try { setActiveTab('orders'); } catch(e) { console.warn('tab:', e); }
+  document.body.classList.add('has-results');
+  showResultTabs();
+  setActiveTab('orders');
 
   hideSearchGuide();
   messageEl.textContent = '';
@@ -4077,9 +4138,11 @@ function resetToHome() {
   };
 
   keywordInput.value = '';
-  rhKeyword.value = '';
+  if (rhKeyword) rhKeyword.value = '';
   messageEl.textContent = '';
   resultsEl.innerHTML = '';
+  document.body.classList.remove('has-results');
+  hideResultTabs();
   updateSearchState();
   hidePrettyAlert();
   showSearchGuide();
@@ -4115,8 +4178,9 @@ const resultTopbar = document.getElementById('resultTopbar');
 const rhKeyword = document.getElementById('rhKeyword');
 const rhSearchBtn = document.getElementById('rhSearchBtn');
 const rhLogoBtn = document.getElementById('rhLogoBtn');
-const ordersTab = document.getElementById('ordersTab');
-const scheduleTab = document.getElementById('scheduleTab');
+const resultTabsWrap = document.getElementById('resultTabsWrap');
+const ordersTab = document.getElementById('resultOrdersTab');
+const scheduleTab = document.getElementById('resultScheduleTab');
 const ordersPanel = document.getElementById('ordersPanel');
 const schedulePanelEl = document.getElementById('schedulePanel');
 
@@ -4333,7 +4397,21 @@ function hideResultTopbar() {
   setActiveTab('orders');
 }
 
+function showResultTabs() {
+  if (!resultTabsWrap) return;
+  resultTabsWrap.classList.add('is-visible');
+  resultTabsWrap.setAttribute('aria-hidden', 'false');
+}
+
+function hideResultTabs() {
+  if (!resultTabsWrap) return;
+  resultTabsWrap.classList.remove('is-visible');
+  resultTabsWrap.setAttribute('aria-hidden', 'true');
+}
+
 function setActiveTab(tabName) {
+  if (!ordersTab || !scheduleTab) return;
+
   if (tabName === 'orders') {
     ordersTab.classList.add('is-active');
     ordersTab.setAttribute('aria-selected', 'true');
