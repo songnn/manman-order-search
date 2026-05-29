@@ -2538,15 +2538,11 @@ body.has-results .results-wrap {
 
 /* 스케쥴 탭 패널 */
 .schedule-panel-wrap {
-  display: none;
+  display: flex;
   background: #f8f9fa;
   min-height: 50vh;
   padding: 60px 20px;
   text-align: center;
-}
-
-.schedule-panel-wrap.is-active {
-  display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -2574,9 +2570,35 @@ body.has-results .results-wrap {
   line-height: 1.5;
 }
 
-/* 탭 전환 시 결과 패널 감춤 */
-.results-wrap.tab-hidden {
+.result-panels {
+  --tab-index: 0;
   display: none;
+  width: 100%;
+  overflow: hidden;
+  touch-action: pan-y;
+}
+
+body.has-results .result-panels {
+  display: block;
+}
+
+.result-panels-track {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  transform: translate3d(calc(var(--tab-index) * -100%), 0, 0);
+  transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.result-panel {
+  flex: 0 0 100%;
+  width: 100%;
+  min-width: 0;
+}
+
+.results-wrap.tab-hidden {
+  display: block;
 }
 
 .result-tabs-wrap {
@@ -2671,7 +2693,6 @@ body.has-results .results-wrap {
 
 .result-tabs-wrap.is-pinned .rh-tabs {
   border-radius: 999px;
-  background: #f3f6f9;
   box-shadow: inset 0 0 0 1px rgba(0, 81, 160, 0.06);
 }
 
@@ -2898,15 +2919,19 @@ body.has-results .results-wrap {
         </div>
       </div>
 
-      <section class="results-wrap" id="ordersPanel">
-        <div class="results" id="results"></div>
-      </section>
+      <div class="result-panels" id="resultPanels">
+        <div class="result-panels-track" id="resultPanelsTrack">
+          <section class="results-wrap result-panel" id="ordersPanel">
+            <div class="results" id="results"></div>
+          </section>
 
-      <!-- 스케쥴 탭 패널 (추후 구현) -->
-      <div class="schedule-panel-wrap" id="schedulePanel">
-        <div class="schedule-panel-icon">📅</div>
-        <div class="schedule-panel-title">스케쥴 준비 중</div>
-        <div class="schedule-panel-desc">곧 이용하실 수 있습니다</div>
+          <!-- 스케쥴 탭 패널 (추후 구현) -->
+          <div class="schedule-panel-wrap result-panel" id="schedulePanel">
+            <div class="schedule-panel-icon">📅</div>
+            <div class="schedule-panel-title">스케쥴 준비 중</div>
+            <div class="schedule-panel-desc">곧 이용하실 수 있습니다</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -4290,6 +4315,8 @@ const rhLogoBtn = document.getElementById('rhLogoBtn');
 const resultTabsWrap = document.getElementById('resultTabsWrap');
 const ordersTab = document.getElementById('resultOrdersTab');
 const scheduleTab = document.getElementById('resultScheduleTab');
+const resultPanels = document.getElementById('resultPanels');
+const resultPanelsTrack = document.getElementById('resultPanelsTrack');
 const ordersPanel = document.getElementById('ordersPanel');
 const schedulePanelEl = document.getElementById('schedulePanel');
 
@@ -4298,6 +4325,9 @@ let resultTabsSpacer = null;
 let resultTabsPinY = 0;
 let resultTabsFrame = null;
 let resultTabsPinned = false;
+let resultSwipeStartX = 0;
+let resultSwipeStartY = 0;
+let resultSwipeTracking = false;
 
 function showResultTopbar() {
   if (topbarVisible) {
@@ -4630,31 +4660,31 @@ function animateResultTabsPosition(fromRect) {
 
 function setActiveTab(tabName) {
   if (!ordersTab || !scheduleTab) return;
+  const normalizedTab = tabName === 'schedule' ? 'schedule' : 'orders';
+  const nextIndex = normalizedTab === 'orders' ? '0' : '1';
 
   if (resultTabsWrap) {
-    resultTabsWrap.style.setProperty('--tab-index', tabName === 'orders' ? '0' : '1');
+    resultTabsWrap.style.setProperty('--tab-index', nextIndex);
   }
 
-  if (tabName === 'orders') {
+  if (resultPanels) {
+    resultPanels.style.setProperty('--tab-index', nextIndex);
+  }
+
+  if (normalizedTab === 'orders') {
     ordersTab.classList.add('is-active');
     ordersTab.setAttribute('aria-selected', 'true');
     scheduleTab.classList.remove('is-active');
     scheduleTab.setAttribute('aria-selected', 'false');
     if (ordersPanel) ordersPanel.classList.remove('tab-hidden');
-    if (schedulePanelEl) {
-      schedulePanelEl.classList.remove('is-active');
-      schedulePanelEl.style.display = 'none';
-    }
+    if (schedulePanelEl) schedulePanelEl.classList.remove('is-active');
   } else {
     scheduleTab.classList.add('is-active');
     scheduleTab.setAttribute('aria-selected', 'true');
     ordersTab.classList.remove('is-active');
     ordersTab.setAttribute('aria-selected', 'false');
     if (ordersPanel) ordersPanel.classList.add('tab-hidden');
-    if (schedulePanelEl) {
-      schedulePanelEl.style.display = '';
-      schedulePanelEl.classList.add('is-active');
-    }
+    if (schedulePanelEl) schedulePanelEl.classList.add('is-active');
   }
 
   requestResultTabsStickyUpdate();
@@ -4716,8 +4746,39 @@ if (resultTabsWrap) {
   resultTabsWrap.addEventListener('click', handleResultTabClick);
 }
 
-// 초기 스케쥴 패널 숨김
-if (schedulePanelEl) schedulePanelEl.style.display = 'none';
+function handleResultPanelPointerDown(event) {
+  if (!resultPanels || !resultPanels.contains(event.target)) return;
+  resultSwipeTracking = true;
+  resultSwipeStartX = event.clientX;
+  resultSwipeStartY = event.clientY;
+}
+
+function handleResultPanelPointerUp(event) {
+  if (!resultSwipeTracking) return;
+  resultSwipeTracking = false;
+
+  const dx = event.clientX - resultSwipeStartX;
+  const dy = event.clientY - resultSwipeStartY;
+
+  if (Math.abs(dx) < 42 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+
+  if (dx < 0) {
+    setActiveTab('schedule');
+  } else {
+    setActiveTab('orders');
+  }
+}
+
+function handleResultPanelPointerCancel() {
+  resultSwipeTracking = false;
+}
+
+if (resultPanels) {
+  resultPanels.addEventListener('pointerdown', handleResultPanelPointerDown, { passive: true });
+  resultPanels.addEventListener('pointerup', handleResultPanelPointerUp, { passive: true });
+  resultPanels.addEventListener('pointercancel', handleResultPanelPointerCancel);
+  resultPanels.addEventListener('pointerleave', handleResultPanelPointerCancel);
+}
 
 function renderLoadingState() {
   return `
