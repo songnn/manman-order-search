@@ -77,12 +77,16 @@
     justify-content: center;
     cursor: pointer;
     user-select: none;
+    -webkit-tap-highlight-color: transparent;
   }
 
   .logo-svg {
     width: 24vw;
     max-width: 400px;
     line-height: 0;
+    transform: translateZ(0);
+    transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), filter 220ms ease;
+    will-change: transform;
   }
 
   .logo-svg svg {
@@ -98,6 +102,7 @@
     font-weight: 500;
     color: #0a58b5;
     letter-spacing: -0.03em;
+    transition: color 220ms ease, transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .grandpa {
@@ -133,12 +138,15 @@
     width: 100%;
     max-width: 760px;
     margin: 0 auto;
+    transform: translateZ(0);
+    transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1), filter 240ms ease;
+    will-change: transform;
   }
 
   .search-input {
     width: 100%;
     height: 124px;
-    border: 1.5px solid transparent;
+    border: 1.5px solid rgba(0, 81, 160, 0);
     outline: none;
     border-radius: 999px;
     background: #fff;
@@ -148,13 +156,22 @@
     font-weight: 500;
     color: #222;
     letter-spacing: -0.03em;
-    transition: border-color 0.12s ease, box-shadow 0.12s ease, padding 0.12s ease;
+    transition:
+      border-color 220ms ease,
+      background-color 220ms ease,
+      box-shadow 240ms cubic-bezier(0.22, 1, 0.36, 1),
+      padding 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      color 180ms ease;
     appearance: none;
     -webkit-appearance: none;
   }
 
   .search-input:focus {
-    border-color: #000;
+    border-color: rgba(0, 81, 160, 0.72);
+    background: #fff;
+    box-shadow:
+      0 18px 38px rgba(0, 0, 0, 0.10),
+      0 0 0 5px rgba(0, 81, 160, 0.08);
     transform: none;
     scale: 1;
   }
@@ -184,7 +201,12 @@
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transition: opacity 0.14s ease, visibility 0.14s ease, transform 0.14s ease;
+    transition:
+      opacity 180ms ease,
+      visibility 180ms ease,
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      background-color 180ms ease,
+      box-shadow 220ms ease;
   }
 
   .search-row.active .search-btn {
@@ -192,6 +214,36 @@
     visibility: visible;
     pointer-events: auto;
     transform: translateY(-50%) scale(1);
+  }
+
+  .search-row.active .search-shell,
+  .top-stage.search-is-focused .search-shell {
+    transform: translateY(-1px);
+  }
+
+  .search-row.active .search-input {
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.10);
+  }
+
+  .search-row.is-focused .search-btn {
+    background: #0051a0;
+    box-shadow: 0 12px 28px rgba(0, 81, 160, 0.28);
+  }
+
+  .search-btn:active {
+    transform: translateY(-50%) scale(0.975);
+  }
+
+  .top-stage.search-is-focused .logo-svg,
+  .top-stage.search-has-value .logo-svg {
+    transform: translateY(-2px) scale(1.012);
+    filter: drop-shadow(0 8px 12px rgba(0, 81, 160, 0.10));
+  }
+
+  .top-stage.search-is-focused .store-name,
+  .top-stage.search-has-value .store-name {
+    color: #0051a0;
+    transform: translateY(-1px);
   }
 
   .message {
@@ -2294,14 +2346,21 @@
   left: 0;
   right: 0;
   z-index: 200;
-  /* 항상 Y=0 위치. 배경만 페이드인 */
+  visibility: hidden;
+  opacity: 0;
   background: rgba(255, 255, 255, 0);
   box-shadow: none;
   pointer-events: none;
-  transition: background 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    opacity 180ms ease,
+    visibility 180ms ease,
+    background 240ms ease,
+    box-shadow 240ms ease;
 }
 
 .result-topbar.is-visible {
+  visibility: visible;
+  opacity: 1;
   background: rgba(255, 255, 255, 1);
   box-shadow: 0 2px 16px rgba(0, 0, 0, 0.09);
   pointer-events: auto;
@@ -2400,6 +2459,7 @@
 .rh-tabs {
   display: flex;
   border-top: 1px solid #ebebeb;
+  opacity: 0;
 }
 
 .rh-tab {
@@ -2520,8 +2580,39 @@ body.has-results .results-wrap {
   display: none;
 }
 
+.topbar-motion-ghost {
+  position: fixed;
+  z-index: 500;
+  margin: 0;
+  pointer-events: none;
+  transform-origin: top left;
+  will-change: left, top, width, height, opacity, transform;
+}
+
+.topbar-motion-ghost.search-shell {
+  max-width: none;
+}
+
+.topbar-motion-ghost .search-input,
+.topbar-motion-ghost .search-btn {
+  transition: none !important;
+}
+
+.topbar-motion-ghost .search-btn {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(-50%) scale(1);
+}
+
+.topbar-motion-ghost--logo svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 </style>
   </head>
+  <body>
 
 <!-- ===== 결과화면 상단 탑바 (검색 후 슬라이드 인) ===== -->
 <div class="result-topbar" id="resultTopbar" aria-hidden="true">
@@ -2595,7 +2686,6 @@ body.has-results .results-wrap {
   </div>
 </div>
 
-  <body>
     <div class="page">
       <div class="top-stage">
         <section class="hero">
@@ -2720,8 +2810,13 @@ const searchGuideEl = document.getElementById('searchGuide');
   function updateSearchState() {
     const hasValue = keywordInput.value.trim().length > 0;
     const isFocused = document.activeElement === keywordInput;
+    const topStage = document.querySelector('.top-stage');
 
     searchRow.classList.toggle('is-focused', isFocused);
+    if (topStage) {
+      topStage.classList.toggle('search-is-focused', isFocused);
+      topStage.classList.toggle('search-has-value', hasValue);
+    }
 
     if (hasValue || isFocused) {
       searchRow.classList.add('active');
@@ -2753,6 +2848,7 @@ function syncSearchGuide() {
 }
 
 function search(selectedCustomerLabel = '') {
+  keywordInput.value = sanitizeFourDigitInput(keywordInput.value);
   const keyword = keywordInput.value.trim();
 
   if (!keyword) {
@@ -2763,7 +2859,7 @@ function search(selectedCustomerLabel = '') {
     return;
   }
 
-  if (isDigitsOnly(keyword) && keyword.length !== 4) {
+  if (!/^\d{4}$/.test(keyword)) {
     showPrettyAlert('휴대폰 번호 끝 4자리 모두 입력해주시기 바랍니다.');
     return;
   }
@@ -2904,6 +3000,10 @@ function hidePrettyAlert() {
 
 function isDigitsOnly(value) {
   return /^\d+$/.test(String(value || '').trim());
+}
+
+function sanitizeFourDigitInput(value) {
+  return String(value || '').replace(/\D/g, '').slice(0, 4);
 }
 
 function formatPriceHtml(value) {
@@ -3924,7 +4024,11 @@ function handleOrderImageClick(event) {
       }
     }, 150);
   });
-  keywordInput.addEventListener('input', updateSearchState);
+  keywordInput.addEventListener('input', () => {
+    keywordInput.value = sanitizeFourDigitInput(keywordInput.value);
+    if (rhKeyword) rhKeyword.value = keywordInput.value;
+    updateSearchState();
+  });
   keywordInput.addEventListener('keydown', e => {
     if (e.key === 'Enter') search();
   });
@@ -4026,106 +4130,169 @@ function showResultTopbar() {
   topbarVisible = true;
   rhKeyword.value = keywordInput.value;
 
-  const D  = 300; // ms
-  const E  = 'cubic-bezier(0.22, 1, 0.36, 1)';
-  const ES = 'cubic-bezier(0.34, 1.18, 0.64, 1)'; // spring
-
-  // ── 1. FIRST: 원본 위치 기록 ────────────────────────────────
+  const D = 280;
+  const E = 'cubic-bezier(0.22, 1, 0.36, 1)';
   const origShellEl = document.querySelector('.search-shell');
-  const origLogoEl  = document.querySelector('.logo-svg');
-  const origShellR  = origShellEl ? origShellEl.getBoundingClientRect() : null;
-  const origLogoR   = origLogoEl  ? origLogoEl.getBoundingClientRect()  : null;
+  const origLogoEl = document.querySelector('.logo-svg');
+  const origShellR = origShellEl ? origShellEl.getBoundingClientRect() : null;
+  const origLogoR = origLogoEl ? origLogoEl.getBoundingClientRect() : null;
+  const manmanRatio = 267 / 513;
 
-  // ── 2. 탑바 = 항상 Y=0. visibility:hidden으로 LAST 위치 측정 ─
-  // 탑바는 이미 position:fixed top:0 에 있음. 보이지 않게만 처리
-  resultTopbar.style.cssText = 'visibility:hidden; pointer-events:none;';
+  resultTopbar.classList.add('is-visible');
+  resultTopbar.style.visibility = 'hidden';
+  resultTopbar.style.pointerEvents = 'none';
   resultTopbar.setAttribute('aria-hidden', 'false');
   resultTopbar.offsetHeight;
 
-  const topbarH      = resultTopbar.offsetHeight;
+  const topbarH = resultTopbar.offsetHeight;
   document.documentElement.style.setProperty('--topbar-h', `${topbarH}px`);
 
   const rhWrap = resultTopbar.querySelector('.rh-search-wrap');
   const rhLogo = resultTopbar.querySelector('.rh-logo');
+  const tabs = resultTopbar.querySelector('.rh-tabs');
   const targetShellR = rhWrap ? rhWrap.getBoundingClientRect() : null;
-  const targetLogoR  = rhLogo ? rhLogo.getBoundingClientRect()  : null;
+  const targetLogoR = rhLogo ? rhLogo.getBoundingClientRect() : null;
 
-  // ── 3. INVERT: 탑바 Y=0 기준으로 단순 차이값 ────────────────
-  // (탑바가 슬라이드하지 않으므로 보정 없음)
-  if (rhWrap && origShellR && targetShellR) {
-    const dx = origShellR.left - targetShellR.left;
-    const dy = origShellR.top  - targetShellR.top;
-    rhWrap.style.cssText = `transition:none; transform:translate(${dx.toFixed(1)}px,${dy.toFixed(1)}px); opacity:1; will-change:transform;`;
-  } else if (rhWrap) {
-    rhWrap.style.cssText = 'opacity:0;';
-  }
+  if (rhWrap) rhWrap.style.opacity = '0';
+  if (rhLogo) rhLogo.style.opacity = '0';
+  if (tabs) tabs.style.cssText = 'opacity:0; transition:none;';
 
-  if (rhLogo && origLogoR && targetLogoR) {
-    // 만만 = 로고 왼쪽 52%, 중심점으로 FLIP
-    const mmW  = origLogoR.width * 0.52;
-    const mmCx = origLogoR.left + mmW / 2;
-    const mmCy = origLogoR.top  + origLogoR.height / 2;
-    const tCx  = targetLogoR.left + targetLogoR.width  / 2;
-    const tCy  = targetLogoR.top  + targetLogoR.height / 2;
-    const dx   = mmCx - tCx;
-    const dy   = mmCy - tCy;
-    const sx   = Math.max(0.3, mmW / Math.max(targetLogoR.width, 1));
-    const sy   = Math.max(0.3, origLogoR.height / Math.max(targetLogoR.height, 1));
-    rhLogo.style.cssText = `transition:none; transform:translate(${dx.toFixed(1)}px,${dy.toFixed(1)}px) scale(${sx.toFixed(3)},${sy.toFixed(3)}); transform-origin:center center; opacity:1; will-change:transform;`;
-  } else if (rhLogo) {
-    rhLogo.style.cssText = 'opacity:0;';
-  }
+  const shellGhost = origShellEl && origShellR && targetShellR
+    ? createSearchShellGhost(origShellEl, origShellR)
+    : null;
 
-  // ── 4. 탑바 표시 (visibility 복원, background 투명으로 시작) ─
-  resultTopbar.style.cssText = '';
-  resultTopbar.offsetHeight;
+  const logoGhost = origLogoR && targetLogoR
+    ? createManmanLogoGhost(origLogoR, manmanRatio)
+    : null;
 
-  // ── 5. PLAY ─────────────────────────────────────────────────
-  requestAnimationFrame(() => {
-    // 탑바 배경 페이드인 (슬라이드 없음)
-    resultTopbar.classList.add('is-visible');
+  if (origShellEl) origShellEl.style.visibility = 'hidden';
+  if (origLogoEl) origLogoEl.style.visibility = 'hidden';
 
-    // 서치 랩: 원본 위치 → 탑바 자연 위치
-    if (rhWrap) {
-      rhWrap.style.transition = `transform ${D}ms ${E}, opacity 0.15s ease`;
-      rhWrap.style.transform  = 'translate(0,0)';
-      rhWrap.style.opacity    = '1';
-    }
-
-    // 로고: 원본 위치·스케일 → 자연 위치 (spring)
-    if (rhLogo) {
-      rhLogo.style.transition      = `transform ${D + 30}ms ${ES}, opacity 0.2s ease`;
-      rhLogo.style.transform       = 'translate(0,0) scale(1,1)';
-      rhLogo.style.transformOrigin = '';
-      rhLogo.style.opacity         = '1';
-    }
-
-    // top-stage 동시에 위로 접기
-    const topStage = document.querySelector('.top-stage');
-    if (topStage) {
-      const stH = topStage.scrollHeight;
-      topStage.style.cssText = `max-height:${stH}px; overflow:hidden; opacity:1;`;
-      requestAnimationFrame(() => {
-        topStage.style.transition    = `max-height ${D}ms cubic-bezier(0.4,0,1,1), opacity 0.22s ease`;
-        topStage.style.maxHeight     = '0';
-        topStage.style.opacity       = '0';
-        topStage.style.pointerEvents = 'none';
-      });
-    }
-
-    // 탭 fade in (약간 딜레이)
-    const tabs = resultTopbar.querySelector('.rh-tabs');
-    if (tabs) {
-      tabs.style.cssText = 'opacity:0; transition:none;';
-      setTimeout(() => {
-        tabs.style.transition = 'opacity 0.2s ease';
-        tabs.style.opacity    = '1';
-      }, D * 0.6);
-    }
-  });
-
+  resultTopbar.style.visibility = '';
+  resultTopbar.style.pointerEvents = '';
   document.body.classList.add('has-results');
   window.scrollTo({ top: 0, behavior: 'instant' });
+
+  const topStage = document.querySelector('.top-stage');
+  if (topStage) {
+    const stH = topStage.scrollHeight;
+    topStage.style.cssText = `max-height:${stH}px; overflow:hidden; opacity:1;`;
+    requestAnimationFrame(() => {
+      topStage.style.transition = `max-height ${D}ms ${E}, opacity 180ms ease`;
+      topStage.style.maxHeight = '0';
+      topStage.style.opacity = '0';
+      topStage.style.pointerEvents = 'none';
+    });
+  }
+
+  const animations = [];
+  if (shellGhost && targetShellR) {
+    animations.push(animateGhostRect(shellGhost, origShellR, targetShellR, D, E));
+  }
+  if (logoGhost && targetLogoR && origLogoR) {
+    const fromLogoR = {
+      left: origLogoR.left,
+      top: origLogoR.top,
+      width: origLogoR.width * manmanRatio,
+      height: origLogoR.height
+    };
+    animations.push(animateGhostRect(logoGhost, fromLogoR, targetLogoR, D + 40, E));
+  }
+
+  Promise.allSettled(animations).then(() => {
+    if (shellGhost) shellGhost.remove();
+    if (logoGhost) logoGhost.remove();
+    if (rhWrap) rhWrap.style.opacity = '1';
+    if (rhLogo) rhLogo.style.opacity = '1';
+    if (tabs) {
+      tabs.style.transition = 'opacity 160ms ease';
+      tabs.style.opacity = '1';
+    }
+  });
+}
+
+function createSearchShellGhost(sourceEl, rect) {
+  const ghost = sourceEl.cloneNode(true);
+  ghost.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+  const input = ghost.querySelector('input');
+  if (input) input.value = keywordInput.value;
+  ghost.classList.add('topbar-motion-ghost');
+  Object.assign(ghost.style, {
+    left: `${rect.left}px`,
+    top: `${rect.top}px`,
+    width: `${rect.width}px`,
+    height: `${rect.height}px`
+  });
+  document.body.appendChild(ghost);
+  return ghost;
+}
+
+function createManmanLogoGhost(sourceLogoRect, ratio) {
+  const ghost = document.createElement('div');
+  ghost.className = 'topbar-motion-ghost topbar-motion-ghost--logo';
+  ghost.innerHTML = rhLogoBtn.innerHTML;
+  Object.assign(ghost.style, {
+    left: `${sourceLogoRect.left}px`,
+    top: `${sourceLogoRect.top}px`,
+    width: `${sourceLogoRect.width * ratio}px`,
+    height: `${sourceLogoRect.height}px`
+  });
+  document.body.appendChild(ghost);
+  return ghost;
+}
+
+function animateGhostRect(el, fromRect, toRect, duration, easing) {
+  const from = {
+    left: fromRect.left,
+    top: fromRect.top,
+    width: fromRect.width,
+    height: fromRect.height,
+    opacity: 1
+  };
+  const to = {
+    left: toRect.left,
+    top: toRect.top,
+    width: toRect.width,
+    height: toRect.height,
+    opacity: 1
+  };
+
+  if (el.animate) {
+    const animation = el.animate([
+      {
+        left: `${from.left}px`,
+        top: `${from.top}px`,
+        width: `${from.width}px`,
+        height: `${from.height}px`,
+        opacity: from.opacity
+      },
+      {
+        left: `${to.left}px`,
+        top: `${to.top}px`,
+        width: `${to.width}px`,
+        height: `${to.height}px`,
+        opacity: to.opacity
+      }
+    ], {
+      duration,
+      easing,
+      fill: 'forwards'
+    });
+    return animation.finished.catch(() => {});
+  }
+
+  return new Promise(resolve => {
+    el.style.transition = `left ${duration}ms ${easing}, top ${duration}ms ${easing}, width ${duration}ms ${easing}, height ${duration}ms ${easing}`;
+    requestAnimationFrame(() => {
+      Object.assign(el.style, {
+        left: `${to.left}px`,
+        top: `${to.top}px`,
+        width: `${to.width}px`,
+        height: `${to.height}px`
+      });
+      setTimeout(resolve, duration);
+    });
+  });
 }
 
 function hideResultTopbar() {
@@ -4145,6 +4312,11 @@ function hideResultTopbar() {
     if (rhLogo) rhLogo.style.cssText = '';
     if (tabs)   tabs.style.cssText   = '';
   }, 320);
+
+  const origShellEl = document.querySelector('.search-shell');
+  const origLogoEl = document.querySelector('.logo-svg');
+  if (origShellEl) origShellEl.style.visibility = '';
+  if (origLogoEl) origLogoEl.style.visibility = '';
 
   document.body.classList.remove('has-results');
 
@@ -4201,6 +4373,7 @@ rhKeyword.addEventListener('keydown', e => {
 
 // 탑바 인풋: 값 동기화만
 rhKeyword.addEventListener('input', () => {
+  rhKeyword.value = sanitizeFourDigitInput(rhKeyword.value);
   keywordInput.value = rhKeyword.value;
 });
 
