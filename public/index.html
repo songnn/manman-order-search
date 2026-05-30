@@ -921,6 +921,29 @@
     transform: translateZ(0);
   }
 
+  .orders-section.animating .order-card[data-order-key] {
+    opacity: 0;
+  }
+
+  .order-card-flight-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 520;
+    pointer-events: none;
+    overflow: visible;
+  }
+
+  .order-card-flight {
+    position: absolute;
+    top: 0;
+    left: 0;
+    margin: 0;
+    pointer-events: none;
+    transform-origin: top left;
+    will-change: transform, width, opacity;
+    backface-visibility: hidden;
+  }
+
   .orders-section + .orders-section {
     margin-top: 120px;
   }
@@ -3401,6 +3424,7 @@ body.has-results .result-panels {
   let searchRequestInFlight = false;
   let searchRequestSeq = 0;
   let orderFlipAnimationFrame = null;
+  let orderFlightLayer = null;
 
   const ENABLE_RESULT_TABS_STICKY = false;
   const ENABLE_SCHEDULE_WEEK_STICKY = true;
@@ -4240,17 +4264,28 @@ function buildSectionsData(items) {
     return document.getElementById(`section-${sectionKey}`);
   }
 
-  function collectOrderCardRects(sectionKey) {
+  function collectOrderCardSnapshots(sectionKey) {
     const section = getOrderSectionEl(sectionKey);
-    const rects = new Map();
+    const snapshots = new Map();
 
-    if (!section) return rects;
+    if (!section) return snapshots;
 
     section.querySelectorAll('.order-card[data-order-key]').forEach(card => {
-      rects.set(card.dataset.orderKey, card.getBoundingClientRect());
+      const clone = card.cloneNode(true);
+
+      clone.classList.add('order-card-flight');
+      clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+      clone.querySelectorAll('img').forEach(img => {
+        img.loading = 'eager';
+      });
+
+      snapshots.set(card.dataset.orderKey, {
+        rect: card.getBoundingClientRect(),
+        clone
+      });
     });
 
-    return rects;
+    return snapshots;
   }
 
   function settleOrderLayoutChange() {
@@ -4269,70 +4304,80 @@ function buildSectionsData(items) {
     return 1 - Math.pow(1 - clampedProgress, 4);
   }
 
-  function animateOrderCardsFromRects(sectionKey, fromRects) {
-    const section = getOrderSectionEl(sectionKey);
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
+  function cleanupOrderFlightAnimation(section = null) {
     if (orderFlipAnimationFrame) {
       cancelAnimationFrame(orderFlipAnimationFrame);
       orderFlipAnimationFrame = null;
     }
 
-    if (!section || !fromRects?.size || prefersReducedMotion) {
+    if (orderFlightLayer) {
+      orderFlightLayer.remove();
+      orderFlightLayer = null;
+    }
+
+    if (section) {
+      section.classList.remove('animating');
+    } else {
+      document.querySelectorAll('.orders-section.animating').forEach(animatingSection => {
+        animatingSection.classList.remove('animating');
+      });
+    }
+  }
+
+  function animateOrderCardsFromSnapshots(sectionKey, fromSnapshots) {
+    const section = getOrderSectionEl(sectionKey);
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    cleanupOrderFlightAnimation();
+
+    if (!section || !fromSnapshots?.size || prefersReducedMotion) {
       settleOrderLayoutChange();
       return;
     }
+
+    const layer = document.createElement('div');
+    layer.className = 'order-card-flight-layer';
+    document.body.appendChild(layer);
+    orderFlightLayer = layer;
 
     section.classList.add('animating');
 
     const cards = Array.from(section.querySelectorAll('.order-card[data-order-key]'));
     const cardStates = cards.map((card, index) => {
-      const from = fromRects.get(card.dataset.orderKey);
+      const snapshot = fromSnapshots.get(card.dataset.orderKey);
       const to = card.getBoundingClientRect();
-
-      card.style.transformOrigin = 'top left';
-      card.style.transform = '';
-      card.style.opacity = '';
-
-      if (!from) {
-        return {
-          card,
-          hasFrom: false,
-          delay: Math.min(index * 10, 80),
-          duration: 260,
-          dx: 0,
-          dy: 12,
-          scaleX: 0.985,
-          scaleY: 0.985
-        };
-      }
-
-      const dx = from.left - to.left;
-      const dy = from.top - to.top;
-      const scaleX = from.width / Math.max(to.width, 1);
-      const scaleY = from.height / Math.max(to.height, 1);
+      const from = snapshot?.rect || {
+        left: to.left,
+        top: to.top + 12,
+        width: to.width
+      };
       const isSamePosition =
-        Math.abs(dx) < 0.5 &&
-        Math.abs(dy) < 0.5 &&
-        Math.abs(scaleX - 1) < 0.01 &&
-        Math.abs(scaleY - 1) < 0.01;
+        Math.abs(from.left - to.left) < 0.5 &&
+        Math.abs(from.top - to.top) < 0.5 &&
+        Math.abs((from.width || 0) - to.width) < 0.5;
 
       if (isSamePosition) return null;
 
+      const clone = snapshot?.clone || card.cloneNode(true);
+
+      clone.classList.add('order-card-flight');
+      clone.style.width = `${Math.max(from.width || to.width, 1)}px`;
+      clone.style.transform = `translate3d(${from.left}px, ${from.top}px, 0)`;
+      clone.style.opacity = snapshot ? '0.98' : '0';
+      layer.appendChild(clone);
+
       return {
-        card,
-        hasFrom: true,
-        delay: 0,
+        clone,
+        hasFrom: Boolean(snapshot),
+        delay: snapshot ? 0 : Math.min(index * 10, 80),
         duration: 420,
-        dx,
-        dy,
-        scaleX,
-        scaleY
+        from,
+        to
       };
     }).filter(Boolean);
 
     if (!cardStates.length) {
-      section.classList.remove('animating');
+      cleanupOrderFlightAnimation(section);
       settleOrderLayoutChange();
       return;
     }
@@ -4347,16 +4392,16 @@ function buildSectionsData(items) {
         const rawProgress = (elapsed - state.delay) / state.duration;
         const progress = clamp(rawProgress, 0, 1);
         const eased = easeOrderFlip(progress);
-        const x = state.dx * (1 - eased);
-        const y = state.dy * (1 - eased);
-        const scaleX = state.scaleX + ((1 - state.scaleX) * eased);
-        const scaleY = state.scaleY + ((1 - state.scaleY) * eased);
+        const x = state.from.left + ((state.to.left - state.from.left) * eased);
+        const y = state.from.top + ((state.to.top - state.from.top) * eased);
+        const width = state.from.width + ((state.to.width - state.from.width) * eased);
         const opacity = state.hasFrom
-          ? 0.9 + (0.1 * eased)
+          ? 0.98 + (0.02 * eased)
           : eased;
 
-        state.card.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scaleX}, ${scaleY})`;
-        state.card.style.opacity = opacity.toFixed(3);
+        state.clone.style.width = `${Math.max(width, 1)}px`;
+        state.clone.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+        state.clone.style.opacity = opacity.toFixed(3);
       });
 
       if (elapsed < totalDuration) {
@@ -4365,12 +4410,7 @@ function buildSectionsData(items) {
       }
 
       orderFlipAnimationFrame = null;
-      section.classList.remove('animating');
-      cards.forEach(card => {
-        card.style.transformOrigin = '';
-        card.style.transform = '';
-        card.style.opacity = '';
-      });
+      cleanupOrderFlightAnimation(section);
       settleOrderLayoutChange();
     };
 
@@ -5488,11 +5528,11 @@ function handleOrderImageClick(event) {
         const sectionKey = btn.dataset.sectionKey;
         if (!sectionKey) return;
 
-        const fromRects = collectOrderCardRects(sectionKey);
+        const fromSnapshots = collectOrderCardSnapshots(sectionKey);
         sectionViewState[sectionKey] = !sectionViewState[sectionKey];
         renderOrdersSection();
         requestAnimationFrame(() => {
-          animateOrderCardsFromRects(sectionKey, fromRects);
+          animateOrderCardsFromSnapshots(sectionKey, fromSnapshots);
         });
       });
     });
