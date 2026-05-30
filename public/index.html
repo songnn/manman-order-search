@@ -2696,6 +2696,26 @@ body.has-results .results-wrap {
   display: block;
 }
 
+.schedule-day-btn.is-disabled,
+.schedule-day-btn:disabled {
+  color: #c6ccd3;
+  cursor: default;
+  opacity: 0.34;
+  pointer-events: none;
+}
+
+.schedule-day-btn.is-disabled .schedule-day-circle,
+.schedule-day-btn:disabled .schedule-day-circle {
+  background: transparent !important;
+  color: currentColor !important;
+  transform: none;
+}
+
+.schedule-day-btn.is-disabled .schedule-day-dot,
+.schedule-day-btn:disabled .schedule-day-dot {
+  display: none;
+}
+
 /* 오늘: 피그마 기준 검정 동그라미 (선택 상태와 동일하되 is-selected가 없어도 표시) */
 .schedule-day-btn.is-today:not(.is-selected) .schedule-day-circle {
   background: #111;
@@ -3271,6 +3291,8 @@ body.has-results .result-panels {
 
   const ENABLE_RESULT_TABS_STICKY = false;
   const ENABLE_SCHEDULE_WEEK_STICKY = false;
+  const SCHEDULE_CENTER_OFFSET_DAYS = 3;
+  const SCHEDULE_VISIBLE_DAYS_AFTER_PICKUP = 7;
 
   const resultTabScrollPositions = {
     orders: null,
@@ -3279,7 +3301,9 @@ body.has-results .result-panels {
 
   const scheduleState = {
     selectedDateKey: '',
-    weekStartKeys: []
+    windowStartKeys: [],
+    rangeStartKey: '',
+    rangeEndKey: ''
   };
 
   const SECTION_KEYS = {
@@ -3792,23 +3816,54 @@ function groupItemsByPickupDate(items) {
   return grouped;
 }
 
+function getDateTime(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+}
+
+function clampDateToRange(date, start, end) {
+  const time = getDateTime(date);
+  const startTime = getDateTime(start);
+  const endTime = getDateTime(end);
+
+  if (time < startTime) return new Date(start);
+  if (time > endTime) return new Date(end);
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function getScheduleDefaultWindow(today = getSeoulTodayInfo().dateObj) {
+  const start = addDaysToDate(today, -SCHEDULE_CENTER_OFFSET_DAYS);
+  const end = addDaysToDate(start, 6);
+  return { start, end };
+}
+
 function getScheduleRange(itemsByDate) {
   const today = getSeoulTodayInfo().dateObj;
-  const dates = [today];
+  const defaultWindow = getScheduleDefaultWindow(today);
+  const visibleStart = addDaysToDate(today, -SCHEDULE_VISIBLE_DAYS_AFTER_PICKUP);
+  let start = new Date(defaultWindow.start);
+  let end = new Date(defaultWindow.end);
 
   itemsByDate.forEach((items, dateKey) => {
     if (!items.length) return;
     const date = dateFromKey(dateKey);
-    if (date) dates.push(date);
+    if (!date) return;
+
+    if (getDateTime(date) < getDateTime(defaultWindow.start)) {
+      const boundedDate = getDateTime(date) < getDateTime(visibleStart) ? visibleStart : date;
+      if (getDateTime(boundedDate) < getDateTime(start)) start = new Date(boundedDate);
+    }
+
+    if (getDateTime(date) > getDateTime(defaultWindow.end)) {
+      if (getDateTime(date) > getDateTime(end)) end = new Date(date);
+    }
   });
 
-  const times = dates.map(date => date.getTime());
-  const minDate = new Date(Math.min(...times));
-  const maxDate = new Date(Math.max(...times));
-  const start = addDaysToDate(getStartOfWeekDate(minDate), -21);
-  const end = addDaysToDate(getStartOfWeekDate(maxDate), 63);
-
-  return { start, end };
+  return {
+    start,
+    end,
+    defaultStart: defaultWindow.start,
+    defaultEnd: defaultWindow.end
+  };
 }
 
 function getScheduleDateList(start, end) {
@@ -3819,12 +3874,33 @@ function getScheduleDateList(start, end) {
   return dates;
 }
 
-function getScheduleWeekStarts(start, end) {
-  const weeks = [];
-  for (let date = getStartOfWeekDate(start); date <= end; date = addDaysToDate(date, 7)) {
-    weeks.push(new Date(date));
+function getScheduleWindowStarts(start, end, defaultStart) {
+  const windows = [];
+  let firstStart = new Date(defaultStart);
+  let lastStart = new Date(defaultStart);
+
+  while (getDateTime(start) < getDateTime(firstStart)) {
+    firstStart = addDaysToDate(firstStart, -7);
   }
-  return weeks;
+
+  while (getDateTime(end) > getDateTime(addDaysToDate(lastStart, 6))) {
+    lastStart = addDaysToDate(lastStart, 7);
+  }
+
+  for (let date = new Date(firstStart); date <= lastStart; date = addDaysToDate(date, 7)) {
+    windows.push(new Date(date));
+  }
+
+  return windows;
+}
+
+function isScheduleDateAccessible(date) {
+  const start = dateFromKey(scheduleState.rangeStartKey);
+  const end = dateFromKey(scheduleState.rangeEndKey);
+  if (!start || !end) return true;
+
+  const time = getDateTime(date);
+  return time >= getDateTime(start) && time <= getDateTime(end);
 }
 
 function sortItemsByOrderSheetDate(items) {
@@ -4028,21 +4104,23 @@ function renderScheduleTab() {
 
   const itemsByDate = groupItemsByPickupDate(currentOrderItems);
   const todayInfo = getSeoulTodayInfo();
+  const { start, end, defaultStart } = getScheduleRange(itemsByDate);
   const selectedDateKey = scheduleState.selectedDateKey || todayInfo.dateKey;
-  const selectedDate = dateFromKey(selectedDateKey) || todayInfo.dateObj;
-  const { start, end } = getScheduleRange(itemsByDate);
+  const selectedDate = clampDateToRange(dateFromKey(selectedDateKey) || todayInfo.dateObj, start, end);
   const dates = getScheduleDateList(start, end);
-  const weekStarts = getScheduleWeekStarts(start, end);
+  const windowStarts = getScheduleWindowStarts(start, end, defaultStart);
 
   scheduleState.selectedDateKey = getDateKey(selectedDate);
-  scheduleState.weekStartKeys = weekStarts.map(date => getDateKey(date));
+  scheduleState.rangeStartKey = getDateKey(start);
+  scheduleState.rangeEndKey = getDateKey(end);
+  scheduleState.windowStartKeys = windowStarts.map(date => getDateKey(date));
 
   // Swiper가 레이블 포함 전체 카드를 커버 → 어디서 swipe해도 동작
   scheduleWeekHostEl.innerHTML = `
     <div class="schedule-week-card">
       <div class="swiper schedule-week-swiper" id="scheduleWeekSwiper">
         <div class="swiper-wrapper">
-          ${weekStarts.map(weekStart => renderScheduleWeekSlide(weekStart, itemsByDate)).join('')}
+          ${windowStarts.map(windowStart => renderScheduleWeekSlide(windowStart, itemsByDate)).join('')}
         </div>
       </div>
     </div>
@@ -4067,20 +4145,22 @@ function renderScheduleTab() {
   });
 }
 
-function renderScheduleWeekdayLabels() {
-  return ['일', '월', '화', '수', '목', '금', '토'].map((label, index) => {
-    const toneClass = index === 0 ? ' is-sunday' : index === 6 ? ' is-saturday' : '';
+function renderScheduleWeekdayLabels(days) {
+  const labels = ['일', '월', '화', '수', '목', '금', '토'];
+  return days.map(date => {
+    const label = labels[date.getDay()];
+    const toneClass = isScheduleRedDate(date) ? ' is-sunday' : isScheduleBlueDate(date) ? ' is-saturday' : '';
     return `<div class="schedule-weekday${toneClass}">${label}</div>`;
   }).join('');
 }
 
-function renderScheduleWeekSlide(weekStart, itemsByDate) {
-  const days = Array.from({ length: 7 }, (_, index) => addDaysToDate(weekStart, index));
+function renderScheduleWeekSlide(windowStart, itemsByDate) {
+  const days = Array.from({ length: 7 }, (_, index) => addDaysToDate(windowStart, index));
 
   return `
     <div class="swiper-slide">
       <div class="schedule-weekdays" aria-hidden="true">
-        ${renderScheduleWeekdayLabels()}
+        ${renderScheduleWeekdayLabels(days)}
       </div>
       <div class="schedule-week-grid">
         ${days.map(date => renderScheduleDayButton(date, itemsByDate.get(getDateKey(date)) || [])).join('')}
@@ -4094,13 +4174,15 @@ function renderScheduleDayButton(date, items) {
   const holiday = getHolidayInfo(date);
   const todayKey = getSeoulTodayInfo().dateKey;
   const isToday = dateKey === todayKey;
+  const isDisabled = !isScheduleDateAccessible(date);
   const classes = [
     'schedule-day-btn',
     date.getDay() === 0 ? 'is-sunday' : '',
     date.getDay() === 6 ? 'is-saturday' : '',
     holiday ? 'is-holiday' : '',
-    items.length ? 'has-pickups' : '',
-    isToday ? 'is-today' : ''
+    items.length && !isDisabled ? 'has-pickups' : '',
+    isToday ? 'is-today' : '',
+    isDisabled ? 'is-disabled' : ''
   ].filter(Boolean).join(' ');
 
   return `
@@ -4109,6 +4191,7 @@ function renderScheduleDayButton(date, items) {
       type="button"
       data-schedule-date="${dateKey}"
       aria-label="${escapeHtml(formatScheduleSectionTitle(date))}${holiday ? ` ${escapeHtml(holiday.name)}` : ''}"
+      ${isDisabled ? 'disabled aria-disabled="true"' : ''}
     >
       <span class="schedule-day-circle">${date.getDate()}</span>
       <span class="schedule-day-meta">
@@ -4195,7 +4278,7 @@ function initScheduleWeekSwiper() {
 
   destroyScheduleWeekSwiper();
 
-  const activeIndex = getScheduleWeekIndex(scheduleState.selectedDateKey);
+  const activeIndex = getScheduleWindowIndex(scheduleState.selectedDateKey);
 
   scheduleWeekSwiper = new Swiper(el, {
     slidesPerView: 1,
@@ -4206,11 +4289,12 @@ function initScheduleWeekSwiper() {
     on: {
       slideChange(swiper) {
         if (scheduleSuppressWeekSlide) return;
-        const weekStartKey = scheduleState.weekStartKeys[swiper.activeIndex];
-        const weekStart = dateFromKey(weekStartKey);
-        const current = dateFromKey(scheduleState.selectedDateKey) || getSeoulTodayInfo().dateObj;
-        if (!weekStart) return;
-        const targetDate = addDaysToDate(weekStart, current.getDay());
+        const windowStartKey = scheduleState.windowStartKeys[swiper.activeIndex];
+        const windowStart = dateFromKey(windowStartKey);
+        if (!windowStart) return;
+        const rangeStart = dateFromKey(scheduleState.rangeStartKey) || windowStart;
+        const rangeEnd = dateFromKey(scheduleState.rangeEndKey) || addDaysToDate(windowStart, 6);
+        const targetDate = clampDateToRange(addDaysToDate(windowStart, SCHEDULE_CENTER_OFFSET_DAYS), rangeStart, rangeEnd);
         selectScheduleDate(getDateKey(targetDate), { scroll: true, slide: false });
       }
     }
@@ -4231,28 +4315,42 @@ function destroyScheduleWeekSwiper() {
 function bindScheduleDateButtons() {
   scheduleWeekHostEl?.querySelectorAll('[data-schedule-date]').forEach(button => {
     button.addEventListener('click', () => {
+      if (button.disabled || button.classList.contains('is-disabled')) return;
       const dateKey = button.dataset.scheduleDate;
       if (dateKey) selectScheduleDate(dateKey, { scroll: true, slide: true });
     });
   });
 }
 
-function getScheduleWeekIndex(dateKey) {
+function getScheduleWindowIndex(dateKey) {
   const date = dateFromKey(dateKey);
   if (!date) return -1;
-  const weekKey = getDateKey(getStartOfWeekDate(date));
-  return scheduleState.weekStartKeys.indexOf(weekKey);
+  const time = getDateTime(date);
+
+  return scheduleState.windowStartKeys.findIndex(windowStartKey => {
+    const windowStart = dateFromKey(windowStartKey);
+    if (!windowStart) return false;
+    const windowEnd = addDaysToDate(windowStart, 6);
+    return time >= getDateTime(windowStart) && time <= getDateTime(windowEnd);
+  });
 }
 
 function selectScheduleDate(dateKey, options = {}) {
   const shouldScroll = options.scroll !== false;
   const shouldSlide = options.slide !== false;
-  scheduleState.selectedDateKey = dateKey;
-  updateScheduleSelection(dateKey, { slide: shouldSlide });
+  const date = dateFromKey(dateKey);
+  const rangeStart = dateFromKey(scheduleState.rangeStartKey);
+  const rangeEnd = dateFromKey(scheduleState.rangeEndKey);
+  const nextDateKey = date && rangeStart && rangeEnd
+    ? getDateKey(clampDateToRange(date, rangeStart, rangeEnd))
+    : dateKey;
+
+  scheduleState.selectedDateKey = nextDateKey;
+  updateScheduleSelection(nextDateKey, { slide: shouldSlide });
 
   if (!shouldScroll) return;
 
-  const section = document.querySelector(`[data-schedule-section="${dateKey}"]`);
+  const section = document.querySelector(`[data-schedule-section="${nextDateKey}"]`);
   if (!section) return;
 
   scheduleSuppressScrollSync = true;
@@ -4281,7 +4379,7 @@ function updateScheduleSelection(dateKey, options = {}) {
 
   if (options.slide === false || !scheduleWeekSwiper) return;
 
-  const activeIndex = getScheduleWeekIndex(dateKey);
+  const activeIndex = getScheduleWindowIndex(dateKey);
   if (activeIndex < 0 || activeIndex === scheduleWeekSwiper.activeIndex) return;
 
   scheduleSuppressWeekSlide = true;
@@ -5071,7 +5169,9 @@ function resetToHome() {
   currentSearchKeyword = '';
   currentSelectedCustomerLabel = '';
   scheduleState.selectedDateKey = '';
-  scheduleState.weekStartKeys = [];
+  scheduleState.windowStartKeys = [];
+  scheduleState.rangeStartKey = '';
+  scheduleState.rangeEndKey = '';
   resetResultTabScrollPositions();
   sectionViewState = {
     [SECTION_KEYS.MY_ORDERS]: false,
