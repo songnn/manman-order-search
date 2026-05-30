@@ -2553,9 +2553,9 @@ body.has-results .results-wrap {
   display: none;
   position: relative;
   z-index: 220;
-  background: #fff;
+  background: transparent;
   padding: 0;
-  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.10);
+  box-shadow: none;
 }
 
 .schedule-week-placeholder {
@@ -2585,9 +2585,13 @@ body.has-results .results-wrap {
 }
 
 .schedule-week-card {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
   background: #fff;
   border-radius: 0;
   overflow: hidden;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.10);
 }
 
 .schedule-weekdays {
@@ -2615,14 +2619,19 @@ body.has-results .results-wrap {
 .schedule-week-swiper {
   width: 100%;
   overflow: hidden;
-  /* 레이블 행 포함 전체 카드를 swiper가 덮어 전체 스윕 가능 */
+  padding: 10px 14px 10px;
 }
 
-.schedule-week-grid {
+.schedule-week-swiper .swiper-wrapper {
+  align-items: stretch;
+}
+
+.schedule-day-slide {
+  height: auto;
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  min-height: 60px;
-  padding: 2px 14px 10px;
+  grid-template-rows: 16px 58px;
+  justify-items: center;
+  align-items: start;
 }
 
 .schedule-day-btn {
@@ -2630,9 +2639,10 @@ body.has-results .results-wrap {
   -webkit-appearance: none;
   border: none;
   background: transparent;
+  width: 100%;
   min-width: 0;
-  min-height: 64px;
-  padding: 4px 0 2px;
+  min-height: 58px;
+  padding: 4px 0 0;
   display: grid;
   grid-template-rows: 34px 16px;
   justify-items: center;
@@ -2795,11 +2805,12 @@ body.has-results .results-wrap {
 .schedule-date-title {
   margin: 0;
   font-size: 13px;
-  line-height: 1.25;
-  font-weight: 700;
-  letter-spacing: -0.04em;
+  line-height: 1.2;
+  font-weight: 500;
+  letter-spacing: 0;
   color: #111;
   text-align: center;
+  white-space: nowrap;
 }
 
 .schedule-date-title.is-sunday,
@@ -2826,23 +2837,23 @@ body.has-results .results-wrap {
   align-items: center;
   justify-content: center;
   padding: 3px 7px;
-  border-radius: 6px;
+  border-radius: 2px;
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: -0.03em;
+  font-weight: 500;
+  letter-spacing: 0;
   white-space: nowrap;
   font-family: 'Pretendard', sans-serif;
 }
 
 .schedule-pickup-badge.has-pickup {
   background: #fff;
-  border: 1.5px solid #0051a0;
+  border: 1px solid #0051a0;
   color: #0051a0;
 }
 
 .schedule-pickup-badge.no-pickup {
   background: #f1f1f1;
-  border: 1.5px solid #f1f1f1;
+  border: 1px solid #f1f1f1;
   color: #737373;
 }
 
@@ -2884,10 +2895,10 @@ body.has-results .results-wrap {
 }
 
 .schedule-product-name {
-  font-size: 11px;
+  font-size: 9px;
   line-height: 1.3;
   font-weight: 500;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
   color: #111;
   overflow: hidden;
   display: -webkit-box;
@@ -2896,13 +2907,52 @@ body.has-results .results-wrap {
   -webkit-box-orient: vertical;
 }
 
-.schedule-product-qty {
+.schedule-product-bottom-row {
   margin-top: 3px;
-  font-size: 12px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 3px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.schedule-product-qty-inline,
+.schedule-product-price {
+  min-width: 0;
+  display: inline-flex;
+  align-items: baseline;
+  flex-shrink: 0;
+}
+
+.schedule-product-qty-inline {
+  gap: 1px;
+}
+
+.schedule-product-price {
+  margin-left: auto;
+  gap: 1px;
+  justify-content: flex-end;
+}
+
+.schedule-product-qty-label,
+.schedule-product-price .order-price-won {
+  font-family: 'Pretendard', Arial, sans-serif;
+  font-size: 10px;
   line-height: 1;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  color: #333;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: #000;
+}
+
+.schedule-product-qty-num,
+.schedule-product-price .order-price-num {
+  font-family: 'Paperlogy', 'Pretendard', sans-serif;
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: #000;
 }
 
 .schedule-grid-placeholder {
@@ -3333,7 +3383,7 @@ body.has-results .result-panels {
 
   const scheduleState = {
     selectedDateKey: '',
-    windowStartKeys: [],
+    dateKeys: [],
     rangeStartKey: '',
     rangeEndKey: ''
   };
@@ -3907,26 +3957,6 @@ function getScheduleDateList(start, end) {
   return dates;
 }
 
-function getScheduleWindowStarts(start, end, defaultStart) {
-  const windows = [];
-  let firstStart = new Date(defaultStart);
-  let lastStart = new Date(defaultStart);
-
-  while (getDateTime(start) < getDateTime(firstStart)) {
-    firstStart = addDaysToDate(firstStart, -7);
-  }
-
-  while (getDateTime(end) > getDateTime(addDaysToDate(lastStart, 6))) {
-    lastStart = addDaysToDate(lastStart, 7);
-  }
-
-  for (let date = new Date(firstStart); date <= lastStart; date = addDaysToDate(date, 7)) {
-    windows.push(new Date(date));
-  }
-
-  return windows;
-}
-
 function isScheduleDateAccessible(date) {
   const start = dateFromKey(scheduleState.rangeStartKey);
   const end = dateFromKey(scheduleState.rangeEndKey);
@@ -4137,23 +4167,22 @@ function renderScheduleTab() {
 
   const itemsByDate = groupItemsByPickupDate(currentOrderItems);
   const todayInfo = getSeoulTodayInfo();
-  const { start, end, defaultStart } = getScheduleRange(itemsByDate);
+  const { start, end } = getScheduleRange(itemsByDate);
   const selectedDateKey = scheduleState.selectedDateKey || todayInfo.dateKey;
   const selectedDate = clampDateToRange(dateFromKey(selectedDateKey) || todayInfo.dateObj, start, end);
   const dates = getScheduleDateList(start, end);
-  const windowStarts = getScheduleWindowStarts(start, end, defaultStart);
 
   scheduleState.selectedDateKey = getDateKey(selectedDate);
   scheduleState.rangeStartKey = getDateKey(start);
   scheduleState.rangeEndKey = getDateKey(end);
-  scheduleState.windowStartKeys = windowStarts.map(date => getDateKey(date));
+  scheduleState.dateKeys = dates.map(date => getDateKey(date));
 
-  // Swiper가 레이블 포함 전체 카드를 커버 → 어디서 swipe해도 동작
+  // 날짜 셀 하나가 Swiper 슬라이드 하나라, 열린 범위 안에서 하루 단위로 움직인다.
   scheduleWeekHostEl.innerHTML = `
     <div class="schedule-week-card">
       <div class="swiper schedule-week-swiper" id="scheduleWeekSwiper">
         <div class="swiper-wrapper">
-          ${windowStarts.map(windowStart => renderScheduleWeekSlide(windowStart, itemsByDate)).join('')}
+          ${dates.map(date => renderScheduleDateSlide(date, itemsByDate.get(getDateKey(date)) || [])).join('')}
         </div>
       </div>
     </div>
@@ -4180,26 +4209,17 @@ function renderScheduleTab() {
   });
 }
 
-function renderScheduleWeekdayLabels(days) {
+function renderScheduleWeekdayLabel(date) {
   const labels = ['일', '월', '화', '수', '목', '금', '토'];
-  return days.map(date => {
-    const label = labels[date.getDay()];
-    const toneClass = isScheduleRedDate(date) ? ' is-sunday' : isScheduleBlueDate(date) ? ' is-saturday' : '';
-    return `<div class="schedule-weekday${toneClass}">${label}</div>`;
-  }).join('');
+  const toneClass = isScheduleRedDate(date) ? ' is-sunday' : isScheduleBlueDate(date) ? ' is-saturday' : '';
+  return `<div class="schedule-weekday${toneClass}">${labels[date.getDay()]}</div>`;
 }
 
-function renderScheduleWeekSlide(windowStart, itemsByDate) {
-  const days = Array.from({ length: 7 }, (_, index) => addDaysToDate(windowStart, index));
-
+function renderScheduleDateSlide(date, items) {
   return `
-    <div class="swiper-slide">
-      <div class="schedule-weekdays" aria-hidden="true">
-        ${renderScheduleWeekdayLabels(days)}
-      </div>
-      <div class="schedule-week-grid">
-        ${days.map(date => renderScheduleDayButton(date, itemsByDate.get(getDateKey(date)) || [])).join('')}
-      </div>
+    <div class="swiper-slide schedule-day-slide">
+      ${renderScheduleWeekdayLabel(date)}
+      ${renderScheduleDayButton(date, items)}
     </div>
   `;
 }
@@ -4241,8 +4261,7 @@ function renderScheduleDateSection(date, items) {
   const holiday = getHolidayInfo(date);
   const toneClass = getScheduleDateToneClass(date);
   const wdays = ['일', '월', '화', '수', '목', '금', '토'];
-  const dayLabel = `${date.getMonth() + 1}월 ${date.getDate()}일`;
-  const dowLabel = `(${wdays[date.getDay()]})`;
+  const dayLabel = `${date.getMonth() + 1}월 ${date.getDate()}일 (${wdays[date.getDay()]})`;
   const hasPickup = items.length > 0;
   const badgeClass = hasPickup ? 'has-pickup' : 'no-pickup';
   const badgeText = `픽업 ${items.length}`;
@@ -4251,7 +4270,7 @@ function renderScheduleDateSection(date, items) {
     <section class="schedule-date-section" id="schedule-date-${dateKey}" data-schedule-section="${dateKey}">
       <div class="schedule-date-row">
         <div class="schedule-date-left">
-          <div class="schedule-date-title ${toneClass}">${escapeHtml(dayLabel)}<br>${escapeHtml(dowLabel)}</div>
+          <div class="schedule-date-title ${toneClass}">${escapeHtml(dayLabel)}</div>
           ${holiday ? `<div class="schedule-date-sub">${escapeHtml(holiday.name)}</div>` : ''}
           <div class="schedule-pickup-badge ${badgeClass}">${escapeHtml(badgeText)}</div>
         </div>
@@ -4291,7 +4310,13 @@ function renderScheduleProductCard(item, index) {
       </div>
       <div class="schedule-product-info">
         <div class="schedule-product-name">${escapeHtml(item.productName || '')}</div>
-        <div class="schedule-product-qty"><b>${qty}</b>개</div>
+        <div class="schedule-product-bottom-row">
+          <div class="schedule-product-qty-inline">
+            <span class="schedule-product-qty-label">주문수 :</span>
+            <span class="schedule-product-qty-num">${escapeHtml(qty)}</span>
+          </div>
+          <div class="schedule-product-price">${formatPriceHtml(item.price)}</div>
+        </div>
       </div>
     </article>
   `;
@@ -4313,24 +4338,20 @@ function initScheduleWeekSwiper() {
 
   destroyScheduleWeekSwiper();
 
-  const activeIndex = getScheduleWindowIndex(scheduleState.selectedDateKey);
+  const activeIndex = getScheduleSlideIndexForDate(scheduleState.selectedDateKey);
 
   scheduleWeekSwiper = new Swiper(el, {
-    slidesPerView: 1,
-    speed: 280,
+    slidesPerView: 7,
+    slidesPerGroup: 1,
+    speed: 260,
     resistanceRatio: 0.7,
     threshold: 8,
     nested: true,
     on: {
       slideChange(swiper) {
         if (scheduleSuppressWeekSlide) return;
-        const windowStartKey = scheduleState.windowStartKeys[swiper.activeIndex];
-        const windowStart = dateFromKey(windowStartKey);
-        if (!windowStart) return;
-        const rangeStart = dateFromKey(scheduleState.rangeStartKey) || windowStart;
-        const rangeEnd = dateFromKey(scheduleState.rangeEndKey) || addDaysToDate(windowStart, 6);
-        const targetDate = clampDateToRange(addDaysToDate(windowStart, SCHEDULE_CENTER_OFFSET_DAYS), rangeStart, rangeEnd);
-        selectScheduleDate(getDateKey(targetDate), { scroll: true, slide: false });
+        const targetDateKey = getScheduleCenteredDateKey(swiper.activeIndex);
+        if (targetDateKey) selectScheduleDate(targetDateKey, { scroll: true, slide: false });
       }
     }
   });
@@ -4405,17 +4426,26 @@ function bindScheduleDateButtons() {
   });
 }
 
-function getScheduleWindowIndex(dateKey) {
-  const date = dateFromKey(dateKey);
-  if (!date) return -1;
-  const time = getDateTime(date);
+function getScheduleDateIndex(dateKey) {
+  return scheduleState.dateKeys.indexOf(dateKey);
+}
 
-  return scheduleState.windowStartKeys.findIndex(windowStartKey => {
-    const windowStart = dateFromKey(windowStartKey);
-    if (!windowStart) return false;
-    const windowEnd = addDaysToDate(windowStart, 6);
-    return time >= getDateTime(windowStart) && time <= getDateTime(windowEnd);
-  });
+function getScheduleSlideIndexForDate(dateKey) {
+  const dateIndex = getScheduleDateIndex(dateKey);
+  if (dateIndex < 0) return -1;
+
+  const maxStartIndex = Math.max(0, scheduleState.dateKeys.length - 7);
+  return clamp(dateIndex - SCHEDULE_CENTER_OFFSET_DAYS, 0, maxStartIndex);
+}
+
+function getScheduleCenteredDateKey(activeIndex) {
+  if (!scheduleState.dateKeys.length) return '';
+  const centerIndex = clamp(
+    Number(activeIndex || 0) + SCHEDULE_CENTER_OFFSET_DAYS,
+    0,
+    scheduleState.dateKeys.length - 1
+  );
+  return scheduleState.dateKeys[centerIndex] || '';
 }
 
 function selectScheduleDate(dateKey, options = {}) {
@@ -4462,7 +4492,7 @@ function updateScheduleSelection(dateKey, options = {}) {
 
   if (options.slide === false || !scheduleWeekSwiper) return;
 
-  const activeIndex = getScheduleWindowIndex(dateKey);
+  const activeIndex = getScheduleSlideIndexForDate(dateKey);
   if (activeIndex < 0 || activeIndex === scheduleWeekSwiper.activeIndex) return;
 
   scheduleSuppressWeekSlide = true;
@@ -5257,7 +5287,7 @@ function resetToHome() {
   currentSearchKeyword = '';
   currentSelectedCustomerLabel = '';
   scheduleState.selectedDateKey = '';
-  scheduleState.windowStartKeys = [];
+  scheduleState.dateKeys = [];
   scheduleState.rangeStartKey = '';
   scheduleState.rangeEndKey = '';
   resetResultTabScrollPositions();
