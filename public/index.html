@@ -451,6 +451,7 @@
     width: 100%;
     overflow: hidden;
     padding: 0 24px;
+    touch-action: pan-y;
   }
 
   .orders-swiper .swiper-wrapper {
@@ -905,6 +906,12 @@
 
   .orders-section.animating {
     pointer-events: none;
+  }
+
+  .orders-section.animating .order-card {
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    transform: translateZ(0);
   }
 
   .orders-section + .orders-section {
@@ -3416,6 +3423,15 @@ body.has-results .result-panels {
     [SECTION_KEYS.MISSED_PICKUP]: false
   };
 
+  function resetSectionViewState() {
+    sectionViewState = {
+      [SECTION_KEYS.MY_ORDERS]: false,
+      [SECTION_KEYS.TODAY_PICKUP]: false,
+      [SECTION_KEYS.TOMORROW_PICKUP]: false,
+      [SECTION_KEYS.MISSED_PICKUP]: false
+    };
+  }
+
   let swiperMap = {};
 
   const keywordInput = document.getElementById('keyword');
@@ -3519,6 +3535,7 @@ function search(selectedCustomerLabel = '') {
   currentSelectedCustomerLabel = selectedCustomerLabel ? decodeURIComponent(selectedCustomerLabel) : '';
   scheduleState.selectedDateKey = getSeoulTodayInfo().dateKey;
   resetResultTabScrollPositions();
+  resetSectionViewState();
 
   document.body.classList.add('has-results');
   hideResultTabs();
@@ -4154,6 +4171,121 @@ function buildSectionsData(items) {
         </span>
       </div>
     `;
+  }
+
+  function getOrderItemKey(item, index) {
+    return [
+      item.customerLabel || '',
+      item.orderDate || '',
+      item.pickupDate || '',
+      item.productName || '',
+      item.quantity ?? '',
+      item.price ?? '',
+      index
+    ].map(value => String(value).replaceAll('|', '/')).join('|');
+  }
+
+  function getOrderSectionEl(sectionKey) {
+    return document.getElementById(`section-${sectionKey}`);
+  }
+
+  function collectOrderCardRects(sectionKey) {
+    const section = getOrderSectionEl(sectionKey);
+    const rects = new Map();
+
+    if (!section) return rects;
+
+    section.querySelectorAll('.order-card[data-order-key]').forEach(card => {
+      rects.set(card.dataset.orderKey, card.getBoundingClientRect());
+    });
+
+    return rects;
+  }
+
+  function settleOrderLayoutChange() {
+    requestAnimationFrame(() => {
+      updateOrderNameMarquees();
+      syncResultPanelsHeight();
+      if (resultPanelsSwiper) {
+        resultPanelsSwiper.update();
+        resultPanelsSwiper.updateAutoHeight?.(0);
+      }
+    });
+  }
+
+  function animateOrderCardsFromRects(sectionKey, fromRects) {
+    const section = getOrderSectionEl(sectionKey);
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const supportsCardAnimation = typeof Element !== 'undefined' && Element.prototype.animate;
+
+    if (!section || !fromRects?.size || prefersReducedMotion || !supportsCardAnimation) {
+      settleOrderLayoutChange();
+      return;
+    }
+
+    section.classList.add('animating');
+
+    const cards = Array.from(section.querySelectorAll('.order-card[data-order-key]'));
+    const animations = cards.map((card, index) => {
+      const from = fromRects.get(card.dataset.orderKey);
+      const to = card.getBoundingClientRect();
+
+      card.style.transformOrigin = 'top left';
+
+      if (!from) {
+        return card.animate([
+          { opacity: 0, transform: 'translate3d(0, 12px, 0) scale(0.985)' },
+          { opacity: 1, transform: 'translate3d(0, 0, 0) scale(1)' }
+        ], {
+          duration: 260,
+          delay: Math.min(index * 12, 96),
+          easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+          fill: 'both'
+        });
+      }
+
+      const dx = from.left - to.left;
+      const dy = from.top - to.top;
+      const scaleX = from.width / Math.max(to.width, 1);
+      const scaleY = from.height / Math.max(to.height, 1);
+      const isSamePosition =
+        Math.abs(dx) < 0.5 &&
+        Math.abs(dy) < 0.5 &&
+        Math.abs(scaleX - 1) < 0.01 &&
+        Math.abs(scaleY - 1) < 0.01;
+
+      if (isSamePosition) return null;
+
+      return card.animate([
+        {
+          opacity: 0.9,
+          transform: `translate3d(${dx}px, ${dy}px, 0) scale(${scaleX}, ${scaleY})`
+        },
+        {
+          opacity: 1,
+          transform: 'translate3d(0, 0, 0) scale(1, 1)'
+        }
+      ], {
+        duration: 420,
+        delay: Math.min(index * 10, 90),
+        easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+        fill: 'both'
+      });
+    }).filter(Boolean);
+
+    if (!animations.length) {
+      section.classList.remove('animating');
+      settleOrderLayoutChange();
+      return;
+    }
+
+    Promise.allSettled(animations.map(animation => animation.finished)).then(() => {
+      section.classList.remove('animating');
+      cards.forEach(card => {
+        card.style.transformOrigin = '';
+      });
+      settleOrderLayoutChange();
+    });
   }
 
   function renderOrdersSection() {
@@ -4816,7 +4948,7 @@ function syncScheduleFromScroll() {
 
           <div class="orders-grid">
             ${items.map((item, index) => `
-              <article class="order-card">
+              <article class="order-card" data-order-key="${escapeHtml(getOrderItemKey(item, index))}">
                 <div class="order-thumb-wrap">
                   <img
                     class="order-thumb"
@@ -4865,7 +4997,7 @@ function syncScheduleFromScroll() {
           <div class="swiper-wrapper">
             ${items.map((item, index) => `
               <div class="swiper-slide">
-                <article class="order-card">
+                <article class="order-card" data-order-key="${escapeHtml(getOrderItemKey(item, index))}">
                   <div class="order-thumb-wrap">
                     <img
                       class="order-thumb"
@@ -4912,6 +5044,8 @@ function syncScheduleFromScroll() {
         spaceBetween: 16,
         grabCursor: true,
         nested: true,
+        touchMoveStopPropagation: true,
+        preventClicksPropagation: true,
         freeMode: {
           enabled: true,
           sticky: false
@@ -5217,25 +5351,16 @@ function handleOrderImageClick(event) {
     if (!buttons.length) return;
 
     buttons.forEach(btn => {
-      btn.addEventListener('click', async () => {
+      btn.addEventListener('click', () => {
         const sectionKey = btn.dataset.sectionKey;
         if (!sectionKey) return;
 
-        const run = () => {
-          sectionViewState[sectionKey] = !sectionViewState[sectionKey];
-          renderOrdersSection();
-        };
-
-        if (!document.startViewTransition) {
-          run();
-          return;
-        }
-
-        const transition = document.startViewTransition(() => {
-          run();
+        const fromRects = collectOrderCardRects(sectionKey);
+        sectionViewState[sectionKey] = !sectionViewState[sectionKey];
+        renderOrdersSection();
+        requestAnimationFrame(() => {
+          animateOrderCardsFromRects(sectionKey, fromRects);
         });
-
-        await transition.finished;
       });
     });
   }
@@ -5334,12 +5459,7 @@ function resetToHome() {
   scheduleState.rangeStartKey = '';
   scheduleState.rangeEndKey = '';
   resetResultTabScrollPositions();
-  sectionViewState = {
-    [SECTION_KEYS.MY_ORDERS]: false,
-    [SECTION_KEYS.TODAY_PICKUP]: false,
-    [SECTION_KEYS.TOMORROW_PICKUP]: false,
-    [SECTION_KEYS.MISSED_PICKUP]: false
-  };
+  resetSectionViewState();
 
   keywordInput.value = '';
   if (rhKeyword) rhKeyword.value = '';
@@ -5788,6 +5908,8 @@ function initResultTabsSwiper() {
     observer: true,
     observeParents: true,
     preventInteractionOnTransition: false,
+    noSwiping: true,
+    noSwipingSelector: '.orders-swiper, .orders-swiper *, .schedule-week-swiper, .schedule-week-swiper *',
     creativeEffect: {
       limitProgress: 2,
       perspective: false,
