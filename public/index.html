@@ -2565,19 +2565,12 @@ body.has-results {
 }
 
 body.has-results .page {
-  padding-bottom: 72px;
+  padding-bottom: 32px;
   background: #f8f9fa;
 }
 
 body.has-results .results-wrap {
   margin-top: 22px;
-}
-
-.schedule-fab.is-visible {
-  opacity: 1;
-  visibility: visible;
-  transform: translate3d(0, calc(-1 * var(--schedule-fab-lift, 0px)), 0) scale(1);
-  pointer-events: auto;
 }
 
 body.schedule-modal-open {
@@ -3081,7 +3074,9 @@ body.schedule-modal-open .page > :not(.schedule-modal) {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .schedule-day-btn.has-pickups .schedule-day-dot {
+  .schedule-day-btn.has-pickups .schedule-day-dot,
+  .schedule-calendar-entry,
+  .schedule-preview-count {
     animation: none;
   }
 }
@@ -3249,58 +3244,174 @@ body.has-results .result-panels {
   }
 }
 
-.schedule-fab {
-  --schedule-fab-lift: 0px;
-  position: fixed;
-  right: max(18px, env(safe-area-inset-right, 0px) + 18px);
-  bottom: max(22px, env(safe-area-inset-bottom, 0px) + 22px);
-  z-index: 250;
-  display: inline-flex;
+.schedule-calendar-entry-wrap {
+  width: 100%;
+  padding: 0 20px;
+  margin: 0 auto 34px;
+}
+
+.schedule-calendar-entry {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  min-height: 118px;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 28px;
+  background: #fff;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 12px 30px rgba(15, 23, 42, 0.08),
+    0 2px 8px rgba(15, 23, 42, 0.04);
+  display: flex;
   align-items: center;
-  gap: 8px;
-  min-height: 54px;
-  padding: 0 18px 0 16px;
-  border: none;
-  border-radius: 999px;
-  background: #0051a0;
-  color: #fff;
-  font-family: 'Pretendard', Arial, sans-serif;
-  font-size: 16px;
-  line-height: 1;
-  font-weight: 700;
-  letter-spacing: 0;
-  box-shadow: 0 14px 30px rgba(0, 81, 160, 0.24);
+  justify-content: space-between;
+  gap: 18px;
+  padding: 22px 22px 22px 26px;
+  color: #222;
+  text-align: left;
   cursor: pointer;
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transform: translate3d(0, calc(12px - var(--schedule-fab-lift, 0px)), 0) scale(0.94);
-  will-change: transform, opacity;
-  backface-visibility: hidden;
+  transform: translateZ(0);
   transition:
-    opacity 180ms ease,
-    visibility 180ms ease,
-    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
-    filter 160ms ease;
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 180ms ease,
+    border-color 180ms ease;
+  animation: scheduleCalendarEntryIn 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
   -webkit-tap-highlight-color: transparent;
 }
 
-.schedule-fab:active {
-  transform: translate3d(0, 0, 0) scale(0.96);
-  filter: brightness(0.96);
+.schedule-calendar-entry:active {
+  transform: scale(0.985);
+  border-color: rgba(0, 81, 160, 0.14);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 8px 20px rgba(15, 23, 42, 0.07);
 }
 
-.schedule-fab svg {
-  width: 22px;
-  height: 22px;
-  flex-shrink: 0;
+@media (hover: hover) and (pointer: fine) {
+  .schedule-calendar-entry:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.9) inset,
+      0 16px 34px rgba(15, 23, 42, 0.10),
+      0 4px 10px rgba(15, 23, 42, 0.05);
+  }
+
+  .schedule-calendar-entry:hover:active {
+    transform: scale(0.985);
+  }
 }
 
-body.schedule-modal-open .schedule-fab {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transform: translate3d(0, calc(12px - var(--schedule-fab-lift, 0px)), 0) scale(0.94);
+.schedule-calendar-entry-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.schedule-calendar-entry-title {
+  font-size: clamp(20px, 5vw, 30px);
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #222;
+}
+
+.schedule-calendar-entry-meta {
+  font-size: clamp(13px, 3.4vw, 16px);
+  line-height: 1.2;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: #737373;
+}
+
+.schedule-preview-stack {
+  position: relative;
+  width: 96px;
+  height: 76px;
+  flex: 0 0 96px;
+}
+
+.schedule-preview-thumb {
+  position: absolute;
+  display: block;
+  overflow: hidden;
+  width: 68px;
+  height: 68px;
+  border: 3px solid #fff;
+  border-radius: 18px;
+  background: #edf0f3;
+  box-shadow:
+    0 12px 20px rgba(15, 23, 42, 0.16),
+    0 2px 6px rgba(15, 23, 42, 0.12);
+}
+
+.schedule-preview-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.schedule-preview-thumb--back {
+  top: 8px;
+  right: 24px;
+  transform: rotate(-7deg);
+  opacity: 0.88;
+}
+
+.schedule-preview-thumb--front {
+  top: 0;
+  right: 0;
+  transform: rotate(4deg);
+}
+
+.schedule-preview-stack.is-single .schedule-preview-thumb--front {
+  right: 12px;
+  transform: rotate(3deg);
+}
+
+.schedule-preview-count {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  z-index: 3;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 7px;
+  border: 3px solid #fff;
+  border-radius: 999px;
+  background: #0051a0;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Paperlogy', 'Pretendard', sans-serif;
+  font-size: 14px;
+  line-height: 1;
+  font-weight: 700;
+  box-shadow: 0 8px 16px rgba(0, 81, 160, 0.26);
+  animation: schedulePreviewBadgePulse 1.9s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+@keyframes scheduleCalendarEntryIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes schedulePreviewBadgePulse {
+  0%,
+  100% {
+    transform: translateZ(0) scale(1);
+  }
+  45% {
+    transform: translateZ(0) scale(1.1);
+  }
 }
 
 .schedule-modal {
@@ -3441,19 +3552,6 @@ body.schedule-modal-open .schedule-fab {
 }
 
 @media (max-width: 640px) {
-  .schedule-fab {
-    right: max(14px, env(safe-area-inset-right, 0px) + 14px);
-    bottom: max(16px, env(safe-area-inset-bottom, 0px) + 16px);
-    min-height: 50px;
-    padding: 0 15px 0 14px;
-    font-size: 14px;
-  }
-
-  .schedule-fab svg {
-    width: 20px;
-    height: 20px;
-  }
-
   .schedule-modal-sheet {
     border-radius: 20px 20px 0 0;
   }
@@ -3664,15 +3762,6 @@ body.schedule-modal-open .schedule-fab {
         </div>
       </div>
 
-      <button class="schedule-fab" id="scheduleFab" type="button" aria-label="픽업 스케쥴 보기" aria-controls="scheduleModal" aria-expanded="false">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-          <rect x="3.5" y="5" width="17" height="15.5" rx="3" stroke="currentColor" stroke-width="2"/>
-          <path d="M7.5 3.5V7.5M16.5 3.5V7.5M4 10H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          <path d="M8 14H10.5M13.5 14H16M8 17H10.5M13.5 17H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-        <span>스케쥴</span>
-      </button>
-
       <div class="schedule-modal" id="scheduleModal" aria-hidden="true">
         <div class="schedule-modal-dim" data-schedule-modal-close aria-hidden="true"></div>
         <section class="schedule-modal-sheet" id="scheduleModalSheet" role="dialog" aria-modal="true" aria-label="픽업 스케쥴">
@@ -3715,7 +3804,6 @@ body.schedule-modal-open .schedule-fab {
   let scheduleModalScrollY = 0;
   let scheduleModalDragState = null;
   let scheduleModalTouchStartY = 0;
-  let scheduleFabFrame = null;
 
   const ENABLE_RESULT_TABS_STICKY = false;
   const ENABLE_LEGACY_RESULT_TABS = false;
@@ -3774,7 +3862,6 @@ const searchGuideEl = document.getElementById('searchGuide');
 const scheduleWeekHostEl = document.getElementById('scheduleWeekHost');
 const scheduleWeekPlaceholderEl = document.getElementById('scheduleWeekPlaceholder');
 const scheduleContentEl = document.getElementById('scheduleContent');
-const scheduleFabEl = document.getElementById('scheduleFab');
 const scheduleModalEl = document.getElementById('scheduleModal');
 const scheduleModalSheetEl = document.getElementById('scheduleModalSheet');
 const scheduleModalDimEl = scheduleModalEl?.querySelector('.schedule-modal-dim');
@@ -3900,7 +3987,7 @@ function search(selectedCustomerLabel = '') {
   resetResultTabScrollPositions();
   resetSectionViewState();
   closeScheduleModal({ clear: true, animate: false });
-  hideScheduleFab();
+  resetScheduleOpenControls();
 
   document.body.classList.add('has-results');
   hideResultTabs();
@@ -3944,7 +4031,7 @@ function search(selectedCustomerLabel = '') {
       resultsEl.innerHTML = `<div class="empty" style="margin:24px 20px;">${escapeHtml(msg)}</div>`;
       clearScheduleTab();
       hideResultTabs();
-      hideScheduleFab();
+      resetScheduleOpenControls();
       syncSearchGuide();
       return;
     }
@@ -3957,7 +4044,7 @@ function search(selectedCustomerLabel = '') {
       bindCustomerSelectionCards();
       clearScheduleTab();
       hideResultTabs();
-      hideScheduleFab();
+      resetScheduleOpenControls();
       syncSearchGuide();
       return;
     }
@@ -3970,7 +4057,7 @@ function search(selectedCustomerLabel = '') {
       resultsEl.innerHTML = '<div class="empty" style="margin:24px 20px;">주문 내역이 없습니다.</div>';
       clearScheduleTab();
       hideResultTabs();
-      hideScheduleFab();
+      resetScheduleOpenControls();
       syncSearchGuide();
       return;
     }
@@ -3982,7 +4069,7 @@ function search(selectedCustomerLabel = '') {
     renderOrdersSection();
     clearScheduleTab();
     hideResultTabs();
-    showScheduleFab();
+    resetScheduleOpenControls();
     syncSearchGuide();
   }
 
@@ -4043,7 +4130,7 @@ function search(selectedCustomerLabel = '') {
     resultsEl.innerHTML = `<div class="empty">${escapeHtml(error.message || String(error))}</div>`;
     clearScheduleTab();
     hideResultTabs();
-    hideScheduleFab();
+    resetScheduleOpenControls();
     syncSearchGuide();
   }
 
@@ -4723,6 +4810,109 @@ function buildSectionsData(items) {
     orderFlipAnimationFrame = requestAnimationFrame(step);
   }
 
+  function getScheduleCalendarPreviewData(items) {
+    const normalized = normalizeOrderItems(items)
+      .map((item, index) => ({ ...item, previewImageIndex: index }))
+      .filter(item => item.pickupDateObj);
+
+    if (!normalized.length) return null;
+
+    const groups = new Map();
+    normalized.forEach(item => {
+      if (!groups.has(item.pickupDateKey)) {
+        groups.set(item.pickupDateKey, {
+          date: item.pickupDateObj,
+          items: []
+        });
+      }
+
+      groups.get(item.pickupDateKey).items.push(item);
+    });
+
+    const todayTime = getDateTime(getSeoulTodayInfo().dateObj);
+    const groupedDays = Array.from(groups.values());
+    const futureDays = groupedDays
+      .filter(group => getDateTime(group.date) >= todayTime)
+      .sort((a, b) => getDateTime(a.date) - getDateTime(b.date));
+    const pastDays = groupedDays
+      .filter(group => getDateTime(group.date) < todayTime)
+      .sort((a, b) => getDateTime(b.date) - getDateTime(a.date));
+    const selectedGroup = futureDays[0] || pastDays[0];
+
+    if (!selectedGroup) return null;
+
+    const sortedItems = sortItemsByOrderSheetDate(selectedGroup.items);
+    const imageItems = sortedItems.slice(0, 2);
+    const count = sortedItems.length;
+
+    return {
+      count,
+      dateLabel: formatPickupDateDisplay(selectedGroup.date),
+      isFuture: Boolean(futureDays[0]),
+      images: imageItems.map((item, index) => {
+        const imageIndex = Number.isFinite(item.previewImageIndex) ? item.previewImageIndex : index;
+        return {
+          src: getImageUrl(item, imageIndex),
+          alt: item.productName || '픽업상품 이미지',
+          fallbackIndex: imageIndex
+        };
+      })
+    };
+  }
+
+  function renderScheduleCalendarEntryCard(items) {
+    const preview = getScheduleCalendarPreviewData(items);
+    if (!preview) return '';
+
+    const [frontImage, backImage] = preview.images;
+    const hasBackImage = Boolean(backImage);
+    const meta = `${preview.dateLabel} · ${preview.isFuture ? '찾을 상품' : '최근 픽업'} ${preview.count}종`;
+
+    return `
+      <section class="schedule-calendar-entry-wrap" aria-label="픽업 달력 바로가기">
+        <button
+          class="schedule-calendar-entry"
+          type="button"
+          data-schedule-modal-open
+          aria-label="${escapeHtml(`픽업 달력 확인하기, ${meta}`)}"
+          aria-controls="scheduleModal"
+          aria-expanded="false"
+        >
+          <span class="schedule-calendar-entry-copy">
+            <span class="schedule-calendar-entry-title">픽업 달력 확인하기</span>
+            <span class="schedule-calendar-entry-meta">${escapeHtml(meta)}</span>
+          </span>
+          <span class="schedule-preview-stack ${hasBackImage ? '' : 'is-single'}" aria-hidden="true">
+            ${hasBackImage ? `
+              <span class="schedule-preview-thumb schedule-preview-thumb--back">
+                <img src="${escapeHtml(backImage.src)}" alt="" loading="lazy" decoding="async" onerror="${getImageErrorHandler(backImage.fallbackIndex)}">
+              </span>
+            ` : ''}
+            <span class="schedule-preview-thumb schedule-preview-thumb--front">
+              <img src="${escapeHtml(frontImage.src)}" alt="" loading="lazy" decoding="async" onerror="${getImageErrorHandler(frontImage.fallbackIndex)}">
+            </span>
+            <span class="schedule-preview-count">${escapeHtml(preview.count)}</span>
+          </span>
+        </button>
+      </section>
+    `;
+  }
+
+  function updateScheduleOpenControls(isExpanded) {
+    document.querySelectorAll('[data-schedule-modal-open]').forEach(control => {
+      control.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+    });
+  }
+
+  function bindScheduleCalendarEntry() {
+    resultsEl.querySelectorAll('[data-schedule-modal-open]').forEach(control => {
+      control.addEventListener('click', event => {
+        event.preventDefault();
+        openScheduleModal();
+      });
+    });
+  }
+
   function renderOrdersSection() {
     if (!currentOrderItems.length) return;
 
@@ -4730,12 +4920,13 @@ function buildSectionsData(items) {
 
     const { sections, sectionItemsMap } = buildSectionsData(currentOrderItems);
 
-    resultsEl.innerHTML = sections.map(section =>
+    resultsEl.innerHTML = renderScheduleCalendarEntryCard(currentOrderItems) + sections.map(section =>
       renderPickupSection(section, sectionItemsMap[section.key] || [])
     ).join('') + renderSupportHelpCard();
 
     initAllSwipers(sections, sectionItemsMap);
     bindOrdersToggle();
+    bindScheduleCalendarEntry();
     initSupportHelpCard();
     requestAnimationFrame(() => {
       updateOrderNameMarquees();
@@ -4818,41 +5009,8 @@ function getScheduleScrollContainer() {
   return isScheduleModalOpen() ? scheduleModalBodyEl : null;
 }
 
-function showScheduleFab() {
-  if (!scheduleFabEl || !currentOrderItems.length) return;
-  scheduleFabEl.classList.add('is-visible');
-  scheduleFabEl.setAttribute('aria-expanded', 'false');
-  requestScheduleFabPositionUpdate();
-}
-
-function hideScheduleFab() {
-  if (!scheduleFabEl) return;
-  scheduleFabEl.classList.remove('is-visible');
-  scheduleFabEl.setAttribute('aria-expanded', 'false');
-  scheduleFabEl.style.setProperty('--schedule-fab-lift', '0px');
-}
-
-function requestScheduleFabPositionUpdate() {
-  if (scheduleFabFrame) return;
-  scheduleFabFrame = requestAnimationFrame(() => {
-    scheduleFabFrame = null;
-    updateScheduleFabPosition();
-  });
-}
-
-function updateScheduleFabPosition() {
-  if (!scheduleFabEl || !scheduleFabEl.classList.contains('is-visible')) return;
-
-  const scrollY = window.scrollY || window.pageYOffset || 0;
-  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
-  const documentHeight = Math.max(
-    document.documentElement.scrollHeight || 0,
-    document.body.scrollHeight || 0
-  );
-  const distanceToBottom = Math.max(0, documentHeight - (scrollY + viewportHeight));
-  const lift = clamp(96 - distanceToBottom, 0, 56);
-
-  scheduleFabEl.style.setProperty('--schedule-fab-lift', `${Math.round(lift)}px`);
+function resetScheduleOpenControls() {
+  updateScheduleOpenControls(false);
 }
 
 function lockScheduleModalBackground() {
@@ -4906,7 +5064,7 @@ function openScheduleModal() {
   scheduleModalEl.classList.remove('is-closing');
   scheduleModalEl.classList.add('is-open');
   scheduleModalEl.setAttribute('aria-hidden', 'false');
-  scheduleFabEl?.setAttribute('aria-expanded', 'true');
+  updateScheduleOpenControls(true);
   lockScheduleModalBackground();
 
   scheduleWeekHostEl?.classList.add('is-visible');
@@ -4936,7 +5094,7 @@ function closeScheduleModal(options = {}) {
   const finishClose = () => {
     scheduleModalEl.classList.remove('is-open', 'is-closing');
     scheduleModalEl.setAttribute('aria-hidden', 'true');
-    scheduleFabEl?.setAttribute('aria-expanded', 'false');
+    updateScheduleOpenControls(false);
     resetScheduleModalInlineMotion();
     unlockScheduleModalBackground();
     activeResultTab = 'orders';
@@ -6146,7 +6304,6 @@ function handleOrderImageClick(event) {
 
   window.addEventListener('resize', () => {
     requestAnimationFrame(updateOrderNameMarquees);
-    requestScheduleFabPositionUpdate();
     updateResultTabsHeightVar();
     syncResultPanelsHeight();
     if (resultPanelsSwiper) resultPanelsSwiper.update();
@@ -6159,7 +6316,6 @@ function handleOrderImageClick(event) {
   });
 
   window.addEventListener('scroll', () => {
-    requestScheduleFabPositionUpdate();
     if (ENABLE_RESULT_TABS_STICKY) requestResultTabsStickyUpdate();
     if (activeResultTab === 'schedule') {
       requestScheduleWeekStickyUpdate();
@@ -6189,7 +6345,6 @@ function handleOrderImageClick(event) {
   document.addEventListener('touchend', handleOrderImagePinchEnd);
   document.addEventListener('touchcancel', handleOrderImagePinchEnd);
   resultsEl.addEventListener('click', handleOrderImageClick);
-  scheduleFabEl?.addEventListener('click', openScheduleModal);
   scheduleModalCloseEl?.addEventListener('click', () => closeScheduleModal({ clear: false, animate: true }));
   scheduleModalEl?.addEventListener('click', event => {
     if (event.target.closest('[data-schedule-modal-close]')) {
@@ -6251,7 +6406,7 @@ function resetToHome() {
   // 탑바 숨기기 (애니메이션 포함)
   hideResultTopbar();
   closeScheduleModal({ clear: true, animate: false });
-  hideScheduleFab();
+  resetScheduleOpenControls();
 
   destroyAllSwipers();
   destroyScheduleWeekSwiper();
