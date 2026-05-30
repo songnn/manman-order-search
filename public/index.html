@@ -5023,7 +5023,7 @@ function handleOrderImageClick(event) {
   document.addEventListener('touchcancel', handleOrderImagePinchEnd);
   resultsEl.addEventListener('click', handleOrderImageClick);
 
-    searchBtn.addEventListener('click', search);
+    searchBtn.addEventListener('click', () => search());
 
     prettyAlertConfirmEl.addEventListener('click', hidePrettyAlert);
 
