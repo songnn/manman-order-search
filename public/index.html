@@ -3391,6 +3391,9 @@ body.has-results .result-panels {
   let scheduleWeekStickyFrame = null;
   let pullRefreshStartY = 0;
   let isRestoringResultTabScroll = false;
+  let searchRequestInFlight = false;
+  let searchRequestSeq = 0;
+  let orderFlipAnimationFrame = null;
 
   const ENABLE_RESULT_TABS_STICKY = false;
   const ENABLE_SCHEDULE_WEEK_STICKY = true;
@@ -3514,6 +3517,31 @@ function syncSearchGuide() {
   }
 }
 
+function hasCurrentSearchSurface(keyword) {
+  const normalizedKeyword = sanitizeFourDigitInput(keyword).trim();
+
+  return (
+    document.body.classList.contains('has-results') &&
+    currentSearchKeyword === normalizedKeyword &&
+    (
+      searchRequestInFlight ||
+      currentOrderItems.length > 0 ||
+      resultsEl.innerHTML.trim().length > 0 ||
+      messageEl.textContent.trim().length > 0
+    )
+  );
+}
+
+function shouldRunKeyboardConfirmSearch(keyword, submitButton) {
+  const normalizedKeyword = sanitizeFourDigitInput(keyword).trim();
+
+  if (!/^\d{4}$/.test(normalizedKeyword)) return false;
+  if (document.activeElement === submitButton) return false;
+  if (hasCurrentSearchSurface(normalizedKeyword)) return false;
+
+  return true;
+}
+
 function search(selectedCustomerLabel = '') {
   keywordInput.value = sanitizeFourDigitInput(keywordInput.value);
   const keyword = keywordInput.value.trim();
@@ -3531,8 +3559,13 @@ function search(selectedCustomerLabel = '') {
     return;
   }
 
+  const nextSelectedCustomerLabel = selectedCustomerLabel ? decodeURIComponent(selectedCustomerLabel) : '';
+  const requestSeq = searchRequestSeq + 1;
+
+  searchRequestSeq = requestSeq;
+  searchRequestInFlight = true;
   currentSearchKeyword = keyword;
-  currentSelectedCustomerLabel = selectedCustomerLabel ? decodeURIComponent(selectedCustomerLabel) : '';
+  currentSelectedCustomerLabel = nextSelectedCustomerLabel;
   scheduleState.selectedDateKey = getSeoulTodayInfo().dateKey;
   resetResultTabScrollPositions();
   resetSectionViewState();
@@ -3552,12 +3585,23 @@ function search(selectedCustomerLabel = '') {
     },
     body: JSON.stringify({
         keyword,
-        selectedCustomerLabel: currentSelectedCustomerLabel
+        selectedCustomerLabel: nextSelectedCustomerLabel
     })
     })
     .then(res => res.json())
-    .then(renderResult)
-    .catch(renderError);
+    .then(result => {
+      if (requestSeq !== searchRequestSeq) return;
+      renderResult(result);
+    })
+    .catch(error => {
+      if (requestSeq !== searchRequestSeq) return;
+      renderError(error);
+    })
+    .finally(() => {
+      if (requestSeq === searchRequestSeq) {
+        searchRequestInFlight = false;
+      }
+    });
 }
 
   function renderResult(result) {
@@ -4213,12 +4257,21 @@ function buildSectionsData(items) {
     });
   }
 
+  function easeOrderFlip(progress) {
+    const clampedProgress = clamp(progress, 0, 1);
+    return 1 - Math.pow(1 - clampedProgress, 4);
+  }
+
   function animateOrderCardsFromRects(sectionKey, fromRects) {
     const section = getOrderSectionEl(sectionKey);
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const supportsCardAnimation = typeof Element !== 'undefined' && Element.prototype.animate;
 
-    if (!section || !fromRects?.size || prefersReducedMotion || !supportsCardAnimation) {
+    if (orderFlipAnimationFrame) {
+      cancelAnimationFrame(orderFlipAnimationFrame);
+      orderFlipAnimationFrame = null;
+    }
+
+    if (!section || !fromRects?.size || prefersReducedMotion) {
       settleOrderLayoutChange();
       return;
     }
@@ -4226,22 +4279,25 @@ function buildSectionsData(items) {
     section.classList.add('animating');
 
     const cards = Array.from(section.querySelectorAll('.order-card[data-order-key]'));
-    const animations = cards.map((card, index) => {
+    const cardStates = cards.map((card, index) => {
       const from = fromRects.get(card.dataset.orderKey);
       const to = card.getBoundingClientRect();
 
       card.style.transformOrigin = 'top left';
+      card.style.transform = '';
+      card.style.opacity = '';
 
       if (!from) {
-        return card.animate([
-          { opacity: 0, transform: 'translate3d(0, 12px, 0) scale(0.985)' },
-          { opacity: 1, transform: 'translate3d(0, 0, 0) scale(1)' }
-        ], {
+        return {
+          card,
+          hasFrom: false,
+          delay: Math.min(index * 10, 80),
           duration: 260,
-          delay: Math.min(index * 12, 96),
-          easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
-          fill: 'both'
-        });
+          dx: 0,
+          dy: 12,
+          scaleX: 0.985,
+          scaleY: 0.985
+        };
       }
 
       const dx = from.left - to.left;
@@ -4256,36 +4312,62 @@ function buildSectionsData(items) {
 
       if (isSamePosition) return null;
 
-      return card.animate([
-        {
-          opacity: 0.9,
-          transform: `translate3d(${dx}px, ${dy}px, 0) scale(${scaleX}, ${scaleY})`
-        },
-        {
-          opacity: 1,
-          transform: 'translate3d(0, 0, 0) scale(1, 1)'
-        }
-      ], {
+      return {
+        card,
+        hasFrom: true,
+        delay: 0,
         duration: 420,
-        delay: Math.min(index * 10, 90),
-        easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
-        fill: 'both'
-      });
+        dx,
+        dy,
+        scaleX,
+        scaleY
+      };
     }).filter(Boolean);
 
-    if (!animations.length) {
+    if (!cardStates.length) {
       section.classList.remove('animating');
       settleOrderLayoutChange();
       return;
     }
 
-    Promise.allSettled(animations.map(animation => animation.finished)).then(() => {
+    const startedAt = performance.now();
+    const totalDuration = Math.max(...cardStates.map(state => state.delay + state.duration));
+
+    const step = now => {
+      const elapsed = now - startedAt;
+
+      cardStates.forEach(state => {
+        const rawProgress = (elapsed - state.delay) / state.duration;
+        const progress = clamp(rawProgress, 0, 1);
+        const eased = easeOrderFlip(progress);
+        const x = state.dx * (1 - eased);
+        const y = state.dy * (1 - eased);
+        const scaleX = state.scaleX + ((1 - state.scaleX) * eased);
+        const scaleY = state.scaleY + ((1 - state.scaleY) * eased);
+        const opacity = state.hasFrom
+          ? 0.9 + (0.1 * eased)
+          : eased;
+
+        state.card.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scaleX}, ${scaleY})`;
+        state.card.style.opacity = opacity.toFixed(3);
+      });
+
+      if (elapsed < totalDuration) {
+        orderFlipAnimationFrame = requestAnimationFrame(step);
+        return;
+      }
+
+      orderFlipAnimationFrame = null;
       section.classList.remove('animating');
       cards.forEach(card => {
         card.style.transformOrigin = '';
+        card.style.transform = '';
+        card.style.opacity = '';
       });
       settleOrderLayoutChange();
-    });
+    };
+
+    orderFlipAnimationFrame = requestAnimationFrame(step);
   }
 
   function renderOrdersSection() {
@@ -5370,8 +5452,11 @@ function handleOrderImageClick(event) {
     setTimeout(updateSearchState, 80);
     // iOS 숫자패드 "완료" 버튼은 blur를 발생시킴 → 4자리면 조회
     setTimeout(() => {
-      if (/^\d{4}$/.test(keywordInput.value.trim())) {
-        if (document.activeElement !== searchBtn) search();
+      keywordInput.value = sanitizeFourDigitInput(keywordInput.value);
+      if (rhKeyword) rhKeyword.value = keywordInput.value;
+
+      if (shouldRunKeyboardConfirmSearch(keywordInput.value, searchBtn)) {
+        search();
       }
     }, 150);
   });
@@ -5454,6 +5539,8 @@ function resetToHome() {
   currentOrderItems = [];
   currentSearchKeyword = '';
   currentSelectedCustomerLabel = '';
+  searchRequestSeq += 1;
+  searchRequestInFlight = false;
   scheduleState.selectedDateKey = '';
   scheduleState.dateKeys = [];
   scheduleState.rangeStartKey = '';
@@ -6023,8 +6110,11 @@ rhKeyword.addEventListener('input', () => {
 // iOS 숫자패드 "완료" 버튼 → blur → 4자리면 조회
 rhKeyword.addEventListener('blur', () => {
   setTimeout(() => {
-    if (/^\d{4}$/.test(rhKeyword.value.trim())) {
-      if (document.activeElement !== rhSearchBtn) searchFromTopbar();
+    rhKeyword.value = sanitizeFourDigitInput(rhKeyword.value);
+    keywordInput.value = rhKeyword.value;
+
+    if (shouldRunKeyboardConfirmSearch(rhKeyword.value, rhSearchBtn)) {
+      searchFromTopbar();
     }
   }, 150);
 });
