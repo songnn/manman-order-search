@@ -2622,14 +2622,11 @@ body.has-results .result-panels {
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   transition:
-    width 260ms cubic-bezier(0.22, 1, 0.36, 1),
-    max-width 260ms cubic-bezier(0.22, 1, 0.36, 1),
-    padding 260ms cubic-bezier(0.22, 1, 0.36, 1),
-    border-radius 260ms cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 220ms ease,
     background-color 220ms ease;
   isolation: isolate;
-  will-change: transform, width, padding, border-radius;
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 .result-tabs-wrap.is-visible {
@@ -2647,7 +2644,7 @@ body.has-results .result-panels {
   margin: 0;
   padding: calc(env(safe-area-inset-top, 0px) + 8px) 40px 10px;
   border-radius: 0;
-  background: rgba(255, 255, 255, 0.98);
+  background: #fff;
   overflow: visible;
 }
 
@@ -3084,11 +3081,14 @@ body.has-results .result-panels {
         const top = 8;
         const scrollY = window.scrollY || window.pageYOffset || 0;
 
-        if (!this.pinned) {
-          this.pinY = this.getDocumentTop(this.$refs.tabs);
-        }
+        if (!this.pinY) this.pinY = this.getDocumentTop(this.$refs.tabs);
 
-        const shouldPin = scrollY + top >= this.pinY;
+        const pinAt = this.pinY;
+        const unpinAt = Math.max(0, this.pinY - 24);
+        const shouldPin = this.pinned
+          ? scrollY + top >= unpinAt
+          : scrollY + top >= pinAt;
+
         if (shouldPin === this.pinned) return;
 
         this.setPinned(shouldPin);
@@ -3098,8 +3098,8 @@ body.has-results .result-panels {
         const tabs = this.$refs.tabs;
         if (!tabs) return;
 
-        const fromRect = tabs.getBoundingClientRect();
         const tabHeight = tabs.offsetHeight;
+        tabs.getAnimations().forEach(animation => animation.cancel());
 
         if (shouldPin && this.spacer) {
           this.spacer.style.setProperty('--result-tabs-spacer-height', `${tabHeight + 18}px`);
@@ -3110,36 +3110,6 @@ body.has-results .result-panels {
 
         this.$nextTick(() => {
           if (!shouldPin && this.spacer) this.spacer.classList.remove('is-active');
-          this.animatePosition(fromRect);
-        });
-      },
-
-      animatePosition(fromRect) {
-        const tabs = this.$refs.tabs;
-        if (!tabs || !fromRect) return;
-
-        const toRect = tabs.getBoundingClientRect();
-        const dx = fromRect.left - toRect.left;
-        const dy = fromRect.top - toRect.top;
-        const sx = fromRect.width / Math.max(toRect.width, 1);
-        const sy = fromRect.height / Math.max(toRect.height, 1);
-
-        tabs.getAnimations().forEach(animation => animation.cancel());
-
-        if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5 && Math.abs(sx - 1) < 0.01 && Math.abs(sy - 1) < 0.01) return;
-
-        tabs.animate([
-          {
-            transform: `translate3d(${dx}px, ${dy}px, 0) scale(${sx}, ${sy})`,
-            transformOrigin: 'top left'
-          },
-          {
-            transform: 'translate3d(0, 0, 0) scale(1, 1)',
-            transformOrigin: 'top left'
-          }
-        ], {
-          duration: 300,
-          easing: 'cubic-bezier(0.22, 1, 0.36, 1)'
         });
       },
 
