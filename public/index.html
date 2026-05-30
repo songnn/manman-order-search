@@ -2595,7 +2595,6 @@ body.has-results .result-panels {
   height: auto;
   min-width: 0;
   backface-visibility: hidden;
-  transform: translateZ(0);
 }
 
 .results-wrap.tab-hidden {
@@ -2906,16 +2905,20 @@ body.has-results .result-panels {
 
       <div class="swiper result-panels" id="resultPanels">
         <div class="swiper-wrapper result-panels-track" id="resultPanelsTrack">
-          <section class="swiper-slide results-wrap result-panel" id="ordersPanel">
-            <div class="results" id="results"></div>
+          <section class="swiper-slide result-panel" id="ordersPanel">
+            <div class="results-wrap">
+              <div class="results" id="results"></div>
+            </div>
           </section>
 
           <!-- 스케쥴 탭 패널 (추후 구현) -->
-          <div class="swiper-slide schedule-panel-wrap result-panel" id="schedulePanel">
-            <div class="schedule-panel-icon">📅</div>
-            <div class="schedule-panel-title">스케쥴 준비 중</div>
-            <div class="schedule-panel-desc">곧 이용하실 수 있습니다</div>
-          </div>
+          <section class="swiper-slide result-panel" id="schedulePanel">
+            <div class="schedule-panel-wrap">
+              <div class="schedule-panel-icon">📅</div>
+              <div class="schedule-panel-title">스케쥴 준비 중</div>
+              <div class="schedule-panel-desc">곧 이용하실 수 있습니다</div>
+            </div>
+          </section>
         </div>
       </div>
     </div>
@@ -4623,14 +4626,14 @@ function initResultTabsSwiper() {
       limitProgress: 2,
       perspective: false,
       prev: {
-        translate: ['-24%', 0, -120],
-        scale: 0.95,
-        opacity: 0.76
+        translate: ['-100%', 0, -80],
+        scale: 0.96,
+        opacity: 0.92
       },
       next: {
-        translate: ['24%', 0, -120],
-        scale: 0.95,
-        opacity: 0.76
+        translate: ['100%', 0, -80],
+        scale: 0.96,
+        opacity: 0.92
       }
     },
     resistanceRatio: 0.72,
