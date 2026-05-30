@@ -43,10 +43,13 @@
     color: #222;
     -webkit-text-size-adjust: 100%;
     overflow-x: hidden;
+    overscroll-behavior-x: none;
+    overscroll-behavior-y: none;
   }
 
   body {
     min-height: 100vh;
+    overscroll-behavior: none;
   }
 
   .page {
@@ -2918,7 +2921,7 @@ body.has-results .results-wrap {
 }
 
 .schedule-product-bottom-row {
-  margin-top: 3px;
+  margin-top: 4px;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -3379,6 +3382,7 @@ body.has-results .result-panels {
   let scheduleSuppressScrollSync = false;
   let scheduleSuppressWeekSlide = false;
   let scheduleWeekStickyFrame = null;
+  let pullRefreshStartY = 0;
   let isRestoringResultTabScroll = false;
 
   const ENABLE_RESULT_TABS_STICKY = false;
@@ -4372,14 +4376,7 @@ function initScheduleWeekSwiper() {
     speed: 260,
     resistanceRatio: 0.7,
     threshold: 8,
-    nested: true,
-    on: {
-      slideChange(swiper) {
-        if (scheduleSuppressWeekSlide) return;
-        const targetDateKey = getScheduleCenteredDateKey(swiper.activeIndex);
-        if (targetDateKey) selectScheduleDate(targetDateKey, { scroll: true, slide: false });
-      }
-    }
+    nested: true
   });
 
   if (activeIndex >= 0) {
@@ -4464,27 +4461,6 @@ function getScheduleSlideIndexForDate(dateKey) {
   return clamp(dateIndex - SCHEDULE_CENTER_OFFSET_DAYS, 0, maxStartIndex);
 }
 
-function getScheduleCenteredDateKey(activeIndex) {
-  if (!scheduleState.dateKeys.length) return '';
-  const maxStartIndex = Math.max(0, scheduleState.dateKeys.length - 7);
-  const normalizedIndex = clamp(Number(activeIndex || 0), 0, maxStartIndex);
-
-  if (maxStartIndex > 0 && normalizedIndex <= 0) {
-    return scheduleState.dateKeys[0] || '';
-  }
-
-  if (maxStartIndex > 0 && normalizedIndex >= maxStartIndex) {
-    return scheduleState.dateKeys[scheduleState.dateKeys.length - 1] || '';
-  }
-
-  const centerIndex = clamp(
-    normalizedIndex + SCHEDULE_CENTER_OFFSET_DAYS,
-    0,
-    scheduleState.dateKeys.length - 1
-  );
-  return scheduleState.dateKeys[centerIndex] || '';
-}
-
 function selectScheduleDate(dateKey, options = {}) {
   const shouldScroll = options.scroll !== false;
   const shouldSlide = options.slide !== false;
@@ -4517,7 +4493,6 @@ function selectScheduleDate(dateKey, options = {}) {
   });
   window.setTimeout(() => {
     scheduleSuppressScrollSync = false;
-    requestScheduleScrollSync();
   }, behavior === 'smooth' ? 520 : 80);
 }
 
@@ -4568,7 +4543,7 @@ function syncScheduleFromScroll() {
 
   let activeSection = null;
 
-  if (documentHeight - scrollBottom <= 4) {
+  if ((window.scrollY || window.pageYOffset || 0) > 0 && documentHeight - scrollBottom <= 4) {
     activeSection = sections[sections.length - 1];
   } else {
     for (const section of sections) {
@@ -5290,16 +5265,36 @@ function handleOrderImageClick(event) {
     syncResultPanelsHeight();
     if (resultPanelsSwiper) resultPanelsSwiper.update();
     if (scheduleWeekSwiper) scheduleWeekSwiper.update();
-    requestResultTabsStickyUpdate();
-    requestScheduleWeekStickyUpdate();
-    requestScheduleScrollSync();
+    if (ENABLE_RESULT_TABS_STICKY) requestResultTabsStickyUpdate();
+    if (activeResultTab === 'schedule') {
+      requestScheduleWeekStickyUpdate();
+      requestScheduleScrollSync();
+    }
   });
 
   window.addEventListener('scroll', () => {
-    requestResultTabsStickyUpdate();
-    requestScheduleWeekStickyUpdate();
-    requestScheduleScrollSync();
+    if (ENABLE_RESULT_TABS_STICKY) requestResultTabsStickyUpdate();
+    if (activeResultTab === 'schedule') {
+      requestScheduleWeekStickyUpdate();
+      requestScheduleScrollSync();
+    }
   }, { passive: true });
+
+  window.addEventListener('touchstart', event => {
+    if (!event.touches || event.touches.length !== 1) return;
+    pullRefreshStartY = event.touches[0].clientY;
+  }, { passive: true });
+
+  window.addEventListener('touchmove', event => {
+    if (!document.body.classList.contains('has-results')) return;
+    if (!event.touches || event.touches.length !== 1) return;
+    if ((window.scrollY || window.pageYOffset || 0) > 0) return;
+
+    const currentY = event.touches[0].clientY;
+    if (currentY - pullRefreshStartY > 6) {
+      event.preventDefault();
+    }
+  }, { passive: false });
 
   resultsEl.addEventListener('touchstart', handleOrderImagePinchStart, { passive: false });
   document.addEventListener('touchmove', handleOrderImagePinchMove, { passive: false });
@@ -5720,13 +5715,6 @@ function restoreResultTabScroll(tabName, delay = 0) {
   return true;
 }
 
-function scrollScheduleToSelectedDate(delay = 0, behavior = 'auto') {
-  window.setTimeout(() => {
-    const dateKey = scheduleState.selectedDateKey || getSeoulTodayInfo().dateKey;
-    selectScheduleDate(dateKey, { scroll: true, slide: true, behavior });
-  }, delay);
-}
-
 function setActiveTab(tabName, options = {}) {
   if (!ordersTab || !scheduleTab) return;
   const normalizedTab = tabName === 'schedule' ? 'schedule' : 'orders';
@@ -5757,6 +5745,7 @@ function setActiveTab(tabName, options = {}) {
     if (ordersPanel) ordersPanel.classList.remove('tab-hidden');
     if (schedulePanelEl) schedulePanelEl.classList.remove('is-active');
   } else {
+    scheduleState.selectedDateKey = getSeoulTodayInfo().dateKey;
     renderScheduleTab();
     scheduleWeekHostEl?.classList.add('is-visible');
     scheduleWeekHostEl?.setAttribute('aria-hidden', 'false');
@@ -5780,13 +5769,9 @@ function setActiveTab(tabName, options = {}) {
   }
 
   requestResultTabsStickyUpdate();
-  requestScheduleScrollSync();
 
   if (tabChanged && shouldRestoreScroll) {
-    const restored = restoreResultTabScroll(normalizedTab, shouldSlide ? 360 : 40);
-    if (!restored && normalizedTab === 'schedule') {
-      scrollScheduleToSelectedDate(shouldSlide ? 360 : 40, 'auto');
-    }
+    restoreResultTabScroll(normalizedTab, shouldSlide ? 360 : 40);
   }
 }
 
