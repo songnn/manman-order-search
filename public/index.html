@@ -454,6 +454,13 @@
     touch-action: pan-y;
   }
 
+  @media (hover: hover) and (pointer: fine) {
+    .orders-swiper,
+    .result-panels.swiper {
+      touch-action: auto;
+    }
+  }
+
   .orders-swiper .swiper-wrapper {
     align-items: stretch;
   }
@@ -5126,6 +5133,8 @@ function syncScheduleFromScroll() {
         spaceBetween: 16,
         grabCursor: true,
         nested: true,
+        simulateTouch: true,
+        allowTouchMove: true,
         touchMoveStopPropagation: true,
         preventClicksPropagation: true,
         freeMode: {
@@ -5146,7 +5155,49 @@ function syncScheduleFromScroll() {
           }
         }
       });
+
+      bindDesktopOrderWheel(el, swiperMap[section.key]);
     });
+  }
+
+  function isDesktopPointerViewport() {
+    return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  }
+
+  function bindDesktopOrderWheel(el, swiper) {
+    if (!el || !swiper || !isDesktopPointerViewport()) return;
+
+    el.addEventListener('wheel', event => {
+      if (!swiper || swiper.destroyed) return;
+      if (event.ctrlKey) return;
+      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+
+      const direction = event.deltaY > 0 ? 1 : -1;
+      const canMovePrev = !swiper.isBeginning || swiper.translate < swiper.minTranslate();
+      const canMoveNext = !swiper.isEnd || swiper.translate > swiper.maxTranslate();
+
+      if ((direction < 0 && !canMovePrev) || (direction > 0 && !canMoveNext)) return;
+
+      event.preventDefault();
+
+      const wheelDelta =
+        event.deltaMode === 1
+          ? event.deltaY * 32
+          : event.deltaMode === 2
+            ? event.deltaY * window.innerHeight
+            : event.deltaY;
+
+      const nextTranslate = clamp(
+        swiper.translate - wheelDelta,
+        swiper.maxTranslate(),
+        swiper.minTranslate()
+      );
+
+      swiper.setTranslate(nextTranslate);
+      swiper.updateProgress(nextTranslate);
+      swiper.updateActiveIndex();
+      swiper.updateSlidesClasses();
+    }, { passive: false });
   }
 
   function destroyAllSwipers() {
