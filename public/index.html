@@ -2537,36 +2537,336 @@ body.has-results .results-wrap {
 
 /* 스케쥴 탭 패널 */
 .schedule-panel-wrap {
-  display: flex;
   background: #f8f9fa;
-  min-height: max(50vh, var(--result-panel-min-height));
-  padding: 60px 20px;
+  min-height: max(70vh, var(--result-panel-min-height));
+  padding: 118px 0 76px;
+  color: #111;
+}
+
+.schedule-content {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.schedule-week-host {
+  display: none;
+  position: sticky;
+  top: var(--result-tabs-current-height, 66px);
+  z-index: 220;
+  background: #f8f9fa;
+  padding: 8px 0 12px;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.10);
+}
+
+.schedule-week-host.is-visible {
+  display: block;
+  position: fixed;
+  left: 0;
+  right: 0;
+}
+
+.schedule-week-card {
+  background: #fff;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.schedule-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  padding: 10px 14px 2px;
+}
+
+.schedule-weekday {
   text-align: center;
-  flex-direction: column;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 700;
+  color: #8a929d;
+}
+
+.schedule-weekday.is-sunday {
+  color: #e54848;
+}
+
+.schedule-weekday.is-saturday {
+  color: #0a58b5;
+}
+
+.schedule-week-swiper {
+  width: 100%;
+  overflow: hidden;
+  padding: 0 14px 10px;
+}
+
+.schedule-week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  min-height: 64px;
+}
+
+.schedule-day-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  background: transparent;
+  min-width: 0;
+  min-height: 64px;
+  padding: 4px 0 2px;
+  display: grid;
+  grid-template-rows: 34px 16px;
+  justify-items: center;
+  align-items: center;
+  color: #20242a;
+  font-family: 'Pretendard', Arial, sans-serif;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.schedule-day-circle {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 14px;
-}
-
-.schedule-panel-icon {
-  font-size: 52px;
+  font-size: 16px;
   line-height: 1;
-  margin-bottom: 4px;
+  font-weight: 700;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.schedule-panel-title {
-  font-size: 20px;
+.schedule-day-btn.is-sunday,
+.schedule-day-btn.is-holiday {
+  color: #e54848;
+}
+
+.schedule-day-btn.is-saturday {
+  color: #0a58b5;
+}
+
+.schedule-day-btn.is-selected .schedule-day-circle {
+  background: #111;
+  color: #fff;
+  transform: scale(1.02);
+}
+
+.schedule-day-btn.is-selected.is-sunday .schedule-day-circle,
+.schedule-day-btn.is-selected.is-holiday .schedule-day-circle {
+  background: #e54848;
+}
+
+.schedule-day-btn.is-selected.is-saturday .schedule-day-circle {
+  background: #0a58b5;
+}
+
+.schedule-day-meta {
+  min-height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 700;
+  color: #8a929d;
+}
+
+.schedule-day-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: #0a58b5;
+  display: none;
+}
+
+.schedule-day-btn.has-pickups .schedule-day-dot {
+  display: block;
+}
+
+.schedule-list {
+  padding: 18px 0 0;
+}
+
+.schedule-date-section {
+  scroll-margin-top: calc(var(--result-tabs-current-height, 66px) + 110px);
+  padding: 18px 0 26px;
+}
+
+.schedule-date-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 20px;
+  margin-bottom: 12px;
+}
+
+.schedule-date-title {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  color: #111;
+}
+
+.schedule-date-title.is-sunday,
+.schedule-date-title.is-holiday {
+  color: #e54848;
+}
+
+.schedule-date-title.is-saturday {
+  color: #0a58b5;
+}
+
+.schedule-date-sub {
+  margin-top: 5px;
+  font-size: 13px;
+  line-height: 1.2;
   font-weight: 600;
-  color: #333;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.03em;
+  color: #98a0aa;
 }
 
-.schedule-panel-desc {
-  font-size: 15px;
-  font-weight: 400;
-  color: #aaa;
-  letter-spacing: -0.02em;
-  line-height: 1.5;
+.schedule-date-count {
+  flex-shrink: 0;
+  font-size: 14px;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #0a58b5;
+}
+
+.schedule-product-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 0 20px;
+}
+
+.schedule-product-card {
+  min-width: 0;
+}
+
+.schedule-product-thumb-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #edf0f3;
+}
+
+.schedule-product-thumb {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.schedule-product-badge {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 6px;
+  min-height: 24px;
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.66);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.schedule-product-info {
+  padding: 8px 2px 0;
+}
+
+.schedule-product-name {
+  min-height: 32px;
+  font-size: 12px;
+  line-height: 1.32;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: #111;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.schedule-product-bottom {
+  margin-top: 6px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.schedule-product-qty {
+  flex-shrink: 0;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: #4b5563;
+}
+
+.schedule-product-price {
+  min-width: 0;
+  text-align: right;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: #111;
+}
+
+.schedule-grid-placeholder {
+  min-width: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.schedule-empty-day {
+  margin: 0 20px;
+  min-height: 130px;
+  border-radius: 14px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #a3aab4;
+  font-size: 16px;
+  line-height: 1.4;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.04);
+}
+
+@media (min-width: 641px) {
+  .schedule-product-grid {
+    gap: 14px;
+    padding: 0 24px;
+  }
+
+  .schedule-date-head {
+    padding: 0 24px;
+  }
+
+  .schedule-empty-day {
+    margin: 0 24px;
+  }
 }
 
 .result-panels {
@@ -2626,6 +2926,13 @@ body.has-results .result-panels {
 .result-tabs-wrap.is-visible {
   display: block;
   animation: resultTabsIn 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.result-tabs-wrap.is-stuck {
+  position: fixed;
+  left: 0;
+  right: 0;
+  margin-top: 0;
 }
 
 .result-tabs-wrap.is-dragging {
@@ -2897,6 +3204,8 @@ body.has-results .result-panels {
         </div>
       </div>
 
+      <div class="schedule-week-host" id="scheduleWeekHost" aria-hidden="true"></div>
+
       <div class="swiper result-panels" id="resultPanels">
         <div class="swiper-wrapper result-panels-track" id="resultPanelsTrack">
           <section class="swiper-slide result-panel" id="ordersPanel">
@@ -2908,9 +3217,7 @@ body.has-results .result-panels {
           <!-- 스케쥴 탭 패널 (추후 구현) -->
           <section class="swiper-slide result-panel" id="schedulePanel">
             <div class="schedule-panel-wrap">
-              <div class="schedule-panel-icon">📅</div>
-              <div class="schedule-panel-title">스케쥴 준비 중</div>
-              <div class="schedule-panel-desc">곧 이용하실 수 있습니다</div>
+              <div class="schedule-content" id="scheduleContent"></div>
             </div>
           </section>
         </div>
@@ -2922,6 +3229,15 @@ body.has-results .result-panels {
   let currentSearchKeyword = '';
   let currentSelectedCustomerLabel = '';
   let activeImageZoom = null;
+  let scheduleWeekSwiper = null;
+  let scheduleScrollFrame = null;
+  let scheduleSuppressScrollSync = false;
+  let scheduleSuppressWeekSlide = false;
+
+  const scheduleState = {
+    selectedDateKey: '',
+    weekStartKeys: []
+  };
 
   const SECTION_KEYS = {
     MY_ORDERS: 'myOrders',
@@ -2950,6 +3266,8 @@ const prettyAlertDescEl = document.getElementById('prettyAlertDesc');
 const prettyAlertConfirmEl = document.getElementById('prettyAlertConfirm');
 const homeLogoBtn = document.getElementById('homeLogoBtn');
 const searchGuideEl = document.getElementById('searchGuide');
+const scheduleWeekHostEl = document.getElementById('scheduleWeekHost');
+const scheduleContentEl = document.getElementById('scheduleContent');
 
   const DUMMY_IMAGES = [
     'https://picsum.photos/seed/manman-order-1/1200/1200',
@@ -3035,6 +3353,7 @@ function search(selectedCustomerLabel = '') {
 
   currentSearchKeyword = keyword;
   currentSelectedCustomerLabel = selectedCustomerLabel ? decodeURIComponent(selectedCustomerLabel) : '';
+  scheduleState.selectedDateKey = getSeoulTodayInfo().dateKey;
 
   document.body.classList.add('has-results');
   hideResultTabs();
@@ -3062,8 +3381,10 @@ function search(selectedCustomerLabel = '') {
   function renderResult(result) {
     if (!result || !result.ok) {
       const msg = (result && result.message) || '조회에 실패했습니다.';
+      currentOrderItems = [];
       messageEl.textContent = msg;
       resultsEl.innerHTML = `<div class="empty" style="margin:24px 20px;">${escapeHtml(msg)}</div>`;
+      renderScheduleTab();
       hideResultTabs();
       syncSearchGuide();
       return;
@@ -3083,8 +3404,10 @@ function search(selectedCustomerLabel = '') {
     const items = result.items || [];
 
     if (items.length === 0) {
+      currentOrderItems = [];
       messageEl.textContent = `"${result.searched}" 검색 결과`;
       resultsEl.innerHTML = '<div class="empty" style="margin:24px 20px;">주문 내역이 없습니다.</div>';
+      renderScheduleTab();
       showResultTabs();
       syncSearchGuide();
       return;
@@ -3095,6 +3418,7 @@ function search(selectedCustomerLabel = '') {
     const displayCustomerName = currentSelectedCustomerLabel || items[0]?.customerLabel || result.searched || '';
     messageEl.textContent = `${displayCustomerName}님의 주문이 ${items.length}건 있습니다.`;
     renderOrdersSection();
+    renderScheduleTab();
     showResultTabs();
     syncSearchGuide();
   }
@@ -3151,8 +3475,10 @@ function search(selectedCustomerLabel = '') {
   }
 
   function renderError(error) {
+    currentOrderItems = [];
     messageEl.textContent = '오류가 발생했습니다.';
     resultsEl.innerHTML = `<div class="empty">${escapeHtml(error.message || String(error))}</div>`;
+    renderScheduleTab();
     hideResultTabs();
     syncSearchGuide();
   }
@@ -3257,6 +3583,42 @@ function getImageErrorHandler(index) {
     return toDateInfo(base);
   }
 
+  const KOREAN_PUBLIC_HOLIDAYS = {
+    '2026-01-01': '신정',
+    '2026-02-16': '설날 연휴',
+    '2026-02-17': '설날',
+    '2026-02-18': '설날 연휴',
+    '2026-03-01': '삼일절',
+    '2026-03-02': '삼일절 대체공휴일',
+    '2026-05-01': '노동절',
+    '2026-05-05': '어린이날',
+    '2026-05-24': '부처님오신날',
+    '2026-05-25': '부처님오신날 대체공휴일',
+    '2026-06-03': '전국동시지방선거',
+    '2026-06-06': '현충일',
+    '2026-07-17': '제헌절',
+    '2026-08-15': '광복절',
+    '2026-08-17': '광복절 대체공휴일',
+    '2026-09-24': '추석 연휴',
+    '2026-09-25': '추석',
+    '2026-09-26': '추석 연휴',
+    '2026-10-03': '개천절',
+    '2026-10-05': '개천절 대체공휴일',
+    '2026-10-09': '한글날',
+    '2026-12-25': '성탄절'
+  };
+
+  const KOREAN_FIXED_PUBLIC_HOLIDAYS = {
+    '01-01': '신정',
+    '03-01': '삼일절',
+    '05-05': '어린이날',
+    '06-06': '현충일',
+    '08-15': '광복절',
+    '10-03': '개천절',
+    '10-09': '한글날',
+    '12-25': '성탄절'
+  };
+
   function inferYearForMonthDay(month, day) {
     const seoulToday = getSeoulTodayInfo();
     let year = seoulToday.year;
@@ -3319,6 +3681,106 @@ function normalizeOrderItems(items) {
       orderDateValue
     };
   });
+}
+
+function dateFromKey(dateKey) {
+  const match = String(dateKey || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function addDaysToDate(date, days) {
+  const next = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function getStartOfWeekDate(date) {
+  const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  start.setDate(start.getDate() - start.getDay());
+  return start;
+}
+
+function getHolidayInfo(date) {
+  const key = getDateKey(date);
+  const fixedKey = `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  const name = KOREAN_PUBLIC_HOLIDAYS[key] || KOREAN_FIXED_PUBLIC_HOLIDAYS[fixedKey] || '';
+  return name ? { key, name } : null;
+}
+
+function isKoreanHolidayDate(date) {
+  return Boolean(getHolidayInfo(date));
+}
+
+function isScheduleRedDate(date) {
+  return date.getDay() === 0 || isKoreanHolidayDate(date);
+}
+
+function isScheduleBlueDate(date) {
+  return date.getDay() === 6 && !isKoreanHolidayDate(date);
+}
+
+function formatScheduleSectionTitle(date) {
+  const weekdays = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+  return `${date.getMonth() + 1}월 ${date.getDate()}일 ${weekdays[date.getDay()]}`;
+}
+
+function getScheduleDateToneClass(date) {
+  if (isScheduleRedDate(date)) return 'is-holiday';
+  if (isScheduleBlueDate(date)) return 'is-saturday';
+  return '';
+}
+
+function groupItemsByPickupDate(items) {
+  const grouped = new Map();
+
+  normalizeOrderItems(items).forEach(item => {
+    if (!item.pickupDateKey) return;
+    if (!grouped.has(item.pickupDateKey)) grouped.set(item.pickupDateKey, []);
+    grouped.get(item.pickupDateKey).push(item);
+  });
+
+  grouped.forEach((group, dateKey) => {
+    grouped.set(dateKey, sortItemsByOrderSheetDate(group));
+  });
+
+  return grouped;
+}
+
+function getScheduleRange(itemsByDate) {
+  const today = getSeoulTodayInfo().dateObj;
+  const dates = [today];
+
+  itemsByDate.forEach((items, dateKey) => {
+    if (!items.length) return;
+    const date = dateFromKey(dateKey);
+    if (date) dates.push(date);
+  });
+
+  const times = dates.map(date => date.getTime());
+  const minDate = new Date(Math.min(...times));
+  const maxDate = new Date(Math.max(...times));
+  const start = addDaysToDate(getStartOfWeekDate(minDate), -21);
+  const end = addDaysToDate(getStartOfWeekDate(maxDate), 63);
+
+  return { start, end };
+}
+
+function getScheduleDateList(start, end) {
+  const dates = [];
+  for (let date = new Date(start); date <= end; date = addDaysToDate(date, 1)) {
+    dates.push(new Date(date));
+  }
+  return dates;
+}
+
+function getScheduleWeekStarts(start, end) {
+  const weeks = [];
+  for (let date = getStartOfWeekDate(start); date <= end; date = addDaysToDate(date, 7)) {
+    weeks.push(new Date(date));
+  }
+  return weeks;
 }
 
 function sortItemsByOrderSheetDate(items) {
@@ -3516,6 +3978,294 @@ function buildSectionsData(items) {
       if (resultPanelsSwiper) resultPanelsSwiper.update();
     });
   }
+
+function renderScheduleTab() {
+  if (!scheduleContentEl || !scheduleWeekHostEl) return;
+
+  const itemsByDate = groupItemsByPickupDate(currentOrderItems);
+  const todayInfo = getSeoulTodayInfo();
+  const selectedDateKey = scheduleState.selectedDateKey || todayInfo.dateKey;
+  const selectedDate = dateFromKey(selectedDateKey) || todayInfo.dateObj;
+  const { start, end } = getScheduleRange(itemsByDate);
+  const dates = getScheduleDateList(start, end);
+  const weekStarts = getScheduleWeekStarts(start, end);
+
+  scheduleState.selectedDateKey = getDateKey(selectedDate);
+  scheduleState.weekStartKeys = weekStarts.map(date => getDateKey(date));
+
+  scheduleWeekHostEl.innerHTML = `
+    <div class="schedule-week-card">
+      <div class="schedule-weekdays" aria-hidden="true">
+        ${renderScheduleWeekdayLabels()}
+      </div>
+      <div class="swiper schedule-week-swiper" id="scheduleWeekSwiper">
+        <div class="swiper-wrapper">
+          ${weekStarts.map(weekStart => renderScheduleWeekSlide(weekStart, itemsByDate)).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+
+  scheduleContentEl.innerHTML = `
+    <div class="schedule-list" id="scheduleList">
+      ${dates.map(date => renderScheduleDateSection(date, itemsByDate.get(getDateKey(date)) || [])).join('')}
+    </div>
+  `;
+
+  initScheduleWeekSwiper();
+  bindScheduleDateButtons();
+  updateScheduleSelection(scheduleState.selectedDateKey, { slide: true });
+
+  requestAnimationFrame(() => {
+    updateResultTabsHeightVar();
+    if (resultPanelsSwiper) {
+      resultPanelsSwiper.update();
+      resultPanelsSwiper.updateAutoHeight?.(0);
+    }
+  });
+}
+
+function renderScheduleWeekdayLabels() {
+  return ['일', '월', '화', '수', '목', '금', '토'].map((label, index) => {
+    const toneClass = index === 0 ? ' is-sunday' : index === 6 ? ' is-saturday' : '';
+    return `<div class="schedule-weekday${toneClass}">${label}</div>`;
+  }).join('');
+}
+
+function renderScheduleWeekSlide(weekStart, itemsByDate) {
+  const days = Array.from({ length: 7 }, (_, index) => addDaysToDate(weekStart, index));
+
+  return `
+    <div class="swiper-slide">
+      <div class="schedule-week-grid">
+        ${days.map(date => renderScheduleDayButton(date, itemsByDate.get(getDateKey(date)) || [])).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderScheduleDayButton(date, items) {
+  const dateKey = getDateKey(date);
+  const holiday = getHolidayInfo(date);
+  const classes = [
+    'schedule-day-btn',
+    date.getDay() === 0 ? 'is-sunday' : '',
+    date.getDay() === 6 ? 'is-saturday' : '',
+    holiday ? 'is-holiday' : '',
+    items.length ? 'has-pickups' : ''
+  ].filter(Boolean).join(' ');
+
+  return `
+    <button
+      class="${classes}"
+      type="button"
+      data-schedule-date="${dateKey}"
+      aria-label="${escapeHtml(formatScheduleSectionTitle(date))}${holiday ? ` ${escapeHtml(holiday.name)}` : ''}"
+    >
+      <span class="schedule-day-circle">${date.getDate()}</span>
+      <span class="schedule-day-meta">
+        <span class="schedule-day-dot" aria-hidden="true"></span>
+        <span>${items.length ? `${items.length}개` : ''}</span>
+      </span>
+    </button>
+  `;
+}
+
+function renderScheduleDateSection(date, items) {
+  const dateKey = getDateKey(date);
+  const holiday = getHolidayInfo(date);
+  const toneClass = getScheduleDateToneClass(date);
+  const countText = items.length ? `${items.length}개 픽업` : '픽업 없음';
+
+  return `
+    <section class="schedule-date-section" id="schedule-date-${dateKey}" data-schedule-section="${dateKey}">
+      <div class="schedule-date-head">
+        <div>
+          <h3 class="schedule-date-title ${toneClass}">${escapeHtml(formatScheduleSectionTitle(date))}</h3>
+          ${holiday ? `<div class="schedule-date-sub">${escapeHtml(holiday.name)}</div>` : ''}
+        </div>
+        <div class="schedule-date-count">${escapeHtml(countText)}</div>
+      </div>
+      ${items.length ? renderScheduleProductGrid(items) : renderScheduleEmptyDay()}
+    </section>
+  `;
+}
+
+function renderScheduleProductGrid(items) {
+  const placeholderCount = (3 - (items.length % 3)) % 3;
+  const placeholders = Array.from({ length: placeholderCount }, () => '<div class="schedule-grid-placeholder" aria-hidden="true"></div>').join('');
+
+  return `
+    <div class="schedule-product-grid">
+      ${items.map((item, index) => renderScheduleProductCard(item, index)).join('')}
+      ${placeholders}
+    </div>
+  `;
+}
+
+function renderScheduleProductCard(item, index) {
+  return `
+    <article class="schedule-product-card">
+      <div class="schedule-product-thumb-wrap">
+        <img
+          class="schedule-product-thumb"
+          src="${escapeHtml(getImageUrl(item, index))}"
+          alt="${escapeHtml(item.productName || '상품 이미지')}"
+          loading="lazy"
+          decoding="async"
+          onerror="${getImageErrorHandler(index)}"
+        >
+        <div class="schedule-product-badge">픽업</div>
+      </div>
+      <div class="schedule-product-info">
+        <div class="schedule-product-name">${escapeHtml(item.productName || '')}</div>
+        <div class="schedule-product-bottom">
+          <div class="schedule-product-qty">주문수 ${escapeHtml(item.quantity ?? 0)}</div>
+          <div class="schedule-product-price">${escapeHtml(Number(item.price || 0).toLocaleString('ko-KR'))}원</div>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+function renderScheduleEmptyDay() {
+  return '<div class="schedule-empty-day">픽업 예정 상품이 없습니다.</div>';
+}
+
+function initScheduleWeekSwiper() {
+  const el = document.getElementById('scheduleWeekSwiper');
+  if (!el || typeof Swiper !== 'function') return;
+
+  destroyScheduleWeekSwiper();
+
+  const activeIndex = getScheduleWeekIndex(scheduleState.selectedDateKey);
+
+  scheduleWeekSwiper = new Swiper(el, {
+    slidesPerView: 1,
+    speed: 280,
+    resistanceRatio: 0.7,
+    threshold: 8,
+    nested: true,
+    on: {
+      slideChange(swiper) {
+        if (scheduleSuppressWeekSlide) return;
+        const weekStartKey = scheduleState.weekStartKeys[swiper.activeIndex];
+        const weekStart = dateFromKey(weekStartKey);
+        const current = dateFromKey(scheduleState.selectedDateKey) || getSeoulTodayInfo().dateObj;
+        if (!weekStart) return;
+        const targetDate = addDaysToDate(weekStart, current.getDay());
+        selectScheduleDate(getDateKey(targetDate), { scroll: true, slide: false });
+      }
+    }
+  });
+
+  if (activeIndex >= 0) {
+    scheduleWeekSwiper.slideTo(activeIndex, 0);
+  }
+}
+
+function destroyScheduleWeekSwiper() {
+  if (scheduleWeekSwiper && typeof scheduleWeekSwiper.destroy === 'function') {
+    scheduleWeekSwiper.destroy(true, true);
+  }
+  scheduleWeekSwiper = null;
+}
+
+function bindScheduleDateButtons() {
+  scheduleWeekHostEl?.querySelectorAll('[data-schedule-date]').forEach(button => {
+    button.addEventListener('click', () => {
+      const dateKey = button.dataset.scheduleDate;
+      if (dateKey) selectScheduleDate(dateKey, { scroll: true, slide: true });
+    });
+  });
+}
+
+function getScheduleWeekIndex(dateKey) {
+  const date = dateFromKey(dateKey);
+  if (!date) return -1;
+  const weekKey = getDateKey(getStartOfWeekDate(date));
+  return scheduleState.weekStartKeys.indexOf(weekKey);
+}
+
+function selectScheduleDate(dateKey, options = {}) {
+  const shouldScroll = options.scroll !== false;
+  const shouldSlide = options.slide !== false;
+  scheduleState.selectedDateKey = dateKey;
+  updateScheduleSelection(dateKey, { slide: shouldSlide });
+
+  if (!shouldScroll) return;
+
+  const section = document.querySelector(`[data-schedule-section="${dateKey}"]`);
+  if (!section) return;
+
+  scheduleSuppressScrollSync = true;
+  const sticky = scheduleWeekHostEl;
+  const topOffset = (resultTabsWrap?.getBoundingClientRect().height || 0) + (sticky?.offsetHeight || 0) + 10;
+  const targetTop = section.getBoundingClientRect().top + (window.scrollY || window.pageYOffset || 0) - topOffset;
+  window.scrollTo({
+    top: Math.max(0, targetTop),
+    behavior: 'smooth'
+  });
+  window.setTimeout(() => {
+    scheduleSuppressScrollSync = false;
+    requestScheduleScrollSync();
+  }, 520);
+}
+
+function updateScheduleSelection(dateKey, options = {}) {
+  scheduleState.selectedDateKey = dateKey;
+
+  scheduleWeekHostEl?.querySelectorAll('[data-schedule-date]').forEach(button => {
+    button.classList.toggle('is-selected', button.dataset.scheduleDate === dateKey);
+  });
+
+  if (options.slide === false || !scheduleWeekSwiper) return;
+
+  const activeIndex = getScheduleWeekIndex(dateKey);
+  if (activeIndex < 0 || activeIndex === scheduleWeekSwiper.activeIndex) return;
+
+  scheduleSuppressWeekSlide = true;
+  scheduleWeekSwiper.slideTo(activeIndex, 240);
+  window.setTimeout(() => {
+    scheduleSuppressWeekSlide = false;
+  }, 260);
+}
+
+function requestScheduleScrollSync() {
+  if (scheduleScrollFrame) return;
+  scheduleScrollFrame = requestAnimationFrame(() => {
+    scheduleScrollFrame = null;
+    syncScheduleFromScroll();
+  });
+}
+
+function syncScheduleFromScroll() {
+  if (activeResultTab !== 'schedule' || scheduleSuppressScrollSync || !scheduleContentEl) return;
+  const sections = [...scheduleContentEl.querySelectorAll('[data-schedule-section]')];
+  if (!sections.length) return;
+
+  const sticky = scheduleWeekHostEl;
+  const tabBottom = resultTabsWrap?.getBoundingClientRect().bottom || 0;
+  const stickyHeight = sticky?.offsetHeight || 0;
+  const readLine = tabBottom + stickyHeight + 14;
+
+  let activeSection = null;
+  for (const section of sections) {
+    const rect = section.getBoundingClientRect();
+    if (rect.top <= readLine) {
+      activeSection = section;
+    } else {
+      break;
+    }
+  }
+
+  if (!activeSection) return;
+
+  const nextDateKey = activeSection.dataset.scheduleSection;
+  if (nextDateKey && nextDateKey !== scheduleState.selectedDateKey) {
+    updateScheduleSelection(nextDateKey, { slide: true });
+  }
+}
 
 
   function renderSupportHelpCard() {
@@ -4214,12 +4964,18 @@ function handleOrderImageClick(event) {
 
   window.addEventListener('resize', () => {
     requestAnimationFrame(updateOrderNameMarquees);
+    updateResultTabsHeightVar();
     syncResultPanelsHeight();
     if (resultPanelsSwiper) resultPanelsSwiper.update();
+    if (scheduleWeekSwiper) scheduleWeekSwiper.update();
     requestResultTabsStickyUpdate();
+    requestScheduleScrollSync();
   });
 
-  window.addEventListener('scroll', requestResultTabsStickyUpdate, { passive: true });
+  window.addEventListener('scroll', () => {
+    requestResultTabsStickyUpdate();
+    requestScheduleScrollSync();
+  }, { passive: true });
 
   resultsEl.addEventListener('touchstart', handleOrderImagePinchStart, { passive: false });
   document.addEventListener('touchmove', handleOrderImagePinchMove, { passive: false });
@@ -4249,10 +5005,13 @@ function resetToHome() {
   hideResultTopbar();
 
   destroyAllSwipers();
+  destroyScheduleWeekSwiper();
 
   currentOrderItems = [];
   currentSearchKeyword = '';
   currentSelectedCustomerLabel = '';
+  scheduleState.selectedDateKey = '';
+  scheduleState.weekStartKeys = [];
   sectionViewState = {
     [SECTION_KEYS.MY_ORDERS]: false,
     [SECTION_KEYS.TODAY_PICKUP]: false,
@@ -4264,6 +5023,12 @@ function resetToHome() {
   if (rhKeyword) rhKeyword.value = '';
   messageEl.textContent = '';
   resultsEl.innerHTML = '';
+  if (scheduleWeekHostEl) {
+    scheduleWeekHostEl.classList.remove('is-visible');
+    scheduleWeekHostEl.setAttribute('aria-hidden', 'true');
+    scheduleWeekHostEl.innerHTML = '';
+  }
+  if (scheduleContentEl) scheduleContentEl.innerHTML = '';
   document.body.classList.remove('has-results');
   hideResultTabs();
   updateSearchState();
@@ -4533,6 +5298,7 @@ function showResultTabs() {
   resultTabsWrap.setAttribute('aria-hidden', 'false');
   initResultTabsSwiper();
   initResultTabsObserver();
+  updateResultTabsHeightVar();
   syncResultPanelsHeight();
   if (resultPanelsSwiper) resultPanelsSwiper.update();
   setActiveTab('orders', { slide: false });
@@ -4545,6 +5311,8 @@ function hideResultTabs() {
   resultTabsWrap.classList.remove('is-stuck', 'is-dragging');
   resultTabsWrap.setAttribute('aria-hidden', 'true');
   resultTabsWrap.style.setProperty('--sticky-progress', '0');
+  scheduleWeekHostEl?.classList.remove('is-visible');
+  scheduleWeekHostEl?.setAttribute('aria-hidden', 'true');
   resultTabsPinned = false;
   activeResultTab = 'orders';
   updateResultTabsVisualState();
@@ -4561,12 +5329,19 @@ function requestResultTabsStickyUpdate() {
 
 function updateResultTabsStickyState() {
   if (!resultTabsWrap || !resultTabsWrap.classList.contains('is-visible')) return;
+  updateResultTabsHeightVar();
   const rect = resultTabsWrap.getBoundingClientRect();
   const start = 98;
   const end = 0;
   const progress = clamp((start - rect.top) / Math.max(start - end, 1), 0, 1);
   resultTabsWrap.style.setProperty('--sticky-progress', progress.toFixed(3));
   resultTabsWrap.classList.toggle('is-stuck', resultTabsPinned || progress > 0.72);
+}
+
+function updateResultTabsHeightVar() {
+  if (!resultTabsWrap) return;
+  const height = Math.max(0, Math.round(resultTabsWrap.getBoundingClientRect().height));
+  document.documentElement.style.setProperty('--result-tabs-current-height', `${height}px`);
 }
 
 function setActiveTab(tabName, options = {}) {
@@ -4582,6 +5357,8 @@ function setActiveTab(tabName, options = {}) {
   }
 
   if (normalizedTab === 'orders') {
+    scheduleWeekHostEl?.classList.remove('is-visible');
+    scheduleWeekHostEl?.setAttribute('aria-hidden', 'true');
     ordersTab.classList.add('is-active');
     ordersTab.setAttribute('aria-selected', 'true');
     scheduleTab.classList.remove('is-active');
@@ -4589,19 +5366,36 @@ function setActiveTab(tabName, options = {}) {
     if (ordersPanel) ordersPanel.classList.remove('tab-hidden');
     if (schedulePanelEl) schedulePanelEl.classList.remove('is-active');
   } else {
+    const selectedScheduleDateKey = scheduleState.selectedDateKey || getSeoulTodayInfo().dateKey;
+    renderScheduleTab();
+    scheduleWeekHostEl?.classList.add('is-visible');
+    scheduleWeekHostEl?.setAttribute('aria-hidden', 'false');
     scheduleTab.classList.add('is-active');
     scheduleTab.setAttribute('aria-selected', 'true');
     ordersTab.classList.remove('is-active');
     ordersTab.setAttribute('aria-selected', 'false');
     if (ordersPanel) ordersPanel.classList.add('tab-hidden');
     if (schedulePanelEl) schedulePanelEl.classList.add('is-active');
+    window.setTimeout(() => {
+      if (resultPanelsSwiper) {
+        resultPanelsSwiper.update();
+        resultPanelsSwiper.updateAutoHeight?.(0);
+      }
+      selectScheduleDate(selectedScheduleDateKey, { scroll: true, slide: true });
+    }, 380);
   }
 
   if (resultPanelsSwiper && shouldSlide && resultPanelsSwiper.activeIndex !== nextIndex) {
     resultPanelsSwiper.slideTo(nextIndex);
   }
 
+  if (resultPanelsSwiper) {
+    resultPanelsSwiper.update();
+    resultPanelsSwiper.updateAutoHeight?.(240);
+  }
+
   requestResultTabsStickyUpdate();
+  requestScheduleScrollSync();
 }
 
 function initResultTabsSwiper() {
@@ -4611,6 +5405,7 @@ function initResultTabsSwiper() {
     slidesPerView: 1,
     speed: 340,
     effect: 'creative',
+    autoHeight: true,
     grabCursor: true,
     watchSlidesProgress: true,
     observer: true,
@@ -4649,6 +5444,7 @@ function initResultTabsSwiper() {
       transitionEnd(swiper) {
         resultTabsWrap?.classList.remove('is-dragging');
         updateResultTabProgress(swiper.activeIndex);
+        swiper.updateAutoHeight?.(0);
       }
     }
   });
