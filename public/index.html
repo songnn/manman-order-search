@@ -1889,7 +1889,7 @@
 .support-help-wrap {
   padding: 0 10px;
   margin-top: 34px;
-  margin-bottom: 124px;
+  margin-bottom: 16px;
   perspective: 1100px;
 }
 
@@ -2141,7 +2141,7 @@
   .support-help-wrap {
     padding: 0 20px;
     margin-top: 44px;
-    margin-bottom: 132px;
+    margin-bottom: 24px;
     perspective: 1200px;
   }
 
@@ -2220,7 +2220,7 @@
   .support-help-wrap {
     padding: 0 24px;
     margin-top: 56px;
-    margin-bottom: 132px;
+    margin-bottom: 32px;
     perspective: 1400px;
   }
 
@@ -2565,7 +2565,7 @@ body.has-results {
 }
 
 body.has-results .page {
-  padding-bottom: 156px;
+  padding-bottom: 72px;
   background: #f8f9fa;
 }
 
@@ -2642,6 +2642,7 @@ body.schedule-modal-open .page > :not(.schedule-modal) {
   z-index: 4;
   margin-top: 0;
   background: #fff;
+  touch-action: pan-x;
 }
 
 .schedule-week-host.is-sticky-ready {
@@ -2692,7 +2693,7 @@ body.schedule-modal-open .page > :not(.schedule-modal) {
 .schedule-week-swiper {
   width: 100%;
   overflow: hidden;
-  padding: 18px 14px 18px;
+  padding: 26px 14px 18px;
 }
 
 .schedule-week-swiper .swiper-wrapper {
@@ -3336,7 +3337,7 @@ body.schedule-modal-open .schedule-fab {
   box-shadow: 0 -18px 44px rgba(0, 0, 0, 0.22);
   overflow: hidden;
   transform: translate3d(0, 105%, 0);
-  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 340ms cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
 }
 
@@ -3356,10 +3357,12 @@ body.schedule-modal-open .schedule-fab {
 
 .schedule-modal.is-closing .schedule-modal-dim {
   opacity: 0;
+  transition-duration: 380ms;
 }
 
 .schedule-modal.is-closing .schedule-modal-sheet {
   transform: translate3d(0, 105%, 0);
+  transition: transform 520ms cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .schedule-modal-drag-zone {
@@ -3419,7 +3422,8 @@ body.schedule-modal-open .schedule-fab {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  overscroll-behavior: contain;
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
   -webkit-overflow-scrolling: touch;
   background: #f9fafb;
   padding-bottom: max(24px, env(safe-area-inset-bottom, 0px) + 24px);
@@ -3710,6 +3714,7 @@ body.schedule-modal-open .schedule-fab {
   let scheduleModalCloseTimer = null;
   let scheduleModalScrollY = 0;
   let scheduleModalDragState = null;
+  let scheduleModalTouchStartY = 0;
   let scheduleFabFrame = null;
 
   const ENABLE_RESULT_TABS_STICKY = false;
@@ -4957,15 +4962,16 @@ function closeScheduleModal(options = {}) {
   scheduleModalCloseTimer = window.setTimeout(() => {
     scheduleModalCloseTimer = null;
     finishClose();
-  }, 330);
+  }, 540);
 }
 
 function isScheduleModalDragTarget(target) {
   if (!target) return false;
-  if (target.closest('button, a, input, textarea, select')) return false;
-  if (target.closest('#scheduleModalDragZone')) return true;
+  if (target.closest?.('#scheduleModalDragZone')) return true;
+  if (target.closest?.('#scheduleWeekHost')) return true;
+  if (target.closest?.('button, a, input, textarea, select')) return false;
   if (!scheduleModalBodyEl?.contains(target)) return true;
-  return scheduleModalBodyEl.scrollTop <= 0;
+  return false;
 }
 
 function beginScheduleModalDrag(event) {
@@ -5014,12 +5020,16 @@ function endScheduleModalDrag(event) {
 
   const deltaY = Math.max(0, event.clientY - scheduleModalDragState.startY);
   const shouldClose =
-    deltaY > scheduleModalDragState.height * 0.22 ||
-    scheduleModalDragState.velocity > 0.55;
+    deltaY > scheduleModalDragState.height * 0.32 ||
+    scheduleModalDragState.velocity > 0.9;
 
   scheduleModalSheetEl.releasePointerCapture?.(event.pointerId);
-  scheduleModalSheetEl.style.transition = 'transform 300ms cubic-bezier(0.22, 1, 0.36, 1)';
-  if (scheduleModalDimEl) scheduleModalDimEl.style.transition = 'opacity 240ms ease';
+  scheduleModalSheetEl.style.transition = shouldClose
+    ? 'transform 520ms cubic-bezier(0.32, 0.72, 0, 1)'
+    : 'transform 360ms cubic-bezier(0.22, 1, 0.36, 1)';
+  if (scheduleModalDimEl) {
+    scheduleModalDimEl.style.transition = shouldClose ? 'opacity 380ms ease' : 'opacity 260ms ease';
+  }
   scheduleModalDragState = null;
 
   if (shouldClose) {
@@ -5036,7 +5046,7 @@ function endScheduleModalDrag(event) {
 
   window.setTimeout(() => {
     if (!scheduleModalDragState) resetScheduleModalInlineMotion();
-  }, 310);
+  }, shouldClose ? 540 : 380);
 }
 
 function renderScheduleWeekdayLabel(date) {
@@ -5105,7 +5115,7 @@ function renderScheduleDateSection(date, items) {
           <div class="schedule-pickup-badge ${badgeClass}">${escapeHtml(badgeText)}</div>
         </div>
         <div class="schedule-date-right">
-          ${hasPickup ? renderScheduleProductGrid(items) : renderScheduleEmptyDay()}
+          ${hasPickup ? renderScheduleProductGrid(items) : renderScheduleEmptyDay(date)}
         </div>
       </div>
     </section>
@@ -5152,11 +5162,14 @@ function renderScheduleProductCard(item, index) {
   `;
 }
 
-function renderScheduleEmptyDay() {
+function renderScheduleEmptyDay(date) {
+  const isUnmannedStoreDay = date && (date.getDay() === 0 || date.getDay() === 6);
+  const label = isUnmannedStoreDay ? '무인매장' : '픽업 없는 날';
+
   return `
     <div class="schedule-empty-day">
       <div class="schedule-empty-line"></div>
-      <span class="schedule-empty-label">픽업 없는 날</span>
+      <span class="schedule-empty-label">${escapeHtml(label)}</span>
       <div class="schedule-empty-line"></div>
     </div>
   `;
@@ -6187,15 +6200,31 @@ function handleOrderImageClick(event) {
   scheduleModalSheetEl?.addEventListener('pointermove', moveScheduleModalDrag);
   scheduleModalSheetEl?.addEventListener('pointerup', endScheduleModalDrag);
   scheduleModalSheetEl?.addEventListener('pointercancel', endScheduleModalDrag);
+  scheduleModalBodyEl?.addEventListener('touchstart', event => {
+    if (!isScheduleModalActive() || !event.touches || event.touches.length !== 1) return;
+    scheduleModalTouchStartY = event.touches[0].clientY;
+  }, { passive: true });
   scheduleModalBodyEl?.addEventListener('scroll', () => {
     if (activeResultTab === 'schedule') requestScheduleScrollSync();
   }, { passive: true });
   document.addEventListener('touchmove', event => {
-    if (!isScheduleModalActive()) return;
-    if (scheduleModalBodyEl?.contains(event.target)) return;
-    event.preventDefault();
-  }, { passive: false });
+    if (!isScheduleModalActive() || !event.touches || event.touches.length !== 1) return;
+    if (!scheduleModalBodyEl?.contains(event.target)) {
+      event.preventDefault();
+      return;
+    }
 
+    if (event.target.closest?.('#scheduleWeekHost') || event.target.closest?.('#scheduleModalDragZone')) return;
+
+    const currentY = event.touches[0].clientY;
+    const deltaY = currentY - scheduleModalTouchStartY;
+    const atTop = scheduleModalBodyEl.scrollTop <= 0;
+    const atBottom = scheduleModalBodyEl.scrollTop + scheduleModalBodyEl.clientHeight >= scheduleModalBodyEl.scrollHeight - 1;
+
+    if ((atTop && deltaY > 0) || (atBottom && deltaY < 0)) {
+      event.preventDefault();
+    }
+  }, { passive: false });
     searchBtn.addEventListener('click', () => search());
 
     prettyAlertConfirmEl.addEventListener('click', hidePrettyAlert);
