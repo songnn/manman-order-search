@@ -2558,19 +2558,30 @@ body.has-results .results-wrap {
   box-shadow: 0 10px 22px rgba(15, 23, 42, 0.10);
 }
 
+.schedule-week-placeholder {
+  display: none;
+  height: 0;
+}
+
+.schedule-week-placeholder.is-active {
+  display: block;
+  height: var(--schedule-week-current-height, 0px);
+}
+
 .schedule-week-host.is-visible {
   display: block;
 }
 
 .schedule-week-host.is-sticky-ready {
-  position: sticky;
-  top: var(--result-tabs-current-height, 66px);
+  position: relative;
 }
 
 .schedule-week-host.is-sticky-ready.is-fixed {
   position: fixed;
+  top: 0;
   left: 0;
   right: 0;
+  z-index: 260;
 }
 
 .schedule-week-card {
@@ -2694,6 +2705,22 @@ body.has-results .results-wrap {
 
 .schedule-day-btn.has-pickups .schedule-day-dot {
   display: block;
+  animation: schedulePickupDotBlink 1.75s ease-in-out infinite;
+  box-shadow: 0 0 0 0 rgba(10, 88, 181, 0.28);
+}
+
+@keyframes schedulePickupDotBlink {
+  0%, 100% {
+    opacity: 0.62;
+    transform: scale(0.86);
+    box-shadow: 0 0 0 0 rgba(10, 88, 181, 0.20);
+  }
+
+  45% {
+    opacity: 1;
+    transform: scale(1.12);
+    box-shadow: 0 0 0 5px rgba(10, 88, 181, 0);
+  }
 }
 
 .schedule-day-btn.is-disabled,
@@ -2745,23 +2772,23 @@ body.has-results .results-wrap {
 }
 
 .schedule-date-row {
-  display: flex;
-  align-items: stretch;
-  gap: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: start;
+  column-gap: 8px;
   padding: 14px 16px 14px 14px;
   min-height: 80px;
 }
 
 /* 좌측: 날짜 + 픽업 배지 */
 .schedule-date-left {
-  flex-shrink: 0;
-  width: 72px;
+  min-width: 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
   padding-top: 2px;
-  padding-right: 8px;
   gap: 8px;
 }
 
@@ -2821,7 +2848,7 @@ body.has-results .results-wrap {
 
 /* 우측: 상품 그리드 */
 .schedule-date-right {
-  flex: 1;
+  grid-column: span 3;
   min-width: 0;
 }
 
@@ -2911,15 +2938,18 @@ body.has-results .results-wrap {
 
 @media (min-width: 641px) {
   .schedule-date-row {
+    column-gap: 12px;
     padding: 16px 24px 16px 20px;
-  }
-
-  .schedule-date-left {
-    width: 88px;
   }
 
   .schedule-product-grid {
     gap: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .schedule-day-btn.has-pickups .schedule-day-dot {
+    animation: none;
   }
 }
 
@@ -3259,6 +3289,7 @@ body.has-results .result-panels {
       </div>
 
       <div class="schedule-week-host" id="scheduleWeekHost" aria-hidden="true"></div>
+      <div class="schedule-week-placeholder" id="scheduleWeekPlaceholder" aria-hidden="true"></div>
 
       <div class="swiper result-panels" id="resultPanels">
         <div class="swiper-wrapper result-panels-track" id="resultPanelsTrack">
@@ -3287,10 +3318,11 @@ body.has-results .result-panels {
   let scheduleScrollFrame = null;
   let scheduleSuppressScrollSync = false;
   let scheduleSuppressWeekSlide = false;
+  let scheduleWeekStickyFrame = null;
   let isRestoringResultTabScroll = false;
 
   const ENABLE_RESULT_TABS_STICKY = false;
-  const ENABLE_SCHEDULE_WEEK_STICKY = false;
+  const ENABLE_SCHEDULE_WEEK_STICKY = true;
   const SCHEDULE_CENTER_OFFSET_DAYS = 3;
   const SCHEDULE_VISIBLE_DAYS_AFTER_PICKUP = 7;
 
@@ -3334,6 +3366,7 @@ const prettyAlertConfirmEl = document.getElementById('prettyAlertConfirm');
 const homeLogoBtn = document.getElementById('homeLogoBtn');
 const searchGuideEl = document.getElementById('searchGuide');
 const scheduleWeekHostEl = document.getElementById('scheduleWeekHost');
+const scheduleWeekPlaceholderEl = document.getElementById('scheduleWeekPlaceholder');
 const scheduleContentEl = document.getElementById('scheduleContent');
 
   const DUMMY_IMAGES = [
@@ -4135,9 +4168,11 @@ function renderScheduleTab() {
   initScheduleWeekSwiper();
   bindScheduleDateButtons();
   updateScheduleSelection(scheduleState.selectedDateKey, { slide: true });
+  resetScheduleWeekStickyState();
 
   requestAnimationFrame(() => {
     updateResultTabsHeightVar();
+    requestScheduleWeekStickyUpdate();
     if (resultPanelsSwiper) {
       resultPanelsSwiper.update();
       resultPanelsSwiper.updateAutoHeight?.(0);
@@ -4312,6 +4347,54 @@ function destroyScheduleWeekSwiper() {
   scheduleWeekSwiper = null;
 }
 
+function resetScheduleWeekStickyState() {
+  scheduleWeekHostEl?.classList.remove('is-fixed');
+  scheduleWeekHostEl?.removeAttribute('data-sticky-anchor-top');
+  scheduleWeekPlaceholderEl?.classList.remove('is-active');
+  if (scheduleWeekPlaceholderEl) scheduleWeekPlaceholderEl.style.height = '0px';
+  document.documentElement.style.setProperty('--schedule-week-current-height', '0px');
+}
+
+function requestScheduleWeekStickyUpdate() {
+  if (scheduleWeekStickyFrame) return;
+  scheduleWeekStickyFrame = requestAnimationFrame(() => {
+    scheduleWeekStickyFrame = null;
+    updateScheduleWeekStickyState();
+  });
+}
+
+function updateScheduleWeekStickyState() {
+  if (!scheduleWeekHostEl || !scheduleWeekPlaceholderEl) return;
+
+  const shouldManage =
+    ENABLE_SCHEDULE_WEEK_STICKY &&
+    activeResultTab === 'schedule' &&
+    scheduleWeekHostEl.classList.contains('is-visible');
+
+  if (!shouldManage) {
+    resetScheduleWeekStickyState();
+    return;
+  }
+
+  const height = Math.max(0, Math.round(scheduleWeekHostEl.getBoundingClientRect().height || scheduleWeekHostEl.offsetHeight || 0));
+  document.documentElement.style.setProperty('--schedule-week-current-height', `${height}px`);
+
+  const scrollY = window.scrollY || window.pageYOffset || 0;
+  const isFixed = scheduleWeekHostEl.classList.contains('is-fixed');
+
+  if (!isFixed) {
+    const anchorTop = Math.round(scheduleWeekHostEl.getBoundingClientRect().top + scrollY);
+    scheduleWeekHostEl.dataset.stickyAnchorTop = String(anchorTop);
+  }
+
+  const stickyAnchorTop = Number(scheduleWeekHostEl.dataset.stickyAnchorTop || 0);
+  const shouldFix = scrollY > stickyAnchorTop;
+
+  scheduleWeekHostEl.classList.toggle('is-fixed', shouldFix);
+  scheduleWeekPlaceholderEl.classList.toggle('is-active', shouldFix);
+  scheduleWeekPlaceholderEl.style.height = shouldFix ? `${height}px` : '0px';
+}
+
 function bindScheduleDateButtons() {
   scheduleWeekHostEl?.querySelectorAll('[data-schedule-date]').forEach(button => {
     button.addEventListener('click', () => {
@@ -4404,8 +4487,11 @@ function syncScheduleFromScroll() {
 
   const sticky = scheduleWeekHostEl;
   const tabBottom = resultTabsWrap?.getBoundingClientRect().bottom || 0;
+  const stickyRect = sticky?.getBoundingClientRect();
   const stickyHeight = sticky?.offsetHeight || 0;
-  const readLine = tabBottom + stickyHeight + 14;
+  const readLine = sticky?.classList.contains('is-fixed')
+    ? (stickyRect?.bottom || stickyHeight) + 14
+    : tabBottom + stickyHeight + 14;
 
   let activeSection = null;
   for (const section of sections) {
@@ -5127,11 +5213,13 @@ function handleOrderImageClick(event) {
     if (resultPanelsSwiper) resultPanelsSwiper.update();
     if (scheduleWeekSwiper) scheduleWeekSwiper.update();
     requestResultTabsStickyUpdate();
+    requestScheduleWeekStickyUpdate();
     requestScheduleScrollSync();
   });
 
   window.addEventListener('scroll', () => {
     requestResultTabsStickyUpdate();
+    requestScheduleWeekStickyUpdate();
     requestScheduleScrollSync();
   }, { passive: true });
 
@@ -5189,6 +5277,7 @@ function resetToHome() {
     scheduleWeekHostEl.setAttribute('aria-hidden', 'true');
     scheduleWeekHostEl.innerHTML = '';
   }
+  resetScheduleWeekStickyState();
   if (scheduleContentEl) scheduleContentEl.innerHTML = '';
   document.body.classList.remove('has-results');
   hideResultTabs();
@@ -5474,6 +5563,7 @@ function hideResultTabs() {
   resultTabsWrap.style.setProperty('--sticky-progress', '0');
   scheduleWeekHostEl?.classList.remove('is-visible', 'is-sticky-ready', 'is-fixed');
   scheduleWeekHostEl?.setAttribute('aria-hidden', 'true');
+  resetScheduleWeekStickyState();
   resultTabsPinned = false;
   activeResultTab = 'orders';
   updateResultTabsVisualState();
@@ -5570,6 +5660,7 @@ function setActiveTab(tabName, options = {}) {
   if (normalizedTab === 'orders') {
     scheduleWeekHostEl?.classList.remove('is-visible', 'is-sticky-ready', 'is-fixed');
     scheduleWeekHostEl?.setAttribute('aria-hidden', 'true');
+    resetScheduleWeekStickyState();
     ordersTab.classList.add('is-active');
     ordersTab.setAttribute('aria-selected', 'true');
     scheduleTab.classList.remove('is-active');
@@ -5581,6 +5672,7 @@ function setActiveTab(tabName, options = {}) {
     scheduleWeekHostEl?.classList.add('is-visible');
     scheduleWeekHostEl?.setAttribute('aria-hidden', 'false');
     scheduleWeekHostEl?.classList.toggle('is-sticky-ready', ENABLE_SCHEDULE_WEEK_STICKY);
+    requestScheduleWeekStickyUpdate();
     scheduleTab.classList.add('is-active');
     scheduleTab.setAttribute('aria-selected', 'true');
     ordersTab.classList.remove('is-active');
