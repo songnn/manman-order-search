@@ -2575,7 +2575,7 @@ body.has-results .results-wrap {
 .schedule-weekdays {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  padding: 10px 14px 2px;
+  padding: 10px 14px 0;
 }
 
 .schedule-weekday {
@@ -2678,8 +2678,8 @@ body.has-results .results-wrap {
 }
 
 .schedule-day-dot {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   border-radius: 999px;
   background: #0a58b5;
   display: none;
@@ -2687,6 +2687,23 @@ body.has-results .results-wrap {
 
 .schedule-day-btn.has-pickups .schedule-day-dot {
   display: block;
+}
+
+/* 오늘: 피그마 기준 검정 동그라미 (선택 상태와 동일하되 is-selected가 없어도 표시) */
+.schedule-day-btn.is-today:not(.is-selected) .schedule-day-circle {
+  background: #111;
+  color: #fff;
+}
+
+.schedule-day-btn.is-today.is-sunday:not(.is-selected) .schedule-day-circle,
+.schedule-day-btn.is-today.is-holiday:not(.is-selected) .schedule-day-circle {
+  background: #e54848;
+  color: #fff;
+}
+
+.schedule-day-btn.is-today.is-saturday:not(.is-selected) .schedule-day-circle {
+  background: #0a58b5;
+  color: #fff;
 }
 
 .schedule-list {
@@ -4058,12 +4075,15 @@ function renderScheduleWeekSlide(weekStart, itemsByDate) {
 function renderScheduleDayButton(date, items) {
   const dateKey = getDateKey(date);
   const holiday = getHolidayInfo(date);
+  const todayKey = getSeoulTodayInfo().dateKey;
+  const isToday = dateKey === todayKey;
   const classes = [
     'schedule-day-btn',
     date.getDay() === 0 ? 'is-sunday' : '',
     date.getDay() === 6 ? 'is-saturday' : '',
     holiday ? 'is-holiday' : '',
-    items.length ? 'has-pickups' : ''
+    items.length ? 'has-pickups' : '',
+    isToday ? 'is-today' : ''
   ].filter(Boolean).join(' ');
 
   return `
@@ -4076,7 +4096,6 @@ function renderScheduleDayButton(date, items) {
       <span class="schedule-day-circle">${date.getDate()}</span>
       <span class="schedule-day-meta">
         <span class="schedule-day-dot" aria-hidden="true"></span>
-        <span>${items.length ? `${items.length}개` : ''}</span>
       </span>
     </button>
   `;
