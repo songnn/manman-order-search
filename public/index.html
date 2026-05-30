@@ -2597,13 +2597,14 @@ body.has-results .results-wrap {
 .schedule-week-swiper {
   width: 100%;
   overflow: hidden;
-  padding: 0 14px 10px;
+  /* 레이블 행 포함 전체 카드를 swiper가 덮어 전체 스윕 가능 */
 }
 
 .schedule-week-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  min-height: 64px;
+  min-height: 60px;
+  padding: 2px 14px 10px;
 }
 
 .schedule-day-btn {
@@ -2689,30 +2690,45 @@ body.has-results .results-wrap {
 }
 
 .schedule-list {
-  padding: 18px 0 0;
+  padding: 6px 0 0;
 }
 
+/* ── 날짜 섹션: 좌측 날짜/배지 + 우측 상품 그리드 (피그마 레이아웃) ── */
 .schedule-date-section {
   scroll-margin-top: calc(var(--result-tabs-current-height, 66px) + 110px);
-  padding: 18px 0 26px;
+  padding: 0;
+  border-bottom: 1px solid #eeeff1;
 }
 
-.schedule-date-head {
+.schedule-date-row {
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 0 20px;
-  margin-bottom: 12px;
+  align-items: stretch;
+  gap: 0;
+  padding: 14px 16px 14px 14px;
+  min-height: 80px;
+}
+
+/* 좌측: 날짜 + 픽업 배지 */
+.schedule-date-left {
+  flex-shrink: 0;
+  width: 72px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 2px;
+  padding-right: 8px;
+  gap: 8px;
 }
 
 .schedule-date-title {
   margin: 0;
-  font-size: 24px;
-  line-height: 1.15;
-  font-weight: 800;
-  letter-spacing: -0.05em;
+  font-size: 13px;
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.04em;
   color: #111;
+  text-align: center;
 }
 
 .schedule-date-title.is-sunday,
@@ -2725,28 +2741,51 @@ body.has-results .results-wrap {
 }
 
 .schedule-date-sub {
-  margin-top: 5px;
-  font-size: 13px;
+  font-size: 10px;
   line-height: 1.2;
   font-weight: 600;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
   color: #98a0aa;
+  text-align: center;
 }
 
-.schedule-date-count {
-  flex-shrink: 0;
-  font-size: 14px;
-  line-height: 1.2;
-  font-weight: 800;
+/* 픽업 배지 — 피그마 스타일 */
+.schedule-pickup-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 7px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
   letter-spacing: -0.03em;
-  color: #0a58b5;
+  white-space: nowrap;
+  font-family: 'Pretendard', sans-serif;
 }
 
+.schedule-pickup-badge.has-pickup {
+  background: #fff;
+  border: 1.5px solid #0051a0;
+  color: #0051a0;
+}
+
+.schedule-pickup-badge.no-pickup {
+  background: #f1f1f1;
+  border: 1.5px solid #f1f1f1;
+  color: #737373;
+}
+
+/* 우측: 상품 그리드 */
+.schedule-date-right {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 3열 상품 그리드 — 1:1 이미지 유지 */
 .schedule-product-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  padding: 0 20px;
+  gap: 8px;
 }
 
 .schedule-product-card {
@@ -2758,7 +2797,7 @@ body.has-results .results-wrap {
   width: 100%;
   aspect-ratio: 1 / 1;
   overflow: hidden;
-  border-radius: 10px;
+  border-radius: 8px;
   background: #edf0f3;
 }
 
@@ -2769,66 +2808,30 @@ body.has-results .results-wrap {
   object-fit: cover;
 }
 
-.schedule-product-badge {
-  position: absolute;
-  left: 6px;
-  right: 6px;
-  bottom: 6px;
-  min-height: 24px;
-  border-radius: 7px;
-  background: rgba(0, 0, 0, 0.66);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  line-height: 1;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-}
-
 .schedule-product-info {
-  padding: 8px 2px 0;
+  padding: 5px 1px 0;
 }
 
 .schedule-product-name {
-  min-height: 32px;
-  font-size: 12px;
-  line-height: 1.32;
-  font-weight: 700;
-  letter-spacing: -0.04em;
+  font-size: 11px;
+  line-height: 1.3;
+  font-weight: 500;
+  letter-spacing: -0.03em;
   color: #111;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 
-.schedule-product-bottom {
-  margin-top: 6px;
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 4px;
-}
-
 .schedule-product-qty {
-  flex-shrink: 0;
-  font-size: 11px;
-  line-height: 1;
-  font-weight: 700;
-  letter-spacing: -0.04em;
-  color: #4b5563;
-}
-
-.schedule-product-price {
-  min-width: 0;
-  text-align: right;
+  margin-top: 3px;
   font-size: 12px;
   line-height: 1;
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  color: #111;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #333;
 }
 
 .schedule-grid-placeholder {
@@ -2837,35 +2840,42 @@ body.has-results .results-wrap {
   pointer-events: none;
 }
 
+/* 픽업 없는 날 — 구분선 패턴 */
 .schedule-empty-day {
-  margin: 0 20px;
-  min-height: 130px;
-  border-radius: 14px;
-  background: #fff;
+  flex: 1;
   display: flex;
   align-items: center;
-  justify-content: center;
-  text-align: center;
-  color: #a3aab4;
-  font-size: 16px;
-  line-height: 1.4;
-  font-weight: 700;
-  letter-spacing: -0.04em;
-  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.04);
+  gap: 10px;
+  min-height: 50px;
+}
+
+.schedule-empty-line {
+  flex: 1;
+  height: 2px;
+  background: #eee;
+  border-radius: 2px;
+}
+
+.schedule-empty-label {
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: #9e9e9e;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
 }
 
 @media (min-width: 641px) {
+  .schedule-date-row {
+    padding: 16px 24px 16px 20px;
+  }
+
+  .schedule-date-left {
+    width: 88px;
+  }
+
   .schedule-product-grid {
-    gap: 14px;
-    padding: 0 24px;
-  }
-
-  .schedule-date-head {
-    padding: 0 24px;
-  }
-
-  .schedule-empty-day {
-    margin: 0 24px;
+    gap: 12px;
   }
 }
 
@@ -3993,11 +4003,9 @@ function renderScheduleTab() {
   scheduleState.selectedDateKey = getDateKey(selectedDate);
   scheduleState.weekStartKeys = weekStarts.map(date => getDateKey(date));
 
+  // Swiper가 레이블 포함 전체 카드를 커버 → 어디서 swipe해도 동작
   scheduleWeekHostEl.innerHTML = `
     <div class="schedule-week-card">
-      <div class="schedule-weekdays" aria-hidden="true">
-        ${renderScheduleWeekdayLabels()}
-      </div>
       <div class="swiper schedule-week-swiper" id="scheduleWeekSwiper">
         <div class="swiper-wrapper">
           ${weekStarts.map(weekStart => renderScheduleWeekSlide(weekStart, itemsByDate)).join('')}
@@ -4037,6 +4045,9 @@ function renderScheduleWeekSlide(weekStart, itemsByDate) {
 
   return `
     <div class="swiper-slide">
+      <div class="schedule-weekdays" aria-hidden="true">
+        ${renderScheduleWeekdayLabels()}
+      </div>
       <div class="schedule-week-grid">
         ${days.map(date => renderScheduleDayButton(date, itemsByDate.get(getDateKey(date)) || [])).join('')}
       </div>
@@ -4075,18 +4086,25 @@ function renderScheduleDateSection(date, items) {
   const dateKey = getDateKey(date);
   const holiday = getHolidayInfo(date);
   const toneClass = getScheduleDateToneClass(date);
-  const countText = items.length ? `${items.length}개 픽업` : '픽업 없음';
+  const wdays = ['일', '월', '화', '수', '목', '금', '토'];
+  const dayLabel = `${date.getMonth() + 1}월 ${date.getDate()}일`;
+  const dowLabel = `(${wdays[date.getDay()]})`;
+  const hasPickup = items.length > 0;
+  const badgeClass = hasPickup ? 'has-pickup' : 'no-pickup';
+  const badgeText = `픽업 ${items.length}`;
 
   return `
     <section class="schedule-date-section" id="schedule-date-${dateKey}" data-schedule-section="${dateKey}">
-      <div class="schedule-date-head">
-        <div>
-          <h3 class="schedule-date-title ${toneClass}">${escapeHtml(formatScheduleSectionTitle(date))}</h3>
+      <div class="schedule-date-row">
+        <div class="schedule-date-left">
+          <div class="schedule-date-title ${toneClass}">${escapeHtml(dayLabel)}<br>${escapeHtml(dowLabel)}</div>
           ${holiday ? `<div class="schedule-date-sub">${escapeHtml(holiday.name)}</div>` : ''}
+          <div class="schedule-pickup-badge ${badgeClass}">${escapeHtml(badgeText)}</div>
         </div>
-        <div class="schedule-date-count">${escapeHtml(countText)}</div>
+        <div class="schedule-date-right">
+          ${hasPickup ? renderScheduleProductGrid(items) : renderScheduleEmptyDay()}
+        </div>
       </div>
-      ${items.length ? renderScheduleProductGrid(items) : renderScheduleEmptyDay()}
     </section>
   `;
 }
@@ -4104,6 +4122,7 @@ function renderScheduleProductGrid(items) {
 }
 
 function renderScheduleProductCard(item, index) {
+  const qty = Number(item.quantity ?? 0);
   return `
     <article class="schedule-product-card">
       <div class="schedule-product-thumb-wrap">
@@ -4115,21 +4134,23 @@ function renderScheduleProductCard(item, index) {
           decoding="async"
           onerror="${getImageErrorHandler(index)}"
         >
-        <div class="schedule-product-badge">픽업</div>
       </div>
       <div class="schedule-product-info">
         <div class="schedule-product-name">${escapeHtml(item.productName || '')}</div>
-        <div class="schedule-product-bottom">
-          <div class="schedule-product-qty">주문수 ${escapeHtml(item.quantity ?? 0)}</div>
-          <div class="schedule-product-price">${escapeHtml(Number(item.price || 0).toLocaleString('ko-KR'))}원</div>
-        </div>
+        <div class="schedule-product-qty"><b>${qty}</b>개</div>
       </div>
     </article>
   `;
 }
 
 function renderScheduleEmptyDay() {
-  return '<div class="schedule-empty-day">픽업 예정 상품이 없습니다.</div>';
+  return `
+    <div class="schedule-empty-day">
+      <div class="schedule-empty-line"></div>
+      <span class="schedule-empty-label">픽업 없는 날</span>
+      <div class="schedule-empty-line"></div>
+    </div>
+  `;
 }
 
 function initScheduleWeekSwiper() {
