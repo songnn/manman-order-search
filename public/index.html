@@ -2619,14 +2619,8 @@ body.has-results .result-panels {
   width: 100%;
   margin: 18px auto 0;
   padding: calc(var(--sticky-progress) * (env(safe-area-inset-top, 0px) + 8px)) 40px calc(4px + (var(--sticky-progress) * 6px));
-  background: rgb(255 255 255 / calc(0.86 + (var(--sticky-progress) * 0.14)));
-  box-shadow:
-    0 calc(10px + (var(--sticky-progress) * 2px)) calc(26px + (var(--sticky-progress) * 4px)) rgba(0, 0, 0, calc(0.06 + (var(--sticky-progress) * 0.06)));
-  transition:
-    background-color 180ms ease,
-    box-shadow 180ms ease,
-    padding 180ms cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: padding, box-shadow;
+  transition: padding 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: padding;
 }
 
 .result-tabs-wrap.is-visible {
