@@ -1889,6 +1889,7 @@
 .support-help-wrap {
   padding: 0 10px;
   margin-top: 34px;
+  margin-bottom: 124px;
   perspective: 1100px;
 }
 
@@ -2140,6 +2141,7 @@
   .support-help-wrap {
     padding: 0 20px;
     margin-top: 44px;
+    margin-bottom: 132px;
     perspective: 1200px;
   }
 
@@ -2218,6 +2220,7 @@
   .support-help-wrap {
     padding: 0 24px;
     margin-top: 56px;
+    margin-bottom: 132px;
     perspective: 1400px;
   }
 
@@ -2562,7 +2565,7 @@ body.has-results {
 }
 
 body.has-results .page {
-  padding-bottom: 60px;
+  padding-bottom: 156px;
   background: #f8f9fa;
 }
 
@@ -2573,12 +2576,20 @@ body.has-results .results-wrap {
 .schedule-fab.is-visible {
   opacity: 1;
   visibility: visible;
-  transform: translate3d(0, 0, 0) scale(1);
+  transform: translate3d(0, calc(-1 * var(--schedule-fab-lift, 0px)), 0) scale(1);
   pointer-events: auto;
 }
 
 body.schedule-modal-open {
   overflow: hidden;
+}
+
+body.schedule-modal-open .result-topbar {
+  pointer-events: none !important;
+}
+
+body.schedule-modal-open .page > :not(.schedule-modal) {
+  pointer-events: none;
 }
 
 /* .top-stage는 JS가 inline style로 애니메이션 처리 */
@@ -2630,7 +2641,7 @@ body.schedule-modal-open {
   top: 0;
   z-index: 4;
   margin-top: 0;
-  background: #f8f9fa;
+  background: #fff;
 }
 
 .schedule-week-host.is-sticky-ready {
@@ -2681,7 +2692,7 @@ body.schedule-modal-open {
 .schedule-week-swiper {
   width: 100%;
   overflow: hidden;
-  padding: 10px 14px 10px;
+  padding: 18px 14px 18px;
 }
 
 .schedule-week-swiper .swiper-wrapper {
@@ -2837,6 +2848,7 @@ body.schedule-modal-open {
 
 .schedule-list {
   padding: 6px 0 0;
+  background: #f9fafb;
 }
 
 /* ── 날짜 섹션: 좌측 날짜/배지 + 우측 상품 그리드 (피그마 레이아웃) ── */
@@ -3237,6 +3249,7 @@ body.has-results .result-panels {
 }
 
 .schedule-fab {
+  --schedule-fab-lift: 0px;
   position: fixed;
   right: max(18px, env(safe-area-inset-right, 0px) + 18px);
   bottom: max(22px, env(safe-area-inset-bottom, 0px) + 22px);
@@ -3260,7 +3273,9 @@ body.has-results .result-panels {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transform: translate3d(0, 12px, 0) scale(0.94);
+  transform: translate3d(0, calc(12px - var(--schedule-fab-lift, 0px)), 0) scale(0.94);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
   transition:
     opacity 180ms ease,
     visibility 180ms ease,
@@ -3284,7 +3299,7 @@ body.schedule-modal-open .schedule-fab {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transform: translate3d(0, 12px, 0) scale(0.94);
+  transform: translate3d(0, calc(12px - var(--schedule-fab-lift, 0px)), 0) scale(0.94);
 }
 
 .schedule-modal {
@@ -3310,14 +3325,14 @@ body.schedule-modal-open .schedule-fab {
   bottom: 0;
   width: 100%;
   max-width: 760px;
-  height: 95dvh;
-  max-height: 95dvh;
+  height: 98dvh;
+  max-height: 98dvh;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  background: #f8f9fa;
+  background: #f9fafb;
   color: #111;
-  border-radius: 22px 22px 0 0;
+  border-radius: 24px 24px 0 0;
   box-shadow: 0 -18px 44px rgba(0, 0, 0, 0.22);
   overflow: hidden;
   transform: translate3d(0, 105%, 0);
@@ -3325,7 +3340,8 @@ body.schedule-modal-open .schedule-fab {
   will-change: transform;
 }
 
-.schedule-modal.is-open {
+.schedule-modal.is-open,
+.schedule-modal.is-closing {
   pointer-events: auto;
   visibility: visible;
 }
@@ -3338,24 +3354,50 @@ body.schedule-modal-open .schedule-fab {
   transform: translate3d(0, 0, 0);
 }
 
-.schedule-modal-header {
-  flex: 0 0 auto;
-  min-height: 58px;
-  padding: 10px 14px 8px;
-  display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) 44px;
-  align-items: center;
-  gap: 6px;
-  background: rgba(248, 249, 250, 0.96);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+.schedule-modal.is-closing .schedule-modal-dim {
+  opacity: 0;
+}
+
+.schedule-modal.is-closing .schedule-modal-sheet {
+  transform: translate3d(0, 105%, 0);
+}
+
+.schedule-modal-drag-zone {
+  position: absolute;
+  top: 0;
+  left: 76px;
+  right: 76px;
+  height: 42px;
+  z-index: 7;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 8px;
+  touch-action: none;
+  cursor: grab;
+}
+
+.schedule-modal-drag-zone:active {
+  cursor: grabbing;
+}
+
+.schedule-modal-grabber {
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(17, 24, 39, 0.22);
 }
 
 .schedule-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  z-index: 8;
   width: 42px;
   height: 42px;
   border: none;
   border-radius: 999px;
-  background: rgba(17, 24, 39, 0.06);
+  background: rgba(17, 24, 39, 0.08);
   color: #111;
   display: inline-flex;
   align-items: center;
@@ -3373,38 +3415,25 @@ body.schedule-modal-open .schedule-fab {
   height: 24px;
 }
 
-.schedule-modal-title {
-  margin: 0;
-  min-width: 0;
-  text-align: center;
-  font-family: 'Pretendard', Arial, sans-serif;
-  font-size: 18px;
-  line-height: 1.2;
-  font-weight: 700;
-  letter-spacing: 0;
-  color: #111;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .schedule-modal-body {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
-  background: #f8f9fa;
+  background: #f9fafb;
   padding-bottom: max(24px, env(safe-area-inset-bottom, 0px) + 24px);
 }
 
 .schedule-modal .schedule-panel-wrap {
   min-height: 0;
   padding-bottom: 0;
+  background: #f9fafb;
 }
 
 .schedule-modal .schedule-content {
   max-width: 760px;
+  background: #f9fafb;
 }
 
 @media (max-width: 640px) {
@@ -3422,7 +3451,7 @@ body.schedule-modal-open .schedule-fab {
   }
 
   .schedule-modal-sheet {
-    border-radius: 18px 18px 0 0;
+    border-radius: 20px 20px 0 0;
   }
 }
 
@@ -3642,16 +3671,15 @@ body.schedule-modal-open .schedule-fab {
 
       <div class="schedule-modal" id="scheduleModal" aria-hidden="true">
         <div class="schedule-modal-dim" data-schedule-modal-close aria-hidden="true"></div>
-        <section class="schedule-modal-sheet" id="scheduleModalSheet" role="dialog" aria-modal="true" aria-labelledby="scheduleModalTitle">
-          <header class="schedule-modal-header">
-            <button class="schedule-modal-close" id="scheduleModalClose" type="button" aria-label="스케쥴 닫기">
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-                <path d="M15 5L8 12L15 19" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </button>
-            <h2 class="schedule-modal-title" id="scheduleModalTitle">픽업 스케쥴</h2>
-            <div aria-hidden="true"></div>
-          </header>
+        <section class="schedule-modal-sheet" id="scheduleModalSheet" role="dialog" aria-modal="true" aria-label="픽업 스케쥴">
+          <div class="schedule-modal-drag-zone" id="scheduleModalDragZone" aria-hidden="true">
+            <span class="schedule-modal-grabber"></span>
+          </div>
+          <button class="schedule-modal-close" id="scheduleModalClose" type="button" aria-label="스케쥴 닫기">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+            </svg>
+          </button>
           <div class="schedule-modal-body" id="scheduleModalBody">
             <div class="schedule-week-host" id="scheduleWeekHost" aria-hidden="true"></div>
             <div class="schedule-week-placeholder" id="scheduleWeekPlaceholder" aria-hidden="true"></div>
@@ -3679,6 +3707,10 @@ body.schedule-modal-open .schedule-fab {
   let searchRequestSeq = 0;
   let orderFlipAnimationFrame = null;
   let orderFlightLayer = null;
+  let scheduleModalCloseTimer = null;
+  let scheduleModalScrollY = 0;
+  let scheduleModalDragState = null;
+  let scheduleFabFrame = null;
 
   const ENABLE_RESULT_TABS_STICKY = false;
   const ENABLE_LEGACY_RESULT_TABS = false;
@@ -3739,9 +3771,11 @@ const scheduleWeekPlaceholderEl = document.getElementById('scheduleWeekPlacehold
 const scheduleContentEl = document.getElementById('scheduleContent');
 const scheduleFabEl = document.getElementById('scheduleFab');
 const scheduleModalEl = document.getElementById('scheduleModal');
+const scheduleModalSheetEl = document.getElementById('scheduleModalSheet');
+const scheduleModalDimEl = scheduleModalEl?.querySelector('.schedule-modal-dim');
+const scheduleModalDragZoneEl = document.getElementById('scheduleModalDragZone');
 const scheduleModalBodyEl = document.getElementById('scheduleModalBody');
 const scheduleModalCloseEl = document.getElementById('scheduleModalClose');
-const scheduleModalTitleEl = document.getElementById('scheduleModalTitle');
 
   const DUMMY_IMAGES = [
     'https://picsum.photos/seed/manman-order-1/1200/1200',
@@ -3860,7 +3894,7 @@ function search(selectedCustomerLabel = '') {
   scheduleState.selectedDateKey = getSeoulTodayInfo().dateKey;
   resetResultTabScrollPositions();
   resetSectionViewState();
-  closeScheduleModal({ clear: true });
+  closeScheduleModal({ clear: true, animate: false });
   hideScheduleFab();
 
   document.body.classList.add('has-results');
@@ -4771,6 +4805,10 @@ function isScheduleModalOpen() {
   return Boolean(scheduleModalEl?.classList.contains('is-open'));
 }
 
+function isScheduleModalActive() {
+  return Boolean(scheduleModalEl?.classList.contains('is-open') || scheduleModalEl?.classList.contains('is-closing'));
+}
+
 function getScheduleScrollContainer() {
   return isScheduleModalOpen() ? scheduleModalBodyEl : null;
 }
@@ -4779,32 +4817,92 @@ function showScheduleFab() {
   if (!scheduleFabEl || !currentOrderItems.length) return;
   scheduleFabEl.classList.add('is-visible');
   scheduleFabEl.setAttribute('aria-expanded', 'false');
+  requestScheduleFabPositionUpdate();
 }
 
 function hideScheduleFab() {
   if (!scheduleFabEl) return;
   scheduleFabEl.classList.remove('is-visible');
   scheduleFabEl.setAttribute('aria-expanded', 'false');
+  scheduleFabEl.style.setProperty('--schedule-fab-lift', '0px');
 }
 
-function formatScheduleModalTitle(dateInfo = getSeoulTodayInfo()) {
-  const todayInfo = getSeoulTodayInfo();
-  const isToday = dateInfo.dateKey === todayInfo.dateKey;
-  return `${dateInfo.year}년 ${dateInfo.month}월 ${dateInfo.day}일${isToday ? ' 오늘' : ''}`;
+function requestScheduleFabPositionUpdate() {
+  if (scheduleFabFrame) return;
+  scheduleFabFrame = requestAnimationFrame(() => {
+    scheduleFabFrame = null;
+    updateScheduleFabPosition();
+  });
+}
+
+function updateScheduleFabPosition() {
+  if (!scheduleFabEl || !scheduleFabEl.classList.contains('is-visible')) return;
+
+  const scrollY = window.scrollY || window.pageYOffset || 0;
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+  const documentHeight = Math.max(
+    document.documentElement.scrollHeight || 0,
+    document.body.scrollHeight || 0
+  );
+  const distanceToBottom = Math.max(0, documentHeight - (scrollY + viewportHeight));
+  const lift = clamp(96 - distanceToBottom, 0, 56);
+
+  scheduleFabEl.style.setProperty('--schedule-fab-lift', `${Math.round(lift)}px`);
+}
+
+function lockScheduleModalBackground() {
+  if (document.body.classList.contains('schedule-modal-open')) return;
+
+  scheduleModalScrollY = window.scrollY || window.pageYOffset || 0;
+  document.body.style.position = 'fixed';
+  document.body.style.top = `-${scheduleModalScrollY}px`;
+  document.body.style.left = '0';
+  document.body.style.right = '0';
+  document.body.style.width = '100%';
+  document.body.classList.add('schedule-modal-open');
+}
+
+function unlockScheduleModalBackground() {
+  if (!document.body.classList.contains('schedule-modal-open')) return;
+
+  document.body.classList.remove('schedule-modal-open');
+  document.body.style.position = '';
+  document.body.style.top = '';
+  document.body.style.left = '';
+  document.body.style.right = '';
+  document.body.style.width = '';
+  window.scrollTo(0, scheduleModalScrollY || 0);
+}
+
+function resetScheduleModalInlineMotion() {
+  if (scheduleModalSheetEl) {
+    scheduleModalSheetEl.style.transition = '';
+    scheduleModalSheetEl.style.transform = '';
+  }
+
+  if (scheduleModalDimEl) {
+    scheduleModalDimEl.style.transition = '';
+    scheduleModalDimEl.style.opacity = '';
+  }
 }
 
 function openScheduleModal() {
   if (!scheduleModalEl || !currentOrderItems.length) return;
+  if (scheduleModalCloseTimer) {
+    clearTimeout(scheduleModalCloseTimer);
+    scheduleModalCloseTimer = null;
+  }
 
   const todayInfo = getSeoulTodayInfo();
   scheduleState.selectedDateKey = todayInfo.dateKey;
   activeResultTab = 'schedule';
 
-  scheduleModalTitleEl && (scheduleModalTitleEl.textContent = formatScheduleModalTitle(todayInfo));
+  resetScheduleModalInlineMotion();
+  scheduleModalEl.classList.remove('is-closing');
   scheduleModalEl.classList.add('is-open');
   scheduleModalEl.setAttribute('aria-hidden', 'false');
   scheduleFabEl?.setAttribute('aria-expanded', 'true');
-  document.body.classList.add('schedule-modal-open');
+  lockScheduleModalBackground();
 
   scheduleWeekHostEl?.classList.add('is-visible');
   scheduleWeekHostEl?.setAttribute('aria-hidden', 'false');
@@ -4823,20 +4921,122 @@ function closeScheduleModal(options = {}) {
   if (!scheduleModalEl) return;
 
   const shouldClear = options.clear !== false;
+  const shouldAnimate = options.animate !== false;
 
-  scheduleModalEl.classList.remove('is-open');
-  scheduleModalEl.setAttribute('aria-hidden', 'true');
-  scheduleFabEl?.setAttribute('aria-expanded', 'false');
-  document.body.classList.remove('schedule-modal-open');
-  activeResultTab = 'orders';
-
-  if (shouldClear) {
-    clearScheduleTab();
-  } else {
-    scheduleWeekHostEl?.classList.remove('is-visible', 'is-sticky-ready', 'is-fixed');
-    scheduleWeekHostEl?.setAttribute('aria-hidden', 'true');
-    resetScheduleWeekStickyState();
+  if (scheduleModalCloseTimer) {
+    clearTimeout(scheduleModalCloseTimer);
+    scheduleModalCloseTimer = null;
   }
+
+  const finishClose = () => {
+    scheduleModalEl.classList.remove('is-open', 'is-closing');
+    scheduleModalEl.setAttribute('aria-hidden', 'true');
+    scheduleFabEl?.setAttribute('aria-expanded', 'false');
+    resetScheduleModalInlineMotion();
+    unlockScheduleModalBackground();
+    activeResultTab = 'orders';
+
+    if (shouldClear) {
+      clearScheduleTab();
+    } else {
+      scheduleWeekHostEl?.classList.remove('is-visible', 'is-sticky-ready', 'is-fixed');
+      scheduleWeekHostEl?.setAttribute('aria-hidden', 'true');
+      resetScheduleWeekStickyState();
+    }
+  };
+
+  if (!isScheduleModalActive() || !shouldAnimate) {
+    finishClose();
+    return;
+  }
+
+  resetScheduleModalInlineMotion();
+  scheduleModalEl.classList.remove('is-open');
+  scheduleModalEl.classList.add('is-closing');
+
+  scheduleModalCloseTimer = window.setTimeout(() => {
+    scheduleModalCloseTimer = null;
+    finishClose();
+  }, 330);
+}
+
+function isScheduleModalDragTarget(target) {
+  if (!target) return false;
+  if (target.closest('button, a, input, textarea, select')) return false;
+  if (target.closest('#scheduleModalDragZone')) return true;
+  if (!scheduleModalBodyEl?.contains(target)) return true;
+  return scheduleModalBodyEl.scrollTop <= 0;
+}
+
+function beginScheduleModalDrag(event) {
+  if (!isScheduleModalOpen() || !scheduleModalSheetEl || event.button !== 0) return;
+  if (!isScheduleModalDragTarget(event.target)) return;
+
+  scheduleModalDragState = {
+    pointerId: event.pointerId,
+    startY: event.clientY,
+    lastY: event.clientY,
+    lastAt: performance.now(),
+    velocity: 0,
+    height: scheduleModalSheetEl.getBoundingClientRect().height || window.innerHeight
+  };
+
+  scheduleModalSheetEl.setPointerCapture?.(event.pointerId);
+  scheduleModalSheetEl.style.transition = 'none';
+  if (scheduleModalDimEl) scheduleModalDimEl.style.transition = 'none';
+}
+
+function moveScheduleModalDrag(event) {
+  if (!scheduleModalDragState || !scheduleModalSheetEl) return;
+  if (event.pointerId !== scheduleModalDragState.pointerId) return;
+
+  const now = performance.now();
+  const deltaY = Math.max(0, event.clientY - scheduleModalDragState.startY);
+  const elapsed = Math.max(now - scheduleModalDragState.lastAt, 1);
+  scheduleModalDragState.velocity = (event.clientY - scheduleModalDragState.lastY) / elapsed;
+  scheduleModalDragState.lastY = event.clientY;
+  scheduleModalDragState.lastAt = now;
+
+  if (deltaY <= 0) return;
+
+  event.preventDefault();
+
+  const easedDelta = Math.min(deltaY, scheduleModalDragState.height);
+  const dimOpacity = clamp(1 - (easedDelta / Math.max(scheduleModalDragState.height * 0.75, 1)), 0, 1);
+
+  scheduleModalSheetEl.style.transform = `translate3d(0, ${easedDelta}px, 0)`;
+  if (scheduleModalDimEl) scheduleModalDimEl.style.opacity = String(dimOpacity);
+}
+
+function endScheduleModalDrag(event) {
+  if (!scheduleModalDragState || !scheduleModalSheetEl) return;
+  if (event.pointerId !== scheduleModalDragState.pointerId) return;
+
+  const deltaY = Math.max(0, event.clientY - scheduleModalDragState.startY);
+  const shouldClose =
+    deltaY > scheduleModalDragState.height * 0.22 ||
+    scheduleModalDragState.velocity > 0.55;
+
+  scheduleModalSheetEl.releasePointerCapture?.(event.pointerId);
+  scheduleModalSheetEl.style.transition = 'transform 300ms cubic-bezier(0.22, 1, 0.36, 1)';
+  if (scheduleModalDimEl) scheduleModalDimEl.style.transition = 'opacity 240ms ease';
+  scheduleModalDragState = null;
+
+  if (shouldClose) {
+    scheduleModalEl?.classList.remove('is-open');
+    scheduleModalEl?.classList.add('is-closing');
+    scheduleModalSheetEl.style.transform = 'translate3d(0, 105%, 0)';
+    if (scheduleModalDimEl) scheduleModalDimEl.style.opacity = '0';
+    closeScheduleModal({ clear: false, animate: true });
+    return;
+  }
+
+  scheduleModalSheetEl.style.transform = 'translate3d(0, 0, 0)';
+  if (scheduleModalDimEl) scheduleModalDimEl.style.opacity = '1';
+
+  window.setTimeout(() => {
+    if (!scheduleModalDragState) resetScheduleModalInlineMotion();
+  }, 310);
 }
 
 function renderScheduleWeekdayLabel(date) {
@@ -5121,11 +5321,6 @@ function selectScheduleDate(dateKey, options = {}) {
 
 function updateScheduleSelection(dateKey, options = {}) {
   scheduleState.selectedDateKey = dateKey;
-
-  if (isScheduleModalOpen() && scheduleModalTitleEl) {
-    const selectedDate = dateFromKey(dateKey);
-    if (selectedDate) scheduleModalTitleEl.textContent = formatScheduleModalTitle(toDateInfo(selectedDate));
-  }
 
   scheduleWeekHostEl?.querySelectorAll('[data-schedule-date]').forEach(button => {
     button.classList.toggle('is-selected', button.dataset.scheduleDate === dateKey);
@@ -5938,6 +6133,7 @@ function handleOrderImageClick(event) {
 
   window.addEventListener('resize', () => {
     requestAnimationFrame(updateOrderNameMarquees);
+    requestScheduleFabPositionUpdate();
     updateResultTabsHeightVar();
     syncResultPanelsHeight();
     if (resultPanelsSwiper) resultPanelsSwiper.update();
@@ -5950,6 +6146,7 @@ function handleOrderImageClick(event) {
   });
 
   window.addEventListener('scroll', () => {
+    requestScheduleFabPositionUpdate();
     if (ENABLE_RESULT_TABS_STICKY) requestResultTabsStickyUpdate();
     if (activeResultTab === 'schedule') {
       requestScheduleWeekStickyUpdate();
@@ -5980,15 +6177,24 @@ function handleOrderImageClick(event) {
   document.addEventListener('touchcancel', handleOrderImagePinchEnd);
   resultsEl.addEventListener('click', handleOrderImageClick);
   scheduleFabEl?.addEventListener('click', openScheduleModal);
-  scheduleModalCloseEl?.addEventListener('click', () => closeScheduleModal({ clear: false }));
+  scheduleModalCloseEl?.addEventListener('click', () => closeScheduleModal({ clear: false, animate: true }));
   scheduleModalEl?.addEventListener('click', event => {
     if (event.target.closest('[data-schedule-modal-close]')) {
-      closeScheduleModal({ clear: false });
+      closeScheduleModal({ clear: false, animate: true });
     }
   });
+  scheduleModalSheetEl?.addEventListener('pointerdown', beginScheduleModalDrag);
+  scheduleModalSheetEl?.addEventListener('pointermove', moveScheduleModalDrag);
+  scheduleModalSheetEl?.addEventListener('pointerup', endScheduleModalDrag);
+  scheduleModalSheetEl?.addEventListener('pointercancel', endScheduleModalDrag);
   scheduleModalBodyEl?.addEventListener('scroll', () => {
     if (activeResultTab === 'schedule') requestScheduleScrollSync();
   }, { passive: true });
+  document.addEventListener('touchmove', event => {
+    if (!isScheduleModalActive()) return;
+    if (scheduleModalBodyEl?.contains(event.target)) return;
+    event.preventDefault();
+  }, { passive: false });
 
     searchBtn.addEventListener('click', () => search());
 
@@ -6002,7 +6208,7 @@ function handleOrderImageClick(event) {
 
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape' && isScheduleModalOpen()) {
-        closeScheduleModal({ clear: false });
+        closeScheduleModal({ clear: false, animate: true });
         return;
       }
 
@@ -6015,7 +6221,7 @@ function handleOrderImageClick(event) {
 function resetToHome() {
   // 탑바 숨기기 (애니메이션 포함)
   hideResultTopbar();
-  closeScheduleModal({ clear: true });
+  closeScheduleModal({ clear: true, animate: false });
   hideScheduleFab();
 
   destroyAllSwipers();
