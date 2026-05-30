@@ -2539,7 +2539,7 @@ body.has-results .results-wrap {
 .schedule-panel-wrap {
   background: #f8f9fa;
   min-height: max(70vh, var(--result-panel-min-height));
-  padding: 118px 0 76px;
+  padding: 0 0 76px;
   color: #111;
 }
 
@@ -2551,8 +2551,7 @@ body.has-results .results-wrap {
 
 .schedule-week-host {
   display: none;
-  position: sticky;
-  top: var(--result-tabs-current-height, 66px);
+  position: relative;
   z-index: 220;
   background: #f8f9fa;
   padding: 8px 0 12px;
@@ -2561,6 +2560,14 @@ body.has-results .results-wrap {
 
 .schedule-week-host.is-visible {
   display: block;
+}
+
+.schedule-week-host.is-sticky-ready {
+  position: sticky;
+  top: var(--result-tabs-current-height, 66px);
+}
+
+.schedule-week-host.is-sticky-ready.is-fixed {
   position: fixed;
   left: 0;
   right: 0;
@@ -2955,7 +2962,7 @@ body.has-results .result-panels {
   animation: resultTabsIn 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.result-tabs-wrap.is-stuck {
+.result-tabs-wrap.is-sticky-ready.is-stuck {
   position: fixed;
   left: 0;
   right: 0;
@@ -3260,6 +3267,15 @@ body.has-results .result-panels {
   let scheduleScrollFrame = null;
   let scheduleSuppressScrollSync = false;
   let scheduleSuppressWeekSlide = false;
+  let isRestoringResultTabScroll = false;
+
+  const ENABLE_RESULT_TABS_STICKY = false;
+  const ENABLE_SCHEDULE_WEEK_STICKY = false;
+
+  const resultTabScrollPositions = {
+    orders: null,
+    schedule: null
+  };
 
   const scheduleState = {
     selectedDateKey: '',
@@ -3381,6 +3397,7 @@ function search(selectedCustomerLabel = '') {
   currentSearchKeyword = keyword;
   currentSelectedCustomerLabel = selectedCustomerLabel ? decodeURIComponent(selectedCustomerLabel) : '';
   scheduleState.selectedDateKey = getSeoulTodayInfo().dateKey;
+  resetResultTabScrollPositions();
 
   document.body.classList.add('has-results');
   hideResultTabs();
@@ -4240,7 +4257,10 @@ function selectScheduleDate(dateKey, options = {}) {
 
   scheduleSuppressScrollSync = true;
   const sticky = scheduleWeekHostEl;
-  const topOffset = (resultTabsWrap?.getBoundingClientRect().height || 0) + (sticky?.offsetHeight || 0) + 10;
+  const topOffset =
+    (ENABLE_RESULT_TABS_STICKY ? (resultTabsWrap?.getBoundingClientRect().height || 0) : 0) +
+    (ENABLE_SCHEDULE_WEEK_STICKY ? (sticky?.offsetHeight || 0) : 0) +
+    10;
   const targetTop = section.getBoundingClientRect().top + (window.scrollY || window.pageYOffset || 0) - topOffset;
   window.scrollTo({
     top: Math.max(0, targetTop),
@@ -5052,6 +5072,7 @@ function resetToHome() {
   currentSelectedCustomerLabel = '';
   scheduleState.selectedDateKey = '';
   scheduleState.weekStartKeys = [];
+  resetResultTabScrollPositions();
   sectionViewState = {
     [SECTION_KEYS.MY_ORDERS]: false,
     [SECTION_KEYS.TODAY_PICKUP]: false,
@@ -5064,7 +5085,7 @@ function resetToHome() {
   messageEl.textContent = '';
   resultsEl.innerHTML = '';
   if (scheduleWeekHostEl) {
-    scheduleWeekHostEl.classList.remove('is-visible');
+    scheduleWeekHostEl.classList.remove('is-visible', 'is-sticky-ready', 'is-fixed');
     scheduleWeekHostEl.setAttribute('aria-hidden', 'true');
     scheduleWeekHostEl.innerHTML = '';
   }
@@ -5348,10 +5369,10 @@ function showResultTabs() {
 function hideResultTabs() {
   if (!resultTabsWrap) return;
   resultTabsWrap.classList.remove('is-visible');
-  resultTabsWrap.classList.remove('is-stuck', 'is-dragging');
+  resultTabsWrap.classList.remove('is-stuck', 'is-sticky-ready', 'is-dragging');
   resultTabsWrap.setAttribute('aria-hidden', 'true');
   resultTabsWrap.style.setProperty('--sticky-progress', '0');
-  scheduleWeekHostEl?.classList.remove('is-visible');
+  scheduleWeekHostEl?.classList.remove('is-visible', 'is-sticky-ready', 'is-fixed');
   scheduleWeekHostEl?.setAttribute('aria-hidden', 'true');
   resultTabsPinned = false;
   activeResultTab = 'orders';
@@ -5370,6 +5391,15 @@ function requestResultTabsStickyUpdate() {
 function updateResultTabsStickyState() {
   if (!resultTabsWrap || !resultTabsWrap.classList.contains('is-visible')) return;
   updateResultTabsHeightVar();
+
+  if (!ENABLE_RESULT_TABS_STICKY) {
+    resultTabsPinned = false;
+    resultTabsWrap.classList.remove('is-stuck', 'is-sticky-ready');
+    resultTabsWrap.style.setProperty('--sticky-progress', '0');
+    return;
+  }
+
+  resultTabsWrap.classList.add('is-sticky-ready');
   const rect = resultTabsWrap.getBoundingClientRect();
   const start = 98;
   const end = 0;
@@ -5384,11 +5414,52 @@ function updateResultTabsHeightVar() {
   document.documentElement.style.setProperty('--result-tabs-current-height', `${height}px`);
 }
 
+function resetResultTabScrollPositions() {
+  resultTabScrollPositions.orders = null;
+  resultTabScrollPositions.schedule = null;
+}
+
+function saveResultTabScroll(tabName) {
+  if (isRestoringResultTabScroll) return;
+  if (tabName !== 'orders' && tabName !== 'schedule') return;
+  resultTabScrollPositions[tabName] = window.scrollY || window.pageYOffset || 0;
+}
+
+function getDefaultResultTabScrollTop(tabName) {
+  const anchor =
+    tabName === 'schedule'
+      ? (resultTabsWrap || scheduleWeekHostEl || resultPanels)
+      : (resultTabsWrap || resultPanels);
+
+  if (!anchor) return 0;
+
+  const rect = anchor.getBoundingClientRect();
+  return Math.max(0, Math.round(rect.top + (window.scrollY || window.pageYOffset || 0) - 8));
+}
+
+function restoreResultTabScroll(tabName, delay = 0) {
+  window.setTimeout(() => {
+    const saved = resultTabScrollPositions[tabName];
+    const nextTop = Number.isFinite(saved) ? saved : getDefaultResultTabScrollTop(tabName);
+    isRestoringResultTabScroll = true;
+    window.scrollTo(0, Math.max(0, nextTop));
+    window.setTimeout(() => {
+      isRestoringResultTabScroll = false;
+    }, 80);
+  }, delay);
+}
+
 function setActiveTab(tabName, options = {}) {
   if (!ordersTab || !scheduleTab) return;
   const normalizedTab = tabName === 'schedule' ? 'schedule' : 'orders';
   const nextIndex = normalizedTab === 'orders' ? 0 : 1;
   const shouldSlide = options.slide !== false;
+  const previousTab = activeResultTab === 'schedule' ? 'schedule' : 'orders';
+  const tabChanged = normalizedTab !== previousTab;
+
+  if (tabChanged) {
+    saveResultTabScroll(previousTab);
+  }
 
   activeResultTab = normalizedTab;
   if (resultTabsWrap) {
@@ -5397,7 +5468,7 @@ function setActiveTab(tabName, options = {}) {
   }
 
   if (normalizedTab === 'orders') {
-    scheduleWeekHostEl?.classList.remove('is-visible');
+    scheduleWeekHostEl?.classList.remove('is-visible', 'is-sticky-ready', 'is-fixed');
     scheduleWeekHostEl?.setAttribute('aria-hidden', 'true');
     ordersTab.classList.add('is-active');
     ordersTab.setAttribute('aria-selected', 'true');
@@ -5406,23 +5477,16 @@ function setActiveTab(tabName, options = {}) {
     if (ordersPanel) ordersPanel.classList.remove('tab-hidden');
     if (schedulePanelEl) schedulePanelEl.classList.remove('is-active');
   } else {
-    const selectedScheduleDateKey = scheduleState.selectedDateKey || getSeoulTodayInfo().dateKey;
     renderScheduleTab();
     scheduleWeekHostEl?.classList.add('is-visible');
     scheduleWeekHostEl?.setAttribute('aria-hidden', 'false');
+    scheduleWeekHostEl?.classList.toggle('is-sticky-ready', ENABLE_SCHEDULE_WEEK_STICKY);
     scheduleTab.classList.add('is-active');
     scheduleTab.setAttribute('aria-selected', 'true');
     ordersTab.classList.remove('is-active');
     ordersTab.setAttribute('aria-selected', 'false');
     if (ordersPanel) ordersPanel.classList.add('tab-hidden');
     if (schedulePanelEl) schedulePanelEl.classList.add('is-active');
-    window.setTimeout(() => {
-      if (resultPanelsSwiper) {
-        resultPanelsSwiper.update();
-        resultPanelsSwiper.updateAutoHeight?.(0);
-      }
-      selectScheduleDate(selectedScheduleDateKey, { scroll: true, slide: true });
-    }, 380);
   }
 
   if (resultPanelsSwiper && shouldSlide && resultPanelsSwiper.activeIndex !== nextIndex) {
@@ -5436,6 +5500,10 @@ function setActiveTab(tabName, options = {}) {
 
   requestResultTabsStickyUpdate();
   requestScheduleScrollSync();
+
+  if (tabChanged) {
+    restoreResultTabScroll(normalizedTab, shouldSlide ? 360 : 40);
+  }
 }
 
 function initResultTabsSwiper() {
@@ -5494,8 +5562,15 @@ function initResultTabsObserver() {
   if (!resultTabsSentinel || !resultTabsWrap || resultTabsObserver) return;
 
   resultTabsObserver = new IntersectionObserver(entries => {
+    if (!ENABLE_RESULT_TABS_STICKY) {
+      resultTabsPinned = false;
+      resultTabsWrap.classList.remove('is-stuck', 'is-sticky-ready');
+      return;
+    }
+
     const entry = entries[0];
     resultTabsPinned = Boolean(entry && !entry.isIntersecting);
+    resultTabsWrap.classList.add('is-sticky-ready');
     resultTabsWrap.classList.toggle('is-stuck', resultTabsPinned);
     requestResultTabsStickyUpdate();
   }, {
