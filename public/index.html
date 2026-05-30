@@ -29,13 +29,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.js"></script>
   <script src="https://unpkg.com/@panzoom/panzoom@4.6.0/dist/panzoom.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
 
   <style>
-  [x-cloak] {
-    display: none !important;
-  }
-
   * {
     box-sizing: border-box;
   }
@@ -57,7 +52,7 @@
   .page {
     width: 100%;
     padding: 80px 0px 100px;
-    overflow-x: hidden;
+    overflow: visible;
   }
 
   .top-stage {
@@ -903,7 +898,6 @@
 
   .order-card {
     display: block;
-    contain: layout paint;
   }
 
   .orders-section.animating {
@@ -2545,7 +2539,7 @@ body.has-results .results-wrap {
 .schedule-panel-wrap {
   display: flex;
   background: #f8f9fa;
-  min-height: 50vh;
+  min-height: max(50vh, var(--result-panel-min-height));
   padding: 60px 20px;
   text-align: center;
   flex-direction: column;
@@ -2576,120 +2570,87 @@ body.has-results .results-wrap {
 }
 
 .result-panels {
-  --tab-index: 0;
+  --result-panel-min-height: 70vh;
   display: none;
   width: 100%;
   overflow: hidden;
-  touch-action: pan-y;
 }
 
 body.has-results .result-panels {
   display: block;
 }
 
+.result-panels.swiper {
+  overflow: hidden;
+  touch-action: pan-y;
+}
+
 .result-panels-track {
-  display: flex;
   align-items: stretch;
-  width: 100%;
-  transform: translate3d(calc(var(--tab-index) * -100%), 0, 0);
-  transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: auto;
-  backface-visibility: hidden;
+  will-change: transform;
 }
 
 .result-panel {
-  flex: 0 0 100%;
   width: 100%;
+  height: auto;
   min-width: 0;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 .results-wrap.tab-hidden {
   display: block;
 }
 
+.result-tabs-sentinel {
+  width: 100%;
+  height: 1px;
+  pointer-events: none;
+}
+
 .result-tabs-wrap {
   --tab-index: 0;
-  --pin-progress: 0;
+  --tab-progress: 0;
+  --tab-indicator-duration: 240ms;
+  --sticky-progress: 0;
   display: none;
-  position: relative;
+  position: sticky;
+  top: 0;
   z-index: 240;
-  width: calc(100% - 80px);
-  max-width: 320px;
+  width: 100%;
   margin: 18px auto 0;
-  padding: 4px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.86);
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.06), inset 0 0 0 1px rgba(0, 81, 160, 0.06);
-  overflow: hidden;
+  padding: calc(var(--sticky-progress) * (env(safe-area-inset-top, 0px) + 8px)) 40px calc(4px + (var(--sticky-progress) * 6px));
+  background: rgb(255 255 255 / calc(0.86 + (var(--sticky-progress) * 0.14)));
+  box-shadow:
+    0 calc(10px + (var(--sticky-progress) * 2px)) calc(26px + (var(--sticky-progress) * 4px)) rgba(0, 0, 0, calc(0.06 + (var(--sticky-progress) * 0.06)));
   transition:
-    box-shadow 220ms ease,
-    background-color 220ms ease;
-  isolation: isolate;
-  will-change: transform;
-  opacity: calc(1 - var(--pin-progress));
-  transform: translate3d(0, calc(var(--pin-progress) * -8px), 0) scale(calc(1 - (var(--pin-progress) * 0.035)));
+    background-color 180ms ease,
+    box-shadow 180ms ease,
+    padding 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: padding, box-shadow;
 }
 
 .result-tabs-wrap.is-visible {
-  display: flex;
+  display: block;
   animation: resultTabsIn 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.result-tabs-wrap.is-pinned {
-  pointer-events: none;
+.result-tabs-wrap.is-dragging {
+  --tab-indicator-duration: 0ms;
 }
 
-.result-tabs-wrap.is-stuck {
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.06), inset 0 0 0 1px rgba(0, 81, 160, 0.06);
-}
-
-.result-tabs-spacer {
-  display: none;
-  height: var(--result-tabs-spacer-height, 0px);
-}
-
-.result-tabs-spacer.is-active {
-  display: block;
-}
-
-.result-tabs-fixed {
-  --tab-index: 0;
-  --pin-progress: 0;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 260;
-  display: none;
-  padding: calc(env(safe-area-inset-top, 0px) + 8px) 40px 10px;
-  background: #fff;
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
-  opacity: var(--pin-progress);
-  pointer-events: none;
-  transform: translate3d(0, calc((1 - var(--pin-progress)) * -22px), 0);
-  transition: box-shadow 220ms ease;
-  will-change: transform, opacity;
-}
-
-.result-tabs-fixed.is-visible {
-  display: block;
-}
-
-.result-tabs-fixed.is-pinned {
-  pointer-events: auto;
-}
-
-.result-tabs-fixed-shell {
+.result-tabs-shell {
   position: relative;
   width: min(320px, calc(100vw - 80px));
   margin: 0 auto;
   padding: 4px;
   border-radius: 999px;
-  background: rgba(248, 250, 252, 0.96);
+  background: rgb(248 250 252 / calc(0.84 + (var(--sticky-progress) * 0.12)));
   box-shadow: inset 0 0 0 1px rgba(0, 81, 160, 0.06);
   overflow: hidden;
-  transform: scale(calc(0.965 + (var(--pin-progress) * 0.035)));
+  transform: translateY(calc(var(--sticky-progress) * -1px)) scale(calc(1 - ((1 - var(--sticky-progress)) * 0.018)));
   transform-origin: top center;
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1), background-color 180ms ease;
 }
 
 .result-tab-indicator {
@@ -2701,14 +2662,13 @@ body.has-results .result-panels {
   border-radius: 999px;
   background: #0051a0;
   box-shadow: 0 8px 18px rgba(0, 81, 160, 0.24);
-  transform: translateX(calc(var(--tab-index) * 100%));
-  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 180ms ease;
+  transform: translate3d(calc(var(--tab-progress) * 100%), 0, 0);
+  transition: transform var(--tab-indicator-duration) cubic-bezier(0.22, 1, 0.36, 1), box-shadow 180ms ease;
   z-index: 0;
   pointer-events: none;
 }
 
-.result-tabs-wrap .rh-tabs,
-.result-tabs-fixed .rh-tabs {
+.result-tabs-wrap .rh-tabs {
   position: relative;
   z-index: 1;
   width: 100%;
@@ -2718,8 +2678,7 @@ body.has-results .result-panels {
   border-top: none;
 }
 
-.result-tabs-wrap .rh-tab,
-.result-tabs-fixed .rh-tab {
+.result-tabs-wrap .rh-tab {
   position: relative;
   padding: 9px 0 10px;
   font-size: 12px;
@@ -2731,19 +2690,16 @@ body.has-results .result-panels {
   -webkit-user-select: none;
 }
 
-.result-tabs-wrap .rh-tab.is-active,
-.result-tabs-fixed .rh-tab.is-active {
+.result-tabs-wrap .rh-tab.is-active {
   color: #fff;
   font-weight: 700;
 }
 
-.result-tabs-wrap .rh-tab:active,
-.result-tabs-fixed .rh-tab:active {
+.result-tabs-wrap .rh-tab:active {
   transform: scale(0.98);
 }
 
-.result-tabs-wrap .rh-tab-underline,
-.result-tabs-fixed .rh-tab-underline {
+.result-tabs-wrap .rh-tab-underline {
   display: none;
 }
 
@@ -2864,7 +2820,7 @@ body.has-results .result-panels {
   </div>
 </div>
 
-    <div class="page" x-data="manmanResultTabs()" x-init="init()">
+    <div class="page">
       <div class="top-stage">
         <section class="hero">
           <div class="logo-wrap" id="homeLogoBtn" role="button" tabindex="0" aria-label="처음 화면으로 돌아가기">
@@ -2914,21 +2870,12 @@ body.has-results .result-panels {
         </section>
       </div>
 
-      <div
-        class="result-tabs-wrap"
-        id="resultTabsWrap"
-        x-ref="tabs"
-        x-show="visible"
-        x-cloak
-        :class="{ 'is-visible': visible, 'is-pinned': pinned, 'is-stuck': pinned }"
-        :style="`--tab-index: ${activeIndex}`"
-        :aria-hidden="visible ? 'false' : 'true'"
-        @pointerup="handleTabPointer($event)"
-        @click="handleTabClick($event)"
-      >
-        <div class="result-tab-indicator" aria-hidden="true"></div>
-        <div class="rh-tabs" role="tablist">
-          <button class="rh-tab" :class="{ 'is-active': activeTab === 'orders' }" id="resultOrdersTab" data-tab="orders" role="tab" :aria-selected="activeTab === 'orders' ? 'true' : 'false'">
+      <div class="result-tabs-sentinel" id="resultTabsSentinel" aria-hidden="true"></div>
+      <div class="result-tabs-wrap" id="resultTabsWrap" aria-hidden="true">
+        <div class="result-tabs-shell">
+          <div class="result-tab-indicator" aria-hidden="true"></div>
+          <div class="rh-tabs" role="tablist">
+          <button class="rh-tab is-active" id="resultOrdersTab" data-tab="orders" type="button" role="tab" aria-selected="true">
             <div class="rh-tab-icon">
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect x="3" y="5" width="18" height="2.2" rx="1.1" fill="currentColor"/>
@@ -2939,7 +2886,7 @@ body.has-results .result-panels {
             <span>주문조회</span>
             <div class="rh-tab-underline"></div>
           </button>
-          <button class="rh-tab" :class="{ 'is-active': activeTab === 'schedule' }" id="resultScheduleTab" data-tab="schedule" role="tab" :aria-selected="activeTab === 'schedule' ? 'true' : 'false'">
+          <button class="rh-tab" id="resultScheduleTab" data-tab="schedule" type="button" role="tab" aria-selected="false">
             <div class="rh-tab-icon">
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect x="3" y="5" width="18" height="15" rx="2" stroke="currentColor" stroke-width="2"/>
@@ -2953,69 +2900,18 @@ body.has-results .result-panels {
             <span>스케쥴</span>
             <div class="rh-tab-underline"></div>
           </button>
-        </div>
-      </div>
-
-      <div
-        class="result-tabs-fixed"
-        x-ref="fixedTabs"
-        x-show="visible"
-        x-cloak
-        :class="{ 'is-visible': visible, 'is-pinned': pinned }"
-        :style="`--tab-index: ${activeIndex}`"
-        aria-hidden="true"
-        @pointerup="handleTabPointer($event)"
-        @click="handleTabClick($event)"
-      >
-        <div class="result-tabs-fixed-shell">
-          <div class="result-tab-indicator" aria-hidden="true"></div>
-          <div class="rh-tabs" role="tablist">
-            <button class="rh-tab" :class="{ 'is-active': activeTab === 'orders' }" data-tab="orders" type="button">
-              <div class="rh-tab-icon">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="3" y="5" width="18" height="2.2" rx="1.1" fill="currentColor"/>
-                  <rect x="3" y="11" width="18" height="2.2" rx="1.1" fill="currentColor"/>
-                  <rect x="3" y="17" width="13" height="2.2" rx="1.1" fill="currentColor"/>
-                </svg>
-              </div>
-              <span>주문조회</span>
-              <div class="rh-tab-underline"></div>
-            </button>
-            <button class="rh-tab" :class="{ 'is-active': activeTab === 'schedule' }" data-tab="schedule" type="button">
-              <div class="rh-tab-icon">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="3" y="5" width="18" height="15" rx="2" stroke="currentColor" stroke-width="2"/>
-                  <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/>
-                  <line x1="8" y1="3" x2="8" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                  <line x1="16" y1="3" x2="16" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                  <rect x="6.5" y="13" width="3.5" height="3" rx="0.5" fill="currentColor"/>
-                  <rect x="11" y="13" width="3.5" height="3" rx="0.5" fill="currentColor"/>
-                </svg>
-              </div>
-              <span>스케쥴</span>
-              <div class="rh-tab-underline"></div>
-            </button>
           </div>
         </div>
       </div>
 
-      <div
-        class="result-panels"
-        id="resultPanels"
-        x-ref="panels"
-        :style="`--tab-index: ${activeIndex}`"
-        @pointerdown.passive="handlePanelPointerDown($event)"
-        @pointerup.passive="handlePanelPointerUp($event)"
-        @pointercancel="handlePanelPointerCancel()"
-        @pointerleave="handlePanelPointerCancel()"
-      >
-        <div class="result-panels-track" id="resultPanelsTrack">
-          <section class="results-wrap result-panel" id="ordersPanel">
+      <div class="swiper result-panels" id="resultPanels">
+        <div class="swiper-wrapper result-panels-track" id="resultPanelsTrack">
+          <section class="swiper-slide results-wrap result-panel" id="ordersPanel">
             <div class="results" id="results"></div>
           </section>
 
           <!-- 스케쥴 탭 패널 (추후 구현) -->
-          <div class="schedule-panel-wrap result-panel" id="schedulePanel">
+          <div class="swiper-slide schedule-panel-wrap result-panel" id="schedulePanel">
             <div class="schedule-panel-icon">📅</div>
             <div class="schedule-panel-title">스케쥴 준비 중</div>
             <div class="schedule-panel-desc">곧 이용하실 수 있습니다</div>
@@ -3045,164 +2941,6 @@ body.has-results .result-panels {
   };
 
   let swiperMap = {};
-
-  function manmanResultTabs() {
-    return {
-      visible: false,
-      activeTab: 'orders',
-      activeIndex: 0,
-      pinned: false,
-      pinProgress: 0,
-      spacer: null,
-      pinY: 0,
-      frame: null,
-      swipeStartX: 0,
-      swipeStartY: 0,
-      swipeTracking: false,
-
-      init() {
-        window.manmanResultTabsApi = {
-          show: () => this.show(),
-          hide: () => this.hide(),
-          setTab: tab => this.setTab(tab),
-          updateSticky: () => this.requestStickyUpdate()
-        };
-
-        window.addEventListener('scroll', () => this.requestStickyUpdate(), { passive: true });
-        window.addEventListener('resize', () => this.requestStickyUpdate(), { passive: true });
-      },
-
-      show() {
-        this.visible = true;
-        this.pinned = false;
-        this.pinProgress = 0;
-        this.applyPinProgress();
-
-        this.$nextTick(() => {
-          this.pinY = this.getDocumentTop(this.$refs.tabs);
-          this.updateSticky();
-        });
-      },
-
-      hide() {
-        this.visible = false;
-        this.pinned = false;
-        this.pinProgress = 0;
-        this.activeTab = 'orders';
-        this.activeIndex = 0;
-        this.pinY = 0;
-        this.applyPinProgress();
-      },
-
-      setTab(tabName) {
-        this.activeTab = tabName === 'schedule' ? 'schedule' : 'orders';
-        this.activeIndex = this.activeTab === 'schedule' ? 1 : 0;
-        this.requestStickyUpdate();
-      },
-
-      handleTabPointer(event) {
-        const tab = event.target.closest('.rh-tab[data-tab]');
-        if (!tab || !this.isInsideTabs(tab)) return;
-        event.preventDefault();
-        this.setTab(tab.dataset.tab || 'orders');
-      },
-
-      handleTabClick(event) {
-        const tab = event.target.closest('.rh-tab[data-tab]');
-        if (!tab || !this.isInsideTabs(tab)) return;
-        this.setTab(tab.dataset.tab || 'orders');
-      },
-
-      isInsideTabs(el) {
-        return Boolean(
-          el &&
-          (
-            (this.$refs.tabs && this.$refs.tabs.contains(el)) ||
-            (this.$refs.fixedTabs && this.$refs.fixedTabs.contains(el))
-          )
-        );
-      },
-
-      handlePanelPointerDown(event) {
-        if (!this.visible) return;
-        this.swipeTracking = true;
-        this.swipeStartX = event.clientX;
-        this.swipeStartY = event.clientY;
-      },
-
-      handlePanelPointerUp(event) {
-        if (!this.swipeTracking) return;
-        this.swipeTracking = false;
-
-        const dx = event.clientX - this.swipeStartX;
-        const dy = event.clientY - this.swipeStartY;
-
-        if (Math.abs(dx) < 42 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
-        this.setTab(dx < 0 ? 'schedule' : 'orders');
-      },
-
-      handlePanelPointerCancel() {
-        this.swipeTracking = false;
-      },
-
-      requestStickyUpdate() {
-        if (!this.visible || this.frame) return;
-        this.frame = requestAnimationFrame(() => {
-          this.frame = null;
-          this.updateSticky();
-        });
-      },
-
-      updateSticky() {
-        if (!this.visible || !this.$refs.tabs) return;
-
-        const top = 8;
-        const scrollY = window.scrollY || window.pageYOffset || 0;
-
-        if (!this.pinY) this.pinY = this.getDocumentTop(this.$refs.tabs);
-
-        const pinAt = this.pinY;
-        const startAt = Math.max(0, pinAt - 96);
-        const progress = this.clamp((scrollY + top - startAt) / Math.max(pinAt - startAt, 1), 0, 1);
-        this.setPinProgress(progress);
-
-        const shouldPin = progress >= 0.98;
-
-        if (shouldPin === this.pinned) return;
-
-        this.setPinned(shouldPin);
-      },
-
-      setPinned(shouldPin) {
-        const tabs = this.$refs.tabs;
-        if (!tabs) return;
-
-        tabs.getAnimations().forEach(animation => animation.cancel());
-        this.pinned = shouldPin;
-      },
-
-      setPinProgress(progress) {
-        if (Math.abs(progress - this.pinProgress) < 0.01) return;
-        this.pinProgress = progress;
-        this.applyPinProgress();
-      },
-
-      applyPinProgress() {
-        const value = this.pinProgress.toFixed(3);
-        if (this.$refs.tabs) this.$refs.tabs.style.setProperty('--pin-progress', value);
-        if (this.$refs.fixedTabs) this.$refs.fixedTabs.style.setProperty('--pin-progress', value);
-      },
-
-      clamp(value, min, max) {
-        return Math.max(min, Math.min(max, value));
-      },
-
-      getDocumentTop(el) {
-        const rect = el.getBoundingClientRect();
-        return rect.top + (window.scrollY || window.pageYOffset || 0);
-      }
-    };
-  }
 
   const keywordInput = document.getElementById('keyword');
   const searchBtn = document.getElementById('searchBtn');
@@ -3775,7 +3513,11 @@ function buildSectionsData(items) {
     initAllSwipers(sections, sectionItemsMap);
     bindOrdersToggle();
     initSupportHelpCard();
-    requestAnimationFrame(updateOrderNameMarquees);
+    requestAnimationFrame(() => {
+      updateOrderNameMarquees();
+      syncResultPanelsHeight();
+      if (resultPanelsSwiper) resultPanelsSwiper.update();
+    });
   }
 
 
@@ -4030,7 +3772,7 @@ function buildSectionsData(items) {
 
           <div class="orders-grid">
             ${items.map((item, index) => `
-              <article class="order-card" style="view-transition-name: ${sectionKey}-order-card-${index};">
+              <article class="order-card">
                 <div class="order-thumb-wrap">
                   <img
                     class="order-thumb"
@@ -4079,7 +3821,7 @@ function buildSectionsData(items) {
           <div class="swiper-wrapper">
             ${items.map((item, index) => `
               <div class="swiper-slide">
-                <article class="order-card" style="view-transition-name: ${sectionKey}-order-card-${index};">
+                <article class="order-card">
                   <div class="order-thumb-wrap">
                     <img
                       class="order-thumb"
@@ -4125,6 +3867,7 @@ function buildSectionsData(items) {
         slidesPerView: 2.3,
         spaceBetween: 16,
         grabCursor: true,
+        nested: true,
         freeMode: {
           enabled: true,
           sticky: false
@@ -4474,6 +4217,8 @@ function handleOrderImageClick(event) {
 
   window.addEventListener('resize', () => {
     requestAnimationFrame(updateOrderNameMarquees);
+    syncResultPanelsHeight();
+    if (resultPanelsSwiper) resultPanelsSwiper.update();
     requestResultTabsStickyUpdate();
   });
 
@@ -4560,21 +4305,19 @@ const rhKeyword = document.getElementById('rhKeyword');
 const rhSearchBtn = document.getElementById('rhSearchBtn');
 const rhLogoBtn = document.getElementById('rhLogoBtn');
 const resultTabsWrap = document.getElementById('resultTabsWrap');
+const resultTabsSentinel = document.getElementById('resultTabsSentinel');
 const ordersTab = document.getElementById('resultOrdersTab');
 const scheduleTab = document.getElementById('resultScheduleTab');
 const resultPanels = document.getElementById('resultPanels');
-const resultPanelsTrack = document.getElementById('resultPanelsTrack');
 const ordersPanel = document.getElementById('ordersPanel');
 const schedulePanelEl = document.getElementById('schedulePanel');
 
 let topbarVisible = false;
-let resultTabsSpacer = null;
-let resultTabsPinY = 0;
+let resultPanelsSwiper = null;
+let resultTabsObserver = null;
 let resultTabsFrame = null;
 let resultTabsPinned = false;
-let resultSwipeStartX = 0;
-let resultSwipeStartY = 0;
-let resultSwipeTracking = false;
+let activeResultTab = 'orders';
 
 function showResultTopbar() {
   if (topbarVisible) {
@@ -4788,46 +4531,30 @@ function hideResultTopbar() {
 }
 
 function showResultTabs() {
-  if (window.manmanResultTabsApi) {
-    window.manmanResultTabsApi.show();
-    return;
-  }
-
   if (!resultTabsWrap) return;
-  ensureResultTabsSpacer();
   resultTabsWrap.classList.add('is-visible');
   resultTabsWrap.setAttribute('aria-hidden', 'false');
-  resultTabsWrap.classList.remove('is-pinned', 'is-stuck');
-  if (resultTabsSpacer) resultTabsSpacer.classList.remove('is-active');
-  resultTabsPinned = false;
-
-  requestAnimationFrame(() => {
-    resultTabsPinY = getDocumentTop(resultTabsWrap);
-    updateResultTabsStickyState();
-  });
+  initResultTabsSwiper();
+  initResultTabsObserver();
+  syncResultPanelsHeight();
+  if (resultPanelsSwiper) resultPanelsSwiper.update();
+  setActiveTab('orders', { slide: false });
+  requestResultTabsStickyUpdate();
 }
 
 function hideResultTabs() {
-  if (window.manmanResultTabsApi) {
-    window.manmanResultTabsApi.hide();
-    return;
-  }
-
   if (!resultTabsWrap) return;
   resultTabsWrap.classList.remove('is-visible');
-  resultTabsWrap.classList.remove('is-pinned', 'is-stuck');
+  resultTabsWrap.classList.remove('is-stuck', 'is-dragging');
   resultTabsWrap.setAttribute('aria-hidden', 'true');
-  if (resultTabsSpacer) resultTabsSpacer.classList.remove('is-active');
-  resultTabsPinY = 0;
+  resultTabsWrap.style.setProperty('--sticky-progress', '0');
   resultTabsPinned = false;
+  activeResultTab = 'orders';
+  updateResultTabsVisualState();
+  if (resultPanelsSwiper) resultPanelsSwiper.slideTo(0, 0);
 }
 
 function requestResultTabsStickyUpdate() {
-  if (window.manmanResultTabsApi) {
-    window.manmanResultTabsApi.updateSticky();
-    return;
-  }
-
   if (resultTabsFrame) return;
   resultTabsFrame = requestAnimationFrame(() => {
     resultTabsFrame = null;
@@ -4837,105 +4564,24 @@ function requestResultTabsStickyUpdate() {
 
 function updateResultTabsStickyState() {
   if (!resultTabsWrap || !resultTabsWrap.classList.contains('is-visible')) return;
-  ensureResultTabsSpacer();
-
-  const top = getStickyTabTopOffset();
-  const scrollY = window.scrollY || window.pageYOffset || 0;
-
-  if (!resultTabsWrap.classList.contains('is-pinned')) {
-    resultTabsPinY = getDocumentTop(resultTabsWrap);
-  }
-
-  const shouldPin = scrollY + top >= resultTabsPinY;
-  const tabHeight = resultTabsWrap.offsetHeight;
-
-  if (shouldPin === resultTabsPinned) return;
-  setResultTabsPinned(shouldPin, tabHeight);
+  const rect = resultTabsWrap.getBoundingClientRect();
+  const start = 98;
+  const end = 0;
+  const progress = clamp((start - rect.top) / Math.max(start - end, 1), 0, 1);
+  resultTabsWrap.style.setProperty('--sticky-progress', progress.toFixed(3));
+  resultTabsWrap.classList.toggle('is-stuck', resultTabsPinned || progress > 0.72);
 }
 
-function getStickyTabTopOffset() {
-  return 8;
-}
-
-function getDocumentTop(el) {
-  const rect = el.getBoundingClientRect();
-  return rect.top + (window.scrollY || window.pageYOffset || 0);
-}
-
-function ensureResultTabsSpacer() {
-  if (!resultTabsWrap || resultTabsSpacer) return;
-  resultTabsSpacer = document.createElement('div');
-  resultTabsSpacer.className = 'result-tabs-spacer';
-  resultTabsWrap.parentNode.insertBefore(resultTabsSpacer, resultTabsWrap);
-}
-
-function setResultTabsPinned(shouldPin, tabHeight) {
-  if (!resultTabsWrap) return;
-
-  const fromRect = resultTabsWrap.getBoundingClientRect();
-
-  if (shouldPin && resultTabsSpacer) {
-    resultTabsSpacer.style.setProperty('--result-tabs-spacer-height', `${tabHeight + 18}px`);
-    resultTabsSpacer.classList.add('is-active');
-  }
-
-  resultTabsWrap.classList.toggle('is-pinned', shouldPin);
-  resultTabsWrap.classList.toggle('is-stuck', shouldPin);
-
-  if (!shouldPin && resultTabsSpacer) {
-    resultTabsSpacer.classList.remove('is-active');
-  }
-
-  resultTabsPinned = shouldPin;
-  animateResultTabsPosition(fromRect);
-}
-
-function animateResultTabsPosition(fromRect) {
-  if (!resultTabsWrap || !fromRect) return;
-
-  const toRect = resultTabsWrap.getBoundingClientRect();
-  const dx = fromRect.left - toRect.left;
-  const dy = fromRect.top - toRect.top;
-  const sx = fromRect.width / Math.max(toRect.width, 1);
-  const sy = fromRect.height / Math.max(toRect.height, 1);
-
-  resultTabsWrap.getAnimations().forEach(animation => animation.cancel());
-
-  if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5 && Math.abs(sx - 1) < 0.01 && Math.abs(sy - 1) < 0.01) {
-    return;
-  }
-
-  resultTabsWrap.animate([
-    {
-      transform: `translate3d(${dx}px, ${dy}px, 0) scale(${sx}, ${sy})`,
-      transformOrigin: 'top left'
-    },
-    {
-      transform: 'translate3d(0, 0, 0) scale(1, 1)',
-      transformOrigin: 'top left'
-    }
-  ], {
-    duration: 300,
-    easing: 'cubic-bezier(0.22, 1, 0.36, 1)'
-  });
-}
-
-function setActiveTab(tabName) {
-  if (window.manmanResultTabsApi) {
-    window.manmanResultTabsApi.setTab(tabName);
-    return;
-  }
-
+function setActiveTab(tabName, options = {}) {
   if (!ordersTab || !scheduleTab) return;
   const normalizedTab = tabName === 'schedule' ? 'schedule' : 'orders';
-  const nextIndex = normalizedTab === 'orders' ? '0' : '1';
+  const nextIndex = normalizedTab === 'orders' ? 0 : 1;
+  const shouldSlide = options.slide !== false;
 
+  activeResultTab = normalizedTab;
   if (resultTabsWrap) {
-    resultTabsWrap.style.setProperty('--tab-index', nextIndex);
-  }
-
-  if (resultPanels) {
-    resultPanels.style.setProperty('--tab-index', nextIndex);
+    resultTabsWrap.style.setProperty('--tab-index', String(nextIndex));
+    resultTabsWrap.style.setProperty('--tab-progress', String(nextIndex));
   }
 
   if (normalizedTab === 'orders') {
@@ -4954,7 +4600,104 @@ function setActiveTab(tabName) {
     if (schedulePanelEl) schedulePanelEl.classList.add('is-active');
   }
 
+  if (resultPanelsSwiper && shouldSlide && resultPanelsSwiper.activeIndex !== nextIndex) {
+    resultPanelsSwiper.slideTo(nextIndex);
+  }
+
   requestResultTabsStickyUpdate();
+}
+
+function initResultTabsSwiper() {
+  if (!resultPanels || resultPanelsSwiper || typeof Swiper !== 'function') return;
+
+  resultPanelsSwiper = new Swiper(resultPanels, {
+    slidesPerView: 1,
+    speed: 340,
+    effect: 'creative',
+    grabCursor: true,
+    watchSlidesProgress: true,
+    observer: true,
+    observeParents: true,
+    preventInteractionOnTransition: false,
+    creativeEffect: {
+      limitProgress: 2,
+      perspective: false,
+      prev: {
+        translate: ['-24%', 0, -120],
+        scale: 0.95,
+        opacity: 0.76
+      },
+      next: {
+        translate: ['24%', 0, -120],
+        scale: 0.95,
+        opacity: 0.76
+      }
+    },
+    resistanceRatio: 0.72,
+    nested: true,
+    threshold: 8,
+    on: {
+      progress(swiper, progress) {
+        updateResultTabProgress(progress);
+      },
+      sliderFirstMove() {
+        resultTabsWrap?.classList.add('is-dragging');
+      },
+      touchEnd() {
+        resultTabsWrap?.classList.remove('is-dragging');
+      },
+      slideChange(swiper) {
+        setActiveTab(swiper.activeIndex === 1 ? 'schedule' : 'orders', { slide: false });
+      },
+      transitionEnd(swiper) {
+        resultTabsWrap?.classList.remove('is-dragging');
+        updateResultTabProgress(swiper.activeIndex);
+      }
+    }
+  });
+}
+
+function initResultTabsObserver() {
+  if (!resultTabsSentinel || !resultTabsWrap || resultTabsObserver) return;
+
+  resultTabsObserver = new IntersectionObserver(entries => {
+    const entry = entries[0];
+    resultTabsPinned = Boolean(entry && !entry.isIntersecting);
+    resultTabsWrap.classList.toggle('is-stuck', resultTabsPinned);
+    requestResultTabsStickyUpdate();
+  }, {
+    threshold: 0,
+    rootMargin: '-1px 0px 0px 0px'
+  });
+
+  resultTabsObserver.observe(resultTabsSentinel);
+}
+
+function updateResultTabsVisualState() {
+  if (!ordersTab || !scheduleTab) return;
+
+  const activeIndex = activeResultTab === 'schedule' ? '1' : '0';
+  resultTabsWrap?.style.setProperty('--tab-index', activeIndex);
+  resultTabsWrap?.style.setProperty('--tab-progress', activeIndex);
+  ordersTab.classList.toggle('is-active', activeResultTab === 'orders');
+  ordersTab.setAttribute('aria-selected', activeResultTab === 'orders' ? 'true' : 'false');
+  scheduleTab.classList.toggle('is-active', activeResultTab === 'schedule');
+  scheduleTab.setAttribute('aria-selected', activeResultTab === 'schedule' ? 'true' : 'false');
+}
+
+function updateResultTabProgress(progress) {
+  if (!resultTabsWrap) return;
+  resultTabsWrap.style.setProperty('--tab-progress', clamp(progress, 0, 1).toFixed(4));
+}
+
+function syncResultPanelsHeight() {
+  if (!resultPanels || !ordersPanel) return;
+  const minHeight = Math.max(ordersPanel.scrollHeight || 0, Math.round(window.innerHeight * 0.7));
+  resultPanels.style.setProperty('--result-panel-min-height', `${minHeight}px`);
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
 }
 
 // 탑바 서치 실행
@@ -5008,31 +4751,9 @@ function handleResultTabClick(event) {
   setActiveTab(tab.dataset.tab || 'orders');
 }
 
-function handleResultPanelPointerDown(event) {
-  if (!resultPanels || !resultPanels.contains(event.target)) return;
-  resultSwipeTracking = true;
-  resultSwipeStartX = event.clientX;
-  resultSwipeStartY = event.clientY;
-}
-
-function handleResultPanelPointerUp(event) {
-  if (!resultSwipeTracking) return;
-  resultSwipeTracking = false;
-
-  const dx = event.clientX - resultSwipeStartX;
-  const dy = event.clientY - resultSwipeStartY;
-
-  if (Math.abs(dx) < 42 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
-
-  if (dx < 0) {
-    setActiveTab('schedule');
-  } else {
-    setActiveTab('orders');
-  }
-}
-
-function handleResultPanelPointerCancel() {
-  resultSwipeTracking = false;
+if (resultTabsWrap) {
+  resultTabsWrap.addEventListener('pointerup', handleResultTabPointer);
+  resultTabsWrap.addEventListener('click', handleResultTabClick);
 }
 
 function renderLoadingState() {
