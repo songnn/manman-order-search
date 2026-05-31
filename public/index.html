@@ -1187,6 +1187,126 @@
   box-shadow: 0 10px 24px rgba(10, 88, 181, 0.18);
 }
 
+.calendar-guide-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10020;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 180ms ease, visibility 180ms ease;
+}
+
+.calendar-guide-overlay.show {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.calendar-guide-box {
+  width: min(92vw, 390px);
+  border-radius: 24px;
+  background: #fff;
+  padding: 24px 20px 18px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.2);
+  text-align: left;
+  transform: translateY(10px) scale(0.98);
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.calendar-guide-overlay.show .calendar-guide-box {
+  transform: translateY(0) scale(1);
+}
+
+.calendar-guide-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background: rgba(0, 81, 160, 0.1);
+  color: #0051a0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin-bottom: 16px;
+}
+
+.calendar-guide-title {
+  margin: 0;
+  font-family: 'Pretendard', Arial, sans-serif;
+  font-size: 20px;
+  line-height: 1.28;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: #111;
+  word-break: keep-all;
+}
+
+.calendar-guide-desc {
+  margin: 12px 0 0;
+  font-family: 'Pretendard', Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  color: #666;
+  word-break: keep-all;
+}
+
+.calendar-guide-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.calendar-guide-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  min-height: 50px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 81, 160, 0.14);
+  background: #fff;
+  color: #0051a0;
+  font-family: 'Pretendard', Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  cursor: pointer;
+  transition:
+    transform 140ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 140ms ease,
+    box-shadow 140ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.calendar-guide-btn:active {
+  transform: scale(0.97);
+}
+
+.calendar-guide-btn.primary {
+  border-color: #0051a0;
+  background: #0051a0;
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(0, 81, 160, 0.18);
+}
+
+.calendar-guide-close {
+  margin-top: 8px;
+  border: none;
+  background: transparent;
+  color: #8a8f98;
+  min-height: 38px;
+}
+
 @media (max-width: 640px) {
   .pretty-alert-box {
     width: min(92vw, 380px);
@@ -3932,6 +4052,22 @@ body.has-results .result-panels {
   </div>
 </div>
 
+<div class="calendar-guide-overlay" id="calendarGuide" aria-hidden="true">
+  <div class="calendar-guide-box" role="dialog" aria-modal="true" aria-labelledby="calendarGuideTitle" aria-describedby="calendarGuideDesc">
+    <div class="calendar-guide-icon" aria-hidden="true">📅</div>
+    <h3 class="calendar-guide-title" id="calendarGuideTitle">캘린더 등록은 브라우저에서 진행돼요</h3>
+    <p class="calendar-guide-desc" id="calendarGuideDesc">
+      카카오톡 안에서는 휴대폰 캘린더 연결이 제한될 수 있어요.
+      Safari 또는 Chrome에서 열면 픽업 알림을 등록할 수 있습니다.
+    </p>
+    <div class="calendar-guide-actions">
+      <button type="button" class="calendar-guide-btn primary" id="calendarGuideOpen">Safari/Chrome에서 열기</button>
+      <button type="button" class="calendar-guide-btn" id="calendarGuideCopy">링크 복사하기</button>
+      <button type="button" class="calendar-guide-btn calendar-guide-close" id="calendarGuideClose">닫기</button>
+    </div>
+  </div>
+</div>
+
     <div class="page">
       <div class="top-stage">
         <section class="hero">
@@ -4128,6 +4264,11 @@ body.has-results .result-panels {
   const prettyAlertEl = document.getElementById('prettyAlert');
 const prettyAlertDescEl = document.getElementById('prettyAlertDesc');
 const prettyAlertConfirmEl = document.getElementById('prettyAlertConfirm');
+const calendarGuideEl = document.getElementById('calendarGuide');
+const calendarGuideDescEl = document.getElementById('calendarGuideDesc');
+const calendarGuideOpenEl = document.getElementById('calendarGuideOpen');
+const calendarGuideCopyEl = document.getElementById('calendarGuideCopy');
+const calendarGuideCloseEl = document.getElementById('calendarGuideClose');
 const homeLogoBtn = document.getElementById('homeLogoBtn');
 const searchGuideEl = document.getElementById('searchGuide');
 const scheduleWeekHostEl = document.getElementById('scheduleWeekHost');
@@ -4139,6 +4280,8 @@ const scheduleModalDimEl = scheduleModalEl?.querySelector('.schedule-modal-dim')
 const scheduleModalDragZoneEl = document.getElementById('scheduleModalDragZone');
 const scheduleModalBodyEl = document.getElementById('scheduleModalBody');
 const scheduleModalCloseEl = document.getElementById('scheduleModalClose');
+let calendarGuideExternalUrl = '';
+let pendingCalendarOpenDateKey = '';
 
   const DUMMY_IMAGES = [
     'https://picsum.photos/seed/manman-order-1/1200/1200',
@@ -4163,6 +4306,7 @@ const scheduleModalCloseEl = document.getElementById('scheduleModalClose');
 
     updateSearchState();
     syncSearchGuide();
+    window.setTimeout(hydrateCalendarIntentFromUrl, 0);
     }
 
   function updateSearchState() {
@@ -4342,6 +4486,7 @@ function search(selectedCustomerLabel = '') {
     hideResultTabs();
     resetScheduleOpenControls();
     syncSearchGuide();
+    openPendingCalendarIntentIfNeeded();
   }
 
   function renderCustomerSelectionCards(candidates, searchedKeyword) {
@@ -4614,6 +4759,14 @@ function isAndroidDevice() {
   return /Android/i.test(navigator.userAgent || '');
 }
 
+function isKakaoInAppBrowser() {
+  return /KAKAOTALK/i.test(navigator.userAgent || '');
+}
+
+function isIOSDevice() {
+  return /iPad|iPhone|iPod/i.test(navigator.userAgent || '') || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
 function openAndroidCalendarEvent(payload) {
   const intentUrl = [
     'intent://insert#Intent',
@@ -4629,6 +4782,99 @@ function openAndroidCalendarEvent(payload) {
   ].join(';');
 
   window.location.href = intentUrl;
+}
+
+function getCalendarExternalUrl(dateKey) {
+  const url = new URL(window.location.href);
+  const keyword = currentSearchKeyword || keywordInput.value || '';
+
+  url.searchParams.set('calendar', '1');
+  url.searchParams.set('pickupDate', dateKey);
+  if (/^\d{4}$/.test(keyword)) {
+    url.searchParams.set('phoneLast4', keyword);
+  }
+
+  return url.toString();
+}
+
+function copyTextToClipboard(text) {
+  if (navigator.clipboard?.writeText) {
+    return navigator.clipboard.writeText(text);
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'fixed';
+  textarea.style.left = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  try {
+    document.execCommand('copy');
+    return Promise.resolve();
+  } catch (error) {
+    return Promise.reject(error);
+  } finally {
+    textarea.remove();
+  }
+}
+
+function updateCalendarGuideCopiedText() {
+  if (!calendarGuideDescEl) return;
+  calendarGuideDescEl.textContent = isIOSDevice()
+    ? '링크가 복사됐어요. Safari를 열어 주소창에 붙여넣고, 열린 화면에서 픽업 알림 등록을 눌러주세요.'
+    : '링크가 복사됐어요. Chrome 또는 기본 브라우저에서 열고 픽업 알림 등록을 눌러주세요.';
+}
+
+async function copyCalendarExternalUrl() {
+  if (!calendarGuideExternalUrl) return;
+  try {
+    await copyTextToClipboard(calendarGuideExternalUrl);
+    updateCalendarGuideCopiedText();
+  } catch (error) {
+    console.warn('Calendar link copy failed', error);
+  }
+}
+
+function openExternalBrowserForCalendar() {
+  const targetUrl = calendarGuideExternalUrl || window.location.href;
+
+  if (isAndroidDevice()) {
+    const url = new URL(targetUrl);
+    const scheme = url.protocol.replace(':', '') || 'https';
+    const intentUrl = [
+      `intent://${url.host}${url.pathname}${url.search}${url.hash}#Intent`,
+      `scheme=${scheme}`,
+      'package=com.android.chrome',
+      `S.browser_fallback_url=${encodeURIComponent(targetUrl)}`,
+      'end'
+    ].join(';');
+
+    window.location.href = intentUrl;
+    return;
+  }
+
+  if (isIOSDevice()) {
+    copyCalendarExternalUrl();
+    return;
+  }
+
+  window.open(targetUrl, '_blank', 'noopener');
+}
+
+function showKakaoCalendarGuide(dateKey) {
+  calendarGuideExternalUrl = getCalendarExternalUrl(dateKey);
+  if (calendarGuideDescEl) {
+    calendarGuideDescEl.textContent = '카카오톡 안에서는 휴대폰 캘린더 연결이 제한될 수 있어요. Safari 또는 Chrome에서 열면 픽업 알림을 등록할 수 있습니다.';
+  }
+  calendarGuideEl?.classList.add('show');
+  calendarGuideEl?.setAttribute('aria-hidden', 'false');
+}
+
+function hideCalendarGuide() {
+  calendarGuideEl?.classList.remove('show');
+  calendarGuideEl?.setAttribute('aria-hidden', 'true');
 }
 
 async function openIcsCalendarFile(ics, fileName) {
@@ -4657,6 +4903,11 @@ async function openPickupCalendarRegistration(dateKey, items, productHash) {
   const payload = getPickupCalendarPayload(dateKey, items, productHash);
   if (!payload) return;
 
+  if (isKakaoInAppBrowser()) {
+    showKakaoCalendarGuide(dateKey);
+    return;
+  }
+
   if (isAndroidDevice()) {
     openAndroidCalendarEvent(payload);
     return;
@@ -4664,6 +4915,34 @@ async function openPickupCalendarRegistration(dateKey, items, productHash) {
 
   const ics = createPickupCalendarIcs(payload.date, items, dateKey, productHash);
   await openIcsCalendarFile(ics, payload.fileName);
+}
+
+function hydrateCalendarIntentFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const shouldOpenCalendar = params.get('calendar') === '1';
+  const pickupDate = params.get('pickupDate') || '';
+  const phoneLast4 = sanitizeFourDigitInput(params.get('phoneLast4') || '');
+
+  if (!shouldOpenCalendar || !/^\d{4}$/.test(phoneLast4)) return;
+
+  pendingCalendarOpenDateKey = pickupDate;
+  keywordInput.value = phoneLast4;
+  if (typeof rhKeyword !== 'undefined' && rhKeyword) rhKeyword.value = phoneLast4;
+  updateSearchState();
+  search();
+}
+
+function openPendingCalendarIntentIfNeeded() {
+  if (!pendingCalendarOpenDateKey) return;
+
+  const dateKey = pendingCalendarOpenDateKey;
+  pendingCalendarOpenDateKey = '';
+  window.setTimeout(() => {
+    openScheduleModal();
+    window.setTimeout(() => {
+      selectScheduleDate(dateKey, { scroll: true, slide: true, behavior: 'smooth' });
+    }, 180);
+  }, 180);
 }
 
   function escapeHtml(str) {
@@ -6997,9 +7276,23 @@ function handleOrderImageClick(event) {
       }
     });
 
+    calendarGuideOpenEl?.addEventListener('click', openExternalBrowserForCalendar);
+    calendarGuideCopyEl?.addEventListener('click', copyCalendarExternalUrl);
+    calendarGuideCloseEl?.addEventListener('click', hideCalendarGuide);
+    calendarGuideEl?.addEventListener('click', e => {
+      if (e.target === calendarGuideEl) {
+        hideCalendarGuide();
+      }
+    });
+
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape' && isScheduleModalOpen()) {
         closeScheduleModal({ clear: false, animate: true });
+        return;
+      }
+
+      if (e.key === 'Escape' && calendarGuideEl?.classList.contains('show')) {
+        hideCalendarGuide();
         return;
       }
 
@@ -7045,6 +7338,7 @@ function resetToHome() {
   hideResultTabs();
   updateSearchState();
   hidePrettyAlert();
+  hideCalendarGuide();
   showSearchGuide();
   keywordInput.blur();
 
