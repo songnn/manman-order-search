@@ -2920,8 +2920,8 @@ body.schedule-modal-open .page > :not(.schedule-modal) {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: start;
-  column-gap: 8px;
-  padding: 14px 16px 14px 14px;
+  column-gap: 10px;
+  padding: 16px 16px 16px 14px;
   min-height: 80px;
 }
 
@@ -2931,15 +2931,15 @@ body.schedule-modal-open .page > :not(.schedule-modal) {
   width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   justify-content: flex-start;
   padding-top: 2px;
-  gap: 8px;
+  gap: 10px;
 }
 
 .schedule-date-title {
   margin: 0;
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.2;
   font-weight: 500;
   letter-spacing: 0;
@@ -2958,7 +2958,7 @@ body.schedule-modal-open .page > :not(.schedule-modal) {
 }
 
 .schedule-date-sub {
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.2;
   font-weight: 600;
   letter-spacing: -0.02em;
@@ -2971,7 +2971,9 @@ body.schedule-modal-open .page > :not(.schedule-modal) {
   display: flex;
   align-items: stretch;
   width: 100%;
-  margin-top: 6px;
+  max-width: 118px;
+  min-height: 70px;
+  margin: 8px auto 0;
 }
 
 .schedule-pickup-metric {
@@ -2979,38 +2981,40 @@ body.schedule-modal-open .page > :not(.schedule-modal) {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 5px;
-  padding: 0 2px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 4px;
+  text-align: center;
 }
 
 .schedule-pickup-metric + .schedule-pickup-metric {
   border-left: 1px solid #ddd;
-  padding-left: 8px;
-  margin-left: 6px;
+  padding-left: 10px;
+  margin-left: 8px;
 }
 
 .schedule-pickup-metric-label {
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.1;
   font-weight: 500;
   letter-spacing: -0.02em;
-  color: #9e9e9e;
+  color: #111;
   white-space: nowrap;
   font-family: 'Pretendard', sans-serif;
 }
 
 .schedule-pickup-metric-value {
   font-family: 'Paperlogy', 'Pretendard', sans-serif;
-  font-size: 15px;
+  font-size: 17px;
   line-height: 1;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.02em;
   color: #111;
 }
 
 .schedule-pickup-metric-icon {
-  font-size: 18px;
+  font-size: 22px;
   line-height: 1;
 }
 
