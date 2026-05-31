@@ -4265,6 +4265,7 @@ body.has-results .result-panels {
 const prettyAlertDescEl = document.getElementById('prettyAlertDesc');
 const prettyAlertConfirmEl = document.getElementById('prettyAlertConfirm');
 const calendarGuideEl = document.getElementById('calendarGuide');
+const calendarGuideTitleEl = document.getElementById('calendarGuideTitle');
 const calendarGuideDescEl = document.getElementById('calendarGuideDesc');
 const calendarGuideOpenEl = document.getElementById('calendarGuideOpen');
 const calendarGuideCopyEl = document.getElementById('calendarGuideCopy');
@@ -4282,6 +4283,7 @@ const scheduleModalBodyEl = document.getElementById('scheduleModalBody');
 const scheduleModalCloseEl = document.getElementById('scheduleModalClose');
 let calendarGuideExternalUrl = '';
 let pendingCalendarOpenDateKey = '';
+let calendarLandingMode = false;
 
   const DUMMY_IMAGES = [
     'https://picsum.photos/seed/manman-order-1/1200/1200',
@@ -4784,12 +4786,15 @@ function openAndroidCalendarEvent(payload) {
   window.location.href = intentUrl;
 }
 
-function getCalendarExternalUrl(dateKey) {
+function getCalendarExternalUrl(dateKey, source = '') {
   const url = new URL(window.location.href);
   const keyword = currentSearchKeyword || keywordInput.value || '';
 
   url.searchParams.set('calendar', '1');
   url.searchParams.set('pickupDate', dateKey);
+  if (source) {
+    url.searchParams.set('from', source);
+  }
   if (/^\d{4}$/.test(keyword)) {
     url.searchParams.set('phoneLast4', keyword);
   }
@@ -4840,6 +4845,11 @@ async function copyCalendarExternalUrl() {
 function openExternalBrowserForCalendar() {
   const targetUrl = calendarGuideExternalUrl || window.location.href;
 
+  if (isKakaoInAppBrowser()) {
+    window.location.href = `kakaotalk://web/openExternal?url=${encodeURIComponent(targetUrl)}`;
+    return;
+  }
+
   if (isAndroidDevice()) {
     const url = new URL(targetUrl);
     const scheme = url.protocol.replace(':', '') || 'https';
@@ -4863,18 +4873,36 @@ function openExternalBrowserForCalendar() {
   window.open(targetUrl, '_blank', 'noopener');
 }
 
-function showKakaoCalendarGuide(dateKey) {
-  calendarGuideExternalUrl = getCalendarExternalUrl(dateKey);
+function showKakaoExternalFallback(targetUrl) {
+  calendarGuideExternalUrl = targetUrl;
+  if (calendarGuideTitleEl) {
+    calendarGuideTitleEl.textContent = '브라우저 열기가 안 됐나요?';
+  }
   if (calendarGuideDescEl) {
-    calendarGuideDescEl.textContent = '카카오톡 안에서는 휴대폰 캘린더 연결이 제한될 수 있어요. Safari 또는 Chrome에서 열면 픽업 알림을 등록할 수 있습니다.';
+    calendarGuideDescEl.textContent = '카카오톡 안에서는 캘린더 연결이 제한될 수 있어요. 링크를 복사한 뒤 Safari 또는 Chrome 주소창에 붙여넣으면 등록할 수 있습니다.';
   }
   calendarGuideEl?.classList.add('show');
   calendarGuideEl?.setAttribute('aria-hidden', 'false');
 }
 
+function openKakaoExternalBrowserForCalendar(dateKey) {
+  const targetUrl = getCalendarExternalUrl(dateKey, 'kakao');
+  calendarGuideExternalUrl = targetUrl;
+  window.location.href = `kakaotalk://web/openExternal?url=${encodeURIComponent(targetUrl)}`;
+
+  window.setTimeout(() => {
+    if (!document.hidden && isKakaoInAppBrowser()) {
+      showKakaoExternalFallback(targetUrl);
+    }
+  }, 1200);
+}
+
 function hideCalendarGuide() {
   calendarGuideEl?.classList.remove('show');
   calendarGuideEl?.setAttribute('aria-hidden', 'true');
+  if (calendarGuideTitleEl) {
+    calendarGuideTitleEl.textContent = '캘린더 등록은 브라우저에서 진행돼요';
+  }
 }
 
 async function openIcsCalendarFile(ics, fileName) {
@@ -4904,7 +4932,7 @@ async function openPickupCalendarRegistration(dateKey, items, productHash) {
   if (!payload) return;
 
   if (isKakaoInAppBrowser()) {
-    showKakaoCalendarGuide(dateKey);
+    openKakaoExternalBrowserForCalendar(dateKey);
     return;
   }
 
@@ -4925,6 +4953,7 @@ function hydrateCalendarIntentFromUrl() {
 
   if (!shouldOpenCalendar || !/^\d{4}$/.test(phoneLast4)) return;
 
+  calendarLandingMode = params.get('from') === 'kakao';
   pendingCalendarOpenDateKey = pickupDate;
   keywordInput.value = phoneLast4;
   if (typeof rhKeyword !== 'undefined' && rhKeyword) rhKeyword.value = phoneLast4;
@@ -6082,6 +6111,7 @@ function renderScheduleDateSection(date, items) {
   const productTypeCount = items.length;
   const totalQuantity = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
   const productHash = hasPickup ? getCalendarProductHash(items) : '';
+  const calendarButtonLabel = calendarLandingMode ? '캘린더 앱 열기' : '픽업 알림 등록';
   const pickupMetricsHtml = hasPickup ? `
             <div class="schedule-pickup-metric">
               <span class="schedule-pickup-metric-label">픽업상품</span>
@@ -6120,7 +6150,7 @@ ${pickupMetricsHtml}
               data-calendar-register
               data-date-key="${dateKey}"
               data-product-hash="${productHash}"
-            ><span class="schedule-calendar-action-icon" aria-hidden="true">📅</span><span>픽업 알림 등록</span></button>
+            ><span class="schedule-calendar-action-icon" aria-hidden="true">📅</span><span>${escapeHtml(calendarButtonLabel)}</span></button>
           </div>` : ''}
         </div>
         <div class="schedule-date-right">
@@ -7314,6 +7344,8 @@ function resetToHome() {
   currentOrderItems = [];
   currentSearchKeyword = '';
   currentSelectedCustomerLabel = '';
+  calendarLandingMode = false;
+  pendingCalendarOpenDateKey = '';
   searchRequestSeq += 1;
   searchRequestInFlight = false;
   scheduleState.selectedDateKey = '';
