@@ -2853,7 +2853,11 @@ body.schedule-modal-open .page > :not(.schedule-modal) {
 }
 
 .schedule-date-section + .schedule-date-section {
-  margin-top: 24px;
+  margin-top: 0;
+}
+
+.schedule-date-section:not(:last-child) {
+  padding-bottom: 24px;
 }
 
 .schedule-date-row {
