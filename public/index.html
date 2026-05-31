@@ -2981,11 +2981,11 @@ body.schedule-modal-open .page > :not(.schedule-modal) {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  gap: 7px;
+  gap: 0;
   padding: 0 4px;
-  text-align: center;
+  text-align: left;
 }
 
 .schedule-pickup-metric + .schedule-pickup-metric {
@@ -2995,7 +2995,7 @@ body.schedule-modal-open .page > :not(.schedule-modal) {
 }
 
 .schedule-pickup-metric-label {
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.1;
   font-weight: 500;
   letter-spacing: -0.02em;
@@ -3005,17 +3005,37 @@ body.schedule-modal-open .page > :not(.schedule-modal) {
 }
 
 .schedule-pickup-metric-value {
-  font-family: 'Paperlogy', 'Pretendard', sans-serif;
-  font-size: 17px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 1px;
+  margin-top: 5px;
+  margin-bottom: 10px;
+  font-size: 10px;
   line-height: 1;
-  font-weight: 600;
   letter-spacing: -0.02em;
   color: #111;
+  text-align: left;
+}
+
+.schedule-pickup-metric-num {
+  font-family: 'Paperlogy', 'Pretendard', sans-serif;
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 600;
+}
+
+.schedule-pickup-metric-unit {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 500;
 }
 
 .schedule-pickup-metric-icon {
-  font-size: 22px;
-  line-height: 1;
+  display: block;
+  width: auto;
+  height: 13px;
+  object-fit: contain;
 }
 
 .schedule-pickup-metrics.no-pickup .schedule-pickup-metric-label {
@@ -5372,13 +5392,17 @@ function renderScheduleDateSection(date, items) {
           <div class="schedule-pickup-metrics ${metricClass}" aria-label="픽업상품 ${productTypeCount}종, 총 개수 ${totalQuantity}개">
             <div class="schedule-pickup-metric">
               <span class="schedule-pickup-metric-label">픽업상품</span>
-              <span class="schedule-pickup-metric-value">${escapeHtml(productTypeCount)}종</span>
-              <span class="schedule-pickup-metric-icon" aria-hidden="true">🧺</span>
+              <span class="schedule-pickup-metric-value">
+                <span class="schedule-pickup-metric-num">${escapeHtml(productTypeCount)}</span><span class="schedule-pickup-metric-unit">종</span>
+              </span>
+              <img class="schedule-pickup-metric-icon" src="/schedule-pickup-products.png" alt="" aria-hidden="true" loading="lazy" decoding="async">
             </div>
             <div class="schedule-pickup-metric">
               <span class="schedule-pickup-metric-label">총 개수</span>
-              <span class="schedule-pickup-metric-value">${escapeHtml(totalQuantity)}개</span>
-              <span class="schedule-pickup-metric-icon" aria-hidden="true">📦</span>
+              <span class="schedule-pickup-metric-value">
+                <span class="schedule-pickup-metric-num">${escapeHtml(totalQuantity)}</span><span class="schedule-pickup-metric-unit">개</span>
+              </span>
+              <img class="schedule-pickup-metric-icon" src="/schedule-pickup-total.png" alt="" aria-hidden="true" loading="lazy" decoding="async">
             </div>
           </div>
         </div>
