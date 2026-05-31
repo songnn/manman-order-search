@@ -2776,27 +2776,27 @@ body.schedule-modal-open .page > :not(.schedule-modal) {
   width: 6px;
   height: 6px;
   border-radius: 999px;
-  background: #e84f86;
+  background: #ff3d7f;
   display: none;
 }
 
 .schedule-day-btn.has-pickups .schedule-day-dot {
   display: block;
   animation: schedulePickupDotBlink 1.75s ease-in-out infinite;
-  box-shadow: 0 0 0 0 rgba(232, 79, 134, 0.28);
+  box-shadow: 0 0 0 0 rgba(255, 61, 127, 0.30);
 }
 
 @keyframes schedulePickupDotBlink {
   0%, 100% {
     opacity: 0.62;
     transform: scale(0.86);
-    box-shadow: 0 0 0 0 rgba(232, 79, 134, 0.20);
+    box-shadow: 0 0 0 0 rgba(255, 61, 127, 0.22);
   }
 
   45% {
     opacity: 1;
     transform: scale(1.12);
-    box-shadow: 0 0 0 5px rgba(232, 79, 134, 0);
+    box-shadow: 0 0 0 5px rgba(255, 61, 127, 0);
   }
 }
 
@@ -2988,8 +2988,8 @@ body.schedule-modal-open .page > :not(.schedule-modal) {
 }
 
 .schedule-pickup-metric + .schedule-pickup-metric {
-  padding-left: 12px;
-  margin-left: 8px;
+  padding-left: 10px;
+  margin-left: 6px;
 }
 
 .schedule-pickup-metric + .schedule-pickup-metric::before {
@@ -3447,8 +3447,8 @@ body.has-results .result-panels {
 
 .schedule-calendar-entry-meta {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -3464,7 +3464,7 @@ body.has-results .result-panels {
 .schedule-calendar-entry-stat {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   min-width: 0;
 }
 
@@ -3472,20 +3472,20 @@ body.has-results .result-panels {
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
 .schedule-calendar-entry-stat-icon {
   display: block;
   width: auto;
-  height: 14px;
+  height: 13px;
   object-fit: contain;
 }
 
 .schedule-calendar-entry-stat-label {
   font-family: 'Pretendard', Arial, sans-serif;
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1;
   font-weight: 500;
   letter-spacing: -0.02em;
@@ -3502,14 +3502,14 @@ body.has-results .result-panels {
 
 .schedule-calendar-entry-stat-num {
   font-family: 'Paperlogy', 'Pretendard', sans-serif;
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1;
   font-weight: 700;
 }
 
 .schedule-calendar-entry-stat-unit {
   font-family: 'Pretendard', Arial, sans-serif;
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1;
   font-weight: 500;
 }
