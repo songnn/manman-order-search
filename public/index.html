@@ -2906,30 +2906,63 @@ body.schedule-modal-open .page > :not(.schedule-modal) {
   text-align: center;
 }
 
-/* 픽업 배지 — 피그마 스타일 */
-.schedule-pickup-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 3px 7px;
-  border-radius: 2px;
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0;
-  white-space: nowrap;
-  font-family: 'Pretendard', sans-serif;
+.schedule-pickup-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+  max-width: 92px;
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.86);
+  overflow: hidden;
 }
 
-.schedule-pickup-badge.has-pickup {
-  background: #fff;
-  border: 1px solid #0051a0;
+.schedule-pickup-metric {
+  min-width: 0;
+  padding: 7px 3px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.schedule-pickup-metric + .schedule-pickup-metric {
+  border-left: 1px solid rgba(17, 24, 39, 0.12);
+}
+
+.schedule-pickup-metric-label {
+  font-size: 9px;
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #737373;
+  white-space: nowrap;
+}
+
+.schedule-pickup-metric-value {
+  font-family: 'Paperlogy', 'Pretendard', sans-serif;
+  font-size: 17px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: #111;
+}
+
+.schedule-pickup-metric-icon {
+  width: 18px;
+  height: 18px;
   color: #0051a0;
 }
 
-.schedule-pickup-badge.no-pickup {
-  background: #f1f1f1;
-  border: 1px solid #f1f1f1;
-  color: #737373;
+.schedule-pickup-metrics.no-pickup {
+  background: rgba(241, 241, 241, 0.9);
+  border-color: rgba(17, 24, 39, 0.06);
+}
+
+.schedule-pickup-metrics.no-pickup .schedule-pickup-metric-label,
+.schedule-pickup-metrics.no-pickup .schedule-pickup-metric-value,
+.schedule-pickup-metrics.no-pickup .schedule-pickup-metric-icon {
+  color: #9ca3af;
 }
 
 /* 우측: 상품 그리드 */
@@ -5265,8 +5298,9 @@ function renderScheduleDateSection(date, items) {
   const wdays = ['일', '월', '화', '수', '목', '금', '토'];
   const dayLabel = `${date.getMonth() + 1}월 ${date.getDate()}일 (${wdays[date.getDay()]})`;
   const hasPickup = items.length > 0;
-  const badgeClass = hasPickup ? 'has-pickup' : 'no-pickup';
-  const badgeText = `픽업 ${items.length}`;
+  const metricClass = hasPickup ? 'has-pickup' : 'no-pickup';
+  const productTypeCount = items.length;
+  const totalQuantity = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
 
   return `
     <section class="schedule-date-section" id="schedule-date-${dateKey}" data-schedule-section="${dateKey}">
@@ -5274,7 +5308,25 @@ function renderScheduleDateSection(date, items) {
         <div class="schedule-date-left">
           <div class="schedule-date-title ${toneClass}">${escapeHtml(dayLabel)}</div>
           ${holiday ? `<div class="schedule-date-sub">${escapeHtml(holiday.name)}</div>` : ''}
-          <div class="schedule-pickup-badge ${badgeClass}">${escapeHtml(badgeText)}</div>
+          <div class="schedule-pickup-metrics ${metricClass}" aria-label="상품수 ${productTypeCount}, 물품개수 ${totalQuantity}">
+            <div class="schedule-pickup-metric">
+              <span class="schedule-pickup-metric-label">상품수</span>
+              <span class="schedule-pickup-metric-value">${escapeHtml(productTypeCount)}</span>
+              <svg class="schedule-pickup-metric-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5v-9Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                <path d="m4.5 8 7.5 4.2L19.5 8M12 12.2V20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="schedule-pickup-metric">
+              <span class="schedule-pickup-metric-label">물품개수</span>
+              <span class="schedule-pickup-metric-value">${escapeHtml(totalQuantity)}</span>
+              <svg class="schedule-pickup-metric-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M7.5 9V7.5a4.5 4.5 0 0 1 9 0V9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M5.5 9h13l-1 11h-11l-1-11Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                <path d="m9 14 2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
         </div>
         <div class="schedule-date-right">
           ${hasPickup ? renderScheduleProductGrid(items) : renderScheduleEmptyDay(date)}
