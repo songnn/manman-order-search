@@ -2853,11 +2853,7 @@ body.schedule-modal-open .page > :not(.schedule-modal) {
 }
 
 .schedule-date-section + .schedule-date-section {
-  margin-top: 0;
-}
-
-.schedule-date-section:not(:last-child) {
-  padding-bottom: 24px;
+  margin-top: 24px;
 }
 
 .schedule-date-row {
@@ -5441,6 +5437,11 @@ function getScheduleSlideIndexForDate(dateKey) {
   return clamp(dateIndex - SCHEDULE_CENTER_OFFSET_DAYS, 0, maxStartIndex);
 }
 
+function getScheduleSectionTopGap(section) {
+  if (!section) return 0;
+  return Number.parseFloat(window.getComputedStyle(section).marginTop || '0') || 0;
+}
+
 function selectScheduleDate(dateKey, options = {}) {
   const shouldScroll = options.scroll !== false;
   const shouldSlide = options.slide !== false;
@@ -5464,6 +5465,7 @@ function selectScheduleDate(dateKey, options = {}) {
   const scrollContainer = getScheduleScrollContainer();
   const sticky = scheduleWeekHostEl;
   const topOffset = Math.round(sticky?.getBoundingClientRect().height || sticky?.offsetHeight || 0);
+  const sectionTopGap = getScheduleSectionTopGap(section);
 
   if (scrollContainer) {
     const containerRect = scrollContainer.getBoundingClientRect();
@@ -5471,7 +5473,8 @@ function selectScheduleDate(dateKey, options = {}) {
       section.getBoundingClientRect().top -
       containerRect.top +
       scrollContainer.scrollTop -
-      topOffset;
+      topOffset -
+      sectionTopGap;
 
     scrollContainer.scrollTo({
       top: Math.max(0, targetTop),
@@ -5480,7 +5483,8 @@ function selectScheduleDate(dateKey, options = {}) {
   } else {
     const pageOffset =
       (ENABLE_RESULT_TABS_STICKY ? (resultTabsWrap?.getBoundingClientRect().height || 0) : 0) +
-      (ENABLE_SCHEDULE_WEEK_STICKY ? topOffset : 0);
+      (ENABLE_SCHEDULE_WEEK_STICKY ? topOffset : 0) +
+      sectionTopGap;
     const targetTop = section.getBoundingClientRect().top + (window.scrollY || window.pageYOffset || 0) - pageOffset;
     window.scrollTo({
       top: Math.max(0, targetTop),
@@ -5554,7 +5558,8 @@ function syncScheduleFromScroll() {
   } else {
     for (const section of sections) {
       const rect = section.getBoundingClientRect();
-      if (rect.top <= readLine) {
+      const sectionTopGap = getScheduleSectionTopGap(section);
+      if (rect.top - sectionTopGap <= readLine) {
         activeSection = section;
       } else {
         break;
