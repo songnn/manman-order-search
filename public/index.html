@@ -3476,13 +3476,6 @@ body.has-results .result-panels {
   min-width: 0;
 }
 
-.schedule-calendar-entry-stat-icon {
-  display: block;
-  width: auto;
-  height: 13px;
-  object-fit: contain;
-}
-
 .schedule-calendar-entry-stat-label {
   font-family: 'Pretendard', Arial, sans-serif;
   font-size: 10px;
@@ -5081,14 +5074,12 @@ function buildSectionsData(items) {
               <span class="schedule-calendar-entry-date">${escapeHtml(dateMeta)}</span>
               <span class="schedule-calendar-entry-stats">
                 <span class="schedule-calendar-entry-stat">
-                  <img class="schedule-calendar-entry-stat-icon" src="/schedule-pickup-products.png" alt="" aria-hidden="true" loading="lazy" decoding="async">
                   <span class="schedule-calendar-entry-stat-label">픽업상품</span>
                   <span class="schedule-calendar-entry-stat-value">
                     <span class="schedule-calendar-entry-stat-num">${escapeHtml(preview.count)}</span><span class="schedule-calendar-entry-stat-unit">종</span>
                   </span>
                 </span>
                 <span class="schedule-calendar-entry-stat">
-                  <img class="schedule-calendar-entry-stat-icon" src="/schedule-pickup-total.png" alt="" aria-hidden="true" loading="lazy" decoding="async">
                   <span class="schedule-calendar-entry-stat-label">총 개수</span>
                   <span class="schedule-calendar-entry-stat-value">
                     <span class="schedule-calendar-entry-stat-num">${escapeHtml(preview.totalQuantity)}</span><span class="schedule-calendar-entry-stat-unit">개</span>
