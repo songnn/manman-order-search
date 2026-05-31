@@ -3446,11 +3446,66 @@ body.has-results .result-panels {
 }
 
 .schedule-calendar-entry-meta {
-  font-size: clamp(13px, 3.0vw, 16px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.schedule-calendar-entry-date {
+  font-family: 'Pretendard', Arial, sans-serif;
+  font-size: 12px;
   line-height: 1.2;
   font-weight: 500;
   letter-spacing: -0.02em;
   color: #737373;
+}
+
+.schedule-calendar-entry-stat {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  width: min(156px, 100%);
+}
+
+.schedule-calendar-entry-stat-icon {
+  display: block;
+  width: auto;
+  height: 14px;
+  object-fit: contain;
+}
+
+.schedule-calendar-entry-stat-label {
+  min-width: 0;
+  font-family: 'Pretendard', Arial, sans-serif;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: #111;
+}
+
+.schedule-calendar-entry-stat-value {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 1px;
+  white-space: nowrap;
+  color: #111;
+}
+
+.schedule-calendar-entry-stat-num {
+  font-family: 'Paperlogy', 'Pretendard', sans-serif;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.schedule-calendar-entry-stat-unit {
+  font-family: 'Pretendard', Arial, sans-serif;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 500;
 }
 
 .schedule-preview-stack {
@@ -4977,9 +5032,11 @@ function buildSectionsData(items) {
     const sortedItems = sortItemsByOrderSheetDate(selectedGroup.items);
     const imageItems = sortedItems.slice(0, 2);
     const count = sortedItems.length;
+    const totalQuantity = sortedItems.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
 
     return {
       count,
+      totalQuantity,
       dateLabel: formatPickupDateDisplay(selectedGroup.date),
       isFuture: Boolean(futureDays[0]),
       images: imageItems.map((item, index) => {
@@ -4999,7 +5056,8 @@ function buildSectionsData(items) {
 
     const [frontImage, backImage] = preview.images;
     const hasBackImage = Boolean(backImage);
-    const meta = `${preview.dateLabel} · ${preview.isFuture ? '찾을 상품' : '최근 픽업'} ${preview.count}종`;
+    const dateMeta = `${preview.dateLabel} · ${preview.isFuture ? '찾을 상품' : '최근 픽업'}`;
+    const meta = `${dateMeta} ${preview.count}종, 총 개수 ${preview.totalQuantity}개`;
 
     return `
       <section class="schedule-calendar-entry-wrap" aria-label="픽업 달력 바로가기">
@@ -5013,7 +5071,23 @@ function buildSectionsData(items) {
         >
           <span class="schedule-calendar-entry-copy">
             <span class="schedule-calendar-entry-title">픽업 달력 확인하기</span>
-            <span class="schedule-calendar-entry-meta">${escapeHtml(meta)}</span>
+            <span class="schedule-calendar-entry-meta">
+              <span class="schedule-calendar-entry-date">${escapeHtml(dateMeta)}</span>
+              <span class="schedule-calendar-entry-stat">
+                <img class="schedule-calendar-entry-stat-icon" src="/schedule-pickup-products.png" alt="" aria-hidden="true" loading="lazy" decoding="async">
+                <span class="schedule-calendar-entry-stat-label">픽업상품</span>
+                <span class="schedule-calendar-entry-stat-value">
+                  <span class="schedule-calendar-entry-stat-num">${escapeHtml(preview.count)}</span><span class="schedule-calendar-entry-stat-unit">종</span>
+                </span>
+              </span>
+              <span class="schedule-calendar-entry-stat">
+                <img class="schedule-calendar-entry-stat-icon" src="/schedule-pickup-total.png" alt="" aria-hidden="true" loading="lazy" decoding="async">
+                <span class="schedule-calendar-entry-stat-label">총 개수</span>
+                <span class="schedule-calendar-entry-stat-value">
+                  <span class="schedule-calendar-entry-stat-num">${escapeHtml(preview.totalQuantity)}</span><span class="schedule-calendar-entry-stat-unit">개</span>
+                </span>
+              </span>
+            </span>
           </span>
           <span class="schedule-preview-stack ${hasBackImage ? '' : 'is-single'}" aria-hidden="true">
             ${hasBackImage ? `
