@@ -5078,7 +5078,7 @@ function buildSectionsData(items) {
 
     const [frontImage, backImage] = preview.images;
     const hasBackImage = Boolean(backImage);
-    const dateMeta = preview.dateLabel;
+    const dateMeta = `${preview.dateLabel} 픽업 일정`;
     const meta = `${dateMeta} 픽업상품 ${preview.count}종, 총 개수 ${preview.totalQuantity}개`;
 
     return `
