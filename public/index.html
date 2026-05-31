@@ -3448,7 +3448,7 @@ body.has-results .result-panels {
 .schedule-calendar-entry-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   min-width: 0;
 }
 
@@ -3464,7 +3464,15 @@ body.has-results .result-panels {
 .schedule-calendar-entry-stat {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
+  min-height: 24px;
+  padding: 4px 7px 4px 5px;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 999px;
+  background: rgba(248, 250, 252, 0.88);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.85) inset,
+    0 5px 14px rgba(15, 23, 42, 0.05);
   min-width: 0;
 }
 
@@ -3472,8 +3480,15 @@ body.has-results .result-panels {
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
-  gap: 8px;
+  gap: 5px;
   min-width: 0;
+}
+
+.schedule-calendar-entry-stat-icon {
+  display: block;
+  width: auto;
+  height: 13px;
+  object-fit: contain;
 }
 
 .schedule-calendar-entry-stat-label {
@@ -3482,7 +3497,7 @@ body.has-results .result-panels {
   line-height: 1;
   font-weight: 500;
   letter-spacing: -0.02em;
-  color: #111;
+  color: #3f4650;
 }
 
 .schedule-calendar-entry-stat-value {
@@ -5074,12 +5089,14 @@ function buildSectionsData(items) {
               <span class="schedule-calendar-entry-date">${escapeHtml(dateMeta)}</span>
               <span class="schedule-calendar-entry-stats">
                 <span class="schedule-calendar-entry-stat">
+                  <img class="schedule-calendar-entry-stat-icon" src="/schedule-pickup-products.png" alt="" aria-hidden="true" loading="lazy" decoding="async">
                   <span class="schedule-calendar-entry-stat-label">픽업상품</span>
                   <span class="schedule-calendar-entry-stat-value">
                     <span class="schedule-calendar-entry-stat-num">${escapeHtml(preview.count)}</span><span class="schedule-calendar-entry-stat-unit">종</span>
                   </span>
                 </span>
                 <span class="schedule-calendar-entry-stat">
+                  <img class="schedule-calendar-entry-stat-icon" src="/schedule-pickup-total.png" alt="" aria-hidden="true" loading="lazy" decoding="async">
                   <span class="schedule-calendar-entry-stat-label">총 개수</span>
                   <span class="schedule-calendar-entry-stat-value">
                     <span class="schedule-calendar-entry-stat-num">${escapeHtml(preview.totalQuantity)}</span><span class="schedule-calendar-entry-stat-unit">개</span>
