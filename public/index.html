@@ -3061,6 +3061,88 @@ body.schedule-modal-open .page > :not(.schedule-modal) {
   opacity: 0.38;
 }
 
+.schedule-calendar-action {
+  width: 100%;
+  margin-top: 2px;
+}
+
+.schedule-calendar-action-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  min-height: 30px;
+  border: none;
+  border-radius: 999px;
+  padding: 8px 7px;
+  background: #0051a0;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-family: 'Pretendard', Arial, sans-serif;
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+  box-shadow: 0 6px 16px rgba(0, 81, 160, 0.18);
+  cursor: pointer;
+  transition:
+    transform 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.schedule-calendar-action-btn:active {
+  transform: translateY(1px) scale(0.96);
+  box-shadow: 0 3px 10px rgba(0, 81, 160, 0.14);
+}
+
+.schedule-calendar-action-btn.is-added {
+  background: #111;
+  box-shadow: 0 6px 16px rgba(17, 17, 17, 0.14);
+}
+
+.schedule-calendar-action-btn.is-update {
+  background: #ff3d7f;
+  box-shadow: 0 6px 16px rgba(255, 61, 127, 0.16);
+}
+
+.schedule-calendar-confirm {
+  display: none;
+  margin-top: 6px;
+  color: #6b7280;
+  font-family: 'Pretendard', Arial, sans-serif;
+  font-size: 9px;
+  line-height: 1.25;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.schedule-calendar-confirm.is-visible {
+  display: block;
+}
+
+.schedule-calendar-confirm-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  margin-top: 4px;
+  width: 100%;
+  min-height: 26px;
+  border: 1px solid rgba(0, 81, 160, 0.14);
+  border-radius: 999px;
+  background: #fff;
+  color: #0051a0;
+  font-family: 'Pretendard', Arial, sans-serif;
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* 우측: 상품 그리드 */
 .schedule-date-right {
   grid-column: span 3;
@@ -4052,6 +4134,9 @@ body.has-results .result-panels {
     MISSED_PICKUP: 'missedPickup'
   };
 
+  const CALENDAR_REGISTRATION_PREFIX = 'mm_calendar_added';
+  const STORE_DISPLAY_NAME = '만만마켓 전농점';
+
   let sectionViewState = {
     [SECTION_KEYS.MY_ORDERS]: false,
     [SECTION_KEYS.TODAY_PICKUP]: false,
@@ -4384,6 +4469,196 @@ function formatPriceHtml(value) {
   return `
     <span class="order-price-num">${n}</span><span class="order-price-won">원</span>
   `;
+}
+
+function hashString(value) {
+  const text = String(value || '');
+  let hash = 5381;
+
+  for (let i = 0; i < text.length; i += 1) {
+    hash = ((hash << 5) + hash) ^ text.charCodeAt(i);
+  }
+
+  return (hash >>> 0).toString(36);
+}
+
+function getCalendarCustomerKey() {
+  return hashString(currentSelectedCustomerLabel || currentSearchKeyword || keywordInput.value || 'guest');
+}
+
+function getCalendarStorageKey(dateKey) {
+  return `${CALENDAR_REGISTRATION_PREFIX}_${getCalendarCustomerKey()}_${dateKey}`;
+}
+
+function getCalendarProductHash(items) {
+  const normalized = sortItemsByOrderSheetDate(normalizeOrderItems(items)).map(item => ({
+    pickupDate: item.pickupDateDisplay || item.pickupDate || '',
+    productName: item.productName || '',
+    quantity: Number(item.quantity || 0),
+    price: Number(item.price || 0)
+  }));
+
+  return hashString(JSON.stringify(normalized));
+}
+
+function getCalendarRegistration(dateKey) {
+  try {
+    return JSON.parse(localStorage.getItem(getCalendarStorageKey(dateKey)) || 'null');
+  } catch {
+    return null;
+  }
+}
+
+function setCalendarRegistration(dateKey, productHash) {
+  try {
+    localStorage.setItem(getCalendarStorageKey(dateKey), JSON.stringify({
+      productHash,
+      registeredAt: new Date().toISOString()
+    }));
+  } catch {}
+}
+
+function getCalendarActionState(dateKey, productHash) {
+  const registered = getCalendarRegistration(dateKey);
+  if (!registered) return 'new';
+  return registered.productHash === productHash ? 'added' : 'update';
+}
+
+function formatCalendarDateCompact(date) {
+  const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+  return `${date.getMonth() + 1}/${date.getDate()}(${weekdays[date.getDay()]})`;
+}
+
+function formatCalendarDateLong(date) {
+  const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+  return `${date.getMonth() + 1}월 ${date.getDate()}일 (${weekdays[date.getDay()]})`;
+}
+
+function formatIcsDate(date) {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0')
+  ].join('');
+}
+
+function formatIcsDateTime(date) {
+  return `${date.getUTCFullYear()}${String(date.getUTCMonth() + 1).padStart(2, '0')}${String(date.getUTCDate()).padStart(2, '0')}T${String(date.getUTCHours()).padStart(2, '0')}${String(date.getUTCMinutes()).padStart(2, '0')}${String(date.getUTCSeconds()).padStart(2, '0')}Z`;
+}
+
+function escapeIcsText(value) {
+  return String(value || '')
+    .replace(/\\/g, '\\\\')
+    .replace(/\n/g, '\\n')
+    .replace(/,/g, '\\,')
+    .replace(/;/g, '\\;');
+}
+
+function foldIcsLine(line) {
+  const chars = Array.from(line);
+  const parts = [];
+  let current = '';
+
+  chars.forEach(char => {
+    if ((current + char).length > 72) {
+      parts.push(current);
+      current = ` ${char}`;
+    } else {
+      current += char;
+    }
+  });
+
+  if (current) parts.push(current);
+  return parts.join('\r\n');
+}
+
+function buildPickupCalendarDescription(date, items, productTypeCount, totalQuantity) {
+  const sortedItems = sortItemsByOrderSheetDate(normalizeOrderItems(items));
+  const visibleItems = sortedItems.slice(0, 10);
+  const extraCount = Math.max(sortedItems.length - visibleItems.length, 0);
+  const productLines = visibleItems.map(item => {
+    const qty = Number(item.quantity || 0);
+    return `- ${item.productName || '상품명 미정'}, ${qty}개`;
+  });
+
+  if (extraCount > 0) {
+    productLines.push(`외 ${extraCount}개 상품은 주문조회 화면에서 확인해주세요.`);
+  }
+
+  return [
+    `${STORE_DISPLAY_NAME} 픽업 일정입니다.`,
+    '',
+    `픽업일: ${formatCalendarDateLong(date)}`,
+    `픽업상품: ${productTypeCount}종`,
+    `총 개수: ${totalQuantity}개`,
+    '',
+    '[픽업 상품]',
+    ...productLines,
+    '',
+    '픽업 전 주문내역을 다시 확인해주세요.',
+    STORE_DISPLAY_NAME
+  ].join('\n');
+}
+
+function createPickupCalendarIcs(date, items, dateKey, productHash) {
+  const productTypeCount = items.length;
+  const totalQuantity = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+  const endDate = addDaysToDate(date, 1);
+  const summary = `만만마켓 픽업 · ${formatCalendarDateCompact(date)} ${productTypeCount}종 ${totalQuantity}개`;
+  const description = buildPickupCalendarDescription(date, items, productTypeCount, totalQuantity);
+  const uid = `manman-pickup-${dateKey.replace(/-/g, '')}-${getCalendarCustomerKey()}-${productHash}@manmanmarket.store`;
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//ManmanMarket//Pickup Calendar//KO',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `DTSTAMP:${formatIcsDateTime(new Date())}`,
+    `SUMMARY:${escapeIcsText(summary)}`,
+    `DESCRIPTION:${escapeIcsText(description)}`,
+    `LOCATION:${escapeIcsText(STORE_DISPLAY_NAME)}`,
+    `DTSTART;VALUE=DATE:${formatIcsDate(date)}`,
+    `DTEND;VALUE=DATE:${formatIcsDate(endDate)}`,
+    'BEGIN:VALARM',
+    'ACTION:DISPLAY',
+    `DESCRIPTION:${escapeIcsText(summary)}`,
+    'TRIGGER:-PT4H',
+    'END:VALARM',
+    'BEGIN:VALARM',
+    'ACTION:DISPLAY',
+    `DESCRIPTION:${escapeIcsText(summary)}`,
+    'TRIGGER;RELATED=START:PT10H',
+    'END:VALARM',
+    'BEGIN:VALARM',
+    'ACTION:DISPLAY',
+    `DESCRIPTION:${escapeIcsText(summary)}`,
+    'TRIGGER;RELATED=START:PT16H',
+    'END:VALARM',
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ];
+
+  return lines.map(foldIcsLine).join('\r\n');
+}
+
+function downloadPickupCalendar(dateKey, items, productHash) {
+  const date = dateFromKey(dateKey);
+  if (!date || !items.length) return;
+
+  const ics = createPickupCalendarIcs(date, items, dateKey, productHash);
+  const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+
+  link.href = url;
+  link.download = `manman-pickup-${dateKey}.ics`;
+  link.rel = 'noopener';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
 
   function escapeHtml(str) {
@@ -5226,6 +5501,7 @@ function renderScheduleTab() {
 
   initScheduleWeekSwiper();
   bindScheduleDateButtons();
+  bindScheduleCalendarActions();
   updateScheduleSelection(scheduleState.selectedDateKey, { slide: true });
   resetScheduleWeekStickyState();
 
@@ -5521,6 +5797,18 @@ function renderScheduleDateSection(date, items) {
   const metricClass = hasPickup ? 'has-pickup' : 'no-pickup';
   const productTypeCount = items.length;
   const totalQuantity = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+  const productHash = hasPickup ? getCalendarProductHash(items) : '';
+  const calendarState = hasPickup ? getCalendarActionState(dateKey, productHash) : 'none';
+  const calendarButtonLabel = calendarState === 'added'
+    ? '✅ 알림 등록됨'
+    : calendarState === 'update'
+      ? '↻ 알림 업데이트'
+      : '📅 픽업 알림 등록';
+  const calendarButtonClass = calendarState === 'added'
+    ? ' is-added'
+    : calendarState === 'update'
+      ? ' is-update'
+      : '';
   const pickupMetricsHtml = hasPickup ? `
             <div class="schedule-pickup-metric">
               <span class="schedule-pickup-metric-label">픽업상품</span>
@@ -5551,6 +5839,26 @@ function renderScheduleDateSection(date, items) {
           <div class="schedule-pickup-metrics ${metricClass}" aria-label="${hasPickup ? `픽업상품 ${productTypeCount}종, 총 개수 ${totalQuantity}개` : '픽업상품 없음'}">
 ${pickupMetricsHtml}
           </div>
+          ${hasPickup ? `
+          <div class="schedule-calendar-action" data-calendar-action="${dateKey}">
+            <button
+              class="schedule-calendar-action-btn${calendarButtonClass}"
+              type="button"
+              data-calendar-download
+              data-date-key="${dateKey}"
+              data-product-hash="${productHash}"
+            >${escapeHtml(calendarButtonLabel)}</button>
+            <div class="schedule-calendar-confirm" data-calendar-confirm="${dateKey}">
+              <div>캘린더에 저장하셨나요?</div>
+              <button
+                class="schedule-calendar-confirm-btn"
+                type="button"
+                data-calendar-confirm-btn
+                data-date-key="${dateKey}"
+                data-product-hash="${productHash}"
+              >네, 저장했어요</button>
+            </div>
+          </div>` : ''}
         </div>
         <div class="schedule-date-right">
           ${hasPickup ? renderScheduleProductGrid(items) : renderScheduleEmptyDay(date)}
@@ -5704,6 +6012,59 @@ function bindScheduleDateButtons() {
       if (button.disabled || button.classList.contains('is-disabled')) return;
       const dateKey = button.dataset.scheduleDate;
       if (dateKey) selectScheduleDate(dateKey, { scroll: true, slide: true });
+    });
+  });
+}
+
+function getScheduleItemsForDate(dateKey) {
+  return groupItemsByPickupDate(currentOrderItems).get(dateKey) || [];
+}
+
+function updateCalendarActionButton(dateKey, productHash) {
+  const button = scheduleContentEl?.querySelector(`[data-calendar-download][data-date-key="${dateKey}"]`);
+  const confirm = scheduleContentEl?.querySelector(`[data-calendar-confirm="${dateKey}"]`);
+  if (!button) return;
+
+  const state = getCalendarActionState(dateKey, productHash);
+  button.classList.toggle('is-added', state === 'added');
+  button.classList.toggle('is-update', state === 'update');
+  button.textContent = state === 'added'
+    ? '✅ 알림 등록됨'
+    : state === 'update'
+      ? '↻ 알림 업데이트'
+      : '📅 픽업 알림 등록';
+  confirm?.classList.remove('is-visible');
+}
+
+function bindScheduleCalendarActions() {
+  scheduleContentEl?.querySelectorAll('[data-calendar-download]').forEach(button => {
+    button.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const dateKey = button.dataset.dateKey || '';
+      const productHash = button.dataset.productHash || '';
+      const items = getScheduleItemsForDate(dateKey);
+
+      if (!dateKey || !productHash || !items.length) return;
+      downloadPickupCalendar(dateKey, items, productHash);
+
+      const confirm = scheduleContentEl.querySelector(`[data-calendar-confirm="${dateKey}"]`);
+      confirm?.classList.add('is-visible');
+    });
+  });
+
+  scheduleContentEl?.querySelectorAll('[data-calendar-confirm-btn]').forEach(button => {
+    button.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const dateKey = button.dataset.dateKey || '';
+      const productHash = button.dataset.productHash || '';
+      if (!dateKey || !productHash) return;
+
+      setCalendarRegistration(dateKey, productHash);
+      updateCalendarActionButton(dateKey, productHash);
     });
   });
 }
