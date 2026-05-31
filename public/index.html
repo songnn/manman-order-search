@@ -2841,7 +2841,7 @@ body.schedule-modal-open .page > :not(.schedule-modal) {
 }
 
 .schedule-list {
-  padding: 6px 0 0;
+  padding: 0;
   background: #f9fafb;
 }
 
@@ -5459,7 +5459,7 @@ function selectScheduleDate(dateKey, options = {}) {
   scheduleSuppressScrollSync = true;
   const scrollContainer = getScheduleScrollContainer();
   const sticky = scheduleWeekHostEl;
-  const topOffset = (sticky?.offsetHeight || 0) + 10;
+  const topOffset = Math.round(sticky?.getBoundingClientRect().height || sticky?.offsetHeight || 0);
 
   if (scrollContainer) {
     const containerRect = scrollContainer.getBoundingClientRect();
@@ -5476,8 +5476,7 @@ function selectScheduleDate(dateKey, options = {}) {
   } else {
     const pageOffset =
       (ENABLE_RESULT_TABS_STICKY ? (resultTabsWrap?.getBoundingClientRect().height || 0) : 0) +
-      (ENABLE_SCHEDULE_WEEK_STICKY ? (sticky?.offsetHeight || 0) : 0) +
-      10;
+      (ENABLE_SCHEDULE_WEEK_STICKY ? topOffset : 0);
     const targetTop = section.getBoundingClientRect().top + (window.scrollY || window.pageYOffset || 0) - pageOffset;
     window.scrollTo({
       top: Math.max(0, targetTop),
