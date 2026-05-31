@@ -3326,6 +3326,7 @@ body.has-results .result-panels {
 
 .schedule-preview-stack {
   position: relative;
+  --schedule-preview-front-right: 0px;
   width: 96px;
   height: 76px;
   flex: 0 0 96px;
@@ -3361,19 +3362,22 @@ body.has-results .result-panels {
 
 .schedule-preview-thumb--front {
   top: 0;
-  right: 0;
+  right: var(--schedule-preview-front-right);
   transform: rotate(4deg);
 }
 
+.schedule-preview-stack.is-single {
+  --schedule-preview-front-right: 12px;
+}
+
 .schedule-preview-stack.is-single .schedule-preview-thumb--front {
-  right: 12px;
   transform: rotate(3deg);
 }
 
 .schedule-preview-count {
   position: absolute;
   top: -8px;
-  right: -8px;
+  right: calc(var(--schedule-preview-front-right) - 8px);
   z-index: 3;
   min-width: 28px;
   height: 28px;
