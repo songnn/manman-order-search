@@ -5123,10 +5123,10 @@ function closeScheduleModal(options = {}) {
   }, 540);
 }
 
-function isScheduleModalDragTarget(target) {
+function isScheduleModalDragTarget(target, pointerType = '') {
   if (!target) return false;
   if (target.closest?.('#scheduleModalDragZone')) return true;
-  if (target.closest?.('#scheduleWeekHost')) return true;
+  if (pointerType !== 'mouse' && target.closest?.('#scheduleWeekHost')) return true;
   if (target.closest?.('button, a, input, textarea, select')) return false;
   if (!scheduleModalBodyEl?.contains(target)) return true;
   return false;
@@ -5134,7 +5134,7 @@ function isScheduleModalDragTarget(target) {
 
 function beginScheduleModalDrag(event) {
   if (!isScheduleModalOpen() || !scheduleModalSheetEl || event.button !== 0) return;
-  if (!isScheduleModalDragTarget(event.target)) return;
+  if (!isScheduleModalDragTarget(event.target, event.pointerType)) return;
 
   scheduleModalDragState = {
     pointerId: event.pointerId,
@@ -5344,6 +5344,9 @@ function initScheduleWeekSwiper() {
   scheduleWeekSwiper = new Swiper(el, {
     slidesPerView: 7,
     slidesPerGroup: 1,
+    grabCursor: true,
+    simulateTouch: true,
+    allowTouchMove: true,
     speed: 260,
     resistanceRatio: 0.7,
     threshold: 8,
