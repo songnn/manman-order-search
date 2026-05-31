@@ -3383,9 +3383,9 @@ body.has-results .result-panels {
   appearance: none;
   -webkit-appearance: none;
   width: 100%;
-  min-height: 118px;
+  min-height: 154px;
   border: 1px solid rgba(15, 23, 42, 0.06);
-  border-radius: 20px;
+  border-radius: 28px;
   background: #fff;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.9) inset,
@@ -3394,8 +3394,8 @@ body.has-results .result-panels {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 18px;
-  padding: 20px 20px 20px 20px;
+  gap: 14px;
+  padding: 24px 20px 22px 22px;
   color: #222;
   text-align: left;
   cursor: pointer;
@@ -3440,47 +3440,57 @@ body.has-results .result-panels {
 
 .schedule-calendar-entry-copy {
   min-width: 0;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .schedule-calendar-entry-title {
-  font-size: clamp(18px, 4.5vw, 30px);
-  line-height: 1.15;
-  font-weight: 600;
-  letter-spacing: -0.03em;
-  color: #222;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: clamp(20px, 5.1vw, 34px);
+  line-height: 1.08;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: #111;
+}
+
+.schedule-calendar-entry-title-icon {
+  font-size: 0.9em;
+  line-height: 1;
 }
 
 .schedule-calendar-entry-meta {
   display: flex;
-  align-items: center;
-  gap: 7px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
   min-width: 0;
 }
 
 .schedule-calendar-entry-date {
   font-family: 'Pretendard', Arial, sans-serif;
-  font-size: 12px;
-  line-height: 1.2;
-  font-weight: 500;
-  letter-spacing: -0.02em;
-  color: #737373;
+  font-size: clamp(14px, 3.8vw, 19px);
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #0051a0;
 }
 
 .schedule-calendar-entry-stat {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  min-height: 24px;
-  padding: 4px 7px 4px 5px;
-  border: 1px solid rgba(15, 23, 42, 0.06);
+  min-height: 34px;
+  padding: 6px 9px 6px 7px;
+  border: 1px solid rgba(15, 23, 42, 0.07);
   border-radius: 999px;
-  background: rgba(248, 250, 252, 0.88);
+  background: rgba(255, 255, 255, 0.92);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.85) inset,
-    0 5px 14px rgba(15, 23, 42, 0.05);
+    0 8px 18px rgba(15, 23, 42, 0.07);
   min-width: 0;
 }
 
@@ -3488,24 +3498,24 @@ body.has-results .result-panels {
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
-  gap: 5px;
+  gap: 6px;
   min-width: 0;
 }
 
 .schedule-calendar-entry-stat-icon {
   display: block;
   width: auto;
-  height: 13px;
+  height: 20px;
   object-fit: contain;
 }
 
 .schedule-calendar-entry-stat-label {
   font-family: 'Pretendard', Arial, sans-serif;
-  font-size: 10px;
+  font-size: 13px;
   line-height: 1;
   font-weight: 500;
   letter-spacing: -0.02em;
-  color: #3f4650;
+  color: #222;
 }
 
 .schedule-calendar-entry-stat-value {
@@ -3518,32 +3528,34 @@ body.has-results .result-panels {
 
 .schedule-calendar-entry-stat-num {
   font-family: 'Paperlogy', 'Pretendard', sans-serif;
-  font-size: 10px;
+  font-size: 15px;
   line-height: 1;
   font-weight: 700;
+  color: #111;
 }
 
 .schedule-calendar-entry-stat-unit {
   font-family: 'Pretendard', Arial, sans-serif;
-  font-size: 10px;
+  font-size: 13px;
   line-height: 1;
   font-weight: 500;
+  color: #111;
 }
 
 .schedule-preview-stack {
   position: relative;
   --schedule-preview-front-right: 0px;
-  width: 96px;
-  height: 76px;
-  flex: 0 0 96px;
+  width: 92px;
+  height: 78px;
+  flex: 0 0 92px;
 }
 
 .schedule-preview-thumb {
   position: absolute;
   display: block;
   overflow: hidden;
-  width: 68px;
-  height: 68px;
+  width: 70px;
+  height: 70px;
   /* border: 1.5px solid #fff; */
   border-radius: 12px;
   background: #edf0f3;
@@ -3561,7 +3573,7 @@ body.has-results .result-panels {
 
 .schedule-preview-thumb--back {
   top: 8px;
-  right: 24px;
+  right: 22px;
   transform: rotate(-7deg);
   opacity: 0.88;
 }
@@ -3573,7 +3585,7 @@ body.has-results .result-panels {
 }
 
 .schedule-preview-stack.is-single {
-  --schedule-preview-front-right: 12px;
+  --schedule-preview-front-right: 11px;
 }
 
 .schedule-preview-stack.is-single .schedule-preview-thumb--front {
@@ -5092,7 +5104,10 @@ function buildSectionsData(items) {
           aria-expanded="false"
         >
           <span class="schedule-calendar-entry-copy">
-            <span class="schedule-calendar-entry-title">픽업 달력 확인하기</span>
+            <span class="schedule-calendar-entry-title">
+              <span class="schedule-calendar-entry-title-icon" aria-hidden="true">🗓️</span>
+              <span>픽업 달력 확인하기</span>
+            </span>
             <span class="schedule-calendar-entry-meta">
               <span class="schedule-calendar-entry-date">${escapeHtml(dateMeta)}</span>
               <span class="schedule-calendar-entry-stats">
