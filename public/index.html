@@ -3222,8 +3222,10 @@ body.schedule-modal-open .page > :not(.schedule-modal) {
 }
 
 .schedule-calendar-action-icon {
-  font-size: 11px;
-  line-height: 1;
+  display: block;
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
 }
 
 /* 우측: 상품 그리드 */
@@ -3643,6 +3645,10 @@ body.has-results .result-panels {
   font-weight: 500;
   letter-spacing: -0.03em;
   color: #0051a0;
+}
+
+.schedule-calendar-entry-date-main {
+  font-weight: 600;
 }
 
 .schedule-calendar-entry-stat {
@@ -4208,6 +4214,7 @@ body.has-results .result-panels {
   let scheduleModalScrollY = 0;
   let scheduleModalDragState = null;
   let scheduleModalTouchStartY = 0;
+  let scheduleModalPullState = null;
 
   const ENABLE_RESULT_TABS_STICKY = false;
   const ENABLE_LEGACY_RESULT_TABS = false;
@@ -4661,9 +4668,9 @@ function foldIcsLine(line) {
 
 function buildPickupCalendarDescription(date, items, productTypeCount, totalQuantity) {
   const sortedItems = sortItemsByOrderSheetDate(normalizeOrderItems(items));
-  const productLines = sortedItems.map((item, index) => {
+  const productLines = sortedItems.map(item => {
     const qty = Number(item.quantity || 0);
-    return `${index + 1}. ${item.productName || '상품명 미정'}, ${qty}개`;
+    return `✅ ${item.productName || '상품명 미정'}, ${qty}개`;
   });
 
   return [
@@ -4674,7 +4681,7 @@ function buildPickupCalendarDescription(date, items, productTypeCount, totalQuan
     '',
     '🍀 픽업상품 목록 🍀',
     '',
-    ...productLines
+    ...productLines.flatMap(line => [line, ''])
   ].join('\n');
 }
 
@@ -5667,6 +5674,7 @@ function buildSectionsData(items) {
     const [frontImage, backImage] = preview.images;
     const hasBackImage = Boolean(backImage);
     const dateMeta = `${preview.dateLabel} 픽업 일정`;
+    const dateMetaHtml = `<span class="schedule-calendar-entry-date-main">${escapeHtml(preview.dateLabel)}</span> 픽업 일정`;
     const meta = `${dateMeta} 픽업상품 ${preview.count}종, 총 개수 ${preview.totalQuantity}개`;
 
     return `
@@ -5686,7 +5694,7 @@ function buildSectionsData(items) {
               <span>픽업 달력 확인하기</span>
             </span>
             <span class="schedule-calendar-entry-meta">
-              <span class="schedule-calendar-entry-date">${escapeHtml(dateMeta)}</span>
+              <span class="schedule-calendar-entry-date">${dateMetaHtml}</span>
               <span class="schedule-calendar-entry-stats">
                 <span class="schedule-calendar-entry-stat">
                   <img class="schedule-calendar-entry-stat-icon" src="/schedule-pickup-products.png" alt="" aria-hidden="true" loading="lazy" decoding="async">
@@ -5882,6 +5890,70 @@ function resetScheduleModalInlineMotion() {
     scheduleModalDimEl.style.transition = '';
     scheduleModalDimEl.style.opacity = '';
   }
+}
+
+function getScheduleModalPullDistance(deltaY) {
+  if (deltaY <= 0) return 0;
+  const eased = Math.pow(deltaY, 0.82) * 0.9;
+  return Math.min(eased, 180);
+}
+
+function startScheduleModalPull(clientY) {
+  if (!scheduleModalSheetEl || !scheduleModalDimEl) return;
+  scheduleModalPullState = {
+    startY: clientY,
+    lastY: clientY,
+    lastAt: performance.now(),
+    velocity: 0
+  };
+  scheduleModalSheetEl.style.transition = 'none';
+  scheduleModalDimEl.style.transition = 'none';
+}
+
+function updateScheduleModalPull(clientY) {
+  if (!scheduleModalPullState || !scheduleModalSheetEl) return;
+
+  const now = performance.now();
+  const elapsed = Math.max(now - scheduleModalPullState.lastAt, 1);
+  const rawDelta = Math.max(0, clientY - scheduleModalPullState.startY);
+  const pullDistance = getScheduleModalPullDistance(rawDelta);
+  const dimOpacity = clamp(1 - (pullDistance / 360), 0.5, 1);
+
+  scheduleModalPullState.velocity = (clientY - scheduleModalPullState.lastY) / elapsed;
+  scheduleModalPullState.lastY = clientY;
+  scheduleModalPullState.lastAt = now;
+
+  scheduleModalSheetEl.style.transform = `translate3d(0, ${pullDistance}px, 0)`;
+  if (scheduleModalDimEl) scheduleModalDimEl.style.opacity = String(dimOpacity);
+}
+
+function endScheduleModalPull(clientY = 0) {
+  if (!scheduleModalPullState || !scheduleModalSheetEl) return;
+
+  const rawDelta = Math.max(0, clientY - scheduleModalPullState.startY);
+  const shouldClose =
+    rawDelta > 190 ||
+    (rawDelta > 130 && scheduleModalPullState.velocity > 1.2);
+
+  scheduleModalSheetEl.style.transition = shouldClose
+    ? 'transform 520ms cubic-bezier(0.32, 0.72, 0, 1)'
+    : 'transform 360ms cubic-bezier(0.22, 1, 0.36, 1)';
+  if (scheduleModalDimEl) {
+    scheduleModalDimEl.style.transition = shouldClose ? 'opacity 380ms ease' : 'opacity 260ms ease';
+  }
+  scheduleModalPullState = null;
+
+  if (shouldClose) {
+    closeScheduleModal({ clear: false, animate: true });
+    return;
+  }
+
+  scheduleModalSheetEl.style.transform = 'translate3d(0, 0, 0)';
+  if (scheduleModalDimEl) scheduleModalDimEl.style.opacity = '1';
+
+  window.setTimeout(() => {
+    if (!scheduleModalPullState && !scheduleModalDragState) resetScheduleModalInlineMotion();
+  }, 380);
 }
 
 function openScheduleModal(initialDateKey = '') {
@@ -6140,7 +6212,7 @@ ${pickupMetricsHtml}
               data-calendar-register
               data-date-key="${dateKey}"
               data-product-hash="${productHash}"
-            ><span class="schedule-calendar-action-icon" aria-hidden="true">📅</span><span>${escapeHtml(calendarButtonLabel)}</span></button>
+            ><img class="schedule-calendar-action-icon" src="/calendar-register.png" alt="" aria-hidden="true" loading="lazy" decoding="async"><span>${escapeHtml(calendarButtonLabel)}</span></button>
           </div>` : ''}
         </div>
         <div class="schedule-date-right">
@@ -7264,6 +7336,7 @@ function handleOrderImageClick(event) {
   scheduleModalBodyEl?.addEventListener('touchstart', event => {
     if (!isScheduleModalActive() || !event.touches || event.touches.length !== 1) return;
     scheduleModalTouchStartY = event.touches[0].clientY;
+    scheduleModalPullState = null;
   }, { passive: true });
   scheduleModalBodyEl?.addEventListener('scroll', () => {
     if (activeResultTab === 'schedule') requestScheduleScrollSync();
@@ -7282,10 +7355,30 @@ function handleOrderImageClick(event) {
     const atTop = scheduleModalBodyEl.scrollTop <= 0;
     const atBottom = scheduleModalBodyEl.scrollTop + scheduleModalBodyEl.clientHeight >= scheduleModalBodyEl.scrollHeight - 1;
 
-    if ((atTop && deltaY > 0) || (atBottom && deltaY < 0)) {
+    if (atTop && deltaY > 0) {
+      event.preventDefault();
+      if (!scheduleModalPullState && deltaY > 12) {
+        startScheduleModalPull(scheduleModalTouchStartY);
+      }
+      if (scheduleModalPullState) {
+        updateScheduleModalPull(currentY);
+      }
+      return;
+    }
+
+    if (atBottom && deltaY < 0) {
       event.preventDefault();
     }
   }, { passive: false });
+  scheduleModalBodyEl?.addEventListener('touchend', event => {
+    if (!scheduleModalPullState) return;
+    const touch = event.changedTouches?.[0];
+    endScheduleModalPull(touch ? touch.clientY : scheduleModalPullState.lastY);
+  });
+  scheduleModalBodyEl?.addEventListener('touchcancel', () => {
+    if (!scheduleModalPullState) return;
+    endScheduleModalPull(scheduleModalPullState.lastY);
+  });
     searchBtn.addEventListener('click', () => search());
 
     prettyAlertConfirmEl.addEventListener('click', hidePrettyAlert);
