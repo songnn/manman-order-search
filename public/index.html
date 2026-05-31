@@ -4235,7 +4235,7 @@ body.has-results .result-panels {
     MISSED_PICKUP: 'missedPickup'
   };
 
-  const STORE_DISPLAY_NAME = '만만마켓 전농점';
+  const STORE_DISPLAY_NAME = '만만마켓 전농래미안크레시티점';
 
   let sectionViewState = {
     [SECTION_KEYS.MY_ORDERS]: false,
@@ -4662,29 +4662,20 @@ function foldIcsLine(line) {
 
 function buildPickupCalendarDescription(date, items, productTypeCount, totalQuantity) {
   const sortedItems = sortItemsByOrderSheetDate(normalizeOrderItems(items));
-  const visibleItems = sortedItems.slice(0, 10);
-  const extraCount = Math.max(sortedItems.length - visibleItems.length, 0);
-  const productLines = visibleItems.map(item => {
+  const productLines = sortedItems.map((item, index) => {
     const qty = Number(item.quantity || 0);
-    return `- ${item.productName || '상품명 미정'}, ${qty}개`;
+    return `${index + 1}. ${item.productName || '상품명 미정'}, ${qty}개`;
   });
 
-  if (extraCount > 0) {
-    productLines.push(`외 ${extraCount}개 상품은 주문조회 화면에서 확인해주세요.`);
-  }
-
   return [
-    `${STORE_DISPLAY_NAME} 픽업 일정입니다.`,
+    `🎈 ${STORE_DISPLAY_NAME} 픽업`,
     '',
-    `픽업일: ${formatCalendarDateLong(date)}`,
-    `픽업상품: ${productTypeCount}종`,
-    `총 개수: ${totalQuantity}개`,
+    `🛍️ 픽업상품 : ${productTypeCount}종`,
+    `🎁 총 개수 : ${totalQuantity}개`,
     '',
-    '[픽업 상품]',
-    ...productLines,
+    '🍀 픽업상품 목록 🍀',
     '',
-    '픽업 전 주문내역을 다시 확인해주세요.',
-    STORE_DISPLAY_NAME
+    ...productLines
   ].join('\n');
 }
 
@@ -4693,9 +4684,10 @@ function createPickupCalendarIcs(date, items, dateKey, productHash) {
   const totalQuantity = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
   const startDate = new Date(date);
   const endDate = new Date(date);
-  startDate.setHours(7, 0, 0, 0);
-  endDate.setHours(22, 0, 0, 0);
-  const summary = `만만마켓 픽업 · ${formatCalendarDateCompact(date)} ${productTypeCount}종 ${totalQuantity}개`;
+  startDate.setHours(10, 0, 0, 0);
+  endDate.setDate(endDate.getDate() + 1);
+  endDate.setHours(0, 0, 0, 0);
+  const summary = `🛍️ [만만마켓 픽업] ${formatCalendarDateCompact(date)} · 상품 ${productTypeCount}종 · 총 ${totalQuantity}개`;
   const description = buildPickupCalendarDescription(date, items, productTypeCount, totalQuantity);
   const uid = `manman-pickup-${dateKey.replace(/-/g, '')}-${getCalendarCustomerKey()}-${productHash}@manmanmarket.store`;
   const lines = [
@@ -4715,17 +4707,12 @@ function createPickupCalendarIcs(date, items, dateKey, productHash) {
     'BEGIN:VALARM',
     'ACTION:DISPLAY',
     `DESCRIPTION:${escapeIcsText(summary)}`,
-    'TRIGGER:-PT11H',
+    'TRIGGER:PT0S',
     'END:VALARM',
     'BEGIN:VALARM',
     'ACTION:DISPLAY',
     `DESCRIPTION:${escapeIcsText(summary)}`,
     'TRIGGER;RELATED=START:PT3H',
-    'END:VALARM',
-    'BEGIN:VALARM',
-    'ACTION:DISPLAY',
-    `DESCRIPTION:${escapeIcsText(summary)}`,
-    'TRIGGER;RELATED=START:PT9H',
     'END:VALARM',
     'END:VEVENT',
     'END:VCALENDAR'
@@ -4740,12 +4727,13 @@ function getPickupCalendarPayload(dateKey, items, productHash) {
 
   const productTypeCount = items.length;
   const totalQuantity = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
-  const title = `만만마켓 픽업 · ${formatCalendarDateCompact(date)} ${productTypeCount}종 ${totalQuantity}개`;
+  const title = `🛍️ [만만마켓 픽업] ${formatCalendarDateCompact(date)} · 상품 ${productTypeCount}종 · 총 ${totalQuantity}개`;
   const description = buildPickupCalendarDescription(date, items, productTypeCount, totalQuantity);
   const startDate = new Date(date);
   const endDate = new Date(date);
-  startDate.setHours(7, 0, 0, 0);
-  endDate.setHours(22, 0, 0, 0);
+  startDate.setHours(10, 0, 0, 0);
+  endDate.setDate(endDate.getDate() + 1);
+  endDate.setHours(0, 0, 0, 0);
 
   return {
     date,
