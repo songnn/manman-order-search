@@ -2972,26 +2972,34 @@ body.schedule-modal-open .page > :not(.schedule-modal) {
   align-items: stretch;
   width: 100%;
   max-width: 118px;
-  min-height: 70px;
-  margin: 8px auto 0;
+  margin: 4px auto;
 }
 
 .schedule-pickup-metric {
+  position: relative;
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: center;
   gap: 0;
   padding: 0 4px;
   text-align: left;
 }
 
 .schedule-pickup-metric + .schedule-pickup-metric {
-  border-left: 1px solid #ddd;
   padding-left: 10px;
   margin-left: 8px;
+}
+
+.schedule-pickup-metric + .schedule-pickup-metric::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 0;
+  width: 0.5px;
+  background: #eaeaea;
 }
 
 .schedule-pickup-metric-label {
