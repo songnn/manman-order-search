@@ -5308,18 +5308,18 @@ function renderScheduleDateSection(date, items) {
         <div class="schedule-date-left">
           <div class="schedule-date-title ${toneClass}">${escapeHtml(dayLabel)}</div>
           ${holiday ? `<div class="schedule-date-sub">${escapeHtml(holiday.name)}</div>` : ''}
-          <div class="schedule-pickup-metrics ${metricClass}" aria-label="상품수 ${productTypeCount}, 물품개수 ${totalQuantity}">
+          <div class="schedule-pickup-metrics ${metricClass}" aria-label="픽업상품 ${productTypeCount}종, 총수량 ${totalQuantity}개">
             <div class="schedule-pickup-metric">
-              <span class="schedule-pickup-metric-label">상품수</span>
-              <span class="schedule-pickup-metric-value">${escapeHtml(productTypeCount)}</span>
+              <span class="schedule-pickup-metric-label">픽업상품</span>
+              <span class="schedule-pickup-metric-value">${escapeHtml(productTypeCount)}종</span>
               <svg class="schedule-pickup-metric-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5v-9Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
                 <path d="m4.5 8 7.5 4.2L19.5 8M12 12.2V20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
             <div class="schedule-pickup-metric">
-              <span class="schedule-pickup-metric-label">물품개수</span>
-              <span class="schedule-pickup-metric-value">${escapeHtml(totalQuantity)}</span>
+              <span class="schedule-pickup-metric-label">총수량</span>
+              <span class="schedule-pickup-metric-value">${escapeHtml(totalQuantity)}개</span>
               <svg class="schedule-pickup-metric-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M7.5 9V7.5a4.5 4.5 0 0 1 9 0V9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
                 <path d="M5.5 9h13l-1 11h-11l-1-11Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
