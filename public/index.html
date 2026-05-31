@@ -3051,7 +3051,14 @@ body.schedule-modal-open .page > :not(.schedule-modal) {
 }
 
 .schedule-pickup-metrics.no-pickup .schedule-pickup-metric-value {
-  color: #ccc;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 500;
+  color: #b8b8b8;
+}
+
+.schedule-pickup-metrics.no-pickup .schedule-pickup-metric-icon {
+  filter: grayscale(1);
+  opacity: 0.38;
 }
 
 /* 우측: 상품 그리드 */
@@ -5390,14 +5397,7 @@ function renderScheduleDateSection(date, items) {
   const metricClass = hasPickup ? 'has-pickup' : 'no-pickup';
   const productTypeCount = items.length;
   const totalQuantity = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
-
-  return `
-    <section class="schedule-date-section" id="schedule-date-${dateKey}" data-schedule-section="${dateKey}">
-      <div class="schedule-date-row">
-        <div class="schedule-date-left">
-          <div class="schedule-date-title ${toneClass}">${escapeHtml(dayLabel)}</div>
-          ${holiday ? `<div class="schedule-date-sub">${escapeHtml(holiday.name)}</div>` : ''}
-          <div class="schedule-pickup-metrics ${metricClass}" aria-label="픽업상품 ${productTypeCount}종, 총 개수 ${totalQuantity}개">
+  const pickupMetricsHtml = hasPickup ? `
             <div class="schedule-pickup-metric">
               <span class="schedule-pickup-metric-label">픽업상품</span>
               <span class="schedule-pickup-metric-value">
@@ -5411,7 +5411,21 @@ function renderScheduleDateSection(date, items) {
                 <span class="schedule-pickup-metric-num">${escapeHtml(totalQuantity)}</span><span class="schedule-pickup-metric-unit">개</span>
               </span>
               <img class="schedule-pickup-metric-icon" src="/schedule-pickup-total.png" alt="" aria-hidden="true" loading="lazy" decoding="async">
-            </div>
+            </div>` : `
+            <div class="schedule-pickup-metric">
+              <span class="schedule-pickup-metric-label">픽업상품</span>
+              <span class="schedule-pickup-metric-value">없음</span>
+              <img class="schedule-pickup-metric-icon" src="/schedule-pickup-products.png" alt="" aria-hidden="true" loading="lazy" decoding="async">
+            </div>`;
+
+  return `
+    <section class="schedule-date-section" id="schedule-date-${dateKey}" data-schedule-section="${dateKey}">
+      <div class="schedule-date-row">
+        <div class="schedule-date-left">
+          <div class="schedule-date-title ${toneClass}">${escapeHtml(dayLabel)}</div>
+          ${holiday ? `<div class="schedule-date-sub">${escapeHtml(holiday.name)}</div>` : ''}
+          <div class="schedule-pickup-metrics ${metricClass}" aria-label="${hasPickup ? `픽업상품 ${productTypeCount}종, 총 개수 ${totalQuantity}개` : '픽업상품 없음'}">
+${pickupMetricsHtml}
           </div>
         </div>
         <div class="schedule-date-right">
