@@ -6172,8 +6172,6 @@ function renderScheduleDateSection(date, items) {
   const metricClass = hasPickup ? 'has-pickup' : 'no-pickup';
   const productTypeCount = items.length;
   const totalQuantity = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
-  const productHash = hasPickup ? getCalendarProductHash(items) : '';
-  const calendarButtonLabel = calendarLandingMode ? '캘린더 앱 열기' : '픽업 알림 등록';
   const pickupMetricsHtml = hasPickup ? `
             <div class="schedule-pickup-metric">
               <span class="schedule-pickup-metric-label">픽업상품</span>
@@ -6204,16 +6202,6 @@ function renderScheduleDateSection(date, items) {
           <div class="schedule-pickup-metrics ${metricClass}" aria-label="${hasPickup ? `픽업상품 ${productTypeCount}종, 총 개수 ${totalQuantity}개` : '픽업상품 없음'}">
 ${pickupMetricsHtml}
           </div>
-          ${hasPickup ? `
-          <div class="schedule-calendar-action" data-calendar-action="${dateKey}">
-            <button
-              class="schedule-calendar-action-btn"
-              type="button"
-              data-calendar-register
-              data-date-key="${dateKey}"
-              data-product-hash="${productHash}"
-            ><img class="schedule-calendar-action-icon" src="/calendar-register.png" alt="" aria-hidden="true" loading="lazy" decoding="async"><span>${escapeHtml(calendarButtonLabel)}</span></button>
-          </div>` : ''}
         </div>
         <div class="schedule-date-right">
           ${hasPickup ? renderScheduleProductGrid(items) : renderScheduleEmptyDay(date)}
