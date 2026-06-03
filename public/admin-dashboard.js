@@ -334,7 +334,7 @@ function renderModePanels() {
 function renderRecentButtons() {
   els.recentButtons.innerHTML = RECENT_DAYS.map(days => `
     <button class="chip-button ${state.mode === 'recent' && state.days === days ? 'is-active' : ''}" type="button" data-days="${days}">
-      ${days === 1 ? '오늘' : `최근 ${days}일`}
+      ${days === 1 ? '어제' : `최근 ${days}일`}
     </button>
   `).join('');
 
@@ -371,6 +371,14 @@ function renderWeekMonthButtons() {
 
 function renderWeekButtons() {
   const ranges = getMonthWeekRanges(state.weekYear, state.weekMonth);
+  if (!ranges.length) {
+    els.weekButtons.innerHTML = '<div class="ranking-empty">어제까지 집계 가능한 주간 데이터가 없습니다.</div>';
+    return;
+  }
+
+  if (ranges.length && state.weekIndex > ranges.length) {
+    state.weekIndex = ranges.length;
+  }
 
   els.weekButtons.innerHTML = ranges.map(range => `
     <button class="week-chip ${state.weekIndex === range.weekIndex ? 'is-active' : ''}" type="button" data-week-index="${range.weekIndex}">
@@ -816,25 +824,33 @@ function getAvailableYears() {
 function getMonthWeekRanges(year, month) {
   const monthStart = new Date(year, month - 1, 1);
   const monthEnd = new Date(year, month, 0);
+  const reportEndDate = getReportEndDate();
   const ranges = [];
   let cursor = new Date(monthStart);
 
-  while (cursor.getTime() <= monthEnd.getTime()) {
+  while (cursor.getTime() <= monthEnd.getTime() && cursor.getTime() <= reportEndDate.getTime()) {
     const weekStart = startOfWeekMonday(cursor);
     const weekEnd = addDays(weekStart, 6);
     const from = weekStart.getTime() > monthStart.getTime() ? weekStart : monthStart;
-    const to = weekEnd.getTime() < monthEnd.getTime() ? weekEnd : monthEnd;
+    const monthClampedTo = weekEnd.getTime() < monthEnd.getTime() ? weekEnd : monthEnd;
+    const to = monthClampedTo.getTime() < reportEndDate.getTime() ? monthClampedTo : reportEndDate;
 
     ranges.push({
       weekIndex: ranges.length + 1,
       label: `${month}월 ${ranges.length + 1}주차`,
-      rangeLabel: `${month}.${from.getDate()} ~ ${month}.${to.getDate()}`
+      rangeLabel: `${from.getMonth() + 1}.${from.getDate()} ~ ${to.getMonth() + 1}.${to.getDate()}`
     });
 
     cursor = addDays(to, 1);
   }
 
   return ranges;
+}
+
+function getReportEndDate() {
+  if (state.data?.meta?.reportEndDate) return parseLocalDate(state.data.meta.reportEndDate);
+
+  return addDays(new Date(), -1);
 }
 
 function startOfWeekMonday(date) {
@@ -927,7 +943,7 @@ function updateStatusLine() {
 
   els.currentPeriod.textContent = data.period?.label || '-';
   setStatus(
-    `${data.sheetName} · ${MODE_LABELS[state.mode] || data.mode} · 기준 ${getBasisLabel(data.basis)} · 그래프 ${formatNumber(pointCount)}구간 · 아군 제외 ${formatNumber(data.meta.excludedAllyRowCount)}행 · 유효 ${formatNumber(data.meta.validRowCount)}행 · 확인 필요 ${formatNumber(data.meta.warningCount)}건`
+    `${data.sheetName} · ${MODE_LABELS[state.mode] || data.mode} · 기준 ${getBasisLabel(data.basis)} · 그래프 ${formatNumber(pointCount)}구간 · 오늘 제외 ${formatNumber(data.meta.excludedTodayRowCount)}행 · 아군 제외 ${formatNumber(data.meta.excludedAllyRowCount)}행 · 유효 ${formatNumber(data.meta.validRowCount)}행 · 확인 필요 ${formatNumber(data.meta.warningCount)}건`
   );
 }
 
@@ -975,6 +991,12 @@ function addDays(date, days) {
   const result = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   result.setDate(result.getDate() + days);
   return result;
+}
+
+function parseLocalDate(dateKey) {
+  const [year, month, day] = String(dateKey || '').split('-').map(Number);
+  if (!year || !month || !day) return addDays(new Date(), -1);
+  return new Date(year, month - 1, day);
 }
 
 function toInputDate(date) {

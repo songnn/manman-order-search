@@ -86,7 +86,8 @@ export default async function handler(req, res) {
       warnings,
       meta: {
         ...aggregated.meta,
-        validRowCount: parsed.validRows.length,
+        validRowCount: aggregated.meta.analyzedRowCount,
+        totalValidRowCount: parsed.validRows.length,
         warningCount: warnings.length,
         totalWarningCount: parsed.warnings.length,
         readStartRow: CONFIG.READ_START_ROW,
