@@ -9,11 +9,7 @@ loadLocalEnv();
 const CONFIG = {
   SPREADSHEET_ID: process.env.SPREADSHEET_ID,
   RAW_SHEET_NAME: process.env.RAW_SHEET_NAME || 'Raw_주문입력',
-  READ_START_ROW: Number(
-    process.env.ADMIN_DASHBOARD_READ_START_ROW ||
-      process.env.RAW_READ_START_ROW ||
-      1
-  )
+  READ_START_ROW: Number(process.env.ADMIN_DASHBOARD_READ_START_ROW || 1)
 };
 
 const BASIS_VALUES = new Set(['groupDate', 'orderDate', 'pickupDate']);
