@@ -2,7 +2,7 @@ import { google } from 'googleapis';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { aggregateDashboardRows } from '../lib/dashboard/aggregateOrders.js';
-import { parseDashboardRows } from '../lib/dashboard/parseOrders.js';
+import { parseDashboardDate, parseDashboardRows, toDateKey } from '../lib/dashboard/parseOrders.js';
 
 loadLocalEnv();
 
@@ -17,6 +17,7 @@ const CONFIG = {
 };
 
 const BASIS_VALUES = new Set(['groupDate', 'orderDate', 'pickupDate']);
+const PERIOD_VALUES = new Set(['daily', 'weekly', 'monthly']);
 const DEFAULT_EXCLUDED_CUSTOMER_NAMES = [
   '로지4298',
   '로지4739',
@@ -49,6 +50,7 @@ export default async function handler(req, res) {
 
     const query = getQuery(req);
     const basis = BASIS_VALUES.has(query.basis) ? query.basis : 'groupDate';
+    const period = PERIOD_VALUES.has(query.period) ? query.period : 'daily';
     const excludedCustomerNames = getExcludedCustomerNames(query);
     const rows = await readDashboardSheetRows();
     const parsed = parseDashboardRows(rows, {
@@ -57,22 +59,25 @@ export default async function handler(req, res) {
       excludedCustomerNames
     });
     const aggregated = aggregateDashboardRows(parsed.validRows, {
-      from: query.from,
-      to: query.to
+      anchor: query.anchor || query.to,
+      period
     });
+    const warnings = getWarningsForResponse(parsed.warnings, aggregated.meta, query);
 
     return res.status(200).json({
       ok: true,
       basis,
+      period,
       sheetName: CONFIG.RAW_SHEET_NAME,
       summary: aggregated.summary,
       series: aggregated.series,
       rankings: aggregated.rankings,
-      warnings: parsed.warnings,
+      warnings,
       meta: {
         ...aggregated.meta,
         validRowCount: parsed.validRows.length,
-        warningCount: parsed.warnings.length,
+        warningCount: warnings.length,
+        totalWarningCount: parsed.warnings.length,
         readStartRow: CONFIG.READ_START_ROW,
         excludedAllyRowCount: parsed.excludedAllyRowCount,
         excludedCustomerNames
@@ -87,6 +92,23 @@ export default async function handler(req, res) {
       detail: error.message
     });
   }
+}
+
+function getWarningsForResponse(warnings, meta, query) {
+  if (query.warningsScope === 'all') return warnings;
+
+  const from = parseDashboardDate(meta.currentPeriod.from);
+  const to = parseDashboardDate(meta.currentPeriod.to);
+
+  if (!from || !to) return warnings;
+
+  return warnings.filter(warning => {
+    if (!warning.basisDate) return false;
+    const date = parseDashboardDate(warning.basisDate);
+    if (!date) return false;
+
+    return toDateKey(date) >= toDateKey(from) && toDateKey(date) <= toDateKey(to);
+  });
 }
 
 function getExcludedCustomerNames(query) {

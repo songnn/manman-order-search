@@ -64,8 +64,7 @@ function cacheElements() {
   els.authForm = document.querySelector('[data-auth-form]');
   els.tokenInput = document.querySelector('[data-token-input]');
   els.authError = document.querySelector('[data-auth-error]');
-  els.from = document.querySelector('[data-from]');
-  els.to = document.querySelector('[data-to]');
+  els.anchor = document.querySelector('[data-anchor]');
   els.basis = document.querySelector('[data-basis]');
   els.refresh = document.querySelector('[data-refresh]');
   els.logout = document.querySelector('[data-logout]');
@@ -80,6 +79,7 @@ function cacheElements() {
   els.productRevenue = document.querySelector('[data-product-revenue]');
   els.warningCount = document.querySelector('[data-warning-count]');
   els.warnings = document.querySelector('[data-warnings]');
+  els.currentPeriod = document.querySelector('[data-current-period]');
   els.orderChartTitle = document.querySelector('[data-order-chart-title]');
   els.revenueChartTitle = document.querySelector('[data-revenue-chart-title]');
   els.customerQuantityTitle = document.querySelector('[data-customer-quantity-title]');
@@ -116,7 +116,7 @@ function bindEvents() {
     showAuth();
   });
 
-  [els.from, els.to, els.basis].forEach(input => {
+  [els.anchor, els.basis].forEach(input => {
     input.addEventListener('change', () => fetchDashboardData());
   });
 
@@ -136,7 +136,7 @@ function bindEvents() {
     button.addEventListener('click', () => {
       state.period = button.dataset.period;
       els.periodButtons.forEach(item => item.classList.toggle('is-active', item === button));
-      renderPeriodViews();
+      fetchDashboardData();
     });
   });
 
@@ -154,8 +154,8 @@ async function fetchDashboardData() {
 
   try {
     const params = new URLSearchParams({
-      from: els.from.value,
-      to: els.to.value,
+      anchor: els.anchor.value,
+      period: state.period,
       basis: els.basis.value,
       excludedCustomers: JSON.stringify(state.allyCustomers)
     });
@@ -201,24 +201,39 @@ function renderPeriodViews() {
 }
 
 function renderKpis() {
-  const today = state.data.summary.today;
-  const week = state.data.summary.week;
+  const current = state.data.summary.current;
+  const periodLabel = PERIOD_LABELS[state.period];
+  const comparisonLabel = state.data.meta.comparisonLabel;
+  const series = getActiveSeries();
 
-  setText('[data-kpi="todayQuantity"]', `${formatNumber(today.quantity)}개`);
-  setText('[data-kpi="todayOrderCount"]', `주문건수 ${formatNumber(today.orderCount)}건`);
-  setText('[data-kpi="weekQuantity"]', `${formatNumber(week.quantity)}개`);
-  setText('[data-kpi="weekOrderCount"]', `주문건수 ${formatNumber(week.orderCount)}건`);
-  setText('[data-kpi="todayRevenue"]', formatWon(today.revenue));
-  setText('[data-kpi="weekRevenue"]', formatWon(week.revenue));
-  setChange('[data-kpi="todayQuantityChange"]', today.quantityChangeRate, '전일');
-  setChange('[data-kpi="weekQuantityChange"]', week.quantityChangeRate, '전주');
-  setChange('[data-kpi="todayRevenueChange"]', today.revenueChangeRate, '전일');
-  setChange('[data-kpi="weekRevenueChange"]', week.revenueChangeRate, '전주');
+  setText('[data-kpi-label="quantity"]', `${periodLabel} 공구주문 수량`);
+  setText('[data-kpi-label="orderCount"]', `${periodLabel} 공구 주문건수`);
+  setText('[data-kpi-label="revenue"]', `${periodLabel} 공구 매출`);
+  setText('[data-kpi-label="averageOrderValue"]', `${periodLabel} 객단가`);
+  setText('[data-kpi="quantity"]', `${formatNumber(current.quantity)}개`);
+  setText('[data-kpi="orderCount"]', `${formatNumber(current.orderCount)}건`);
+  setText('[data-kpi="revenue"]', formatWon(current.revenue));
+  setText('[data-kpi="averageOrderValue"]', formatWon(current.averageOrderValue));
+  setText('[data-kpi-desc="quantity"]', `선택 기간 주문수량 합계`);
+  setText('[data-kpi-desc="orderCount"]', `유효 주문 라인 수`);
+  setText('[data-kpi-desc="revenue"]', `가격 × 주문수량`);
+  setText('[data-kpi-desc="averageOrderValue"]', `매출 ÷ 주문건수`);
+  setChange('[data-kpi-change="quantity"]', current.quantityChangeRate, comparisonLabel);
+  setChange('[data-kpi-change="orderCount"]', current.orderCountChangeRate, comparisonLabel);
+  setChange('[data-kpi-change="revenue"]', current.revenueChangeRate, comparisonLabel);
+  setChange(
+    '[data-kpi-change="averageOrderValue"]',
+    current.averageOrderValueChangeRate,
+    comparisonLabel
+  );
 
-  renderSparkline('[data-sparkline="quantity"]', state.data.series.daily.map(item => item.quantity));
-  renderSparkline('[data-sparkline="orderCount"]', state.data.series.daily.map(item => item.orderCount));
-  renderSparkline('[data-sparkline="revenue"]', state.data.series.daily.map(item => item.revenue));
-  renderSparkline('[data-sparkline="weekRevenue"]', state.data.series.weekly.map(item => item.revenue));
+  renderSparkline('[data-sparkline="quantity"]', series.map(item => item.quantity));
+  renderSparkline('[data-sparkline="orderCount"]', series.map(item => item.orderCount));
+  renderSparkline('[data-sparkline="revenue"]', series.map(item => item.revenue));
+  renderSparkline(
+    '[data-sparkline="averageOrderValue"]',
+    series.map(item => item.averageOrderValue)
+  );
 }
 
 function renderCharts() {
@@ -258,22 +273,22 @@ function renderRankings() {
 
   renderCustomerRanking(
     els.customerQuantity,
-    customerRankings[`${keyPrefix}ByQuantity`] || [],
+    customerRankings.byQuantity || customerRankings[`${keyPrefix}ByQuantity`] || [],
     'quantity'
   );
   renderCustomerRanking(
     els.customerRevenue,
-    customerRankings[`${keyPrefix}ByRevenue`] || [],
+    customerRankings.byRevenue || customerRankings[`${keyPrefix}ByRevenue`] || [],
     'revenue'
   );
   renderProductRanking(
     els.productQuantity,
-    productRankings[`${keyPrefix}ByQuantity`] || [],
+    productRankings.byQuantity || productRankings[`${keyPrefix}ByQuantity`] || [],
     'quantity'
   );
   renderProductRanking(
     els.productRevenue,
-    productRankings[`${keyPrefix}ByRevenue`] || [],
+    productRankings.byRevenue || productRankings[`${keyPrefix}ByRevenue`] || [],
     'revenue'
   );
 }
@@ -361,7 +376,8 @@ function renderProductRanking(container, items, metric) {
 
 function renderWarnings() {
   const warnings = state.data.warnings || [];
-  els.warningCount.textContent = `${formatNumber(warnings.length)}건`;
+  const totalWarningCount = state.data.meta.totalWarningCount ?? warnings.length;
+  els.warningCount.textContent = `선택 기간 ${formatNumber(warnings.length)}건 / 전체 ${formatNumber(totalWarningCount)}건`;
 
   if (!warnings.length) {
     els.warnings.innerHTML = '<div class="ranking-empty">확인 필요 데이터가 없습니다.</div>';
@@ -531,7 +547,7 @@ function upsertLineChart(chart, canvas, config) {
 }
 
 function getActiveSeries() {
-  return state.data?.series?.[state.period] || [];
+  return state.data?.series?.active || state.data?.series?.[state.period] || [];
 }
 
 function getSeriesPointLabel(item) {
@@ -573,11 +589,7 @@ function renderSparkline(selector, values) {
 
 function setDefaultDates() {
   const today = new Date();
-  const from = new Date(today);
-  from.setDate(from.getDate() - 30);
-
-  els.from.value = toInputDate(from);
-  els.to.value = toInputDate(today);
+  els.anchor.value = toInputDate(today);
 }
 
 function loadAllyCustomers() {
@@ -649,8 +661,11 @@ function updateStatusLine() {
 
   const data = state.data;
   const pointCount = getActiveSeries().length;
+  if (els.currentPeriod) {
+    els.currentPeriod.textContent = data.meta.currentPeriod?.label || '-';
+  }
   setStatus(
-    `${data.sheetName} · 분석 단위 ${PERIOD_LABELS[state.period]} · 랭킹 기준 ${data.meta.rankingAnchor || '-'} · 그래프 ${formatNumber(pointCount)}구간 · 아군 제외 ${formatNumber(data.meta.excludedAllyRowCount)}행 · 유효 ${formatNumber(data.meta.validRowCount)}행 · 확인 필요 ${formatNumber(data.meta.warningCount)}건`
+    `${data.sheetName} · ${PERIOD_LABELS[state.period]} · 기준 ${getBasisLabel(data.basis)} · 그래프 ${formatNumber(pointCount)}구간 · 아군 제외 ${formatNumber(data.meta.excludedAllyRowCount)}행 · 유효 ${formatNumber(data.meta.validRowCount)}행 · 확인 필요 ${formatNumber(data.meta.warningCount)}건`
   );
 }
 
@@ -682,6 +697,12 @@ function formatMonthLabel(monthKey) {
   if (!year || !month) return String(monthKey || '');
 
   return `${Number(month)}월`;
+}
+
+function getBasisLabel(basis) {
+  if (basis === 'pickupDate') return '픽업일자';
+  if (basis === 'orderDate') return '주문일자';
+  return '공구일자';
 }
 
 function toInputDate(date) {

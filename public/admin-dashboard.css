@@ -262,7 +262,7 @@ button {
 
 .filter-card {
   display: grid;
-  grid-template-columns: repeat(3, minmax(150px, 1fr)) auto;
+  grid-template-columns: minmax(180px, 240px) minmax(180px, 240px) auto;
   align-items: end;
   gap: 14px;
   padding: 16px;
@@ -270,6 +270,30 @@ button {
   border-radius: 18px;
   background: #fff;
   box-shadow: var(--soft-shadow);
+}
+
+.analysis-period-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 16px 18px;
+  border: 1px solid #cfe3fb;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #ffffff 0%, #f4f9ff 100%);
+  box-shadow: var(--soft-shadow);
+}
+
+.analysis-period-card span {
+  color: var(--brand);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.analysis-period-card strong {
+  color: var(--text);
+  font-size: 17px;
+  line-height: 1.35;
 }
 
 .field.compact input,

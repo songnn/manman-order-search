@@ -53,19 +53,14 @@
 
         <section class="filter-card" aria-label="대시보드 필터">
           <label class="field compact">
-            <span>시작일</span>
-            <input type="date" data-from />
-          </label>
-          <label class="field compact">
-            <span>종료일</span>
-            <input type="date" data-to />
-          </label>
-          <label class="field compact">
             <span>기준 날짜</span>
+            <input type="date" data-anchor />
+          </label>
+          <label class="field compact">
+            <span>날짜 기준</span>
             <select data-basis>
               <option value="groupDate">공구일자</option>
-              <option value="orderDate">주문일자</option>
-              <option value="pickupDate">픽업일</option>
+              <option value="pickupDate">픽업일자</option>
             </select>
           </label>
           <div class="segmented" role="tablist" aria-label="분석 단위">
@@ -73,6 +68,11 @@
             <button type="button" data-period="weekly">주간</button>
             <button type="button" data-period="monthly">월간</button>
           </div>
+        </section>
+
+        <section class="analysis-period-card" aria-label="현재 분석 기간">
+          <span>현재 분석 기간</span>
+          <strong data-current-period>기준 날짜를 선택해주세요.</strong>
         </section>
 
         <section class="panel ally-panel" id="allies">
@@ -101,39 +101,39 @@
         <section class="kpi-grid" aria-label="핵심 지표">
           <article class="kpi-card">
             <div class="kpi-head">
-              <span>오늘 공구주문 수량</span>
-              <span class="kpi-change" data-kpi="todayQuantityChange">0%</span>
+              <span data-kpi-label="quantity">일간 공구주문 수량</span>
+              <span class="kpi-change" data-kpi-change="quantity">0%</span>
             </div>
-            <strong data-kpi="todayQuantity">0개</strong>
-            <p data-kpi="todayOrderCount">주문건수 0건</p>
+            <strong data-kpi="quantity">0개</strong>
+            <p data-kpi-desc="quantity">주문수량 합계</p>
             <div class="sparkline" data-sparkline="quantity"></div>
           </article>
           <article class="kpi-card">
             <div class="kpi-head">
-              <span>이번 주 공구주문 수량</span>
-              <span class="kpi-change" data-kpi="weekQuantityChange">0%</span>
+              <span data-kpi-label="orderCount">일간 공구 주문건수</span>
+              <span class="kpi-change" data-kpi-change="orderCount">0%</span>
             </div>
-            <strong data-kpi="weekQuantity">0개</strong>
-            <p data-kpi="weekOrderCount">주문건수 0건</p>
+            <strong data-kpi="orderCount">0건</strong>
+            <p data-kpi-desc="orderCount">유효 주문 라인 수</p>
             <div class="sparkline" data-sparkline="orderCount"></div>
           </article>
           <article class="kpi-card">
             <div class="kpi-head">
-              <span>오늘 공구 매출</span>
-              <span class="kpi-change" data-kpi="todayRevenueChange">0%</span>
+              <span data-kpi-label="revenue">일간 공구 매출</span>
+              <span class="kpi-change" data-kpi-change="revenue">0%</span>
             </div>
-            <strong data-kpi="todayRevenue">0원</strong>
-            <p>가격 × 주문수량</p>
+            <strong data-kpi="revenue">0원</strong>
+            <p data-kpi-desc="revenue">가격 × 주문수량</p>
             <div class="sparkline" data-sparkline="revenue"></div>
           </article>
           <article class="kpi-card">
             <div class="kpi-head">
-              <span>이번 주 공구 매출</span>
-              <span class="kpi-change" data-kpi="weekRevenueChange">0%</span>
+              <span data-kpi-label="averageOrderValue">일간 객단가</span>
+              <span class="kpi-change" data-kpi-change="averageOrderValue">0%</span>
             </div>
-            <strong data-kpi="weekRevenue">0원</strong>
-            <p>월요일 시작 기준</p>
-            <div class="sparkline" data-sparkline="weekRevenue"></div>
+            <strong data-kpi="averageOrderValue">0원</strong>
+            <p data-kpi-desc="averageOrderValue">매출 ÷ 주문건수</p>
+            <div class="sparkline" data-sparkline="averageOrderValue"></div>
           </article>
         </section>
 
