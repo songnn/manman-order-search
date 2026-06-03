@@ -623,7 +623,7 @@ button {
 
 .warning-item {
   display: grid;
-  grid-template-columns: 84px 160px minmax(0, 1fr);
+  grid-template-columns: 84px 160px 112px minmax(0, 1fr);
   gap: 12px;
   align-items: center;
   padding: 12px;

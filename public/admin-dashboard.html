@@ -68,7 +68,7 @@
               <option value="pickupDate">픽업일</option>
             </select>
           </label>
-          <div class="segmented" role="tablist" aria-label="랭킹 기간">
+          <div class="segmented" role="tablist" aria-label="분석 단위">
             <button type="button" class="is-active" data-period="daily">일간</button>
             <button type="button" data-period="weekly">주간</button>
             <button type="button" data-period="monthly">월간</button>
@@ -142,7 +142,7 @@
             <div class="panel-head">
               <div>
                 <p class="eyebrow">Orders</p>
-                <h2>공구주문 수 변화</h2>
+                <h2 data-order-chart-title>일별 공구주문 수 변화</h2>
               </div>
               <select class="small-select" data-order-metric>
                 <option value="quantity">주문수량</option>
@@ -158,7 +158,7 @@
             <div class="panel-head">
               <div>
                 <p class="eyebrow">Revenue</p>
-                <h2>공구 매출 변화</h2>
+                <h2 data-revenue-chart-title>일별 공구 매출 변화</h2>
               </div>
             </div>
             <div class="chart-wrap">
@@ -172,7 +172,7 @@
             <div class="panel-head">
               <div>
                 <p class="eyebrow">Customers</p>
-                <h2>고객 주문수량 TOP 10</h2>
+                <h2 data-customer-quantity-title>일간 고객 주문수량 TOP 10</h2>
               </div>
             </div>
             <div class="ranking-list" data-customer-quantity></div>
@@ -182,7 +182,7 @@
             <div class="panel-head">
               <div>
                 <p class="eyebrow">Customers</p>
-                <h2>고객 주문금액 TOP 10</h2>
+                <h2 data-customer-revenue-title>일간 고객 주문금액 TOP 10</h2>
               </div>
             </div>
             <div class="ranking-list" data-customer-revenue></div>
@@ -194,7 +194,7 @@
             <div class="panel-head">
               <div>
                 <p class="eyebrow">Products</p>
-                <h2>상품 주문수량 TOP 10</h2>
+                <h2 data-product-quantity-title>일간 상품 주문수량 TOP 10</h2>
               </div>
             </div>
             <div class="ranking-list product-list" data-product-quantity></div>
@@ -204,7 +204,7 @@
             <div class="panel-head">
               <div>
                 <p class="eyebrow">Products</p>
-                <h2>상품 매출 TOP 10</h2>
+                <h2 data-product-revenue-title>일간 상품 매출 TOP 10</h2>
               </div>
             </div>
             <div class="ranking-list product-list" data-product-revenue></div>

@@ -15,6 +15,11 @@ const PERIOD_LABELS = {
   weekly: '주간',
   monthly: '월간'
 };
+const PERIOD_SERIES_LABELS = {
+  daily: '일별',
+  weekly: '주간',
+  monthly: '월간'
+};
 const PLACEHOLDER_IMAGE =
   'data:image/svg+xml;utf8,' +
   encodeURIComponent(`
@@ -75,6 +80,12 @@ function cacheElements() {
   els.productRevenue = document.querySelector('[data-product-revenue]');
   els.warningCount = document.querySelector('[data-warning-count]');
   els.warnings = document.querySelector('[data-warnings]');
+  els.orderChartTitle = document.querySelector('[data-order-chart-title]');
+  els.revenueChartTitle = document.querySelector('[data-revenue-chart-title]');
+  els.customerQuantityTitle = document.querySelector('[data-customer-quantity-title]');
+  els.customerRevenueTitle = document.querySelector('[data-customer-revenue-title]');
+  els.productQuantityTitle = document.querySelector('[data-product-quantity-title]');
+  els.productRevenueTitle = document.querySelector('[data-product-revenue-title]');
   els.allyForm = document.querySelector('[data-ally-form]');
   els.allyInput = document.querySelector('[data-ally-input]');
   els.allyList = document.querySelector('[data-ally-list]');
@@ -125,7 +136,7 @@ function bindEvents() {
     button.addEventListener('click', () => {
       state.period = button.dataset.period;
       els.periodButtons.forEach(item => item.classList.toggle('is-active', item === button));
-      renderRankings();
+      renderPeriodViews();
     });
   });
 
@@ -168,9 +179,6 @@ async function fetchDashboardData() {
 
     state.data = data;
     renderDashboard();
-    setStatus(
-      `${data.sheetName} · 랭킹 기준 ${data.meta.rankingAnchor || '-'} · 아군 제외 ${formatNumber(data.meta.excludedAllyRowCount)}행 · 유효 ${formatNumber(data.meta.validRowCount)}행 · 확인 필요 ${formatNumber(data.meta.warningCount)}건`
-    );
   } catch (error) {
     console.error(error);
     setStatus(error.message, true);
@@ -181,9 +189,15 @@ async function fetchDashboardData() {
 
 function renderDashboard() {
   renderKpis();
+  renderPeriodViews();
+  renderWarnings();
+}
+
+function renderPeriodViews() {
+  renderPeriodTitles();
   renderCharts();
   renderRankings();
-  renderWarnings();
+  updateStatusLine();
 }
 
 function renderKpis() {
@@ -210,11 +224,11 @@ function renderKpis() {
 function renderCharts() {
   if (!state.data || typeof Chart === 'undefined') return;
 
-  const daily = state.data.series.daily;
-  const labels = daily.map(item => compactDate(item.date));
+  const series = getActiveSeries();
+  const labels = series.map(item => getSeriesPointLabel(item));
   const orderLabel = state.orderMetric === 'quantity' ? '주문수량' : '주문건수';
-  const orderData = daily.map(item => item[state.orderMetric]);
-  const revenueData = daily.map(item => item.revenue);
+  const orderData = series.map(item => item[state.orderMetric]);
+  const revenueData = series.map(item => item.revenue);
 
   state.orderChart = upsertLineChart(state.orderChart, els.orderCanvas, {
     labels,
@@ -262,6 +276,30 @@ function renderRankings() {
     productRankings[`${keyPrefix}ByRevenue`] || [],
     'revenue'
   );
+}
+
+function renderPeriodTitles() {
+  const periodLabel = PERIOD_LABELS[state.period];
+  const seriesLabel = PERIOD_SERIES_LABELS[state.period];
+
+  if (els.orderChartTitle) {
+    els.orderChartTitle.textContent = `${seriesLabel} 공구주문 수 변화`;
+  }
+  if (els.revenueChartTitle) {
+    els.revenueChartTitle.textContent = `${seriesLabel} 공구 매출 변화`;
+  }
+  if (els.customerQuantityTitle) {
+    els.customerQuantityTitle.textContent = `${periodLabel} 고객 주문수량 TOP 10`;
+  }
+  if (els.customerRevenueTitle) {
+    els.customerRevenueTitle.textContent = `${periodLabel} 고객 주문금액 TOP 10`;
+  }
+  if (els.productQuantityTitle) {
+    els.productQuantityTitle.textContent = `${periodLabel} 상품 주문수량 TOP 10`;
+  }
+  if (els.productRevenueTitle) {
+    els.productRevenueTitle.textContent = `${periodLabel} 상품 매출 TOP 10`;
+  }
 }
 
 function renderCustomerRanking(container, items, metric) {
@@ -337,6 +375,7 @@ function renderWarnings() {
         <article class="warning-item">
           <strong>${formatNumber(warning.rowNumber)}행</strong>
           <span>${escapeHtml(warning.reason)}</span>
+          <span>${escapeHtml(warning.basisDate || '-')}</span>
           <span>${escapeHtml(warning.customerName || '-')} · ${escapeHtml(warning.productName || '-')}</span>
         </article>
       `
@@ -491,6 +530,22 @@ function upsertLineChart(chart, canvas, config) {
   });
 }
 
+function getActiveSeries() {
+  return state.data?.series?.[state.period] || [];
+}
+
+function getSeriesPointLabel(item) {
+  if (state.period === 'weekly') {
+    return item.weekLabel || compactDate(item.weekStart);
+  }
+
+  if (state.period === 'monthly') {
+    return formatMonthLabel(item.month);
+  }
+
+  return compactDate(item.date);
+}
+
 function renderSparkline(selector, values) {
   const el = document.querySelector(selector);
   const sliced = values.slice(-14);
@@ -589,6 +644,16 @@ function setStatus(message, isError = false) {
   els.status.classList.toggle('is-error', isError);
 }
 
+function updateStatusLine() {
+  if (!state.data) return;
+
+  const data = state.data;
+  const pointCount = getActiveSeries().length;
+  setStatus(
+    `${data.sheetName} · 분석 단위 ${PERIOD_LABELS[state.period]} · 랭킹 기준 ${data.meta.rankingAnchor || '-'} · 그래프 ${formatNumber(pointCount)}구간 · 아군 제외 ${formatNumber(data.meta.excludedAllyRowCount)}행 · 유효 ${formatNumber(data.meta.validRowCount)}행 · 확인 필요 ${formatNumber(data.meta.warningCount)}건`
+  );
+}
+
 function setText(selector, value) {
   const el = document.querySelector(selector);
   if (el) el.textContent = value;
@@ -610,6 +675,13 @@ function emptyRankingMessage() {
 function compactDate(dateKey) {
   const [, month, day] = String(dateKey).split('-');
   return `${Number(month)}/${Number(day)}`;
+}
+
+function formatMonthLabel(monthKey) {
+  const [year, month] = String(monthKey || '').split('-');
+  if (!year || !month) return String(monthKey || '');
+
+  return `${Number(month)}월`;
 }
 
 function toInputDate(date) {
