@@ -17,6 +17,16 @@ const CONFIG = {
 };
 
 const BASIS_VALUES = new Set(['groupDate', 'orderDate', 'pickupDate']);
+const DEFAULT_EXCLUDED_CUSTOMER_NAMES = [
+  '로지4298',
+  '로지4739',
+  '프리지아6450',
+  '죠르디9319',
+  '하품하는 죠르디 0108',
+  '온누리1004',
+  '김두팔 7380',
+  '하니팡팡6743'
+];
 
 export default async function handler(req, res) {
   try {
@@ -39,10 +49,12 @@ export default async function handler(req, res) {
 
     const query = getQuery(req);
     const basis = BASIS_VALUES.has(query.basis) ? query.basis : 'groupDate';
+    const excludedCustomerNames = getExcludedCustomerNames(query);
     const rows = await readDashboardSheetRows();
     const parsed = parseDashboardRows(rows, {
       basis,
-      startRowNumber: CONFIG.READ_START_ROW
+      startRowNumber: CONFIG.READ_START_ROW,
+      excludedCustomerNames
     });
     const aggregated = aggregateDashboardRows(parsed.validRows, {
       from: query.from,
@@ -61,7 +73,9 @@ export default async function handler(req, res) {
         ...aggregated.meta,
         validRowCount: parsed.validRows.length,
         warningCount: parsed.warnings.length,
-        readStartRow: CONFIG.READ_START_ROW
+        readStartRow: CONFIG.READ_START_ROW,
+        excludedAllyRowCount: parsed.excludedAllyRowCount,
+        excludedCustomerNames
       }
     });
   } catch (error) {
@@ -73,6 +87,37 @@ export default async function handler(req, res) {
       detail: error.message
     });
   }
+}
+
+function getExcludedCustomerNames(query) {
+  if (!Object.prototype.hasOwnProperty.call(query, 'excludedCustomers')) {
+    return DEFAULT_EXCLUDED_CUSTOMER_NAMES;
+  }
+
+  const raw = Array.isArray(query.excludedCustomers)
+    ? query.excludedCustomers[0]
+    : query.excludedCustomers;
+
+  if (!raw) return [];
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return sanitizeCustomerNames(parsed);
+  } catch {
+    // Fallback to comma-separated values below.
+  }
+
+  return sanitizeCustomerNames(String(raw).split(','));
+}
+
+function sanitizeCustomerNames(names) {
+  return Array.from(
+    new Set(
+      names
+        .map(name => String(name == null ? '' : name).trim())
+        .filter(Boolean)
+    )
+  );
 }
 
 async function getSheetsClient() {

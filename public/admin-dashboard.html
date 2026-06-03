@@ -34,6 +34,7 @@
           <a href="#orders">주문 분석</a>
           <a href="#customers">고객 랭킹</a>
           <a href="#products">상품 랭킹</a>
+          <a href="#allies">아군 목록</a>
           <a href="#warnings">확인 필요 데이터</a>
         </nav>
       </aside>
@@ -72,6 +73,27 @@
             <button type="button" data-period="weekly">주간</button>
             <button type="button" data-period="monthly">월간</button>
           </div>
+        </section>
+
+        <section class="panel ally-panel" id="allies">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Internal Orders</p>
+              <h2>아군 주문 제외 목록</h2>
+            </div>
+            <button class="ghost-button" type="button" data-ally-reset>기본 목록 복원</button>
+          </div>
+          <p class="ally-description">
+            여기에 등록된 닉네임은 KPI, 그래프, 고객/상품 랭킹 등 모든 통계에서 제외됩니다.
+          </p>
+          <form class="ally-form" data-ally-form>
+            <label class="field compact">
+              <span>아군 닉네임</span>
+              <input type="text" placeholder="예: 로지4298" data-ally-input />
+            </label>
+            <button type="submit">추가</button>
+          </form>
+          <div class="ally-list" data-ally-list></div>
         </section>
 
         <div class="status-line" data-status></div>

@@ -1,4 +1,15 @@
 const TOKEN_KEY = 'mm_admin_dashboard_token';
+const ALLY_CUSTOMERS_KEY = 'mm_admin_dashboard_ally_customers';
+const DEFAULT_ALLY_CUSTOMERS = [
+  '로지4298',
+  '로지4739',
+  '프리지아6450',
+  '죠르디9319',
+  '하품하는 죠르디 0108',
+  '온누리1004',
+  '김두팔 7380',
+  '하니팡팡6743'
+];
 const PERIOD_LABELS = {
   daily: '일간',
   weekly: '주간',
@@ -21,7 +32,8 @@ const state = {
   orderMetric: 'quantity',
   orderChart: null,
   revenueChart: null,
-  loading: false
+  loading: false,
+  allyCustomers: []
 };
 
 const els = {};
@@ -29,7 +41,9 @@ const els = {};
 document.addEventListener('DOMContentLoaded', () => {
   cacheElements();
   setDefaultDates();
+  state.allyCustomers = loadAllyCustomers();
   bindEvents();
+  renderAllyCustomers();
 
   if (state.token) {
     showApp();
@@ -61,6 +75,10 @@ function cacheElements() {
   els.productRevenue = document.querySelector('[data-product-revenue]');
   els.warningCount = document.querySelector('[data-warning-count]');
   els.warnings = document.querySelector('[data-warnings]');
+  els.allyForm = document.querySelector('[data-ally-form]');
+  els.allyInput = document.querySelector('[data-ally-input]');
+  els.allyList = document.querySelector('[data-ally-list]');
+  els.allyReset = document.querySelector('[data-ally-reset]');
 }
 
 function bindEvents() {
@@ -91,6 +109,18 @@ function bindEvents() {
     input.addEventListener('change', () => fetchDashboardData());
   });
 
+  els.allyForm.addEventListener('submit', event => {
+    event.preventDefault();
+    addAllyCustomer(els.allyInput.value);
+  });
+
+  els.allyReset.addEventListener('click', () => {
+    state.allyCustomers = [...DEFAULT_ALLY_CUSTOMERS];
+    saveAllyCustomers();
+    renderAllyCustomers();
+    fetchDashboardData();
+  });
+
   els.periodButtons.forEach(button => {
     button.addEventListener('click', () => {
       state.period = button.dataset.period;
@@ -115,7 +145,8 @@ async function fetchDashboardData() {
     const params = new URLSearchParams({
       from: els.from.value,
       to: els.to.value,
-      basis: els.basis.value
+      basis: els.basis.value,
+      excludedCustomers: JSON.stringify(state.allyCustomers)
     });
     const response = await fetch(`/api/admin-dashboard-data?${params.toString()}`, {
       headers: {
@@ -138,7 +169,7 @@ async function fetchDashboardData() {
     state.data = data;
     renderDashboard();
     setStatus(
-      `${data.sheetName} · 랭킹 기준 ${data.meta.rankingAnchor || '-'} · 유효 ${formatNumber(data.meta.validRowCount)}행 · 확인 필요 ${formatNumber(data.meta.warningCount)}건`
+      `${data.sheetName} · 랭킹 기준 ${data.meta.rankingAnchor || '-'} · 아군 제외 ${formatNumber(data.meta.excludedAllyRowCount)}행 · 유효 ${formatNumber(data.meta.validRowCount)}행 · 확인 필요 ${formatNumber(data.meta.warningCount)}건`
     );
   } catch (error) {
     console.error(error);
@@ -313,6 +344,83 @@ function renderWarnings() {
     .join('');
 }
 
+function renderAllyCustomers() {
+  if (!els.allyList) return;
+
+  if (!state.allyCustomers.length) {
+    els.allyList.innerHTML = '<div class="ranking-empty">아군 제외 목록이 비어 있습니다.</div>';
+    return;
+  }
+
+  els.allyList.innerHTML = state.allyCustomers
+    .map(
+      (name, index) => `
+        <span class="ally-chip">
+          <span>${escapeHtml(name)}</span>
+          <span class="ally-chip-actions">
+            <button type="button" data-ally-edit="${index}">수정</button>
+            <button type="button" data-ally-delete="${index}">삭제</button>
+          </span>
+        </span>
+      `
+    )
+    .join('');
+
+  els.allyList.querySelectorAll('[data-ally-edit]').forEach(button => {
+    button.addEventListener('click', () => editAllyCustomer(Number(button.dataset.allyEdit)));
+  });
+
+  els.allyList.querySelectorAll('[data-ally-delete]').forEach(button => {
+    button.addEventListener('click', () => deleteAllyCustomer(Number(button.dataset.allyDelete)));
+  });
+}
+
+function addAllyCustomer(value) {
+  const name = String(value || '').trim();
+  if (!name) return;
+
+  if (state.allyCustomers.some(item => normalizeAllyName(item) === normalizeAllyName(name))) {
+    els.allyInput.value = '';
+    return;
+  }
+
+  state.allyCustomers = [...state.allyCustomers, name];
+  els.allyInput.value = '';
+  saveAllyCustomers();
+  renderAllyCustomers();
+  fetchDashboardData();
+}
+
+function editAllyCustomer(index) {
+  const current = state.allyCustomers[index];
+  if (!current) return;
+
+  const next = window.prompt('수정할 아군 닉네임을 입력해주세요.', current);
+  if (next == null) return;
+
+  const name = next.trim();
+  if (!name) return;
+
+  const exists = state.allyCustomers.some(
+    (item, itemIndex) => itemIndex !== index && normalizeAllyName(item) === normalizeAllyName(name)
+  );
+  if (exists) return;
+
+  state.allyCustomers = state.allyCustomers.map((item, itemIndex) =>
+    itemIndex === index ? name : item
+  );
+  saveAllyCustomers();
+  renderAllyCustomers();
+  fetchDashboardData();
+}
+
+function deleteAllyCustomer(index) {
+  state.allyCustomers = state.allyCustomers.filter((_, itemIndex) => itemIndex !== index);
+  saveAllyCustomers();
+  renderAllyCustomers();
+  fetchDashboardData();
+}
+
 function upsertLineChart(chart, canvas, config) {
   const chartData = {
     labels: config.labels,
@@ -415,6 +523,51 @@ function setDefaultDates() {
 
   els.from.value = toInputDate(from);
   els.to.value = toInputDate(today);
+}
+
+function loadAllyCustomers() {
+  const raw = localStorage.getItem(ALLY_CUSTOMERS_KEY);
+  if (!raw) {
+    localStorage.setItem(ALLY_CUSTOMERS_KEY, JSON.stringify(DEFAULT_ALLY_CUSTOMERS));
+    return [...DEFAULT_ALLY_CUSTOMERS];
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return uniqueAllyCustomers(parsed);
+  } catch {
+    // Restore defaults below.
+  }
+
+  localStorage.setItem(ALLY_CUSTOMERS_KEY, JSON.stringify(DEFAULT_ALLY_CUSTOMERS));
+  return [...DEFAULT_ALLY_CUSTOMERS];
+}
+
+function saveAllyCustomers() {
+  state.allyCustomers = uniqueAllyCustomers(state.allyCustomers);
+  localStorage.setItem(ALLY_CUSTOMERS_KEY, JSON.stringify(state.allyCustomers));
+}
+
+function uniqueAllyCustomers(names) {
+  const seen = new Set();
+  const result = [];
+
+  names.forEach(name => {
+    const cleanName = String(name == null ? '' : name).trim();
+    const key = normalizeAllyName(cleanName);
+    if (!cleanName || seen.has(key)) return;
+    seen.add(key);
+    result.push(cleanName);
+  });
+
+  return result;
+}
+
+function normalizeAllyName(value) {
+  return String(value == null ? '' : value)
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '');
 }
 
 function showAuth(message = '') {
