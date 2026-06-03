@@ -1,5 +1,7 @@
 const TOKEN_KEY = 'mm_admin_dashboard_token';
 const ALLY_CUSTOMERS_KEY = 'mm_admin_dashboard_ally_customers';
+const ALLY_CUSTOMERS_VERSION_KEY = 'mm_admin_dashboard_ally_customers_version';
+const ALLY_CUSTOMERS_DEFAULT_VERSION = '2026-06-03-v2';
 const DEFAULT_ALLY_CUSTOMERS = [
   '로지4298',
   '로지4739',
@@ -8,7 +10,13 @@ const DEFAULT_ALLY_CUSTOMERS = [
   '하품하는 죠르디 0108',
   '온누리1004',
   '김두팔 7380',
-  '하니팡팡6743'
+  '하니팡팡6743',
+  '아리 1301',
+  '춘삼 9319',
+  '김밥말이라이언4829',
+  '삼비4739',
+  '사우나9071',
+  '힐청맨9071'
 ];
 const PERIOD_LABELS = {
   daily: '일간',
@@ -596,23 +604,37 @@ function loadAllyCustomers() {
   const raw = localStorage.getItem(ALLY_CUSTOMERS_KEY);
   if (!raw) {
     localStorage.setItem(ALLY_CUSTOMERS_KEY, JSON.stringify(DEFAULT_ALLY_CUSTOMERS));
+    localStorage.setItem(ALLY_CUSTOMERS_VERSION_KEY, ALLY_CUSTOMERS_DEFAULT_VERSION);
     return [...DEFAULT_ALLY_CUSTOMERS];
   }
 
   try {
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) return uniqueAllyCustomers(parsed);
+    if (Array.isArray(parsed)) {
+      const savedVersion = localStorage.getItem(ALLY_CUSTOMERS_VERSION_KEY);
+      const shouldMergeDefaults = savedVersion !== ALLY_CUSTOMERS_DEFAULT_VERSION;
+      const customers = shouldMergeDefaults
+        ? uniqueAllyCustomers([...parsed, ...DEFAULT_ALLY_CUSTOMERS])
+        : uniqueAllyCustomers(parsed);
+
+      localStorage.setItem(ALLY_CUSTOMERS_KEY, JSON.stringify(customers));
+      localStorage.setItem(ALLY_CUSTOMERS_VERSION_KEY, ALLY_CUSTOMERS_DEFAULT_VERSION);
+
+      return customers;
+    }
   } catch {
     // Restore defaults below.
   }
 
   localStorage.setItem(ALLY_CUSTOMERS_KEY, JSON.stringify(DEFAULT_ALLY_CUSTOMERS));
+  localStorage.setItem(ALLY_CUSTOMERS_VERSION_KEY, ALLY_CUSTOMERS_DEFAULT_VERSION);
   return [...DEFAULT_ALLY_CUSTOMERS];
 }
 
 function saveAllyCustomers() {
   state.allyCustomers = uniqueAllyCustomers(state.allyCustomers);
   localStorage.setItem(ALLY_CUSTOMERS_KEY, JSON.stringify(state.allyCustomers));
+  localStorage.setItem(ALLY_CUSTOMERS_VERSION_KEY, ALLY_CUSTOMERS_DEFAULT_VERSION);
 }
 
 function uniqueAllyCustomers(names) {
