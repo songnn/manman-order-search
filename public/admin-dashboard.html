@@ -30,10 +30,12 @@
           <span>만만마켓</span>
         </a>
         <nav class="sidebar-nav" aria-label="관리자 메뉴">
-          <a href="#dashboard" class="is-active">Dashboard</a>
-          <a href="#orders">주문 분석</a>
-          <a href="#customers">고객 랭킹</a>
-          <a href="#products">상품 랭킹</a>
+          <a href="#dashboard" class="is-active">대시보드</a>
+          <a href="#recent">최근 기간 분석</a>
+          <a href="#week">주간 분석</a>
+          <a href="#month">월간 분석</a>
+          <a href="#total">고객 누적 분석</a>
+          <a href="#products">상품 누적 분석</a>
           <a href="#warnings">확인 필요 데이터</a>
           <a href="#allies">아군 목록</a>
         </nav>
@@ -53,66 +55,125 @@
 
         <section class="filter-card" aria-label="대시보드 필터">
           <label class="field compact">
-            <span>기준 날짜</span>
-            <input type="date" data-anchor />
-          </label>
-          <label class="field compact">
             <span>날짜 기준</span>
             <select data-basis>
               <option value="groupDate">공구일자</option>
+              <option value="orderDate">주문일자</option>
               <option value="pickupDate">픽업일자</option>
             </select>
           </label>
-          <div class="segmented" role="tablist" aria-label="분석 단위">
-            <button type="button" class="is-active" data-period="daily">일간</button>
-            <button type="button" data-period="weekly">주간</button>
-            <button type="button" data-period="monthly">월간</button>
+          <div class="mode-tabs" role="tablist" aria-label="기간 모드">
+            <button type="button" class="is-active" data-mode="recent">최근 기간</button>
+            <button type="button" data-mode="week">주간</button>
+            <button type="button" data-mode="month">월간</button>
+            <button type="button" data-mode="total">누적 분석</button>
           </div>
         </section>
 
+        <section class="quick-panel" id="recent" data-mode-panel="recent">
+          <div class="quick-panel-head">
+            <div>
+              <p class="eyebrow">Recent</p>
+              <h2>최근 기간</h2>
+            </div>
+          </div>
+          <div class="chip-row" data-recent-buttons></div>
+        </section>
+
+        <section class="quick-panel is-hidden" id="week" data-mode-panel="week">
+          <div class="quick-panel-head">
+            <div>
+              <p class="eyebrow">Weekly</p>
+              <h2>주간 보기</h2>
+            </div>
+          </div>
+          <div class="chip-row subtle" data-week-month-buttons></div>
+          <div class="chip-grid" data-week-buttons></div>
+        </section>
+
+        <section class="quick-panel is-hidden" id="month" data-mode-panel="month">
+          <div class="quick-panel-head">
+            <div>
+              <p class="eyebrow">Monthly</p>
+              <h2>월간 보기</h2>
+            </div>
+          </div>
+          <div class="chip-row subtle" data-month-year-buttons></div>
+          <div class="chip-row" data-month-buttons></div>
+        </section>
+
+        <section class="quick-panel is-hidden" id="total" data-mode-panel="total">
+          <div class="quick-panel-head">
+            <div>
+              <p class="eyebrow">Cumulative</p>
+              <h2>누적 분석</h2>
+            </div>
+            <div class="segmented compact-segmented">
+              <button type="button" class="is-active" data-total-view="customer">고객 누적</button>
+              <button type="button" data-total-view="product">상품 누적</button>
+            </div>
+          </div>
+          <form class="customer-search-form" data-customer-search-form>
+            <label class="field compact">
+              <span>고객명 또는 뒤 4자리 검색</span>
+              <input type="search" placeholder="예: 5402" data-customer-search />
+            </label>
+            <button type="submit">검색</button>
+          </form>
+        </section>
+
+        <details class="advanced-range">
+          <summary>고급 기간 설정</summary>
+          <form class="advanced-range-form" data-custom-range-form>
+            <label class="field compact">
+              <span>시작일</span>
+              <input type="date" data-custom-from />
+            </label>
+            <label class="field compact">
+              <span>종료일</span>
+              <input type="date" data-custom-to />
+            </label>
+            <button type="submit">직접 기간 보기</button>
+          </form>
+        </details>
+
         <section class="analysis-period-card" aria-label="현재 분석 기간">
           <span>현재 분석 기간</span>
-          <strong data-current-period>기준 날짜를 선택해주세요.</strong>
+          <strong data-current-period>기간을 선택해주세요.</strong>
         </section>
 
         <div class="status-line" data-status></div>
 
         <section class="kpi-grid" aria-label="핵심 지표">
           <article class="kpi-card">
-            <div class="kpi-head">
-              <span data-kpi-label="quantity">일간 공구주문 수량</span>
-              <span class="kpi-change" data-kpi-change="quantity">0%</span>
-            </div>
+            <div class="kpi-head"><span>총 주문수량</span></div>
             <strong data-kpi="quantity">0개</strong>
-            <p data-kpi-desc="quantity">주문수량 합계</p>
+            <p>선택 기간 주문수량 합계</p>
             <div class="sparkline" data-sparkline="quantity"></div>
           </article>
           <article class="kpi-card">
-            <div class="kpi-head">
-              <span data-kpi-label="orderCount">일간 공구 주문건수</span>
-              <span class="kpi-change" data-kpi-change="orderCount">0%</span>
-            </div>
+            <div class="kpi-head"><span>총 주문건수</span></div>
             <strong data-kpi="orderCount">0건</strong>
-            <p data-kpi-desc="orderCount">유효 주문 라인 수</p>
+            <p>유효 주문 라인 수</p>
             <div class="sparkline" data-sparkline="orderCount"></div>
           </article>
           <article class="kpi-card">
-            <div class="kpi-head">
-              <span data-kpi-label="revenue">일간 공구 매출</span>
-              <span class="kpi-change" data-kpi-change="revenue">0%</span>
-            </div>
+            <div class="kpi-head"><span>총 주문금액</span></div>
             <strong data-kpi="revenue">0원</strong>
-            <p data-kpi-desc="revenue">가격 × 주문수량</p>
+            <p>가격 × 주문수량</p>
             <div class="sparkline" data-sparkline="revenue"></div>
           </article>
           <article class="kpi-card">
-            <div class="kpi-head">
-              <span data-kpi-label="averageOrderValue">일간 객단가</span>
-              <span class="kpi-change" data-kpi-change="averageOrderValue">0%</span>
-            </div>
-            <strong data-kpi="averageOrderValue">0원</strong>
-            <p data-kpi-desc="averageOrderValue">매출 ÷ 주문건수</p>
-            <div class="sparkline" data-sparkline="averageOrderValue"></div>
+            <div class="kpi-head"><span>주문 고객 수</span></div>
+            <strong data-kpi="customerCount">0명</strong>
+            <p>중복 제거 고객 수</p>
+            <div class="sparkline muted-sparkline" data-sparkline="customerCount"></div>
+          </article>
+          <article class="kpi-card">
+            <div class="kpi-head"><span>주문 상품 수</span></div>
+            <strong data-kpi="productCount">0개</strong>
+            <p>중복 제거 상품 수</p>
+            <div class="sparkline muted-sparkline" data-sparkline="productCount"></div>
           </article>
         </section>
 
@@ -121,7 +182,7 @@
             <div class="panel-head">
               <div>
                 <p class="eyebrow">Orders</p>
-                <h2 data-order-chart-title>일별 공구주문 수 변화</h2>
+                <h2 data-order-chart-title>일별 주문수량 그래프</h2>
               </div>
               <select class="small-select" data-order-metric>
                 <option value="quantity">주문수량</option>
@@ -137,7 +198,7 @@
             <div class="panel-head">
               <div>
                 <p class="eyebrow">Revenue</p>
-                <h2 data-revenue-chart-title>일별 공구 매출 변화</h2>
+                <h2 data-revenue-chart-title>일별 주문금액 그래프</h2>
               </div>
             </div>
             <div class="chart-wrap">
@@ -151,7 +212,7 @@
             <div class="panel-head">
               <div>
                 <p class="eyebrow">Customers</p>
-                <h2 data-customer-quantity-title>일간 고객 주문수량 TOP 10</h2>
+                <h2 data-customer-quantity-title>고객 주문수량 TOP 10</h2>
               </div>
             </div>
             <div class="ranking-list" data-customer-quantity></div>
@@ -161,7 +222,7 @@
             <div class="panel-head">
               <div>
                 <p class="eyebrow">Customers</p>
-                <h2 data-customer-revenue-title>일간 고객 주문금액 TOP 10</h2>
+                <h2 data-customer-revenue-title>고객 주문금액 TOP 10</h2>
               </div>
             </div>
             <div class="ranking-list" data-customer-revenue></div>
@@ -173,7 +234,7 @@
             <div class="panel-head">
               <div>
                 <p class="eyebrow">Products</p>
-                <h2 data-product-quantity-title>일간 상품 주문수량 TOP 10</h2>
+                <h2 data-product-quantity-title>상품 주문수량 TOP 10</h2>
               </div>
             </div>
             <div class="ranking-list product-list" data-product-quantity></div>
@@ -183,11 +244,15 @@
             <div class="panel-head">
               <div>
                 <p class="eyebrow">Products</p>
-                <h2 data-product-revenue-title>일간 상품 매출 TOP 10</h2>
+                <h2 data-product-revenue-title>상품 매출 TOP 10</h2>
               </div>
             </div>
             <div class="ranking-list product-list" data-product-revenue></div>
           </article>
+        </section>
+
+        <section class="total-detail-section is-hidden" data-total-detail-section>
+          <article class="panel customer-detail-panel" data-customer-detail></article>
         </section>
 
         <section class="panel warnings-panel" id="warnings">

@@ -13,7 +13,7 @@ const CONFIG = {
 };
 
 const BASIS_VALUES = new Set(['groupDate', 'orderDate', 'pickupDate']);
-const PERIOD_VALUES = new Set(['daily', 'weekly', 'monthly']);
+const MODE_VALUES = new Set(['recent', 'week', 'month', 'total', 'custom']);
 const DEFAULT_EXCLUDED_CUSTOMER_NAMES = [
   '로지4298',
   '로지4739',
@@ -52,7 +52,7 @@ export default async function handler(req, res) {
 
     const query = getQuery(req);
     const basis = BASIS_VALUES.has(query.basis) ? query.basis : 'groupDate';
-    const period = PERIOD_VALUES.has(query.period) ? query.period : 'daily';
+    const mode = MODE_VALUES.has(query.mode) ? query.mode : 'recent';
     const excludedCustomerNames = getExcludedCustomerNames(query);
     const rows = await readDashboardSheetRows();
     const parsed = parseDashboardRows(rows, {
@@ -61,19 +61,28 @@ export default async function handler(req, res) {
       excludedCustomerNames
     });
     const aggregated = aggregateDashboardRows(parsed.validRows, {
-      anchor: query.anchor || query.to,
-      period
+      mode,
+      days: query.days,
+      year: query.year,
+      month: query.month,
+      weekIndex: query.weekIndex,
+      from: query.from,
+      to: query.to,
+      customerQuery: query.customerQuery
     });
-    const warnings = getWarningsForResponse(parsed.warnings, aggregated.meta, query);
+    const warnings = getWarningsForResponse(parsed.warnings, aggregated.period, query);
 
     return res.status(200).json({
       ok: true,
+      mode: aggregated.mode,
       basis,
-      period,
       sheetName: CONFIG.RAW_SHEET_NAME,
+      period: aggregated.period,
       summary: aggregated.summary,
       series: aggregated.series,
       rankings: aggregated.rankings,
+      totals: aggregated.totals,
+      options: aggregated.options,
       warnings,
       meta: {
         ...aggregated.meta,
@@ -96,11 +105,12 @@ export default async function handler(req, res) {
   }
 }
 
-function getWarningsForResponse(warnings, meta, query) {
+function getWarningsForResponse(warnings, period, query) {
   if (query.warningsScope === 'all') return warnings;
+  if (!period?.from || !period?.to) return warnings;
 
-  const from = parseDashboardDate(meta.currentPeriod.from);
-  const to = parseDashboardDate(meta.currentPeriod.to);
+  const from = parseDashboardDate(period.from);
+  const to = parseDashboardDate(period.to);
 
   if (!from || !to) return warnings;
 
