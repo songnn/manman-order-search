@@ -26,9 +26,9 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonts-archive/Paperlogy/Paperlogy.css" type="text/css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonts-archive/TheJamsil/TheJamsil.css" type="text/css">
   <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@12.2.0/swiper-bundle.min.css">
 
-  <script src="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/swiper@12.2.0/swiper-bundle.min.js"></script>
   <script src="https://unpkg.com/@panzoom/panzoom@4.6.0/dist/panzoom.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.21/dayjs.min.js"></script>
@@ -4092,8 +4092,74 @@ body.has-results .discount-products {
 }
 
 .discount-products__cards {
-  width: min(81.6667vw, 1176px);
+  width: min(81.6667vw, 720px);
   margin-top: clamp(17px, 4.1667vw, 60px);
+  overflow: visible;
+}
+
+.discount-swiper {
+  width: 100%;
+  overflow: hidden;
+  touch-action: pan-y;
+}
+
+.discount-swiper .swiper-wrapper {
+  align-items: stretch;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.discount-swiper .swiper-slide {
+  width: 100%;
+  height: auto;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.discount-swiper.swiper-lock,
+.discount-swiper.swiper-lock .swiper-wrapper {
+  cursor: default;
+}
+
+.discount-swiper-pagination {
+  position: static;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  gap: 6px;
+  margin-top: clamp(14px, 1.25vw, 18px);
+}
+
+.discount-swiper-pagination[hidden],
+.discount-swiper-pagination.swiper-pagination-lock {
+  display: none !important;
+}
+
+.discount-swiper-pagination .swiper-pagination-bullet {
+  width: 7px;
+  height: 7px;
+  margin: 0 !important;
+  border-radius: 999px;
+  background: #8a8f98;
+  opacity: 0.28;
+  transition:
+    width 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 180ms ease,
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.discount-swiper-pagination .swiper-pagination-bullet-active {
+  width: 20px;
+  background: #0051a0;
+  opacity: 1;
+}
+
+.discount-swiper-pagination .swiper-pagination-bullet:focus-visible {
+  outline: 2px solid rgba(0, 81, 160, 0.42);
+  outline-offset: 4px;
 }
 
 .discount-card {
@@ -4129,7 +4195,7 @@ body.has-results .discount-products {
   align-items: center;
   gap: clamp(3px, 0.6944vw, 10px);
   height: auto;
-  padding: clamp(10px, 2.2vw, 40px) clamp(20px, 2.8vw, 40px);
+  padding: clamp(10px, 2.2vw, 40px) clamp(20px, 2.8vw, 40px) clamp(4px, 1.6vw, 40px);
   background: rgba(0, 0, 0, 0.75);
   color: #fff;
   text-align: center;
@@ -4173,6 +4239,7 @@ body.has-results .discount-products {
   align-items: flex-end;
   min-width: 0;
   pointer-events: none;
+  gap: 2.0vw;
 }
 
 .discount-card__price {
@@ -4181,6 +4248,7 @@ body.has-results .discount-products {
   align-items: flex-end;
   max-width: min(66vw, 920px);
   text-align: right;
+  gap: 1.6vw;
 }
 
 .discount-card__compare {
@@ -4296,7 +4364,7 @@ body.has-results .discount-products {
   justify-content: center;
   min-width: 0;
   min-height: clamp(18px, 3.8194vw, 55px);
-  border: 1px solid #fff;
+  border: 0.5px solid #fff;
   font-family: var(--discount-jalnan);
   font-size: clamp(11px, 2.9861vw, 43px);
   line-height: 1;
@@ -4315,7 +4383,7 @@ body.has-results .discount-products {
 
 .discount-card__pill--secondary {
   margin-left: max(-0.2778vw, -4px);
-  padding: clamp(4px, 1.1111vw, 16px) clamp(6px, 1.3889vw, 20px) clamp(4px, 0.4167vw, 6px) clamp(8px, 1.9444vw, 28px);
+  padding: clamp(4px, 1.1111vw, 16px) clamp(12px, 1.3889vw, 20px) clamp(4px, 0.4167vw, 6px) clamp(8px, 1.9444vw, 28px);
   border-radius: 0 999px 999px 0;
   background: #fff;
   color: #000;
@@ -4693,7 +4761,11 @@ let calendarLandingMode = false;
   let discountRefreshTimer = null;
   let discountPeriodicTimer = null;
   let discountExpireInProgress = false;
-  let discountCurrentItem = null;
+  let discountSwiper = null;
+  let activeDiscountItems = [];
+  let discountDisplayOrder = [];
+  let currentDiscountItemId = '';
+  let discountCountdownEndAtMs = 0;
   let discountClockOffset = 0;
 
   const discountCountdownValues = {};
@@ -5394,7 +5466,7 @@ function initDiscountProducts() {
   if (!discountSectionEl || !discountCountdownEl || !discountProductCardsEl) return;
 
   setupDiscountDayjs();
-  loadDiscountProducts({ animate: true });
+  refreshDiscountProducts({ animate: true, resetOrder: true });
   document.addEventListener('visibilitychange', handleDiscountVisibilityChange);
 }
 
@@ -5415,7 +5487,7 @@ function handleDiscountVisibilityChange() {
   if (document.body.classList.contains('has-results')) return;
 
   updateDiscountCountdown();
-  loadDiscountProducts({ animate: false });
+  refreshDiscountProducts({ animate: false });
 }
 
 function fetchDiscountProducts() {
@@ -5446,7 +5518,12 @@ function fetchDiscountProducts() {
 }
 
 function loadDiscountProducts(options = {}) {
+  return refreshDiscountProducts(options);
+}
+
+function refreshDiscountProducts(options = {}) {
   const animate = options.animate !== false;
+  const resetOrder = options.resetOrder === true;
 
   if (!discountSectionEl || document.body.classList.contains('has-results')) {
     return Promise.resolve(null);
@@ -5464,7 +5541,7 @@ function loadDiscountProducts(options = {}) {
       const items = Array.isArray(payload?.items) ? payload.items : [];
 
       if (items.length) {
-        renderDiscountProducts(items, { animate });
+        renderDiscountProducts(items, { animate, resetOrder });
       } else {
         destroyDiscountSection({
           abort: false,
@@ -5496,8 +5573,8 @@ function loadDiscountProducts(options = {}) {
 function renderDiscountProducts(items, options = {}) {
   if (!discountSectionEl || !discountProductCardsEl) return;
 
-  const item = items?.[0];
-  if (!item) {
+  const validItems = Array.isArray(items) ? items.filter(item => item && item.id) : [];
+  if (!validItems.length) {
     destroyDiscountSection({
       abort: false,
       clearRefresh: false,
@@ -5506,32 +5583,201 @@ function renderDiscountProducts(items, options = {}) {
     return;
   }
 
-  const card = createDiscountProductCard(item);
-  const img = card.querySelector('.discount-card__image');
+  const previousItemId = preserveCurrentDiscountItem();
+  discountDisplayOrder = reconcileDiscountOrder(
+    options.resetOrder ? [] : discountDisplayOrder,
+    validItems
+  );
+  const orderedItems = sortDiscountItemsByDisplayOrder(validItems, discountDisplayOrder);
+  const preferredItemId = previousItemId && orderedItems.some(item => item.id === previousItemId)
+    ? previousItemId
+    : orderedItems[0]?.id || '';
 
   stopDiscountCountdown();
-  discountCurrentItem = item;
   resetDiscountCountdownValues();
-  discountProductCardsEl.replaceChildren(card);
-  startDiscountCountdown(item);
+  activeDiscountItems = orderedItems;
+  currentDiscountItemId = preferredItemId;
+  renderDiscountSlides(orderedItems);
+  initializeDiscountSwiper(orderedItems, preferredItemId);
+  startDiscountCountdown(orderedItems);
 
-  waitForDiscountImage(img).then(() => {
-    if (discountCurrentItem?.id !== item.id) return;
+  waitForDiscountFirstImage().then(() => {
     if (document.body.classList.contains('has-results')) return;
+    if (!activeDiscountItems.length) return;
 
-    revealDiscountSection(card, options);
+    revealDiscountSection(options);
   });
 }
 
-function createDiscountProductCard(item) {
+function shuffleItems(items) {
+  const shuffled = [...items];
+
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const randomIndex = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[i]];
+  }
+
+  return shuffled;
+}
+
+function reconcileDiscountOrder(previousOrder, newItems) {
+  const itemIds = newItems.map(item => item.id).filter(Boolean);
+  if (!itemIds.length) return [];
+
+  if (!previousOrder || !previousOrder.length) {
+    return shuffleItems(itemIds);
+  }
+
+  const activeIdSet = new Set(itemIds);
+  const previousIdSet = new Set(previousOrder);
+  const nextOrder = previousOrder.filter(id => activeIdSet.has(id));
+  const newIds = itemIds.filter(id => !previousIdSet.has(id));
+
+  shuffleItems(newIds).forEach(id => {
+    const insertIndex = Math.floor(Math.random() * (nextOrder.length + 1));
+    nextOrder.splice(insertIndex, 0, id);
+  });
+
+  return nextOrder;
+}
+
+function sortDiscountItemsByDisplayOrder(items, order) {
+  const itemMap = new Map(items.map(item => [item.id, item]));
+
+  return order
+    .map(id => itemMap.get(id))
+    .filter(Boolean);
+}
+
+function preserveCurrentDiscountItem() {
+  if (discountSwiper && activeDiscountItems.length) {
+    const currentIndex = Number(discountSwiper.realIndex ?? discountSwiper.activeIndex ?? 0);
+    const currentItem = activeDiscountItems[currentIndex];
+    if (currentItem?.id) {
+      currentDiscountItemId = currentItem.id;
+    }
+  }
+
+  return currentDiscountItemId;
+}
+
+function renderDiscountSlides(items) {
+  destroyDiscountSwiper();
+
+  const swiperEl = document.createElement('div');
+  swiperEl.className = 'discount-swiper swiper';
+  swiperEl.setAttribute('aria-label', '오늘의 매장 할인상품');
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'swiper-wrapper';
+
+  items.forEach((item, index) => {
+    const slide = document.createElement('div');
+    slide.className = 'swiper-slide';
+    slide.setAttribute('role', 'group');
+    slide.setAttribute('aria-label', `총 ${items.length}개 중 ${index + 1}번째 상품`);
+    slide.dataset.discountProductId = item.id;
+    slide.append(createDiscountProductCard(item, index, items.length));
+    wrapper.append(slide);
+  });
+
+  const pagination = document.createElement('div');
+  pagination.className = 'discount-swiper-pagination';
+  pagination.hidden = items.length < 2;
+
+  swiperEl.append(wrapper, pagination);
+  discountProductCardsEl.replaceChildren(swiperEl);
+}
+
+function initializeDiscountSwiper(items, preferredItemId = '') {
+  const swiperEl = discountProductCardsEl.querySelector('.discount-swiper');
+  const paginationEl = discountProductCardsEl.querySelector('.discount-swiper-pagination');
+  const itemCount = items.length;
+
+  if (!swiperEl) return;
+
+  if (itemCount < 2) {
+    swiperEl.classList.add('swiper-lock');
+    if (paginationEl) paginationEl.hidden = true;
+    currentDiscountItemId = items[0]?.id || '';
+    return;
+  }
+
+  if (typeof Swiper !== 'function') {
+    console.warn('Swiper is not available for discount products.');
+    return;
+  }
+
+  const preferredIndex = Math.max(0, items.findIndex(item => item.id === preferredItemId));
+
+  discountSwiper = new Swiper(swiperEl, {
+    slidesPerView: 1,
+    slidesPerGroup: 1,
+    spaceBetween: getDiscountSwiperSpaceBetween(),
+    speed: 520,
+    grabCursor: true,
+    watchOverflow: true,
+    observer: true,
+    observeParents: true,
+    allowTouchMove: itemCount > 1,
+    loop: false,
+    rewind: itemCount > 1,
+    threshold: 8,
+    touchAngle: 42,
+    initialSlide: preferredIndex,
+    pagination: {
+      el: paginationEl,
+      clickable: true,
+      dynamicBullets: itemCount >= 6
+    },
+    keyboard: {
+      enabled: true,
+      onlyInViewport: true
+    },
+    a11y: {
+      enabled: true,
+      containerMessage: '오늘의 매장 할인상품',
+      prevSlideMessage: '이전 할인상품',
+      nextSlideMessage: '다음 할인상품',
+      paginationBulletMessage: '{{index}}번 할인상품 보기'
+    },
+    on: {
+      init(swiper) {
+        currentDiscountItemId = items[swiper.realIndex]?.id || items[0]?.id || '';
+      },
+      slideChange(swiper) {
+        currentDiscountItemId = items[swiper.realIndex]?.id || '';
+      }
+    }
+  });
+}
+
+function destroyDiscountSwiper() {
+  if (discountSwiper && typeof discountSwiper.destroy === 'function') {
+    discountSwiper.destroy(true, true);
+  }
+
+  discountSwiper = null;
+}
+
+function getDiscountSwiperSpaceBetween() {
+  if (window.matchMedia('(max-width: 640px)').matches) return 14;
+  if (window.matchMedia('(max-width: 1024px)').matches) return 18;
+
+  return 24;
+}
+
+function createDiscountProductCard(item, index = 0, total = 1) {
   const card = document.createElement('article');
   card.className = 'discount-card';
   card.dataset.discountProductId = item.id || '';
+  card.setAttribute('aria-label', `총 ${total}개 중 ${index + 1}번째 할인상품`);
 
   const img = document.createElement('img');
   img.className = 'discount-card__image';
-  img.loading = 'lazy';
+  img.loading = index <= 1 ? 'eager' : 'lazy';
   img.decoding = 'async';
+  if (index === 0) img.fetchPriority = 'high';
   img.alt = item.productName || '할인상품';
   img.src = getDiscountImageUrl(item.imageUrl);
   img.addEventListener('error', () => {
@@ -5621,9 +5867,9 @@ function createDiscountProductCard(item) {
   return card;
 }
 
-function startDiscountCountdown(item) {
+function startDiscountCountdown(items) {
   stopDiscountCountdown();
-  discountCurrentItem = item;
+  discountCountdownEndAtMs = getNearestDiscountEndAt(items);
   updateDiscountCountdown();
 
   discountCountdownTimer = window.setInterval(updateDiscountCountdown, 1000);
@@ -5637,16 +5883,14 @@ function stopDiscountCountdown() {
 }
 
 function updateDiscountCountdown() {
-  if (!discountCurrentItem || !discountCountdownEl) return;
+  if (!activeDiscountItems.length || !discountCountdownEl) return;
 
-  const endsAtMs = Date.parse(discountCurrentItem.endsAt || '');
-
-  if (!Number.isFinite(endsAtMs)) {
+  if (!Number.isFinite(discountCountdownEndAtMs) || discountCountdownEndAtMs <= 0) {
     destroyDiscountSection();
     return;
   }
 
-  const remainingMs = endsAtMs - getDiscountCorrectedNowMs();
+  const remainingMs = discountCountdownEndAtMs - getDiscountCorrectedNowMs();
 
   if (remainingMs <= 0) {
     handleDiscountExpired();
@@ -5677,6 +5921,14 @@ function renderDiscountCountdownUnits(parts) {
     discountCountdownValues[part.key] = part.value;
     animateCountdownUnit(valueEl, part.value);
   });
+}
+
+function getNearestDiscountEndAt(items) {
+  const endTimes = (items || [])
+    .map(item => Date.parse(item?.endsAt || ''))
+    .filter(time => Number.isFinite(time) && time > getDiscountCorrectedNowMs());
+
+  return endTimes.length ? Math.min(...endTimes) : 0;
 }
 
 function createDiscountCountdownUnit(part) {
@@ -5807,6 +6059,7 @@ function destroyDiscountSection(options = {}) {
     discountFetchController.abort();
   }
 
+  destroyDiscountSwiper();
   stopDiscountCountdown();
 
   if (clearRefresh && discountRefreshTimer) {
@@ -5820,7 +6073,10 @@ function destroyDiscountSection(options = {}) {
   }
 
   discountExpireInProgress = false;
-  discountCurrentItem = null;
+  activeDiscountItems = [];
+  discountDisplayOrder = [];
+  currentDiscountItemId = '';
+  discountCountdownEndAtMs = 0;
   resetDiscountCountdownValues();
 
   if (discountSectionEl) {
@@ -5844,21 +6100,13 @@ function handleDiscountExpired() {
   discountExpireInProgress = true;
   stopDiscountCountdown();
 
-  fadeOutDiscountSection()
-    .then(() => {
-      destroyDiscountSection({
-        abort: false,
-        clearRefresh: false,
-        clearPeriodic: false
-      });
-      return loadDiscountProducts({ animate: true });
-    })
+  refreshDiscountProducts({ animate: true })
     .finally(() => {
       discountExpireInProgress = false;
     });
 }
 
-function revealDiscountSection(card, options = {}) {
+function revealDiscountSection(options = {}) {
   if (!discountSectionEl) return;
 
   const shouldAnimate = options.animate !== false;
@@ -5876,7 +6124,8 @@ function revealDiscountSection(card, options = {}) {
   }
 
   const title = discountSectionEl.querySelector('.discount-products__title');
-  const targets = [title, discountCountdownEl, card].filter(Boolean);
+  const swiperEl = discountProductCardsEl.querySelector('.discount-swiper');
+  const targets = [title, discountCountdownEl, swiperEl].filter(Boolean);
 
   gsapApi.killTweensOf([discountSectionEl, ...targets]);
   gsapApi.set(discountSectionEl, {
@@ -5971,6 +6220,12 @@ function waitForDiscountImage(img) {
 
     img.addEventListener('load', finish);
   });
+}
+
+function waitForDiscountFirstImage() {
+  const firstImage = discountProductCardsEl?.querySelector('.swiper-slide:first-child .discount-card__image');
+
+  return waitForDiscountImage(firstImage);
 }
 
 function getDiscountImageUrl(value) {
