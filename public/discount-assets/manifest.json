@@ -1,5 +1,42 @@
 {
   "version": 1,
-  "generatedAt": null,
-  "items": {}
+  "generatedAt": "2026-06-06T14:05:21.135Z",
+  "items": {
+    "3f5c33fdb8b759": {
+      "productName": "우와!한 낙지볶음 400g",
+      "description": "낙지원물 79%, 3216시간 연구한 양념",
+      "themeColor": "#C63D2B",
+      "themeIconUrl": "/discount-assets/icons/3f5c33fdb8b759.png",
+      "iconPrompt": "Centered 3D single food icon of spicy stir-fried octopus in a small bowl, glossy red-orange sauce with subtle octopus pieces, premium realistic material, isolated on transparent background, no text, no badge, no background clutter, suitable for a 40px square UI ornament",
+      "generatedAt": "2026-06-06T14:03:50.959Z",
+      "source": "openai"
+    },
+    "b29ead9f2ce84e": {
+      "productName": "포항 구룡포 건조 원양산 반건조 오징어 450g (5미)",
+      "description": "구룡포 해풍으로 말린, 온가족 영양간식",
+      "themeColor": "#D98C2B",
+      "themeIconUrl": "/discount-assets/icons/b29ead9f2ce84e.png",
+      "iconPrompt": "Centered 3D icon of a premium semi-dried squid snack, featuring a single glossy golden-brown dried squid with lightly curled tentacles and subtle sea-salt sheen, clean studio lighting, isolated on transparent background, no text, no badge, no clutter, suitable for a 40px square UI ornament",
+      "generatedAt": "2026-06-06T14:04:15.945Z",
+      "source": "openai"
+    },
+    "bc5a4134f95de8": {
+      "productName": "CJ 촌두부 380G, 1개",
+      "description": "특급 국산콩 100%, 프리미엄 두부",
+      "themeColor": "#2F6F4E",
+      "themeIconUrl": "/discount-assets/icons/bc5a4134f95de8.png",
+      "iconPrompt": "Centered 3D icon of a premium Korean tofu block in a clean white rectangular pack with subtle soybean motif, slightly glossy surface, realistic soft shadows, no text, no badge, isolated object, minimal composition, suitable for a 40px square UI ornament",
+      "generatedAt": "2026-06-06T14:04:36.125Z",
+      "source": "openai"
+    },
+    "4626b8032a0206": {
+      "productName": "자이언트 통다리 1.2kg / 소비기한 1년이상",
+      "description": "압도적인 1.2kg 다리, 풍부한 풍미와 육즙",
+      "themeColor": "#B07A2A",
+      "themeIconUrl": "/discount-assets/icons/4626b8032a0206.png",
+      "iconPrompt": "Centered premium 3D icon of one oversized whole chicken leg drumstick, plump and juicy, golden-brown roasted surface with subtle sheen, emphasizing generous 1.2kg scale and rich flavor, clean isolated object, no text, no badge, no background clutter, suitable for a 40px square UI ornament",
+      "generatedAt": "2026-06-06T14:05:21.135Z",
+      "source": "openai"
+    }
+  }
 }

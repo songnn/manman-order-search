@@ -207,15 +207,30 @@ function createIconPrompt(product, themeColor) {
 }
 
 async function generateIconImage(prompt) {
-  const result = await openaiJson('/v1/images/generations', {
+  const baseRequest = {
     model: IMAGE_MODEL,
     prompt,
     size: '1024x1024',
     quality: 'low',
-    background: 'transparent',
     output_format: 'png',
     n: 1
-  });
+  };
+
+  let result;
+
+  try {
+    result = await openaiJson('/v1/images/generations', {
+      ...baseRequest,
+      background: 'transparent'
+    });
+  } catch (error) {
+    if (!/transparent background is not supported/i.test(error.message)) {
+      throw error;
+    }
+
+    console.warn(`${IMAGE_MODEL} does not support transparent background; retrying with model default background.`);
+    result = await openaiJson('/v1/images/generations', baseRequest);
+  }
 
   const image = result?.data?.[0];
   if (image?.b64_json) {
