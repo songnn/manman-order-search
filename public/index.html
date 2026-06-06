@@ -4412,10 +4412,10 @@ body.has-results .discount-products {
 .discount-card__rate {
   position: absolute;
   right: clamp(8px, 2.1vw, 30px);
-  bottom: clamp(104px, 22.9167vw, 330px);
+  bottom: clamp(130px, 26.4vw, 386px);
   z-index: 3;
-  width: clamp(84px, 15vw, 216px);
-  aspect-ratio: 1000 / 965;
+  width: clamp(100px, 16.6667vw, 240px);
+  aspect-ratio: 1000 / 895;
   overflow: visible;
   color: #fff8ec;
   pointer-events: none;
@@ -4431,7 +4431,7 @@ body.has-results .discount-products {
 .discount-badge {
   position: relative;
   width: 100%;
-  aspect-ratio: 1000 / 965;
+  aspect-ratio: 1000 / 895;
 }
 
 .discount-badge__image,
@@ -4457,10 +4457,10 @@ body.has-results .discount-products {
   transform-origin: center;
 }
 
-.discount-badge__number,
-.discount-badge__percent {
+.discount-badge__number {
   fill: #fff8ec;
-  font-family: Pretendard, "Arial Black", sans-serif;
+  font-family: "Arial Black", Pretendard, sans-serif;
+  font-style: italic;
   font-weight: 900;
   letter-spacing: 0;
   paint-order: normal;
@@ -4880,7 +4880,7 @@ let calendarLandingMode = false;
   const discountProductCardsEl = document.getElementById('discountProductCards');
   const DISCOUNT_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
   const DISCOUNT_PLACEHOLDER_IMAGE = DUMMY_IMAGES[0];
-  const DISCOUNT_BADGE_IMAGE = '/price_badge.png';
+  const DISCOUNT_BADGE_IMAGE = '/price_badge2.png';
   const discountReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
   let discountDayjsPluginsReady = false;
@@ -6046,22 +6046,17 @@ function normalizeDiscountPercent(value) {
 
 function getDiscountBadgeTextLayout(percentText) {
   const digitCount = percentText.length;
-  const numberFontSize = digitCount >= 3 ? 245 : digitCount === 1 ? 310 : 290;
-  const percentFontSize = Math.round(numberFontSize * 0.386);
-  const digitWidth = numberFontSize * (digitCount >= 3 ? 0.58 : 0.61);
+  const numberFontSize = digitCount >= 3 ? 305 : digitCount === 1 ? 430 : 390;
+  const digitWidth = numberFontSize * (digitCount >= 3 ? 0.57 : digitCount === 1 ? 0.62 : 0.6);
   const numberWidth = digitWidth * digitCount;
-  const gap = Math.max(10, numberFontSize * 0.035);
-  const percentWidth = percentFontSize * 0.72;
-  const totalWidth = numberWidth + gap + percentWidth;
-  const startX = totalWidth / -2;
+  const targetRightEdge = digitCount === 1 ? 505 : 610;
 
   return {
     numberFontSize,
-    percentFontSize,
-    numberX: startX + (numberWidth / 2),
-    percentX: startX + numberWidth + gap,
-    numberY: 0,
-    percentY: digitCount >= 3 ? -98 : -92
+    groupX: targetRightEdge - (numberWidth / 2),
+    groupY: digitCount >= 3 ? 506 : 500,
+    numberX: 0,
+    numberY: 0
   };
 }
 
@@ -6079,7 +6074,7 @@ function createDiscountBadge(options = {}) {
 
   const svg = createDiscountSvgElement('svg', {
     class: 'discount-badge__svg',
-    viewBox: '0 0 1000 1000',
+    viewBox: '0 0 1000 895',
     preserveAspectRatio: 'xMidYMid meet',
     'aria-hidden': 'true',
     focusable: 'false'
@@ -6096,19 +6091,19 @@ function createDiscountBadge(options = {}) {
   });
 
   const deepShadow = createDiscountSvgElement('feDropShadow', {
-    dx: 0,
+    dx: 12,
     dy: 18,
-    stdDeviation: 8,
+    stdDeviation: 7,
     'flood-color': '#6f1f11',
-    'flood-opacity': 0.5
+    'flood-opacity': 0.48
   });
 
   const closeShadow = createDiscountSvgElement('feDropShadow', {
-    dx: 0,
-    dy: 5,
+    dx: 5,
+    dy: 7,
     stdDeviation: 2,
     'flood-color': '#421208',
-    'flood-opacity': 0.34
+    'flood-opacity': 0.36
   });
 
   filter.append(deepShadow, closeShadow);
@@ -6116,9 +6111,7 @@ function createDiscountBadge(options = {}) {
   const defs = createDiscountSvgElement('defs');
   defs.append(filter);
 
-  const tiltGroup = createDiscountSvgElement('g', {
-    transform: 'translate(500 610) rotate(-4)'
-  });
+  const tiltGroup = createDiscountSvgElement('g');
   const popGroup = createDiscountSvgElement('g', {
     class: 'discount-badge__percent-pop'
   });
@@ -6130,19 +6123,11 @@ function createDiscountBadge(options = {}) {
     filter: `url(#${filterId})`
   });
 
-  const percent = createDiscountSvgElement('text', {
-    class: 'discount-badge__percent',
-    'text-anchor': 'start',
-    'dominant-baseline': 'central',
-    filter: `url(#${filterId})`
-  });
-  percent.textContent = '%';
-
-  popGroup.append(number, percent);
+  popGroup.append(number);
   tiltGroup.append(popGroup);
   svg.append(defs, tiltGroup);
   badge.append(image, svg);
-  badge._discountBadgeRefs = { number, percent };
+  badge._discountBadgeRefs = { number, tiltGroup };
 
   updateDiscountBadge(badge, options);
 
@@ -6159,15 +6144,13 @@ function updateDiscountBadge(badge, options = {}) {
   badge.setAttribute('aria-label', `${percentText}% 할인`);
 
   refs.number.textContent = percentText;
+  setDiscountSvgAttributes(refs.tiltGroup, {
+    transform: `translate(${layout.groupX.toFixed(2)} ${layout.groupY}) rotate(-4)`
+  });
   setDiscountSvgAttributes(refs.number, {
     x: layout.numberX.toFixed(2),
     y: layout.numberY,
     'font-size': layout.numberFontSize
-  });
-  setDiscountSvgAttributes(refs.percent, {
-    x: layout.percentX.toFixed(2),
-    y: layout.percentY,
-    'font-size': layout.percentFontSize
   });
 
   return badge;
