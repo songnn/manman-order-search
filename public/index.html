@@ -22,6 +22,7 @@
   <meta name="twitter:image" content="https://res.cloudinary.com/diol40iez/image/upload/v1779749205/%E1%84%86%E1%85%A1%E1%86%AB%E1%84%86%E1%85%A1%E1%86%AB%E1%84%86%E1%85%A1%E1%84%8F%E1%85%A6%E1%86%BA%E1%84%86%E1%85%A6%E1%84%90%E1%85%A1%E1%84%8B%E1%85%B5%E1%84%86%E1%85%B5%E1%84%8C%E1%85%B5_fy0x8i.png">
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preload" href="/fonts/JalnanGothicTTF.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonts-archive/JalnanGothic/JalnanGothic.css" type="text/css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonts-archive/Paperlogy/Paperlogy.css" type="text/css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonts-archive/TheJamsil/TheJamsil.css" type="text/css">
@@ -37,6 +38,14 @@
   <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.21/plugin/customParseFormat.js"></script>
 
   <style>
+  @font-face {
+    font-family: 'Jalnan Gothic';
+    src: url('/fonts/JalnanGothicTTF.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+
   * {
     box-sizing: border-box;
   }
@@ -4144,8 +4153,10 @@ body.has-results .discount-products {
   justify-content: center;
   min-height: 30px;
   gap: 5px;
-  width: max-content;
-  max-width: calc(100vw - 40px);
+  align-self: center;
+  flex: 0 0 auto;
+  width: fit-content !important;
+  max-width: none;
   padding: 5px 7px;
   margin-top: clamp(14px, 1.25vw, 18px);
   margin-left: auto;
@@ -4231,13 +4242,14 @@ body.has-results .discount-products {
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
-  height: 32.398%;
-  padding: clamp(8px, 2.0833vw, 30px) clamp(22px, 5.5556vw, 80px) clamp(16px, 4.1667vw, 60px);
+  min-height: 32.398%;
+  height: auto;
+  padding: clamp(8px, 2.0833vw, 30px) clamp(18px, 5.5556vw, 80px) clamp(18px, 5vw, 72px);
   background: linear-gradient(
     180deg,
     rgba(0, 0, 0, 1) 0%,
-    rgba(0, 0, 0, 0.85) 50%,
-    rgba(0, 0, 0, 0.75) 80%,
+    rgba(0, 0, 0, 0.88) 54%,
+    rgba(0, 0, 0, 0.76) 82%,
     rgba(0, 0, 0, 0) 100%
   );
   color: #fff;
@@ -4302,11 +4314,13 @@ body.has-results .discount-products {
   margin: 0;
   overflow: hidden;
   font-family: var(--discount-base);
-  font-size: clamp(22px, 5.9028vw, 85px);
-  line-height: clamp(23px, 5.9722vw, 86px);
+  width: 100%;
+  font-size: clamp(20px, 5.4167vw, 78px);
+  line-height: 1.18;
   font-weight: 800;
   letter-spacing: 0;
   word-break: keep-all;
+  overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
@@ -4379,7 +4393,7 @@ body.has-results .discount-products {
   flex-direction: row;
   align-items: flex-end;
   justify-content: flex-end;
-  gap: clamp(5px, 0.8333vw, 12px);
+  gap: clamp(6px, 1.1111vw, 16px);
   max-width: 100%;
   color: #fff;
   font-family: var(--discount-base);
@@ -4391,7 +4405,7 @@ body.has-results .discount-products {
   display: inline;
   color: currentColor;
   font-family: inherit;
-  font-size: clamp(14px, 3.125vw, 45px);
+  font-size: clamp(16px, 3.6111vw, 52px);
   line-height: 1.05;
   font-weight: 600;
   letter-spacing: 0;
@@ -4400,7 +4414,7 @@ body.has-results .discount-products {
 .discount-card__compare-price {
   color: currentColor;
   font-family: inherit;
-  font-size: clamp(16px, 3.75vw, 54px);
+  font-size: clamp(18px, 4.1667vw, 60px);
   line-height: 1;
   font-weight: 800;
   letter-spacing: -0.02em;
@@ -4499,9 +4513,9 @@ body.has-results .discount-products {
 
 .discount-badge__number {
   fill: #fff8ec;
-  font-family: "Arial Black", Pretendard, sans-serif;
-  font-style: italic;
-  font-weight: 900;
+  font-family: var(--discount-jalnan);
+  font-style: normal;
+  font-weight: 400;
   letter-spacing: 0;
   paint-order: normal;
 }
@@ -6089,17 +6103,18 @@ function normalizeDiscountPercent(value) {
 
 function getDiscountBadgeTextLayout(percentText) {
   const digitCount = percentText.length;
-  const numberFontSize = digitCount >= 3 ? 305 : digitCount === 1 ? 430 : 390;
-  const digitWidth = numberFontSize * (digitCount >= 3 ? 0.57 : digitCount === 1 ? 0.62 : 0.6);
+  const numberFontSize = digitCount >= 3 ? 285 : digitCount === 1 ? 410 : 365;
+  const digitWidth = numberFontSize * (digitCount >= 3 ? 0.59 : digitCount === 1 ? 0.66 : 0.62);
   const numberWidth = digitWidth * digitCount;
-  const targetRightEdge = digitCount === 1 ? 505 : 610;
+  const targetRightEdge = digitCount === 1 ? 500 : digitCount >= 3 ? 620 : 590;
 
   return {
     numberFontSize,
     groupX: targetRightEdge - (numberWidth / 2),
-    groupY: digitCount >= 3 ? 506 : 500,
+    groupY: digitCount >= 3 ? 506 : 498,
     numberX: 0,
-    numberY: 0
+    numberY: 0,
+    rotate: -1.5
   };
 }
 
@@ -6126,24 +6141,24 @@ function createDiscountBadge(options = {}) {
   const filterId = `discount-badge-text-shadow-${++discountBadgeId}`;
   const filter = createDiscountSvgElement('filter', {
     id: filterId,
-    x: '-30%',
-    y: '-35%',
-    width: '160%',
-    height: '180%',
+    x: '-70%',
+    y: '-70%',
+    width: '240%',
+    height: '240%',
     'color-interpolation-filters': 'sRGB'
   });
 
   const deepShadow = createDiscountSvgElement('feDropShadow', {
-    dx: 12,
-    dy: 18,
-    stdDeviation: 7,
+    dx: 9,
+    dy: 15,
+    stdDeviation: 6,
     'flood-color': '#6f1f11',
     'flood-opacity': 0.48
   });
 
   const closeShadow = createDiscountSvgElement('feDropShadow', {
-    dx: 5,
-    dy: 7,
+    dx: 4,
+    dy: 6,
     stdDeviation: 2,
     'flood-color': '#421208',
     'flood-opacity': 0.36
@@ -6188,7 +6203,7 @@ function updateDiscountBadge(badge, options = {}) {
 
   refs.number.textContent = percentText;
   setDiscountSvgAttributes(refs.tiltGroup, {
-    transform: `translate(${layout.groupX.toFixed(2)} ${layout.groupY}) rotate(-4)`
+    transform: `translate(${layout.groupX.toFixed(2)} ${layout.groupY}) rotate(${layout.rotate})`
   });
   setDiscountSvgAttributes(refs.number, {
     x: layout.numberX.toFixed(2),
