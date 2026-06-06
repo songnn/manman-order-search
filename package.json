@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "discount:assets": "node scripts/generate-discount-assets.mjs"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.2",
     "dayjs": "^1.11.21",

@@ -4208,12 +4208,17 @@ body.has-results .discount-products {
   z-index: 2;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
-  gap: clamp(3px, 0.6944vw, 10px);
-  height: auto;
-  padding: clamp(10px, 2.2vw, 40px) clamp(20px, 2.8vw, 40px) clamp(4px, 1.6vw, 40px);
-  background: rgba(0, 0, 0, 0.75);
+  height: 32.398%;
+  padding: clamp(8px, 2.0833vw, 30px) clamp(22px, 5.5556vw, 80px) clamp(16px, 4.1667vw, 60px);
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 0.85) 50%,
+    rgba(0, 0, 0, 0.75) 80%,
+    rgba(0, 0, 0, 0) 100%
+  );
   color: #fff;
   text-align: center;
   transform: translateZ(0);
@@ -4221,32 +4226,105 @@ body.has-results .discount-products {
   backface-visibility: hidden;
 }
 
+.discount-card__headline-ornament {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: clamp(11px, 2.7778vw, 40px);
+  margin-bottom: clamp(4px, 1.25vw, 18px);
+  color: var(--discount-theme-color, #f2de95);
+}
+
+.discount-card__headline-line {
+  flex: 1 1 0;
+  height: max(0.5px, 0.0694vw);
+  max-height: 1px;
+  background: currentColor;
+  opacity: 0.82;
+}
+
+.discount-card__headline-icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: clamp(11px, 2.7778vw, 40px);
+  height: clamp(11px, 2.7778vw, 40px);
+  margin: 0 clamp(12px, 4.1667vw, 60px);
+  filter: drop-shadow(0 clamp(2px, 0.42vw, 6px) clamp(3px, 0.69vw, 10px) rgba(0, 0, 0, 0.35));
+}
+
+.discount-card__headline-icon-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.discount-card__headline-icon-fallback {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0) 38%),
+    radial-gradient(circle at 64% 72%, color-mix(in srgb, currentColor 78%, #000 22%), currentColor 66%, color-mix(in srgb, currentColor 54%, #000 46%) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+  font-size: clamp(8px, 1.8056vw, 26px);
+  line-height: 1;
+}
+
 .discount-card__name {
   display: -webkit-box;
   margin: 0;
   overflow: hidden;
-  font-family: var(--discount-jalnan);
-  font-size: clamp(18px, 5vw, 72px);
-  line-height: 1.12;
-  font-weight: 400;
+  font-family: var(--discount-base);
+  font-size: clamp(22px, 5.9028vw, 85px);
+  line-height: clamp(23px, 5.9722vw, 86px);
+  font-weight: 800;
   letter-spacing: 0;
   word-break: keep-all;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
 
-.discount-card__desc {
+.discount-card__chips {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(4px, 0.8333vw, 12px);
   width: 100%;
   min-width: 0;
+  margin-top: clamp(3px, 0.9722vw, 14px);
   overflow: hidden;
-  font-family: var(--discount-jamsil);
-  font-size: clamp(10px, 2.5vw, 36px);
-  line-height: 1.22;
+  flex-wrap: nowrap;
+}
+
+.discount-card__chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  min-width: 0;
+  padding: clamp(2px, 0.4861vw, 7px) clamp(11px, 2.7778vw, 40px);
+  border: max(0.5px, 0.0694vw) solid var(--discount-theme-color, #f2de95);
+  border-radius: 999px;
+  color: #fff7d9;
+  font-family: var(--discount-base);
+  font-size: clamp(9px, 2.2917vw, 33px);
+  line-height: 1.1;
   font-weight: 500;
   letter-spacing: -0.02em;
-  color: #fff3c8;
   text-overflow: ellipsis;
   white-space: nowrap;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.discount-card__chip[hidden] {
+  display: none;
 }
 
 .discount-card__bottom-group {
@@ -4259,7 +4337,7 @@ body.has-results .discount-products {
   align-items: flex-end;
   min-width: 0;
   pointer-events: none;
-  gap: 2.0vw;
+  gap: clamp(7px, 1.1111vw, 16px);
   transform: translateZ(0);
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
@@ -4269,75 +4347,74 @@ body.has-results .discount-products {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  max-width: min(66vw, 920px);
+  max-width: min(74vw, 960px);
   text-align: right;
-  gap: 1.6vw;
+  gap: clamp(2px, 0.4167vw, 6px);
 }
 
 .discount-card__compare {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: flex-end;
+  justify-content: flex-end;
+  gap: clamp(5px, 0.8333vw, 12px);
   max-width: 100%;
-  margin-bottom: max(-0.2778vw, -4px);
+  color: #fff;
+  font-family: var(--discount-base);
+  text-shadow: 0 clamp(1px, 0.2778vw, 4px) clamp(3px, 0.6944vw, 10px) rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
 }
 
 .discount-card__compare-label {
-  display: inline-flex;
-  align-items: center;
-  min-height: clamp(12px, 1.45vw, 21px);
-  padding: 0 clamp(4px, 0.8333vw, 12px);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.88);
-  color: #111;
-  font-family: var(--discount-base);
-  font-size: clamp(9px, 1.25vw, 18px);
-  line-height: 1;
-  font-weight: 700;
+  display: inline;
+  color: currentColor;
+  font-family: inherit;
+  font-size: clamp(14px, 3.125vw, 45px);
+  line-height: 1.05;
+  font-weight: 600;
   letter-spacing: 0;
 }
 
 .discount-card__compare-price {
-  margin-top: max(-0.2778vw, -4px);
-  color: #111;
-  font-family: var(--discount-jalnan);
-  font-size: clamp(28px, 7.4306vw, 107px);
-  line-height: 1.04;
-  font-weight: 400;
-  letter-spacing: -0.01em;
-  text-shadow:
-    -1px -1px 0 #fff,
-    1px -1px 0 #fff,
-    -1px 1px 0 #fff,
-    1px 1px 0 #fff,
-    0 3px 12px rgba(255, 255, 255, 0.78);
+  color: currentColor;
+  font-family: inherit;
+  font-size: clamp(16px, 3.75vw, 54px);
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-decoration-line: line-through;
+  text-decoration-thickness: max(1px, 0.1389vw);
+  text-decoration-color: rgba(255, 255, 255, 0.9);
   white-space: nowrap;
 }
 
 .discount-card__sale {
   max-width: 100%;
-  margin-top: max(-0.2778vw, -4px);
   color: #ef4c4d;
   font-family: var(--discount-jalnan);
   font-size: clamp(48px, 12.5vw, 180px);
   line-height: 0.98;
   font-weight: 400;
   letter-spacing: -0.01em;
-  text-shadow:
-    -1.5px -1.5px 0 #fff,
-    1.5px -1.5px 0 #fff,
-    -1.5px 1.5px 0 #fff,
-    1.5px 1.5px 0 #fff,
-    0 5px 18px rgba(255, 255, 255, 0.86);
+  background: linear-gradient(0deg, #ef4c4d -50%, #db3622 150%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: clamp(0.8px, 0.1389vw, 2px) #fff;
+  paint-order: stroke fill;
+  text-shadow: none;
+  filter:
+    drop-shadow(0 clamp(1px, 0.2778vw, 4px) clamp(2px, 0.5556vw, 8px) rgba(0, 0, 0, 0.38))
+    drop-shadow(0 0 clamp(2px, 0.5556vw, 8px) rgba(255, 255, 255, 0.46));
   white-space: nowrap;
 }
 
 .discount-card__rate {
   position: absolute;
   right: clamp(8px, 2.1vw, 30px);
-  bottom: clamp(104px, 25.9vw, 373px);
+  bottom: clamp(104px, 22.9167vw, 330px);
   z-index: 3;
-  width: clamp(120px, 17.5vw, 252px);
+  width: clamp(84px, 15vw, 216px);
   aspect-ratio: 1000 / 965;
   overflow: visible;
   color: #fff8ec;
@@ -4410,7 +4487,8 @@ body.has-results .discount-products {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  margin-top: max(-0.2778vw, -4px);
+  gap: clamp(5px, 1.1111vw, 16px);
+  max-width: 100%;
   pointer-events: none;
 }
 
@@ -4419,30 +4497,27 @@ body.has-results .discount-products {
   align-items: center;
   justify-content: center;
   min-width: 0;
-  min-height: clamp(18px, 3.8194vw, 55px);
-  border: 0.5px solid #fff;
-  font-family: var(--discount-jalnan);
-  font-size: clamp(11px, 2.9861vw, 43px);
+  min-height: clamp(24px, 5vw, 72px);
+  padding: clamp(4px, 1.1111vw, 16px) clamp(9px, 2.2222vw, 32px);
+  border: max(1px, 0.1389vw) solid #fff;
+  border-radius: 999px;
+  font-family: var(--discount-base);
+  font-size: clamp(11px, 2.7778vw, 40px);
   line-height: 1;
-  font-weight: 400;
+  font-weight: 600;
   letter-spacing: 0;
   white-space: nowrap;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.55);
+  box-shadow: 0 clamp(2px, 0.4861vw, 7px) clamp(8px, 1.6667vw, 24px) rgba(0, 0, 0, 0.22);
 }
 
 .discount-card__pill--primary {
-  padding: clamp(4px, 1.1111vw, 16px) clamp(6px, 2.0833vw, 30px) clamp(4px, 0.4167vw, 6px) clamp(6px, 1.3889vw, 20px);
-  border-radius: 999px 0 0 999px;
-  background: #ef4c4d;
+  background: linear-gradient(90deg, #b4361d 0%, #721f0b 100%);
   color: #fff;
 }
 
 .discount-card__pill--secondary {
-  margin-left: max(-0.2778vw, -4px);
-  padding: clamp(4px, 1.1111vw, 16px) clamp(12px, 1.3889vw, 20px) clamp(4px, 0.4167vw, 6px) clamp(8px, 1.9444vw, 28px);
-  border-radius: 0 999px 999px 0;
-  background: #fff;
-  color: #000;
+  background: linear-gradient(90deg, #29271e 0%, #191813 100%);
+  color: #fff;
 }
 
 @media (max-width: 430px) {
@@ -4822,6 +4897,7 @@ let calendarLandingMode = false;
   let discountCountdownEndAtMs = 0;
   let discountClockOffset = 0;
   let discountBadgeId = 0;
+  let discountChipsFitRaf = 0;
 
   const discountCountdownValues = {};
 
@@ -5523,6 +5599,7 @@ function initDiscountProducts() {
   setupDiscountDayjs();
   refreshDiscountProducts({ animate: true, resetOrder: true });
   document.addEventListener('visibilitychange', handleDiscountVisibilityChange);
+  window.addEventListener('resize', scheduleDiscountChipsFit, { passive: true });
 }
 
 function setupDiscountDayjs() {
@@ -5742,6 +5819,7 @@ function renderDiscountSlides(items) {
 
   swiperEl.append(wrapper, pagination);
   discountProductCardsEl.replaceChildren(swiperEl);
+  scheduleDiscountChipsFit();
 }
 
 function initializeDiscountSwiper(items, preferredItemId = '') {
@@ -5819,6 +5897,131 @@ function destroyDiscountSwiper() {
 
 function getDiscountSwiperSpaceBetween() {
   return Math.round(Math.max(10, Math.min(40, window.innerWidth * (40 / 1440))));
+}
+
+function scheduleDiscountChipsFit() {
+  if (discountChipsFitRaf) {
+    window.cancelAnimationFrame(discountChipsFitRaf);
+  }
+
+  discountChipsFitRaf = window.requestAnimationFrame(() => {
+    discountChipsFitRaf = 0;
+    fitDiscountDescriptionChips();
+  });
+}
+
+function fitDiscountDescriptionChips() {
+  if (!discountProductCardsEl) return;
+
+  discountProductCardsEl.querySelectorAll('.discount-card__chips').forEach(container => {
+    const chips = Array.from(container.querySelectorAll('.discount-card__chip'));
+    const availableWidth = container.clientWidth;
+
+    if (!availableWidth || !chips.length) return;
+
+    chips.forEach(chip => {
+      chip.hidden = false;
+    });
+
+    chips.forEach((chip, index) => {
+      if (index === 0) return;
+
+      const chipRight = chip.offsetLeft + chip.offsetWidth;
+      if (chipRight > availableWidth + 1) {
+        chip.hidden = true;
+      }
+    });
+  });
+}
+
+function getDiscountThemeColor(item) {
+  const color = String(item?.themeColor || '').trim();
+  if (/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(color)) return color;
+
+  return getFallbackDiscountThemeColor(item?.productName || '');
+}
+
+function getFallbackDiscountThemeColor(productName = '') {
+  return '#F2DE95';
+}
+
+function splitDiscountDescriptionChips(description = '') {
+  return String(description)
+    .split(',')
+    .map(part => part.trim())
+    .filter(Boolean)
+    .slice(0, 6);
+}
+
+function getDiscountFallbackIcon(productName = '') {
+  const name = String(productName);
+  if (/계란|대란|특란|유정란|난각|egg/i.test(name)) return '🥚';
+  if (/패드|화장|시카|크림|로션|마스크|미백|스킨/i.test(name)) return '✦';
+  if (/과일|사과|배|귤|포도|딸기/i.test(name)) return '🍎';
+  if (/고기|한우|삼겹|목살|닭/i.test(name)) return '★';
+  if (/우유|치즈|요거트|요구르트/i.test(name)) return '●';
+
+  return '◆';
+}
+
+function createDiscountHeadlineOrnament(item) {
+  const ornament = document.createElement('div');
+  ornament.className = 'discount-card__headline-ornament';
+  ornament.setAttribute('aria-hidden', 'true');
+
+  const leftLine = document.createElement('span');
+  leftLine.className = 'discount-card__headline-line';
+
+  const iconWrap = document.createElement('span');
+  iconWrap.className = 'discount-card__headline-icon';
+
+  const themeIconUrl = getDiscountThemeIconUrl(item);
+  if (themeIconUrl) {
+    const icon = document.createElement('img');
+    icon.className = 'discount-card__headline-icon-img';
+    icon.src = themeIconUrl;
+    icon.alt = '';
+    icon.decoding = 'async';
+    icon.loading = 'lazy';
+    icon.draggable = false;
+    icon.addEventListener('error', () => {
+      icon.remove();
+      const fallback = document.createElement('span');
+      fallback.className = 'discount-card__headline-icon-fallback';
+      fallback.textContent = getDiscountFallbackIcon(item?.productName || '');
+      iconWrap.append(fallback);
+    }, { once: true });
+    iconWrap.append(icon);
+  } else {
+    const fallback = document.createElement('span');
+    fallback.className = 'discount-card__headline-icon-fallback';
+    fallback.textContent = getDiscountFallbackIcon(item?.productName || '');
+    iconWrap.append(fallback);
+  }
+
+  const rightLine = document.createElement('span');
+  rightLine.className = 'discount-card__headline-line';
+
+  ornament.append(leftLine, iconWrap, rightLine);
+
+  return ornament;
+}
+
+function getDiscountThemeIconUrl(item) {
+  const value = String(item?.themeIconUrl || '').trim();
+  if (!value) return '';
+  if (value.startsWith('/')) return value;
+
+  try {
+    const url = new URL(value);
+    if (url.protocol === 'http:' || url.protocol === 'https:') {
+      return url.href;
+    }
+  } catch {
+    // Fallback below.
+  }
+
+  return '';
 }
 
 function setDiscountSvgAttributes(el, attributes = {}) {
@@ -5974,6 +6177,7 @@ function createDiscountProductCard(item, index = 0, total = 1) {
   const card = document.createElement('article');
   card.className = 'discount-card';
   card.dataset.discountProductId = item.id || '';
+  card.style.setProperty('--discount-theme-color', getDiscountThemeColor(item));
   card.setAttribute('aria-label', `총 ${total}개 중 ${index + 1}번째 할인상품`);
 
   const img = document.createElement('img');
@@ -5991,17 +6195,26 @@ function createDiscountProductCard(item, index = 0, total = 1) {
 
   const top = document.createElement('div');
   top.className = 'discount-card__top';
+  top.append(createDiscountHeadlineOrnament(item));
 
   const name = document.createElement('h3');
   name.className = 'discount-card__name';
   name.textContent = item.productName || '';
   top.append(name);
 
-  if (item.description) {
-    const desc = document.createElement('div');
-    desc.className = 'discount-card__desc';
-    desc.textContent = item.description;
-    top.append(desc);
+  const descriptionChips = splitDiscountDescriptionChips(item.description || '');
+  if (descriptionChips.length) {
+    const chips = document.createElement('div');
+    chips.className = 'discount-card__chips';
+
+    descriptionChips.forEach(text => {
+      const chip = document.createElement('span');
+      chip.className = 'discount-card__chip';
+      chip.textContent = text;
+      chips.append(chip);
+    });
+
+    top.append(chips);
   }
 
   const price = document.createElement('div');
@@ -6045,7 +6258,7 @@ function createDiscountProductCard(item, index = 0, total = 1) {
 
   const productBadge = document.createElement('span');
   productBadge.className = 'discount-card__pill discount-card__pill--secondary';
-  productBadge.textContent = '매장 상품';
+  productBadge.textContent = '⭐ 매장 구매 상품';
 
   footer.append(storeBadge, productBadge);
 
@@ -6310,6 +6523,7 @@ function revealDiscountSection(options = {}) {
   discountSectionEl.hidden = false;
   discountSectionEl.classList.add('is-visible');
   discountSectionEl.classList.remove('is-leaving');
+  scheduleDiscountChipsFit();
 
   if (!shouldAnimate || !wasHidden || !gsapApi || discountReduceMotion.matches) {
     discountSectionEl.style.opacity = '';
