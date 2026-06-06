@@ -7,7 +7,8 @@ import { fileURLToPath } from 'node:url';
 import {
   getAllDiscountProductsForAssets,
   getDiscountAssetKey,
-  getFallbackDiscountThemeColor
+  getFallbackDiscountThemeColor,
+  updateDiscountProductAssetCells
 } from '../lib/discountProducts.js';
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -19,6 +20,7 @@ const MANIFEST_PATH = path.join(ASSET_DIR, 'manifest.json');
 const args = new Set(process.argv.slice(2));
 const dryRun = args.has('--dry-run');
 const force = args.has('--force');
+const writeSheet = !args.has('--no-write-sheet');
 const sourceUrl = getArgValue('--source-url');
 
 await loadLocalEnv(path.join(ROOT_DIR, '.env.local'));
@@ -32,10 +34,7 @@ async function main() {
   const manifest = await readManifest();
   const nextItems = { ...(manifest.items || {}) };
   const changed = [];
-
-  if (!dryRun && !OPENAI_API_KEY) {
-    throw new Error('OPENAI_API_KEY 환경변수가 필요합니다. 테스트만 하려면 --dry-run을 사용하세요.');
-  }
+  const sheetUpdates = [];
 
   await fs.mkdir(ICON_DIR, { recursive: true });
 
@@ -44,8 +43,19 @@ async function main() {
     if (!assetKey) continue;
 
     const existing = nextItems[assetKey];
+    const sheetHasColor = Boolean(normalizeHexColor(product._sheetThemeColor));
+    const sheetHasIcon = Boolean(normalizeIconUrl(product._sheetThemeIconUrl));
+
     if (existing?.themeColor && existing?.themeIconUrl && !force) {
+      queueSheetUpdate(sheetUpdates, product, existing, {
+        sheetHasColor,
+        sheetHasIcon
+      });
       continue;
+    }
+
+    if (!dryRun && !OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY 환경변수가 필요합니다. 테스트만 하려면 --dry-run을 사용하세요.');
     }
 
     const metadata = dryRun
@@ -74,6 +84,11 @@ async function main() {
       source: dryRun ? 'fallback-dry-run' : 'openai'
     };
 
+    queueSheetUpdate(sheetUpdates, product, nextItems[assetKey], {
+      sheetHasColor,
+      sheetHasIcon,
+      force
+    });
     changed.push(nextItems[assetKey]);
   }
 
@@ -85,15 +100,25 @@ async function main() {
 
   if (!dryRun) {
     await fs.writeFile(MANIFEST_PATH, `${JSON.stringify(nextManifest, null, 2)}\n`);
+    if (writeSheet && sheetUpdates.length) {
+      await updateDiscountProductAssetCells(sheetUpdates);
+    }
   }
 
   console.log(JSON.stringify({
     dryRun,
     force,
+    writeSheet,
     productCount: products.length,
     generatedCount: changed.length,
+    sheetUpdateCount: sheetUpdates.length,
     generated: changed.map(item => ({
       productName: item.productName,
+      themeColor: item.themeColor,
+      themeIconUrl: item.themeIconUrl
+    })),
+    sheetUpdates: sheetUpdates.map(item => ({
+      sheetRow: item.sheetRow,
       themeColor: item.themeColor,
       themeIconUrl: item.themeIconUrl
     }))
@@ -116,7 +141,7 @@ async function loadDiscountProducts() {
     }));
   }
 
-  return getAllDiscountProductsForAssets();
+  return getAllDiscountProductsForAssets({ includeSheetAssetFields: true });
 }
 
 async function readManifest() {
@@ -268,6 +293,32 @@ function normalizeHexColor(value) {
   }
 
   return text.toUpperCase();
+}
+
+function normalizeIconUrl(value) {
+  const text = String(value || '').trim();
+  if (!text) return '';
+  if (text.startsWith('/')) return text;
+
+  try {
+    const url = new URL(text);
+    if (url.protocol === 'http:' || url.protocol === 'https:') return url.href;
+  } catch {
+    // Invalid URL.
+  }
+
+  return '';
+}
+
+function queueSheetUpdate(updates, product, asset, options = {}) {
+  if (!writeSheet || !product?.sheetRow || !asset?.themeColor || !asset?.themeIconUrl) return;
+  if (!options.force && options.sheetHasColor && options.sheetHasIcon) return;
+
+  updates.push({
+    sheetRow: product.sheetRow,
+    themeColor: asset.themeColor,
+    themeIconUrl: asset.themeIconUrl
+  });
 }
 
 function getArgValue(name) {
