@@ -4334,17 +4334,14 @@ body.has-results .discount-products {
 
 .discount-card__rate {
   position: absolute;
-  right: clamp(10px, 2.5vw, 36px);
+  right: clamp(8px, 2.1vw, 30px);
   bottom: clamp(104px, 25.9vw, 373px);
   z-index: 3;
-  width: clamp(66px, 17.5vw, 252px);
-  min-height: clamp(62px, 17vw, 245px);
-  padding: clamp(8px, 1.5278vw, 22px) clamp(5px, 0.8333vw, 12px) clamp(18px, 2.7778vw, 40px);
-  clip-path: polygon(0 0, 100% 0, 100% 74%, 72% 74%, 64% 86%, 58% 86%, 50% 100%, 42% 86%, 36% 86%, 28% 74%, 0 74%);
-  background: linear-gradient(180deg, #ff2338 0%, #d60012 100%);
-  color: #fff;
-  text-align: center;
-  box-shadow: 0 14px 22px rgba(214, 0, 18, 0.25);
+  width: clamp(120px, 17.5vw, 252px);
+  aspect-ratio: 1000 / 965;
+  overflow: visible;
+  color: #fff8ec;
+  pointer-events: none;
   transform: translateZ(0);
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
@@ -4354,26 +4351,59 @@ body.has-results .discount-products {
   display: none;
 }
 
-.discount-card__rate-kicker,
-.discount-card__rate-number {
+.discount-badge {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1000 / 965;
+}
+
+.discount-badge__image,
+.discount-badge__svg {
+  position: absolute;
+  inset: 0;
   display: block;
-  font-family: var(--discount-jamsil);
+  width: 100%;
+  height: 100%;
+}
+
+.discount-badge__image {
+  object-fit: contain;
+}
+
+.discount-badge__svg {
+  overflow: visible;
+}
+
+.discount-badge__percent-pop {
+  animation: discountBadgePercentIn 500ms cubic-bezier(.2,.8,.2,1) both;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.discount-badge__number,
+.discount-badge__percent {
+  fill: #fff8ec;
+  font-family: Pretendard, "Arial Black", sans-serif;
+  font-weight: 900;
   letter-spacing: 0;
+  paint-order: normal;
 }
 
-.discount-card__rate-kicker {
-  font-size: clamp(12px, 3.3333vw, 48px);
-  line-height: 1.16;
-  font-weight: 700;
-  color: #ffc90d;
-  word-break: keep-all;
-}
+@keyframes discountBadgePercentIn {
+  0% {
+    opacity: 0;
+    transform: scale(.82);
+  }
 
-.discount-card__rate-number {
-  margin-top: clamp(2px, 0.5556vw, 8px);
-  font-size: clamp(21px, 5.4167vw, 78px);
-  line-height: 1;
-  font-weight: 700;
+  72% {
+    opacity: 1;
+    transform: scale(1.035);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .discount-card__footer {
@@ -4426,10 +4456,6 @@ body.has-results .discount-products {
 }
 
 @media (max-width: 360px) {
-  .discount-card__rate {
-    width: 64px;
-  }
-
   .discount-card__pill {
     font-size: 10px;
   }
@@ -4438,7 +4464,8 @@ body.has-results .discount-products {
 @media (prefers-reduced-motion: reduce) {
   .discount-products,
   .discount-countdown__value-current,
-  .discount-countdown__value-next {
+  .discount-countdown__value-next,
+  .discount-badge__percent-pop {
     transition: none !important;
     animation: none !important;
     transform: none !important;
@@ -4778,6 +4805,7 @@ let calendarLandingMode = false;
   const discountProductCardsEl = document.getElementById('discountProductCards');
   const DISCOUNT_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
   const DISCOUNT_PLACEHOLDER_IMAGE = DUMMY_IMAGES[0];
+  const DISCOUNT_BADGE_IMAGE = '/price_badge.png';
   const discountReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
   let discountDayjsPluginsReady = false;
@@ -4793,6 +4821,7 @@ let calendarLandingMode = false;
   let currentDiscountItemId = '';
   let discountCountdownEndAtMs = 0;
   let discountClockOffset = 0;
+  let discountBadgeId = 0;
 
   const discountCountdownValues = {};
 
@@ -5792,6 +5821,155 @@ function getDiscountSwiperSpaceBetween() {
   return Math.round(Math.max(10, Math.min(40, window.innerWidth * (40 / 1440))));
 }
 
+function setDiscountSvgAttributes(el, attributes = {}) {
+  Object.entries(attributes).forEach(([key, value]) => {
+    el.setAttribute(key, String(value));
+  });
+
+  return el;
+}
+
+function createDiscountSvgElement(tagName, attributes = {}) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tagName);
+  return setDiscountSvgAttributes(el, attributes);
+}
+
+function normalizeDiscountPercent(value) {
+  const percent = Number(value);
+  if (!Number.isFinite(percent) || percent <= 0) return null;
+
+  return String(Math.min(999, Math.max(1, Math.round(percent))));
+}
+
+function getDiscountBadgeTextLayout(percentText) {
+  const digitCount = percentText.length;
+  const numberFontSize = digitCount >= 3 ? 245 : digitCount === 1 ? 310 : 290;
+  const percentFontSize = Math.round(numberFontSize * 0.386);
+  const digitWidth = numberFontSize * (digitCount >= 3 ? 0.58 : 0.61);
+  const numberWidth = digitWidth * digitCount;
+  const gap = Math.max(10, numberFontSize * 0.035);
+  const percentWidth = percentFontSize * 0.72;
+  const totalWidth = numberWidth + gap + percentWidth;
+  const startX = totalWidth / -2;
+
+  return {
+    numberFontSize,
+    percentFontSize,
+    numberX: startX + (numberWidth / 2),
+    percentX: startX + numberWidth + gap,
+    numberY: 0,
+    percentY: digitCount >= 3 ? -98 : -92
+  };
+}
+
+function createDiscountBadge(options = {}) {
+  const badge = document.createElement('div');
+  badge.className = 'discount-badge';
+
+  const image = document.createElement('img');
+  image.className = 'discount-badge__image';
+  image.src = DISCOUNT_BADGE_IMAGE;
+  image.alt = '';
+  image.decoding = 'async';
+  image.draggable = false;
+  image.setAttribute('aria-hidden', 'true');
+
+  const svg = createDiscountSvgElement('svg', {
+    class: 'discount-badge__svg',
+    viewBox: '0 0 1000 1000',
+    preserveAspectRatio: 'xMidYMid meet',
+    'aria-hidden': 'true',
+    focusable: 'false'
+  });
+
+  const filterId = `discount-badge-text-shadow-${++discountBadgeId}`;
+  const filter = createDiscountSvgElement('filter', {
+    id: filterId,
+    x: '-30%',
+    y: '-35%',
+    width: '160%',
+    height: '180%',
+    'color-interpolation-filters': 'sRGB'
+  });
+
+  const deepShadow = createDiscountSvgElement('feDropShadow', {
+    dx: 0,
+    dy: 18,
+    stdDeviation: 8,
+    'flood-color': '#6f1f11',
+    'flood-opacity': 0.5
+  });
+
+  const closeShadow = createDiscountSvgElement('feDropShadow', {
+    dx: 0,
+    dy: 5,
+    stdDeviation: 2,
+    'flood-color': '#421208',
+    'flood-opacity': 0.34
+  });
+
+  filter.append(deepShadow, closeShadow);
+
+  const defs = createDiscountSvgElement('defs');
+  defs.append(filter);
+
+  const tiltGroup = createDiscountSvgElement('g', {
+    transform: 'translate(500 610) rotate(-4)'
+  });
+  const popGroup = createDiscountSvgElement('g', {
+    class: 'discount-badge__percent-pop'
+  });
+
+  const number = createDiscountSvgElement('text', {
+    class: 'discount-badge__number',
+    'text-anchor': 'middle',
+    'dominant-baseline': 'central',
+    filter: `url(#${filterId})`
+  });
+
+  const percent = createDiscountSvgElement('text', {
+    class: 'discount-badge__percent',
+    'text-anchor': 'start',
+    'dominant-baseline': 'central',
+    filter: `url(#${filterId})`
+  });
+  percent.textContent = '%';
+
+  popGroup.append(number, percent);
+  tiltGroup.append(popGroup);
+  svg.append(defs, tiltGroup);
+  badge.append(image, svg);
+  badge._discountBadgeRefs = { number, percent };
+
+  updateDiscountBadge(badge, options);
+
+  return badge;
+}
+
+function updateDiscountBadge(badge, options = {}) {
+  const percentText = normalizeDiscountPercent(options.discountPercent);
+  const refs = badge?._discountBadgeRefs;
+  if (!percentText || !refs) return badge;
+
+  const layout = getDiscountBadgeTextLayout(percentText);
+  badge.dataset.discountPercent = percentText;
+  badge.setAttribute('aria-label', `${percentText}% 할인`);
+
+  refs.number.textContent = percentText;
+  setDiscountSvgAttributes(refs.number, {
+    x: layout.numberX.toFixed(2),
+    y: layout.numberY,
+    'font-size': layout.numberFontSize
+  });
+  setDiscountSvgAttributes(refs.percent, {
+    x: layout.percentX.toFixed(2),
+    y: layout.percentY,
+    'font-size': layout.percentFontSize
+  });
+
+  return badge;
+}
+
 function createDiscountProductCard(item, index = 0, total = 1) {
   const card = document.createElement('article');
   card.className = 'discount-card';
@@ -5855,16 +6033,7 @@ function createDiscountProductCard(item, index = 0, total = 1) {
   if (Number.isFinite(discountRate) && discountRate > 0) {
     rate = document.createElement('div');
     rate.className = 'discount-card__rate';
-
-    const kicker = document.createElement('span');
-    kicker.className = 'discount-card__rate-kicker';
-    kicker.textContent = '한정수량 특가';
-
-    const number = document.createElement('span');
-    number.className = 'discount-card__rate-number';
-    number.textContent = `${discountRate}%`;
-
-    rate.append(kicker, number);
+    rate.append(createDiscountBadge({ discountPercent: discountRate }));
   }
 
   const footer = document.createElement('div');
