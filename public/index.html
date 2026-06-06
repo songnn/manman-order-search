@@ -4292,7 +4292,7 @@ body.has-results .discount-products {
   left: 50%;
   top: 50%;
   display: block;
-  width: 260%;
+  width: 225%;
   height: auto;
   aspect-ratio: 1 / 1;
   max-width: none;
@@ -4569,7 +4569,62 @@ body.has-results .discount-products {
   font-weight: 600;
   letter-spacing: 0;
   white-space: nowrap;
+  gap: clamp(5px, 0.8333vw, 12px);
   box-shadow: 0 clamp(2px, 0.4861vw, 7px) clamp(8px, 1.6667vw, 24px) rgba(0, 0, 0, 0.22);
+  overflow: visible;
+}
+
+.discount-card__pill-icon {
+  display: block;
+  flex: 0 0 auto;
+  width: clamp(16px, 3vw, 36px);
+  height: clamp(16px, 3vw, 36px);
+  object-fit: contain;
+  object-position: center;
+  user-select: none;
+  pointer-events: none;
+  filter: drop-shadow(0 clamp(1px, 0.2083vw, 3px) clamp(2px, 0.4167vw, 6px) rgba(0, 0, 0, 0.24));
+}
+
+.discount-card__pill-icon--location {
+  width: clamp(18px, 3.3333vw, 48px);
+  height: clamp(18px, 3.3333vw, 48px);
+  transform: scale(1.32);
+  transform-origin: center;
+  margin-left: -0.16em;
+  margin-right: 0.02em;
+}
+
+.discount-card__pill-text {
+  display: inline-block;
+  min-width: 0;
+  line-height: 1;
+}
+
+.discount-card__location-number {
+  display: inline-grid;
+  place-items: center;
+  min-width: clamp(15px, 3.0556vw, 44px);
+  height: clamp(15px, 3.0556vw, 44px);
+  margin-left: clamp(-3px, -0.2083vw, 0px);
+  padding: 0 clamp(4px, 0.5556vw, 8px);
+  border: 1px solid rgba(255, 255, 255, 0.94);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 34% 22%, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0) 36%),
+    linear-gradient(135deg, #0051a0 0%, #0b74e8 100%);
+  color: #fff;
+  font-family: var(--discount-base);
+  font-size: clamp(10px, 2.2222vw, 32px);
+  line-height: 1;
+  font-weight: 800;
+  box-shadow:
+    0 3px 8px rgba(0, 81, 160, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.34);
+}
+
+.discount-card__pill--location {
+  overflow: visible;
 }
 
 .discount-card__pill--primary {
@@ -4943,6 +4998,8 @@ let calendarLandingMode = false;
   const DISCOUNT_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
   const DISCOUNT_PLACEHOLDER_IMAGE = DUMMY_IMAGES[0];
   const DISCOUNT_BADGE_IMAGE = '/price_badge2.png';
+  const DISCOUNT_STORAGE_SHOWCASE_ICON = '/storage-showcase-icon.png';
+  const DISCOUNT_STORAGE_COLD_ICON = '/storage-cold-icon.png';
   const discountReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
   let discountDayjsPluginsReady = false;
@@ -6222,6 +6279,101 @@ function updateDiscountBadge(badge, options = {}) {
   return badge;
 }
 
+function getDiscountStorageLocationParts(value) {
+  const raw = String(value || '').trim();
+  const normalized = raw.replace(/\s+/g, '');
+
+  if (!normalized) {
+    return {
+      raw: '',
+      label: '매장 위치',
+      number: '',
+      iconUrl: DISCOUNT_STORAGE_SHOWCASE_ICON,
+      type: 'default'
+    };
+  }
+
+  const freezerMatch = normalized.match(/^냉동(?:고)?(\d+)?$/);
+  if (freezerMatch || normalized.includes('냉동')) {
+    const number = freezerMatch?.[1] || (normalized.match(/\d+/)?.[0] || '');
+    return {
+      raw,
+      label: '냉동',
+      number,
+      iconUrl: DISCOUNT_STORAGE_COLD_ICON,
+      type: 'freezer'
+    };
+  }
+
+  if (normalized.includes('냉장')) {
+    return {
+      raw,
+      label: '냉장',
+      number: '',
+      iconUrl: DISCOUNT_STORAGE_COLD_ICON,
+      type: 'cold'
+    };
+  }
+
+  if (normalized.includes('쇼케이스')) {
+    return {
+      raw,
+      label: '쇼케이스',
+      number: '',
+      iconUrl: DISCOUNT_STORAGE_SHOWCASE_ICON,
+      type: 'showcase'
+    };
+  }
+
+  if (normalized.includes('상온')) {
+    return {
+      raw,
+      label: '상온',
+      number: '',
+      iconUrl: DISCOUNT_STORAGE_SHOWCASE_ICON,
+      type: 'ambient'
+    };
+  }
+
+  return {
+    raw,
+    label: raw,
+    number: '',
+    iconUrl: DISCOUNT_STORAGE_SHOWCASE_ICON,
+    type: 'custom'
+  };
+}
+
+function createDiscountStorageLocationBadge(item) {
+  const location = getDiscountStorageLocationParts(item?.storageLocation);
+  const badge = document.createElement('span');
+  badge.className = 'discount-card__pill discount-card__pill--secondary discount-card__pill--location';
+  badge.setAttribute('aria-label', location.number ? `${location.label} ${location.number}` : location.label);
+
+  const icon = document.createElement('img');
+  icon.className = 'discount-card__pill-icon discount-card__pill-icon--location';
+  icon.src = location.iconUrl;
+  icon.alt = '';
+  icon.setAttribute('aria-hidden', 'true');
+  icon.decoding = 'async';
+  icon.draggable = false;
+
+  const text = document.createElement('span');
+  text.className = 'discount-card__pill-text';
+  text.textContent = location.label;
+
+  badge.append(icon, text);
+
+  if (location.number) {
+    const number = document.createElement('span');
+    number.className = 'discount-card__location-number';
+    number.textContent = location.number;
+    badge.append(number);
+  }
+
+  return badge;
+}
+
 function createDiscountProductCard(item, index = 0, total = 1) {
   const card = document.createElement('article');
   card.className = 'discount-card';
@@ -6305,9 +6457,7 @@ function createDiscountProductCard(item, index = 0, total = 1) {
   storeBadge.className = 'discount-card__pill discount-card__pill--primary';
   storeBadge.textContent = '⭐ 전농점 특별할인';
 
-  const productBadge = document.createElement('span');
-  productBadge.className = 'discount-card__pill discount-card__pill--secondary';
-  productBadge.textContent = '⭐ 매장 구매 상품';
+  const productBadge = createDiscountStorageLocationBadge(item);
 
   footer.append(storeBadge, productBadge);
 

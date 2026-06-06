@@ -1,49 +1,49 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-06T14:11:10.960Z",
+  "generatedAt": "2026-06-06T14:30:21.233Z",
   "items": {
     "3f5c33fdb8b759": {
       "productName": "우와!한 낙지볶음 400g",
       "description": "낙지원물 79%, 3216시간 연구한 양념",
-      "themeColor": "#C0392B",
+      "themeColor": "#C62828",
       "themeIconUrl": "/discount-assets/icons/3f5c33fdb8b759.svg",
-      "iconPrompt": "Transparent-background single-color outline icon of a premium octopus stir-fry ingredient, simple clean line art only, no text, no fill, no 3D shading, no gradients, no shadows, centered composition, suitable for a 40px square UI ornament, elegant and easily readable on a dark overlay.",
+      "iconPrompt": "Transparent-background single-color thin-line line icon of a premium Korean spicy stir-fried octopus dish, showing a whole octopus with curled tentacles in a shallow pan or bowl, subtle steam and chili-flake motion accents, clean elegant strokes, no text, no fill-heavy shapes, no 3D rendering, high contrast and centered for a 40px square UI ornament",
       "iconType": "octopus",
       "iconStyle": "line-svg",
-      "generatedAt": "2026-06-06T14:11:05.249Z",
+      "generatedAt": "2026-06-06T14:30:16.003Z",
       "source": "openai-metadata"
     },
     "b29ead9f2ce84e": {
       "productName": "포항 구룡포 건조 원양산 반건조 오징어 450g (5미)",
       "description": "구룡포 해풍으로 말린, 온가족 영양간식",
-      "themeColor": "#2F6F8F",
+      "themeColor": "#C48A4A",
       "themeIconUrl": "/discount-assets/icons/b29ead9f2ce84e.svg",
-      "iconPrompt": "Transparent-background single-color outline icon of a dried squid, simple premium line art, side view with curled tentacles, no text, no fill, no 3D rendering, no gradients, clean minimal strokes, centered and suitable for a 40px square UI ornament",
+      "iconPrompt": "Transparent-background single-color thin-line icon of a dried squid, viewed in a clean simple product-illustration style, elegant and premium, with lightly curled tentacles and subtle drying-drape details; no text, no fill, no shading, no 3D rendering, no background, suitable as a small 40px square UI ornament.",
       "iconType": "squid",
       "iconStyle": "line-svg",
-      "generatedAt": "2026-06-06T14:11:06.680Z",
+      "generatedAt": "2026-06-06T14:30:18.244Z",
       "source": "openai-metadata"
     },
     "bc5a4134f95de8": {
       "productName": "CJ 촌두부 380G, 1개",
       "description": "특급 국산콩 100%, 프리미엄 두부",
-      "themeColor": "#2F7D4A",
+      "themeColor": "#2E7D32",
       "themeIconUrl": "/discount-assets/icons/bc5a4134f95de8.svg",
-      "iconPrompt": "Transparent-background single-color outline icon of a premium tofu block, simple clean line art, no text, no fill-heavy areas, no 3D rendering, minimal and elegant, suitable for a 40px square UI ornament.",
+      "iconPrompt": "Transparent-background premium single-color thin-line line icon of a traditional Korean tofu block (chondubu), compact and centered for a 40px square UI ornament, detailed but minimal, clean outline with subtle tofu cube edges and a small soy-bean leaf accent, no text, no fill-heavy shapes, no 3D rendering, elegant grocery discount card style",
       "iconType": "tofu",
       "iconStyle": "line-svg",
-      "generatedAt": "2026-06-06T14:11:08.030Z",
+      "generatedAt": "2026-06-06T14:30:19.700Z",
       "source": "openai-metadata"
     },
     "4626b8032a0206": {
       "productName": "자이언트 통다리 1.2kg / 소비기한 1년이상",
       "description": "압도적인 1.2kg 다리, 풍부한 풍미와 육즙",
-      "themeColor": "#8B1E3F",
+      "themeColor": "#7A4A2A",
       "themeIconUrl": "/discount-assets/icons/4626b8032a0206.svg",
-      "iconPrompt": "Transparent background, single-color outline icon of a large premium chicken leg/drumstick, simple clean line art, no text, no fill, no shading, no 3D rendering, centered composition, suitable for a 40px square UI ornament, bold but elegant silhouette that suggests a giant juicy whole leg.",
+      "iconPrompt": "Transparent-background single-color thin-line icon of a large whole chicken leg/drumstick, premium clean Korean grocery UI ornament, detailed but minimal outline with visible bone end and meaty contour, no text, no fill, no shading, no 3D, no background, centered composition, suitable for a 40px square, elegant and highly legible line art",
       "iconType": "chicken-leg",
       "iconStyle": "line-svg",
-      "generatedAt": "2026-06-06T14:11:10.960Z",
+      "generatedAt": "2026-06-06T14:30:21.233Z",
       "source": "openai-metadata"
     }
   }

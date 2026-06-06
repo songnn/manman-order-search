@@ -64,7 +64,10 @@ async function main() {
     const themeColor = normalizeHexColor(metadata.themeColor) ||
       normalizeHexColor(existing?.themeColor) ||
       getFallbackDiscountThemeColor(product.productName);
-    const iconType = normalizeIconType(metadata.iconType) || normalizeIconType(existing?.iconType) || inferIconType(product);
+    const inferredIconType = inferIconType(product);
+    const iconType = inferredIconType !== 'default'
+      ? inferredIconType
+      : normalizeIconType(metadata.iconType) || normalizeIconType(existing?.iconType) || inferredIconType;
     const iconPrompt = metadata.iconPrompt || createIconPrompt(product, themeColor, iconType);
     const iconFileName = `${assetKey}.svg`;
     const iconPath = path.join(ICON_DIR, iconFileName);
@@ -169,7 +172,7 @@ async function generateThemeMetadata(product) {
     'Return only JSON with this shape: {"themeColor":"#RRGGBB","iconType":"octopus|squid|tofu|chicken-leg|seafood|meat|produce|beauty|default","iconPrompt":"..."}',
     'themeColor must be a premium line color that harmonizes with the product name and remains visible on a dark photo overlay.',
     'iconType must choose the closest simple line-icon category for the product.',
-    'iconPrompt must describe a transparent-background single-color outline icon, no text, no fill-heavy 3D rendering, suitable inside a 40px square UI ornament.',
+    'iconPrompt must describe a transparent-background detailed single-color thin-line icon, no text, no fill-heavy 3D rendering, suitable inside a 40px square UI ornament.',
     `Product name: ${product.productName}`,
     `Description: ${product.description || ''}`
   ].join('\n');
@@ -207,7 +210,7 @@ function createIconPrompt(product, themeColor, iconType = inferIconType(product)
   return [
     'A single premium transparent-background line icon for a Korean market discount product.',
     'No letters, no numbers, no labels, no price tags, no background scene, no 3D rendering.',
-    'Centered outline icon, single stroke color, clean rounded stroke caps and joins.',
+    'Centered detailed outline icon, single stroke color, thin clean rounded stroke caps and joins.',
     'Keep the object readable when rendered at 40px.',
     `Theme accent color: ${themeColor}.`,
     `Icon type: ${iconType}.`,
@@ -338,7 +341,7 @@ function createLineIconSvg({ iconType, themeColor, title }) {
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none" role="img" aria-label="${escapedTitle}">
   <title>${escapedTitle}</title>
-  <g stroke="${stroke}" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round">
+  <g stroke="${stroke}" stroke-width="2.35" stroke-linecap="round" stroke-linejoin="round">
 ${body}
   </g>
 </svg>
@@ -349,36 +352,45 @@ function getLineIconBody(iconType) {
   switch (iconType) {
     case 'octopus':
       return [
-        '    <path d="M20 27c0-9 5.5-15 12-15s12 6 12 15c0 8-5 12-12 12s-12-4-12-12Z"/>',
-        '    <path d="M24 41c-3 3-5 6-8 6"/>',
-        '    <path d="M29 42c-1 5-3 8-6 10"/>',
-        '    <path d="M35 42c1 5 3 8 6 10"/>',
-        '    <path d="M40 41c3 3 5 6 8 6"/>',
-        '    <path d="M28 25h.1M36 25h.1"/>'
+        '    <path d="M20 28c0-9.5 5.4-16 12-16s12 6.5 12 16c0 7.6-4.9 12.2-12 12.2S20 35.6 20 28Z"/>',
+        '    <path d="M24.5 39.5c-3.2 2.4-6.5 4.4-10.5 4.8"/>',
+        '    <path d="M27.8 40.8c-2 3.3-4.4 6.2-7.8 8.2"/>',
+        '    <path d="M31 41.6c-.7 4.1-2.2 7.7-5 10.4"/>',
+        '    <path d="M36.2 40.8c2 3.3 4.4 6.2 7.8 8.2"/>',
+        '    <path d="M39.5 39.5c3.2 2.4 6.5 4.4 10.5 4.8"/>',
+        '    <path d="M28 26.5h.1M36 26.5h.1"/>',
+        '    <path d="M28.5 32.5c2.1 1.3 4.9 1.3 7 0"/>',
+        '    <path d="M23.5 20c2-3.2 5-5 8.5-5"/>'
       ].join('\n');
     case 'squid':
       return [
-        '    <path d="M32 10 20 27l12 9 12-9-12-17Z"/>',
-        '    <path d="M24 38c-2 4-5 7-9 9"/>',
-        '    <path d="M29 39c-1 5-3 9-6 12"/>',
-        '    <path d="M35 39c1 5 3 9 6 12"/>',
-        '    <path d="M40 38c2 4 5 7 9 9"/>',
-        '    <path d="M27 26h.1M37 26h.1"/>'
+        '    <path d="M32 9 19.5 27.5 32 37l12.5-9.5L32 9Z"/>',
+        '    <path d="M25 36.5c-2.3 4.7-5.7 8.4-10.2 11.1"/>',
+        '    <path d="M29.4 38.4c-1.1 5.6-3.4 10.1-6.9 13.6"/>',
+        '    <path d="M34.6 38.4c1.1 5.6 3.4 10.1 6.9 13.6"/>',
+        '    <path d="M39 36.5c2.3 4.7 5.7 8.4 10.2 11.1"/>',
+        '    <path d="M26.4 27.1h.1M37.6 27.1h.1"/>',
+        '    <path d="M25 21.6c4.4 2 9.6 2 14 0"/>',
+        '    <path d="M22.7 27.8h18.6"/>'
       ].join('\n');
     case 'tofu':
       return [
-        '    <path d="M15 24 32 14l17 10v20L32 54 15 44V24Z"/>',
-        '    <path d="M15 24 32 34l17-10"/>',
-        '    <path d="M32 34v20"/>',
-        '    <path d="M24 24c2-3 6-4 9-2"/>',
-        '    <path d="M38 39h.1"/>'
+        '    <path d="M14 24.5 32 14l18 10.5v19L32 54 14 43.5v-19Z"/>',
+        '    <path d="M14 24.5 32 35l18-10.5"/>',
+        '    <path d="M32 35v19"/>',
+        '    <path d="M21.8 27.6 39.8 17"/>',
+        '    <path d="M21.5 40.2 26 43M38 39.8l4.5-2.7"/>',
+        '    <path d="M25 22.2c2.1-2.8 6-3.9 9.6-2.4"/>',
+        '    <path d="M40 31.5h.1M24 35.5h.1"/>'
       ].join('\n');
     case 'chicken-leg':
       return [
-        '    <path d="M24 37c-6-6-5-16 2-21 8-5 19 0 21 8 2 9-4 16-12 17"/>',
-        '    <path d="M25 36 14 47"/>',
-        '    <path d="M12 46c-4-1-7 2-6 6 4 1 7-2 6-6Z"/>',
-        '    <path d="M15 49c2 2 2 5 0 7 5 1 8-4 5-8"/>'
+        '    <path d="M24.8 37.2c-6-6.4-4.8-16.3 2.6-21.2 8.8-5.8 20.1.1 21.8 8.9 1.8 9.7-5.2 17.1-14.8 16.9"/>',
+        '    <path d="M27 34.7 14.5 47.2"/>',
+        '    <path d="M13.4 46.2c-4.1-1.2-7.8 2.6-6.4 6.8 4.2 1.3 7.9-2.5 6.4-6.8Z"/>',
+        '    <path d="M15.9 48.7c2.6 2.8 2.4 6.2-.4 8.6 5.8 1.2 9.4-4.9 5.5-9.2"/>',
+        '    <path d="M31 22.5c4.1-2.4 9.5-.9 12.2 2.9"/>',
+        '    <path d="M35.5 31.8c2.6.6 5.4-.2 7.4-2.2"/>'
       ].join('\n');
     case 'seafood':
       return [

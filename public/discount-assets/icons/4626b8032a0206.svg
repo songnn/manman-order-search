@@ -1,9 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none" role="img" aria-label="자이언트 통다리 1.2kg / 소비기한 1년이상">
   <title>자이언트 통다리 1.2kg / 소비기한 1년이상</title>
-  <g stroke="#8B1E3F" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M24 37c-6-6-5-16 2-21 8-5 19 0 21 8 2 9-4 16-12 17"/>
-    <path d="M25 36 14 47"/>
-    <path d="M12 46c-4-1-7 2-6 6 4 1 7-2 6-6Z"/>
-    <path d="M15 49c2 2 2 5 0 7 5 1 8-4 5-8"/>
+  <g stroke="#7A4A2A" stroke-width="2.35" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M24.8 37.2c-6-6.4-4.8-16.3 2.6-21.2 8.8-5.8 20.1.1 21.8 8.9 1.8 9.7-5.2 17.1-14.8 16.9"/>
+    <path d="M27 34.7 14.5 47.2"/>
+    <path d="M13.4 46.2c-4.1-1.2-7.8 2.6-6.4 6.8 4.2 1.3 7.9-2.5 6.4-6.8Z"/>
+    <path d="M15.9 48.7c2.6 2.8 2.4 6.2-.4 8.6 5.8 1.2 9.4-4.9 5.5-9.2"/>
+    <path d="M31 22.5c4.1-2.4 9.5-.9 12.2 2.9"/>
+    <path d="M35.5 31.8c2.6.6 5.4-.2 7.4-2.2"/>
   </g>
 </svg>

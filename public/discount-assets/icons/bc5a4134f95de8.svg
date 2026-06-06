@@ -1,10 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none" role="img" aria-label="CJ 촌두부 380G, 1개">
   <title>CJ 촌두부 380G, 1개</title>
-  <g stroke="#2F7D4A" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M15 24 32 14l17 10v20L32 54 15 44V24Z"/>
-    <path d="M15 24 32 34l17-10"/>
-    <path d="M32 34v20"/>
-    <path d="M24 24c2-3 6-4 9-2"/>
-    <path d="M38 39h.1"/>
+  <g stroke="#2E7D32" stroke-width="2.35" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M14 24.5 32 14l18 10.5v19L32 54 14 43.5v-19Z"/>
+    <path d="M14 24.5 32 35l18-10.5"/>
+    <path d="M32 35v19"/>
+    <path d="M21.8 27.6 39.8 17"/>
+    <path d="M21.5 40.2 26 43M38 39.8l4.5-2.7"/>
+    <path d="M25 22.2c2.1-2.8 6-3.9 9.6-2.4"/>
+    <path d="M40 31.5h.1M24 35.5h.1"/>
   </g>
 </svg>
