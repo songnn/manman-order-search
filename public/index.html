@@ -22,6 +22,7 @@
   <meta name="twitter:image" content="https://res.cloudinary.com/diol40iez/image/upload/v1779749205/%E1%84%86%E1%85%A1%E1%86%AB%E1%84%86%E1%85%A1%E1%86%AB%E1%84%86%E1%85%A1%E1%84%8F%E1%85%A6%E1%86%BA%E1%84%86%E1%85%A6%E1%84%90%E1%85%A1%E1%84%8B%E1%85%B5%E1%84%86%E1%85%B5%E1%84%8C%E1%85%B5_fy0x8i.png">
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preload" href="/api/discount-products" as="fetch" crossorigin>
   <link rel="preload" href="/fonts/JalnanGothicTTF.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonts-archive/JalnanGothic/JalnanGothic.css" type="text/css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonts-archive/Paperlogy/Paperlogy.css" type="text/css">
@@ -4117,6 +4118,7 @@ body.has-results .discount-products {
   padding-right: var(--discount-slide-left);
   box-sizing: border-box;
   touch-action: pan-y;
+  will-change: transform;
 }
 
 .discount-swiper .swiper-wrapper {
@@ -5747,7 +5749,6 @@ function fetchDiscountProducts() {
   discountFetchController = new AbortController();
   discountFetchPromise = fetch('/api/discount-products', {
     method: 'GET',
-    cache: 'no-store',
     headers: {
       Accept: 'application/json'
     },
@@ -5852,12 +5853,7 @@ function renderDiscountProducts(items, options = {}) {
   initializeDiscountSwiper(orderedItems, preferredItemId);
   startDiscountCountdown(orderedItems);
 
-  waitForDiscountFirstImage().then(() => {
-    if (document.body.classList.contains('has-results')) return;
-    if (!activeDiscountItems.length) return;
-
-    revealDiscountSection(options);
-  });
+  revealDiscountSection(options);
 }
 
 function shuffleItems(items) {
@@ -6730,25 +6726,21 @@ function revealDiscountSection(options = {}) {
     return;
   }
 
-  const title = discountSectionEl.querySelector('.discount-products__title');
   const swiperEl = discountProductCardsEl.querySelector('.discount-swiper');
-  const targets = [title, discountCountdownEl, swiperEl].filter(Boolean);
+  if (!swiperEl) return;
 
-  gsapApi.killTweensOf([discountSectionEl, ...targets]);
+  gsapApi.killTweensOf([discountSectionEl, swiperEl]);
   gsapApi.set(discountSectionEl, {
     opacity: 1,
     y: 0
   });
-  gsapApi.fromTo(targets, {
-    opacity: 0,
-    y: 16
+  gsapApi.fromTo(swiperEl, {
+    x: Math.min(32, Math.max(14, window.innerWidth * 0.052))
   }, {
-    opacity: 1,
-    y: 0,
-    duration: 0.42,
-    stagger: 0.08,
-    ease: 'power3.out',
-    clearProps: 'opacity,transform'
+    x: 0,
+    duration: 0.62,
+    ease: 'back.out(1.12)',
+    clearProps: 'transform'
   });
 }
 

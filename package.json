@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "discount:assets": "node scripts/generate-discount-assets.mjs"
+    "discount:assets": "node scripts/generate-discount-assets.mjs",
+    "discount:snapshot": "node scripts/generate-discount-snapshot.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.2",

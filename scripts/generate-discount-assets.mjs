@@ -5,6 +5,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  DISCOUNT_TIMEZONE,
   getAllDiscountProductsForAssets,
   getDiscountAssetKey,
   getFallbackDiscountThemeColor,
@@ -16,6 +17,7 @@ const PUBLIC_DIR = path.join(ROOT_DIR, 'public');
 const ASSET_DIR = path.join(PUBLIC_DIR, 'discount-assets');
 const ICON_DIR = path.join(ASSET_DIR, 'icons');
 const MANIFEST_PATH = path.join(ASSET_DIR, 'manifest.json');
+const SNAPSHOT_PATH = path.join(ROOT_DIR, 'lib', 'discount-products-data.json');
 
 const args = new Set(process.argv.slice(2));
 const dryRun = args.has('--dry-run');
@@ -112,6 +114,7 @@ async function main() {
     if (writeSheet && sheetUpdates.length) {
       await updateDiscountProductAssetCells(sheetUpdates);
     }
+    await writeDiscountProductsSnapshot(sourceUrl ? products : null);
   }
 
   console.log(JSON.stringify({
@@ -151,6 +154,32 @@ async function loadDiscountProducts() {
   }
 
   return getAllDiscountProductsForAssets({ includeSheetAssetFields: true });
+}
+
+async function writeDiscountProductsSnapshot(sourceProducts = null) {
+  const products = Array.isArray(sourceProducts)
+    ? sourceProducts.map(sanitizeDiscountSnapshotItem)
+    : await getAllDiscountProductsForAssets();
+  const payload = {
+    version: 1,
+    generatedAt: new Date().toISOString(),
+    timezone: DISCOUNT_TIMEZONE,
+    items: products
+  };
+
+  await fs.writeFile(SNAPSHOT_PATH, `${JSON.stringify(payload, null, 2)}\n`);
+
+  return payload;
+}
+
+function sanitizeDiscountSnapshotItem(item) {
+  const {
+    _sheetThemeColor,
+    _sheetThemeIconUrl,
+    ...snapshotItem
+  } = item || {};
+
+  return snapshotItem;
 }
 
 async function readManifest() {
