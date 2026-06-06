@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>만만마켓 지점별 매출 비교</title>
+    <link rel="stylesheet" href="/admin-dashboard.css" />
+    <link rel="stylesheet" href="/admin-branch-sales.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js" defer></script>
+    <script src="/admin-branch-sales.js" defer></script>
+  </head>
+  <body>
+    <section class="admin-auth" data-auth>
+      <form class="auth-card" data-auth-form>
+        <div class="auth-brand">만만마켓</div>
+        <h1>지점별 매출 비교</h1>
+        <p>관리자 토큰을 입력하면 지점별 매출 그래프를 볼 수 있습니다.</p>
+        <label class="field">
+          <span>관리자 토큰</span>
+          <input type="password" autocomplete="current-password" data-token-input />
+        </label>
+        <button type="submit">매출 그래프 열기</button>
+        <p class="auth-error" data-auth-error></p>
+      </form>
+    </section>
+
+    <main class="admin-shell is-hidden" data-app>
+      <aside class="sidebar">
+        <a class="sidebar-brand" href="/admin-dashboard.html">
+          <span class="brand-mark">만</span>
+          <span>만만마켓</span>
+        </a>
+        <nav class="sidebar-nav" aria-label="관리자 메뉴">
+          <a href="/admin-dashboard.html#dashboard">대시보드</a>
+          <a href="/admin-branch-sales.html" class="is-active">지점별 매출 비교</a>
+          <a href="/admin-dashboard.html#recent">최근 기간 분석</a>
+          <a href="/admin-dashboard.html#week">주간 분석</a>
+          <a href="/admin-dashboard.html#month">월간 분석</a>
+          <a href="/admin-dashboard.html#total">고객 누적 분석</a>
+          <a href="/admin-dashboard.html#products">상품 누적 분석</a>
+          <a href="/admin-dashboard.html#warnings">확인 필요 데이터</a>
+          <a href="/admin-dashboard.html#allies">아군 목록</a>
+        </nav>
+      </aside>
+
+      <section class="dashboard branch-dashboard">
+        <header class="topbar branch-topbar">
+          <div>
+            <p class="eyebrow">Branch Sales</p>
+            <h1>지점별 일자 매출 비교</h1>
+          </div>
+          <div class="topbar-actions">
+            <button class="ghost-button" type="button" data-refresh>새로고침</button>
+            <button class="ghost-button" type="button" data-logout>토큰 재입력</button>
+          </div>
+        </header>
+
+        <section class="branch-period-panel" aria-label="기간 필터">
+          <div class="branch-period-buttons" data-period-buttons></div>
+          <div class="analysis-period-card branch-period-card" aria-label="현재 기간">
+            <span>현재 기간</span>
+            <strong data-current-period>기간을 선택해주세요.</strong>
+          </div>
+        </section>
+
+        <div class="status-line" data-status></div>
+
+        <section class="branch-kpi-grid" aria-label="지점별 매출 핵심 지표">
+          <article class="kpi-card branch-kpi-card">
+            <div class="kpi-head"><span>선택 지점</span></div>
+            <strong data-kpi="selectedBranches">0개</strong>
+            <p>그래프에 표시 중인 지점 수</p>
+          </article>
+          <article class="kpi-card branch-kpi-card">
+            <div class="kpi-head"><span>총 매출</span></div>
+            <strong data-kpi="totalSales">0원</strong>
+            <p>선택 지점의 기간 합계</p>
+          </article>
+          <article class="kpi-card branch-kpi-card">
+            <div class="kpi-head"><span>일평균 매출</span></div>
+            <strong data-kpi="averageSales">0원</strong>
+            <p>기간 내 날짜 기준 평균</p>
+          </article>
+          <article class="kpi-card branch-kpi-card">
+            <div class="kpi-head"><span>매출 1위 지점</span></div>
+            <strong data-kpi="topBranch">-</strong>
+            <p data-kpi="topBranchSales">0원</p>
+          </article>
+        </section>
+
+        <section class="panel branch-toggle-panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Branches</p>
+              <h2>지점 선택</h2>
+            </div>
+            <label class="branch-all-toggle">
+              <input type="checkbox" data-branch-all />
+              <span>모든 지점</span>
+            </label>
+          </div>
+          <div class="branch-toggle-grid" data-branch-toggles></div>
+        </section>
+
+        <section class="panel branch-chart-panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Daily Revenue</p>
+              <h2>일자별 지점 매출 그래프</h2>
+            </div>
+            <span class="branch-chart-meta" data-chart-meta>0개 지점</span>
+          </div>
+          <div class="branch-chart-wrap">
+            <canvas data-branch-sales-chart></canvas>
+            <div class="branch-empty is-hidden" data-chart-empty>선택된 지점이 없습니다.</div>
+          </div>
+        </section>
+
+        <section class="panel branch-table-panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Summary</p>
+              <h2>선택 기간 지점별 합계</h2>
+            </div>
+          </div>
+          <div class="branch-table-scroll">
+            <table class="branch-summary-table">
+              <thead>
+                <tr>
+                  <th>지점</th>
+                  <th>총 매출</th>
+                  <th>판매수량</th>
+                  <th>일평균</th>
+                  <th>최고 매출일</th>
+                </tr>
+              </thead>
+              <tbody data-branch-summary></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

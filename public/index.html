@@ -4246,7 +4246,7 @@ body.has-results .discount-products {
   align-items: center;
   min-height: 32.398%;
   height: auto;
-  padding: clamp(8px, 2.0833vw, 30px) clamp(18px, 5.5556vw, 80px) clamp(18px, 5vw, 72px);
+  padding: clamp(8px, 2.0833vw, 30px) clamp(18px, 5.5556vw, 80px) clamp(18px, 3vw, 72px);
   background: linear-gradient(
     180deg,
     rgba(0, 0, 0, 1) 0%,
@@ -4266,7 +4266,7 @@ body.has-results .discount-products {
   align-items: center;
   width: 100%;
   height: clamp(11px, 2.7778vw, 40px);
-  margin-bottom: clamp(4px, 1.25vw, 18px);
+  margin-bottom: clamp(4px, 0.4vw, 18px);
   color: var(--discount-theme-color, #f2de95);
 }
 
@@ -4343,7 +4343,7 @@ body.has-results .discount-products {
   width: 100%;
   min-width: 0;
   min-height: clamp(19px, 3.75vw, 54px);
-  margin-top: clamp(6px, 1.9444vw, 28px);
+  margin-top: clamp(2px, 0.5vw, 28px);
   overflow: visible;
   flex-wrap: nowrap;
 }
@@ -4424,7 +4424,7 @@ body.has-results .discount-products {
 .discount-card__compare-price {
   color: currentColor;
   font-family: inherit;
-  font-size: clamp(18px, 4.1667vw, 60px);
+  font-size: clamp(27px, 4.5vw, 60px);
   line-height: 1;
   font-weight: 800;
   letter-spacing: -0.02em;
@@ -4438,28 +4438,59 @@ body.has-results .discount-products {
   display: inline-flex;
   align-items: baseline;
   justify-content: flex-end;
+
   max-width: 100%;
   min-width: 0;
+
   line-height: 0.98;
   letter-spacing: -0.01em;
   white-space: nowrap;
-  text-shadow: none;
-  filter:
-    drop-shadow(0 clamp(1px, 0.2778vw, 4px) clamp(2px, 0.5556vw, 8px) rgba(0, 0, 0, 0.38))
-    drop-shadow(0 0 clamp(2px, 0.5556vw, 8px) rgba(255, 255, 255, 0.46));
-}
 
+  text-shadow: none;
+
+  /*
+    테두리와 별도로 가격 전체에만 입체 그림자 적용
+  */
+  filter:
+    drop-shadow(
+      0
+      clamp(1px, 0.2778vw, 4px)
+      clamp(2px, 0.5556vw, 8px)
+      rgba(0, 0, 0, 0.38)
+    );
+}
 .discount-card__sale-number,
 .discount-card__sale-unit {
-  color: #ef4c4d;
+  display: inline-block;
+
   font-size: clamp(42px, 10.4167vw, 150px);
   line-height: 0.98;
-  background: linear-gradient(0deg, #ef4c4d -50%, #db3622 150%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  -webkit-text-stroke: clamp(1.8px, 0.4861vw, 7px) #fff;
+
+  /*
+    투명한 그라데이션 글자를 사용하지 않고
+    실제 빨간색으로 내부를 완전히 채웁니다.
+  */
+  color: #e7443c;
+  -webkit-text-fill-color: #e7443c;
+  background: none;
+
+  /*
+    같은 글자 자체에 흰 테두리를 적용합니다.
+    별도의 복제 글자가 없으므로 절대 어긋나지 않습니다.
+  */
+  -webkit-text-stroke:
+    clamp(1.8px, 1.0vw, 7px)
+    #fff;
+
+  /*
+    stroke를 먼저 그리고 빨간 fill을 나중에 그립니다.
+    흰 테두리의 안쪽 절반이 빨간 fill에 덮이므로
+    빨간 글자 굵기가 가늘어지지 않습니다.
+  */
   paint-order: stroke fill;
+
+  text-shadow: none;
+  font-synthesis: none;
 }
 
 .discount-card__sale-number {
@@ -4551,7 +4582,7 @@ body.has-results .discount-products {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: clamp(5px, 1.1111vw, 16px);
+  gap: clamp(6px, 1.1111vw, 16px);
   max-width: 100%;
   pointer-events: none;
 }
@@ -4560,32 +4591,70 @@ body.has-results .discount-products {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+
   min-width: 0;
-  min-height: clamp(24px, 5vw, 72px);
-  padding: clamp(4px, 1.1111vw, 16px) clamp(9px, 2.2222vw, 32px);
-  border: 1px solid #fff;
+  min-height: clamp(28px, 5vw, 72px);
+
+  padding:
+    clamp(4px, 0.8333vw, 12px)
+    clamp(10px, 1.6667vw, 24px);
+
+  gap: clamp(5px, 0.8333vw, 12px);
+
+  border: 1px solid rgba(255, 255, 255, 0.92);
   border-radius: 999px;
+
   font-family: var(--discount-base);
   font-size: clamp(11px, 2.7778vw, 40px);
   line-height: 1;
   font-weight: 600;
   letter-spacing: 0;
   white-space: nowrap;
-  gap: clamp(5px, 0.8333vw, 12px);
-  box-shadow: 0 clamp(2px, 0.4861vw, 7px) clamp(8px, 1.6667vw, 24px) rgba(0, 0, 0, 0.22);
+
+  box-shadow:
+    0 clamp(2px, 0.4861vw, 7px)
+    clamp(8px, 1.6667vw, 24px)
+    rgba(0, 0, 0, 0.22);
+
   overflow: visible;
 }
 
+/* 아이콘 공통 */
 .discount-card__pill-icon {
   display: block;
   flex: 0 0 auto;
-  width: clamp(16px, 3vw, 36px);
-  height: clamp(16px, 3vw, 36px);
+
+  width: clamp(16px, 3.0vw, 36px);
+  height: clamp(16px, 3.0vw, 36px);
+
   object-fit: contain;
   object-position: center;
+
   user-select: none;
   pointer-events: none;
-  filter: drop-shadow(0 clamp(1px, 0.2083vw, 3px) clamp(2px, 0.4167vw, 6px) rgba(0, 0, 0, 0.24));
+
+  filter:
+    drop-shadow(
+      0 clamp(1px, 0.2083vw, 3px)
+      clamp(2px, 0.4167vw, 6px)
+      rgba(0, 0, 0, 0.24)
+    );
+}
+
+/* 할인 태그 아이콘 */
+.discount-card__pill-icon--sale {
+  transform: scale(1.18) rotate(-3deg);
+  transform-origin: center;
+  margin-left: -0.08em;
+  margin-right: 0.02em;
+}
+
+/* 매장 아이콘 */
+.discount-card__pill-icon--store {
+  transform: scale(1.16);
+  transform-origin: center;
+  margin-left: -0.08em;
+  margin-right: 0.02em;
 }
 
 .discount-card__pill-icon--location {
@@ -4610,33 +4679,60 @@ body.has-results .discount-products {
   height: clamp(15px, 3.0556vw, 44px);
   margin-left: clamp(-3px, -0.2083vw, 0px);
   padding: 0 clamp(4px, 0.5556vw, 8px);
-  border: 1px solid rgba(255, 255, 255, 0.94);
   border-radius: 999px;
   background:
     radial-gradient(circle at 34% 22%, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0) 36%),
     linear-gradient(135deg, #0051a0 0%, #0b74e8 100%);
   color: #fff;
   font-family: var(--discount-base);
-  font-size: clamp(10px, 2.2222vw, 32px);
+  font-size: clamp(12px, 2.4vw, 32px);
   line-height: 1;
-  font-weight: 800;
-  box-shadow:
-    0 3px 8px rgba(0, 81, 160, 0.34),
-    inset 0 1px 0 rgba(255, 255, 255, 0.34);
+  font-weight: 700;
 }
 
-.discount-card__pill--location {
-  overflow: visible;
-}
-
+/* 전농점 특별할인 */
 .discount-card__pill--primary {
-  background: linear-gradient(90deg, #b4361d 0%, #721f0b 100%);
   color: #fff;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.18) 0%,
+      rgba(255, 255, 255, 0) 48%
+    ),
+    linear-gradient(
+      135deg,
+      #1677e8 0%,
+      #0051a0 55%,
+      #00366f 100%
+    );
+
+  box-shadow:
+    0 6px 16px rgba(0, 81, 160, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.42);
 }
 
 .discount-card__pill--secondary {
-  background: linear-gradient(90deg, #29271e 0%, #191813 100%);
-  color: #fff;
+  color: #17385f;
+
+  background:
+    linear-gradient(
+      180deg,
+      #ffffff 0%,
+      #ffffff 58%,
+      #f2f6fb 100%
+    );
+
+  border: 1px solid rgba(0, 81, 160, 0.18);
+
+  box-shadow:
+    0 5px 14px rgba(14, 35, 59, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    inset 0 -1px 0 rgba(0, 81, 160, 0.06);
+}
+
+.discount-card__pill--location {
+  color: #17385f;
 }
 
 @media (max-width: 430px) {
@@ -4809,9 +4905,9 @@ body.has-results .discount-products {
         </section>
       </div>
 
-      <section class="discount-products" id="discountProducts" aria-label="오늘의 매장 할인" hidden>
+      <section class="discount-products" id="discountProducts" aria-label="전농점 특별 한정특가" hidden>
         <div class="discount-products__inner">
-          <h2 class="discount-products__title" id="discountProductsTitle">오늘의 매장 할인</h2>
+          <h2 class="discount-products__title" id="discountProductsTitle">전농점 특별 한정특가</h2>
           <div class="discount-countdown" id="discountCountdown" aria-live="polite"></div>
           <div class="discount-products__cards" id="discountProductCards"></div>
         </div>
@@ -5852,7 +5948,6 @@ function renderDiscountProducts(items, options = {}) {
   renderDiscountSlides(orderedItems);
   initializeDiscountSwiper(orderedItems, preferredItemId);
   startDiscountCountdown(orderedItems);
-
   revealDiscountSection(options);
 }
 
@@ -6164,18 +6259,56 @@ function normalizeDiscountPercent(value) {
 
 function getDiscountBadgeTextLayout(percentText) {
   const digitCount = percentText.length;
-  const numberFontSize = digitCount >= 3 ? 285 : digitCount === 1 ? 410 : 365;
-  const digitWidth = numberFontSize * (digitCount >= 3 ? 0.59 : digitCount === 1 ? 0.66 : 0.62);
+
+  const baseFontSize =
+    digitCount >= 3
+      ? 285
+      : digitCount === 1
+        ? 410
+        : 365;
+
+  const numberFontSize = baseFontSize * 0.87;
+
+  const digitWidth =
+    numberFontSize *
+    (
+      digitCount >= 3
+        ? 0.59
+        : digitCount === 1
+          ? 0.66
+          : 0.62
+    );
+
   const numberWidth = digitWidth * digitCount;
-  const targetRightEdge = digitCount === 1 ? 500 : digitCount >= 3 ? 620 : 590;
+
+  const targetRightEdge =
+    digitCount === 1
+      ? 500
+      : digitCount >= 3
+        ? 620
+        : 590;
+
+  /* 여기 숫자만 조절 */
+  const moveX = -72; // 음수: 왼쪽 / 양수: 오른쪽
+  const moveY = -9;  // 음수: 위쪽 / 양수: 아래쪽
 
   return {
     numberFontSize,
-    groupX: targetRightEdge - (numberWidth / 2),
-    groupY: digitCount >= 3 ? 506 : 498,
+
+    groupX:
+      targetRightEdge -
+      (numberWidth / 2) +
+      moveX,
+
+    groupY:
+      (digitCount >= 3 ? 472 : 474) +
+      moveY,
+
     numberX: 0,
     numberY: 0,
-    rotate: -1.5
+
+    rotate: -1,
+    skewX: -15
   };
 }
 
@@ -6263,9 +6396,12 @@ function updateDiscountBadge(badge, options = {}) {
   badge.setAttribute('aria-label', `${percentText}% 할인`);
 
   refs.number.textContent = percentText;
-  setDiscountSvgAttributes(refs.tiltGroup, {
-    transform: `translate(${layout.groupX.toFixed(2)} ${layout.groupY}) rotate(${layout.rotate})`
-  });
+setDiscountSvgAttributes(refs.tiltGroup, {
+  transform:
+    `translate(${layout.groupX.toFixed(2)} ${layout.groupY}) ` +
+    `rotate(${layout.rotate}) ` +
+    `skewX(${layout.skewX})`
+});
   setDiscountSvgAttributes(refs.number, {
     x: layout.numberX.toFixed(2),
     y: layout.numberY,
@@ -6347,7 +6483,7 @@ function createDiscountStorageLocationBadge(item) {
   badge.setAttribute('aria-label', location.number ? `${location.label} ${location.number}` : location.label);
 
   const icon = document.createElement('img');
-  icon.className = 'discount-card__pill-icon discount-card__pill-icon--location';
+  icon.className = 'discount-card__pill-icon discount-card__pill-icon--store discount-card__pill-icon--location';
   icon.src = location.iconUrl;
   icon.alt = '';
   icon.setAttribute('aria-hidden', 'true');
@@ -6450,8 +6586,23 @@ function createDiscountProductCard(item, index = 0, total = 1) {
   footer.className = 'discount-card__footer';
 
   const storeBadge = document.createElement('span');
-  storeBadge.className = 'discount-card__pill discount-card__pill--primary';
-  storeBadge.textContent = '⭐ 전농점 특별할인';
+  storeBadge.className =
+    'discount-card__pill discount-card__pill--primary';
+
+  const storeBadgeIcon = document.createElement('img');
+  storeBadgeIcon.className =
+    'discount-card__pill-icon discount-card__pill-icon--sale';
+  storeBadgeIcon.src = '/discount-special-icon.png';
+  storeBadgeIcon.alt = '';
+  storeBadgeIcon.setAttribute('aria-hidden', 'true');
+  storeBadgeIcon.decoding = 'async';
+  storeBadgeIcon.draggable = false;
+
+  const storeBadgeText = document.createElement('span');
+  storeBadgeText.className = 'discount-card__pill-text';
+  storeBadgeText.textContent = '전농점 특별할인';
+
+  storeBadge.append(storeBadgeIcon, storeBadgeText);
 
   const productBadge = createDiscountStorageLocationBadge(item);
 
@@ -6851,6 +7002,7 @@ function formatDiscountPrice(value) {
 function createDiscountSalePriceNodes(value) {
   const priceText = formatDiscountPrice(value);
   const match = priceText.match(/^(.+?)(원)$/);
+
   const number = document.createElement('span');
   number.className = 'discount-card__sale-number';
 
@@ -6859,11 +7011,17 @@ function createDiscountSalePriceNodes(value) {
 
   if (match) {
     number.textContent = match[1];
+    number.dataset.text = match[1];
+
     unit.textContent = match[2];
+    unit.dataset.text = match[2];
+
     return [number, unit];
   }
 
   number.textContent = priceText;
+  number.dataset.text = priceText;
+
   return [number];
 }
 
