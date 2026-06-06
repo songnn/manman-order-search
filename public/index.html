@@ -4092,14 +4092,21 @@ body.has-results .discount-products {
 }
 
 .discount-products__cards {
-  width: min(81.6667vw, 720px);
+  --discount-slide-left: clamp(20px, 5.5556vw, 80px);
+  --discount-card-width: min(81.6667vw, 1176px);
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
   margin-top: clamp(17px, 4.1667vw, 60px);
   overflow: visible;
 }
 
 .discount-swiper {
   width: 100%;
-  overflow: hidden;
+  overflow: visible;
+  padding-left: var(--discount-slide-left);
+  padding-right: var(--discount-slide-left);
+  box-sizing: border-box;
   touch-action: pan-y;
 }
 
@@ -4109,11 +4116,11 @@ body.has-results .discount-products {
 }
 
 .discount-swiper .swiper-slide {
-  width: 100%;
+  width: var(--discount-card-width);
   height: auto;
   display: flex;
   align-items: stretch;
-  justify-content: center;
+  justify-content: flex-start;
   box-sizing: border-box;
 }
 
@@ -4395,7 +4402,7 @@ body.has-results .discount-products {
   }
 
   .discount-products__cards {
-    width: min(81.6667vw, calc(100vw - 32px));
+    width: 100vw;
   }
 }
 
@@ -5711,7 +5718,7 @@ function initializeDiscountSwiper(items, preferredItemId = '') {
   const preferredIndex = Math.max(0, items.findIndex(item => item.id === preferredItemId));
 
   discountSwiper = new Swiper(swiperEl, {
-    slidesPerView: 1,
+    slidesPerView: 'auto',
     slidesPerGroup: 1,
     spaceBetween: getDiscountSwiperSpaceBetween(),
     speed: 520,
@@ -5761,10 +5768,7 @@ function destroyDiscountSwiper() {
 }
 
 function getDiscountSwiperSpaceBetween() {
-  if (window.matchMedia('(max-width: 640px)').matches) return 14;
-  if (window.matchMedia('(max-width: 1024px)').matches) return 18;
-
-  return 24;
+  return Math.round(Math.max(10, Math.min(40, window.innerWidth * (40 / 1440))));
 }
 
 function createDiscountProductCard(item, index = 0, total = 1) {
