@@ -4283,14 +4283,22 @@ body.has-results .discount-products {
   width: clamp(11px, 2.7778vw, 40px);
   height: clamp(11px, 2.7778vw, 40px);
   margin: 0 clamp(12px, 4.1667vw, 60px);
+  overflow: visible;
   filter: drop-shadow(0 clamp(2px, 0.42vw, 6px) clamp(3px, 0.69vw, 10px) rgba(0, 0, 0, 0.35));
 }
 
 .discount-card__headline-icon-img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
   display: block;
-  width: 100%;
-  height: 100%;
+  width: 260%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  max-width: none;
+  max-height: none;
   object-fit: contain;
+  transform: translate(-50%, -50%);
 }
 
 .discount-card__headline-icon-fallback {

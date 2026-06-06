@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none" role="img" aria-label="우와!한 낙지볶음 400g">
+  <title>우와!한 낙지볶음 400g</title>
+  <g stroke="#C0392B" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 27c0-9 5.5-15 12-15s12 6 12 15c0 8-5 12-12 12s-12-4-12-12Z"/>
+    <path d="M24 41c-3 3-5 6-8 6"/>
+    <path d="M29 42c-1 5-3 8-6 10"/>
+    <path d="M35 42c1 5 3 8 6 10"/>
+    <path d="M40 41c3 3 5 6 8 6"/>
+    <path d="M28 25h.1M36 25h.1"/>
+  </g>
+</svg>

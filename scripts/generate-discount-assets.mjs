@@ -46,7 +46,7 @@ async function main() {
     const sheetHasColor = Boolean(normalizeHexColor(product._sheetThemeColor));
     const sheetHasIcon = Boolean(normalizeIconUrl(product._sheetThemeIconUrl));
 
-    if (existing?.themeColor && existing?.themeIconUrl && !force) {
+    if (isReusableLineIconAsset(existing) && !force) {
       queueSheetUpdate(sheetUpdates, product, existing, {
         sheetHasColor,
         sheetHasIcon
@@ -64,14 +64,18 @@ async function main() {
     const themeColor = normalizeHexColor(metadata.themeColor) ||
       normalizeHexColor(existing?.themeColor) ||
       getFallbackDiscountThemeColor(product.productName);
-    const iconPrompt = metadata.iconPrompt || createIconPrompt(product, themeColor);
-    const iconFileName = `${assetKey}.png`;
+    const iconType = normalizeIconType(metadata.iconType) || normalizeIconType(existing?.iconType) || inferIconType(product);
+    const iconPrompt = metadata.iconPrompt || createIconPrompt(product, themeColor, iconType);
+    const iconFileName = `${assetKey}.svg`;
     const iconPath = path.join(ICON_DIR, iconFileName);
     const themeIconUrl = `/discount-assets/icons/${iconFileName}`;
 
     if (!dryRun) {
-      const iconBuffer = await generateIconImage(iconPrompt);
-      await fs.writeFile(iconPath, iconBuffer);
+      await fs.writeFile(iconPath, createLineIconSvg({
+        iconType,
+        themeColor,
+        title: product.productName
+      }));
     }
 
     nextItems[assetKey] = {
@@ -80,8 +84,10 @@ async function main() {
       themeColor,
       themeIconUrl,
       iconPrompt,
+      iconType,
+      iconStyle: 'line-svg',
       generatedAt: new Date().toISOString(),
-      source: dryRun ? 'fallback-dry-run' : 'openai'
+      source: dryRun ? 'line-svg-dry-run' : 'openai-metadata'
     };
 
     queueSheetUpdate(sheetUpdates, product, nextItems[assetKey], {
@@ -160,9 +166,10 @@ async function readManifest() {
 async function generateThemeMetadata(product) {
   const prompt = [
     'You are designing commerce UI assets for a Korean grocery discount card.',
-    'Return only JSON with this shape: {"themeColor":"#RRGGBB","iconPrompt":"..."}',
+    'Return only JSON with this shape: {"themeColor":"#RRGGBB","iconType":"octopus|squid|tofu|chicken-leg|seafood|meat|produce|beauty|default","iconPrompt":"..."}',
     'themeColor must be a premium line color that harmonizes with the product name and remains visible on a dark photo overlay.',
-    'iconPrompt must describe one centered 3D product icon, no text, no badge, no background clutter, suitable inside a 40px square UI ornament.',
+    'iconType must choose the closest simple line-icon category for the product.',
+    'iconPrompt must describe a transparent-background single-color outline icon, no text, no fill-heavy 3D rendering, suitable inside a 40px square UI ornament.',
     `Product name: ${product.productName}`,
     `Description: ${product.description || ''}`
   ].join('\n');
@@ -177,6 +184,7 @@ async function generateThemeMetadata(product) {
 
     return {
       themeColor: normalizeHexColor(parsed.themeColor),
+      iconType: normalizeIconType(parsed.iconType),
       iconPrompt: String(parsed.iconPrompt || '').trim()
     };
   } catch (error) {
@@ -190,63 +198,22 @@ function createFallbackMetadata(product) {
 
   return {
     themeColor,
-    iconPrompt: createIconPrompt(product, themeColor)
+    iconType: inferIconType(product),
+    iconPrompt: createIconPrompt(product, themeColor, inferIconType(product))
   };
 }
 
-function createIconPrompt(product, themeColor) {
+function createIconPrompt(product, themeColor, iconType = inferIconType(product)) {
   return [
-    'A single premium 3D commerce icon for a Korean market discount product.',
-    'No letters, no numbers, no labels, no price tags, no background scene.',
-    'Centered product-object icon, glossy but clean, transparent or plain background, soft studio lighting.',
+    'A single premium transparent-background line icon for a Korean market discount product.',
+    'No letters, no numbers, no labels, no price tags, no background scene, no 3D rendering.',
+    'Centered outline icon, single stroke color, clean rounded stroke caps and joins.',
     'Keep the object readable when rendered at 40px.',
     `Theme accent color: ${themeColor}.`,
+    `Icon type: ${iconType}.`,
     `Product: ${product.productName}.`,
     `Product detail: ${product.description || ''}.`
   ].join(' ');
-}
-
-async function generateIconImage(prompt) {
-  const baseRequest = {
-    model: IMAGE_MODEL,
-    prompt,
-    size: '1024x1024',
-    quality: 'low',
-    output_format: 'png',
-    n: 1
-  };
-
-  let result;
-
-  try {
-    result = await openaiJson('/v1/images/generations', {
-      ...baseRequest,
-      background: 'transparent'
-    });
-  } catch (error) {
-    if (!/transparent background is not supported/i.test(error.message)) {
-      throw error;
-    }
-
-    console.warn(`${IMAGE_MODEL} does not support transparent background; retrying with model default background.`);
-    result = await openaiJson('/v1/images/generations', baseRequest);
-  }
-
-  const image = result?.data?.[0];
-  if (image?.b64_json) {
-    return Buffer.from(image.b64_json, 'base64');
-  }
-
-  if (image?.url) {
-    const response = await fetch(image.url);
-    if (!response.ok) {
-      throw new Error(`generated image download failed (${response.status})`);
-    }
-
-    return Buffer.from(await response.arrayBuffer());
-  }
-
-  throw new Error('OpenAI image response did not include b64_json or url.');
 }
 
 async function openaiJson(endpoint, body) {
@@ -323,6 +290,137 @@ function normalizeIconUrl(value) {
   }
 
   return '';
+}
+
+const ICON_TYPES = new Set([
+  'octopus',
+  'squid',
+  'tofu',
+  'chicken-leg',
+  'seafood',
+  'meat',
+  'produce',
+  'beauty',
+  'default'
+]);
+
+function normalizeIconType(value) {
+  const text = String(value || '').trim().toLowerCase();
+  return ICON_TYPES.has(text) ? text : '';
+}
+
+function inferIconType(product) {
+  const text = `${product?.productName || ''} ${product?.description || ''}`.toLowerCase();
+  if (/낙지|octopus/.test(text)) return 'octopus';
+  if (/오징어|squid/.test(text)) return 'squid';
+  if (/두부|tofu/.test(text)) return 'tofu';
+  if (/통다리|닭|치킨|chicken|drumstick/.test(text)) return 'chicken-leg';
+  if (/생선|해산|seafood|fish|새우|shrimp/.test(text)) return 'seafood';
+  if (/고기|육|meat|beef|pork/.test(text)) return 'meat';
+  if (/사과|과일|채소|야채|fruit|produce/.test(text)) return 'produce';
+  if (/패드|화장|시카|뷰티|beauty|cosmetic/.test(text)) return 'beauty';
+  return 'default';
+}
+
+function isReusableLineIconAsset(asset) {
+  return Boolean(
+    asset?.themeColor &&
+    asset?.themeIconUrl &&
+    normalizeIconUrl(asset.themeIconUrl).endsWith('.svg') &&
+    asset.iconStyle === 'line-svg'
+  );
+}
+
+function createLineIconSvg({ iconType, themeColor, title }) {
+  const stroke = normalizeHexColor(themeColor) || '#F2DE95';
+  const escapedTitle = escapeXml(title || 'discount product icon');
+  const body = getLineIconBody(normalizeIconType(iconType) || 'default');
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none" role="img" aria-label="${escapedTitle}">
+  <title>${escapedTitle}</title>
+  <g stroke="${stroke}" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round">
+${body}
+  </g>
+</svg>
+`;
+}
+
+function getLineIconBody(iconType) {
+  switch (iconType) {
+    case 'octopus':
+      return [
+        '    <path d="M20 27c0-9 5.5-15 12-15s12 6 12 15c0 8-5 12-12 12s-12-4-12-12Z"/>',
+        '    <path d="M24 41c-3 3-5 6-8 6"/>',
+        '    <path d="M29 42c-1 5-3 8-6 10"/>',
+        '    <path d="M35 42c1 5 3 8 6 10"/>',
+        '    <path d="M40 41c3 3 5 6 8 6"/>',
+        '    <path d="M28 25h.1M36 25h.1"/>'
+      ].join('\n');
+    case 'squid':
+      return [
+        '    <path d="M32 10 20 27l12 9 12-9-12-17Z"/>',
+        '    <path d="M24 38c-2 4-5 7-9 9"/>',
+        '    <path d="M29 39c-1 5-3 9-6 12"/>',
+        '    <path d="M35 39c1 5 3 9 6 12"/>',
+        '    <path d="M40 38c2 4 5 7 9 9"/>',
+        '    <path d="M27 26h.1M37 26h.1"/>'
+      ].join('\n');
+    case 'tofu':
+      return [
+        '    <path d="M15 24 32 14l17 10v20L32 54 15 44V24Z"/>',
+        '    <path d="M15 24 32 34l17-10"/>',
+        '    <path d="M32 34v20"/>',
+        '    <path d="M24 24c2-3 6-4 9-2"/>',
+        '    <path d="M38 39h.1"/>'
+      ].join('\n');
+    case 'chicken-leg':
+      return [
+        '    <path d="M24 37c-6-6-5-16 2-21 8-5 19 0 21 8 2 9-4 16-12 17"/>',
+        '    <path d="M25 36 14 47"/>',
+        '    <path d="M12 46c-4-1-7 2-6 6 4 1 7-2 6-6Z"/>',
+        '    <path d="M15 49c2 2 2 5 0 7 5 1 8-4 5-8"/>'
+      ].join('\n');
+    case 'seafood':
+      return [
+        '    <path d="M11 32c9-11 23-14 37-2-14 12-28 9-37 2Z"/>',
+        '    <path d="M48 30 57 22v20l-9-8"/>',
+        '    <path d="M24 31h.1"/>',
+        '    <path d="M32 24c3 4 3 12 0 16"/>'
+      ].join('\n');
+    case 'meat':
+      return [
+        '    <path d="M16 38c-4-9 2-20 12-23 12-4 25 6 22 18-2 11-15 18-26 13"/>',
+        '    <path d="M24 44 13 55"/>',
+        '    <path d="M14 54c-4 0-7-3-6-7 4-1 7 2 6 7Z"/>',
+        '    <path d="M32 25c4-2 9 0 11 4"/>'
+      ].join('\n');
+    case 'produce':
+      return [
+        '    <path d="M32 22c-10-8-22 1-19 15 2 11 11 18 19 13 8 5 17-2 19-13 3-14-9-23-19-15Z"/>',
+        '    <path d="M32 22c0-7 4-11 10-12"/>',
+        '    <path d="M28 14c3 0 6 2 7 5"/>'
+      ].join('\n');
+    case 'beauty':
+      return [
+        '    <path d="M20 12h24v40H20z"/>',
+        '    <path d="M24 20h16"/>',
+        '    <path d="M28 31c6-5 13 1 7 7-2 2-5 4-7 7"/>',
+        '    <path d="M23 48c8 1 14-1 18-7"/>'
+      ].join('\n');
+    default:
+      return [
+        '    <path d="M32 10 47 18v18c0 10-6 16-15 20-9-4-15-10-15-20V18l15-8Z"/>',
+        '    <path d="M24 33 30 39 42 25"/>'
+      ].join('\n');
+  }
+}
+
+function escapeXml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 function queueSheetUpdate(updates, product, asset, options = {}) {
