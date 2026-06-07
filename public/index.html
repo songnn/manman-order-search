@@ -4247,7 +4247,13 @@ body.has-results .discount-products {
   min-height: 0;
   height: auto;
   padding: clamp(8px, 2.0833vw, 30px) clamp(18px, 5.5556vw, 80px) clamp(18px, 3vw, 72px);
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.35) 75%, rgba(0, 0, 0, 0.0) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 0.65) 50%,
+    rgba(0, 0, 0, 0.35) 90%,
+    rgba(0, 0, 0, 0) 100%
+  );
   color: #fff;
   text-align: center;
   transform: translateZ(0);
@@ -4327,6 +4333,14 @@ body.has-results .discount-products {
   overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+.discount-card--single-line-title .discount-card__top {
+  padding-bottom: clamp(12px, 2vw, 48px);
+}
+
+.discount-card--single-line-title .discount-card__chips {
+  margin-top: clamp(1px, 0.35vw, 18px);
 }
 
 .discount-card__chips {
@@ -4900,9 +4914,9 @@ body.has-results .discount-products {
         </section>
       </div>
 
-      <section class="discount-products" id="discountProducts" aria-label="전농점 특별 한정특가" hidden>
+      <section class="discount-products" id="discountProducts" aria-label="오늘의 매장 특가" hidden>
         <div class="discount-products__inner">
-          <h2 class="discount-products__title" id="discountProductsTitle">전농점 특별 한정특가</h2>
+          <h2 class="discount-products__title" id="discountProductsTitle">오늘의 매장 특가</h2>
           <div class="discount-countdown" id="discountCountdown" aria-live="polite"></div>
           <div class="discount-products__cards" id="discountProductCards"></div>
         </div>
@@ -5086,6 +5100,7 @@ let calendarLandingMode = false;
   ];
 
   const discountSectionEl = document.getElementById('discountProducts');
+  const discountProductsTitleEl = document.getElementById('discountProductsTitle');
   const discountCountdownEl = document.getElementById('discountCountdown');
   const discountProductCardsEl = document.getElementById('discountProductCards');
   const DISCOUNT_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
@@ -5809,9 +5824,11 @@ function initDiscountProducts() {
   if (!discountSectionEl || !discountCountdownEl || !discountProductCardsEl) return;
 
   setupDiscountDayjs();
+  updateDiscountProductsTitle();
   refreshDiscountProducts({ animate: true, resetOrder: true });
   document.addEventListener('visibilitychange', handleDiscountVisibilityChange);
   window.addEventListener('resize', scheduleDiscountChipsFit, { passive: true });
+  document.fonts?.ready?.then(scheduleDiscountChipsFit).catch(() => {});
 }
 
 function setupDiscountDayjs() {
@@ -5830,8 +5847,20 @@ function handleDiscountVisibilityChange() {
   if (document.visibilityState !== 'visible') return;
   if (document.body.classList.contains('has-results')) return;
 
+  updateDiscountProductsTitle();
   updateDiscountCountdown();
   refreshDiscountProducts({ animate: false });
+}
+
+function updateDiscountProductsTitle() {
+  if (!discountProductsTitleEl) return;
+
+  const today = getSeoulTodayInfo();
+  const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+  const title = `${today.month}/${today.day}(${weekdays[today.dayOfWeek]}) 오늘의 매장 특가`;
+
+  discountProductsTitleEl.textContent = title;
+  discountSectionEl?.setAttribute('aria-label', title);
 }
 
 function fetchDiscountProducts() {
@@ -6114,7 +6143,24 @@ function scheduleDiscountChipsFit() {
 
   discountChipsFitRaf = window.requestAnimationFrame(() => {
     discountChipsFitRaf = 0;
+    updateDiscountTitleLineDensity();
     fitDiscountDescriptionChips();
+  });
+}
+
+function updateDiscountTitleLineDensity() {
+  if (!discountProductCardsEl) return;
+
+  discountProductCardsEl.querySelectorAll('.discount-card').forEach(card => {
+    const name = card.querySelector('.discount-card__name');
+    if (!name) return;
+
+    const styles = window.getComputedStyle(name);
+    const lineHeight = Number.parseFloat(styles.lineHeight);
+    if (!Number.isFinite(lineHeight) || lineHeight <= 0) return;
+
+    const renderedLines = Math.round(name.scrollHeight / lineHeight);
+    card.classList.toggle('discount-card--single-line-title', renderedLines <= 1);
   });
 }
 

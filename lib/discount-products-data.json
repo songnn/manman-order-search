@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-06T14:51:43.608Z",
+  "generatedAt": "2026-06-07T12:56:38.135Z",
   "timezone": "Asia/Seoul",
   "items": [
     {
@@ -17,7 +17,7 @@
       "themeColor": "#C62828",
       "themeIconUrl": "/discount-assets/icons/3f5c33fdb8b759.svg",
       "startsAt": "2026-06-05T15:00:00.000Z",
-      "endsAt": "2026-06-07T15:00:00.000Z",
+      "endsAt": "2026-06-06T15:00:00.000Z",
       "comparePrice": 15000,
       "comparePriceLabel": "온라인 최저가",
       "discountRate": 34
@@ -36,7 +36,7 @@
       "themeColor": "#C48A4A",
       "themeIconUrl": "/discount-assets/icons/b29ead9f2ce84e.svg",
       "startsAt": "2026-06-05T15:00:00.000Z",
-      "endsAt": "2026-06-07T15:00:00.000Z",
+      "endsAt": "2026-06-06T15:00:00.000Z",
       "comparePrice": 23500,
       "comparePriceLabel": "온라인 최저가",
       "discountRate": 51
@@ -44,25 +44,6 @@
     {
       "id": "discount-product-row-4",
       "sheetRow": 4,
-      "productName": "CJ 촌두부 380G, 1개",
-      "imageUrl": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260422/388998eeffdddbf7c2489ba6ddafa5bd.jpg",
-      "salePrice": 2990,
-      "groupPrice": 3480,
-      "onlineLowestPrice": 5180,
-      "description": "특급 국산콩 100%, 프리미엄 두부",
-      "storageLocation": "쇼케이스",
-      "assetKey": "bc5a4134f95de8",
-      "themeColor": "#2E7D32",
-      "themeIconUrl": "/discount-assets/icons/bc5a4134f95de8.svg",
-      "startsAt": "2026-06-05T15:00:00.000Z",
-      "endsAt": "2026-06-07T15:00:00.000Z",
-      "comparePrice": 5180,
-      "comparePriceLabel": "온라인 최저가",
-      "discountRate": 42
-    },
-    {
-      "id": "discount-product-row-5",
-      "sheetRow": 5,
       "productName": "자이언트 통다리 1.2kg / 소비기한 1년이상",
       "imageUrl": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260521/cee3a02014274d7b2a6037b7654e74d0.jpg",
       "salePrice": 12900,
@@ -74,7 +55,7 @@
       "themeColor": "#7A4A2A",
       "themeIconUrl": "/discount-assets/icons/4626b8032a0206.svg",
       "startsAt": "2026-06-05T15:00:00.000Z",
-      "endsAt": "2026-06-07T15:00:00.000Z",
+      "endsAt": "2026-06-06T15:00:00.000Z",
       "comparePrice": 31200,
       "comparePriceLabel": "온라인 최저가",
       "discountRate": 59
