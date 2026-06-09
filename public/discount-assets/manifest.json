@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-06T14:30:21.233Z",
+  "generatedAt": "2026-06-09T08:41:46.650Z",
   "items": {
     "3f5c33fdb8b759": {
       "productName": "우와!한 낙지볶음 400g",
@@ -44,6 +44,39 @@
       "iconType": "chicken-leg",
       "iconStyle": "line-svg",
       "generatedAt": "2026-06-06T14:30:21.233Z",
+      "source": "openai-metadata"
+    },
+    "f297809b263afd": {
+      "productName": "강훈목장 1A등급 우유 1L / 10일",
+      "description": "1A 등급의 우유의 고소한 맛",
+      "themeColor": "#F2C94C",
+      "themeIconUrl": "/discount-assets/icons/f297809b263afd.svg",
+      "iconPrompt": "A transparent-background, single-color thin-line line icon of a premium milk carton or milk bottle representing 1A grade milk, elegant and minimal, centered composition, no text, no fill-heavy shapes, no 3D rendering, no shadow, suitable for a 40px square UI ornament, refined grocery discount card asset",
+      "iconType": "default",
+      "iconStyle": "line-svg",
+      "generatedAt": "2026-06-09T08:41:43.519Z",
+      "source": "openai-metadata"
+    },
+    "3925f8ff5794ca": {
+      "productName": "CJ 하루 낫또 국산검정약콩 45.5G, 8개",
+      "description": "최고의 나또를 위해 엄선한 콩",
+      "themeColor": "#2F6B3A",
+      "themeIconUrl": "/discount-assets/icons/3925f8ff5794ca.svg",
+      "iconPrompt": "Transparent-background single-color thin-line icon of a premium Korean natto soy product: a small neatly stacked soy bean pack with subtle soybeans and a clean fermented-food cue, elegant minimal grocery UI ornament, no text, no fill-heavy shapes, no 3D rendering, centered composition, suitable for a 40px square asset",
+      "iconType": "tofu",
+      "iconStyle": "line-svg",
+      "generatedAt": "2026-06-09T08:41:45.152Z",
+      "source": "openai-metadata"
+    },
+    "4202ab03f2bdc2": {
+      "productName": "대구 반고개 오징어 초무침 370g",
+      "description": "매콤새콤 대구 최고의 명물",
+      "themeColor": "#D94B2B",
+      "themeIconUrl": "/discount-assets/icons/4202ab03f2bdc2.svg",
+      "iconPrompt": "Transparent-background single-color thin-line line icon of a seasoned squid dish from Korean seafood cuisine, featuring a sliced squid body with subtle tentacle curves and a small garnish suggestion, elegant premium commerce UI ornament, no text, no fill-heavy areas, no 3D rendering, clean vector style, centered composition suitable for a 40px square",
+      "iconType": "squid",
+      "iconStyle": "line-svg",
+      "generatedAt": "2026-06-09T08:41:46.650Z",
       "source": "openai-metadata"
     }
   }

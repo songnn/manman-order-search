@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-07T12:56:38.135Z",
+  "generatedAt": "2026-06-09T08:41:47.860Z",
   "timezone": "Asia/Seoul",
   "items": [
     {
@@ -17,7 +17,7 @@
       "themeColor": "#C62828",
       "themeIconUrl": "/discount-assets/icons/3f5c33fdb8b759.svg",
       "startsAt": "2026-06-05T15:00:00.000Z",
-      "endsAt": "2026-06-06T15:00:00.000Z",
+      "endsAt": "2026-06-09T15:00:00.000Z",
       "comparePrice": 15000,
       "comparePriceLabel": "온라인 최저가",
       "discountRate": 34
@@ -36,7 +36,7 @@
       "themeColor": "#C48A4A",
       "themeIconUrl": "/discount-assets/icons/b29ead9f2ce84e.svg",
       "startsAt": "2026-06-05T15:00:00.000Z",
-      "endsAt": "2026-06-06T15:00:00.000Z",
+      "endsAt": "2026-06-09T15:00:00.000Z",
       "comparePrice": 23500,
       "comparePriceLabel": "온라인 최저가",
       "discountRate": 51
@@ -55,10 +55,67 @@
       "themeColor": "#7A4A2A",
       "themeIconUrl": "/discount-assets/icons/4626b8032a0206.svg",
       "startsAt": "2026-06-05T15:00:00.000Z",
-      "endsAt": "2026-06-06T15:00:00.000Z",
+      "endsAt": "2026-06-09T15:00:00.000Z",
       "comparePrice": 31200,
       "comparePriceLabel": "온라인 최저가",
       "discountRate": 59
+    },
+    {
+      "id": "discount-product-row-5",
+      "sheetRow": 5,
+      "productName": "강훈목장 1A등급 우유 1L / 10일",
+      "imageUrl": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260522/87d7a85a8c7ca8882776bc7ef5556ab5.jpg",
+      "salePrice": 4000,
+      "groupPrice": 4900,
+      "onlineLowestPrice": 5800,
+      "description": "1A 등급의 우유의 고소한 맛",
+      "storageLocation": "쇼케이스",
+      "assetKey": "f297809b263afd",
+      "themeColor": "#F2C94C",
+      "themeIconUrl": "/discount-assets/icons/f297809b263afd.svg",
+      "startsAt": "2026-06-07T15:00:00.000Z",
+      "endsAt": "2026-06-09T15:00:00.000Z",
+      "comparePrice": 5800,
+      "comparePriceLabel": "온라인 최저가",
+      "discountRate": 31
+    },
+    {
+      "id": "discount-product-row-6",
+      "sheetRow": 6,
+      "productName": "CJ 하루 낫또 국산검정약콩 45.5G, 8개",
+      "imageUrl": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260523/5f3be12189ba5327f06064d6cf46eb08.jpg",
+      "salePrice": 6990,
+      "groupPrice": 7980,
+      "onlineLowestPrice": 10980,
+      "description": "최고의 나또를 위해 엄선한 콩",
+      "storageLocation": "냉장2",
+      "assetKey": "3925f8ff5794ca",
+      "themeColor": "#2F6B3A",
+      "themeIconUrl": "/discount-assets/icons/3925f8ff5794ca.svg",
+      "startsAt": "2026-06-08T15:00:00.000Z",
+      "endsAt": "2026-06-09T15:00:00.000Z",
+      "comparePrice": 10980,
+      "comparePriceLabel": "온라인 최저가",
+      "discountRate": 36
+    },
+    {
+      "id": "discount-product-row-7",
+      "sheetRow": 7,
+      "productName": "대구 반고개 오징어 초무침 370g",
+      "imageUrl": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260521/773aca6581273e017fbccb06de138433.jpg",
+      "salePrice": 7900,
+      "groupPrice": 8900,
+      "onlineLowestPrice": 17700,
+      "description": "매콤새콤 대구 최고의 명물",
+      "storageLocation": "냉동5",
+      "assetKey": "4202ab03f2bdc2",
+      "themeColor": "#D94B2B",
+      "themeIconUrl": "/discount-assets/icons/4202ab03f2bdc2.svg",
+      "startsAt": "2026-06-08T15:00:00.000Z",
+      "endsAt": "2026-06-09T15:00:00.000Z",
+      "comparePrice": 17700,
+      "comparePriceLabel": "온라인 최저가",
+      "discountRate": 55
     }
   ]
 }

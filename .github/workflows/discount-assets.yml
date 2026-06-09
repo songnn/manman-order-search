@@ -1,0 +1,58 @@
+name: Discount Assets
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/30 * * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  sync-discount-assets:
+    runs-on: ubuntu-latest
+    env:
+      SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+      GOOGLE_CLIENT_EMAIL: ${{ secrets.GOOGLE_CLIENT_EMAIL }}
+      GOOGLE_PRIVATE_KEY: ${{ secrets.GOOGLE_PRIVATE_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_TEXT_MODEL: ${{ secrets.OPENAI_TEXT_MODEL }}
+      OPENAI_IMAGE_MODEL: ${{ secrets.OPENAI_IMAGE_MODEL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Generate discount assets
+        run: |
+          missing=0
+          for key in SPREADSHEET_ID GOOGLE_CLIENT_EMAIL GOOGLE_PRIVATE_KEY OPENAI_API_KEY; do
+            if [ -z "${!key}" ]; then
+              echo "::notice::$key secret is missing. Skipping discount asset generation."
+              missing=1
+            fi
+          done
+
+          if [ "$missing" -eq 1 ]; then
+            exit 0
+          fi
+
+          npm run discount:assets
+
+      - name: Commit generated assets
+        run: |
+          if git diff --quiet; then
+            echo "No discount asset changes."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/discount-products-data.json public/discount-assets/manifest.json public/discount-assets/icons
+          git commit -m "Auto update discount assets"
+          git push
