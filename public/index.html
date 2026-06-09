@@ -4149,20 +4149,22 @@ body.has-results .discount-products {
 }
 
 .discount-swiper-pagination {
-  position: static;
-  display: flex;
+  position: relative !important;
+  inset: auto !important;
+  display: flex !important;
   align-items: center;
   justify-content: center;
   min-height: 30px;
   gap: 5px;
   align-self: center;
   flex: 0 0 auto;
-  width: fit-content !important;
-  max-width: none;
+  width: max-content !important;
+  max-width: calc(100vw - 40px);
   padding: 5px 7px;
   margin-top: clamp(14px, 1.25vw, 18px);
   margin-left: auto;
   margin-right: auto;
+  transform: none !important;
   border: 1px solid rgba(255, 255, 255, 0.64);
   border-radius: 999px;
   background:
@@ -6100,7 +6102,7 @@ function initializeDiscountSwiper(items, preferredItemId = '') {
     pagination: {
       el: paginationEl,
       clickable: true,
-      dynamicBullets: itemCount >= 6
+      dynamicBullets: false
     },
     keyboard: {
       enabled: true,
