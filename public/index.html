@@ -4376,7 +4376,7 @@ body.has-results .discount-products {
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.3);
 }
 
 .discount-card__chip[hidden] {
@@ -6310,7 +6310,7 @@ function getDiscountBadgeTextLayout(percentText) {
         ? 410
         : 365;
 
-  const numberFontSize = baseFontSize * 0.87;
+  const numberFontSize = baseFontSize * 1.00;
 
   const digitWidth =
     numberFontSize *
@@ -6332,7 +6332,7 @@ function getDiscountBadgeTextLayout(percentText) {
         : 590;
 
   /* 여기 숫자만 조절 */
-  const moveX = -72; // 음수: 왼쪽 / 양수: 오른쪽
+  const moveX = -60; // 음수: 왼쪽 / 양수: 오른쪽
   const moveY = -9;  // 음수: 위쪽 / 양수: 아래쪽
 
   return {
@@ -6521,9 +6521,10 @@ function getDiscountStorageLocationParts(value) {
 
 function createDiscountStorageLocationBadge(item) {
   const location = getDiscountStorageLocationParts(item?.storageLocation);
+  const locationText = `위치: ${location.label}`;
   const badge = document.createElement('span');
   badge.className = 'discount-card__pill discount-card__pill--secondary discount-card__pill--location';
-  badge.setAttribute('aria-label', location.number ? `${location.label} ${location.number}` : location.label);
+  badge.setAttribute('aria-label', location.number ? `${locationText} ${location.number}` : locationText);
 
   const icon = document.createElement('img');
   icon.className = 'discount-card__pill-icon discount-card__pill-icon--store discount-card__pill-icon--location';
@@ -6535,7 +6536,7 @@ function createDiscountStorageLocationBadge(item) {
 
   const text = document.createElement('span');
   text.className = 'discount-card__pill-text';
-  text.textContent = location.label;
+  text.textContent = locationText;
 
   badge.append(icon, text);
 
