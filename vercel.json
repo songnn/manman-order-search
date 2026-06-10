@@ -2,6 +2,10 @@
   "version": 2,
   "rewrites": [
     {
+      "source": "/api/pickup-calendar.ics",
+      "destination": "/api/pickup-calendar"
+    },
+    {
       "source": "/",
       "destination": "/index.html"
     }

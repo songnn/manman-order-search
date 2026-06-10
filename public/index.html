@@ -5612,9 +5612,9 @@ function openAndroidCalendarEvent(payload) {
   window.location.href = intentUrl;
 }
 
-function getCalendarExternalUrl(dateKey, source = '') {
-  const url = new URL(window.location.href);
+function appendCalendarIdentityParams(url, dateKey, source = '', productHash = '') {
   const keyword = currentSearchKeyword || keywordInput.value || '';
+  const customerLabel = currentSelectedCustomerLabel || '';
 
   url.searchParams.set('calendar', '1');
   url.searchParams.set('pickupDate', dateKey);
@@ -5624,6 +5624,49 @@ function getCalendarExternalUrl(dateKey, source = '') {
   if (/^\d{4}$/.test(keyword)) {
     url.searchParams.set('phoneLast4', keyword);
   }
+  if (customerLabel) {
+    url.searchParams.set('customerLabel', customerLabel);
+  }
+  if (productHash) {
+    url.searchParams.set('productHash', productHash);
+  }
+
+  return url;
+}
+
+function getCalendarExternalUrl(dateKey, source = '', productHash = '') {
+  return appendCalendarIdentityParams(new URL(window.location.href), dateKey, source, productHash).toString();
+}
+
+function getPickupCalendarIcsUrl(dateKey, productHash = '') {
+  const url = new URL('/api/pickup-calendar.ics', window.location.origin);
+  const keyword = currentSearchKeyword || keywordInput.value || '';
+  const customerLabel = currentSelectedCustomerLabel || '';
+
+  url.searchParams.set('pickupDate', dateKey);
+  if (/^\d{4}$/.test(keyword)) {
+    url.searchParams.set('phoneLast4', keyword);
+  }
+  if (customerLabel) {
+    url.searchParams.set('customerLabel', customerLabel);
+  }
+  if (productHash) {
+    url.searchParams.set('productHash', productHash);
+  }
+
+  return url.toString();
+}
+
+function getGoogleCalendarUrl(payload) {
+  const start = formatIcsDateTime(new Date(payload.startMs)).replace(/Z$/, 'Z');
+  const end = formatIcsDateTime(new Date(payload.endMs)).replace(/Z$/, 'Z');
+  const url = new URL('https://calendar.google.com/calendar/render');
+
+  url.searchParams.set('action', 'TEMPLATE');
+  url.searchParams.set('text', payload.title);
+  url.searchParams.set('dates', `${start}/${end}`);
+  url.searchParams.set('details', payload.description);
+  url.searchParams.set('location', STORE_DISPLAY_NAME);
 
   return url.toString();
 }
@@ -5707,12 +5750,15 @@ function showKakaoExternalFallback(targetUrl) {
   if (calendarGuideDescEl) {
     calendarGuideDescEl.textContent = '카카오톡 안에서는 캘린더 연결이 제한될 수 있어요. 링크를 복사한 뒤 Safari 또는 Chrome 주소창에 붙여넣으면 등록할 수 있습니다.';
   }
+  if (calendarGuideOpenEl) {
+    calendarGuideOpenEl.textContent = 'Safari/Chrome에서 열기';
+  }
   calendarGuideEl?.classList.add('show');
   calendarGuideEl?.setAttribute('aria-hidden', 'false');
 }
 
-function openKakaoExternalBrowserForCalendar(dateKey) {
-  const targetUrl = getCalendarExternalUrl(dateKey, 'kakao');
+function openKakaoExternalBrowserForCalendar(dateKey, productHash = '') {
+  const targetUrl = getCalendarExternalUrl(dateKey, 'kakao', productHash);
   calendarGuideExternalUrl = targetUrl;
   window.location.href = `kakaotalk://web/openExternal?url=${encodeURIComponent(targetUrl)}`;
 
@@ -5728,6 +5774,9 @@ function hideCalendarGuide() {
   calendarGuideEl?.setAttribute('aria-hidden', 'true');
   if (calendarGuideTitleEl) {
     calendarGuideTitleEl.textContent = '캘린더 등록은 브라우저에서 진행돼요';
+  }
+  if (calendarGuideOpenEl) {
+    calendarGuideOpenEl.textContent = 'Safari/Chrome에서 열기';
   }
 }
 
@@ -5758,17 +5807,29 @@ async function openPickupCalendarRegistration(dateKey, items, productHash) {
   if (!payload) return;
 
   if (isKakaoInAppBrowser()) {
-    openKakaoExternalBrowserForCalendar(dateKey);
+    openKakaoExternalBrowserForCalendar(dateKey, productHash);
     return;
   }
+
+  const icsUrl = getPickupCalendarIcsUrl(dateKey, productHash);
+  calendarGuideExternalUrl = icsUrl;
+  window.location.href = icsUrl;
 
   if (isAndroidDevice()) {
-    openAndroidCalendarEvent(payload);
-    return;
+    window.setTimeout(() => {
+      if (document.hidden) return;
+      calendarGuideExternalUrl = getGoogleCalendarUrl(payload);
+      if (calendarGuideTitleEl) {
+        calendarGuideTitleEl.textContent = '캘린더 파일이 열리지 않았나요?';
+      }
+      if (calendarGuideDescEl) {
+        calendarGuideDescEl.textContent = '기기에서 .ics 파일 연결이 막힌 경우 Google 캘린더로 추가할 수 있습니다. 아래 버튼을 눌러 대체 등록을 시도해 주세요.';
+      }
+      calendarGuideOpenEl && (calendarGuideOpenEl.textContent = 'Google 캘린더로 열기');
+      calendarGuideEl?.classList.add('show');
+      calendarGuideEl?.setAttribute('aria-hidden', 'false');
+    }, 1400);
   }
-
-  const ics = createPickupCalendarIcs(payload.date, items, dateKey, productHash);
-  await openIcsCalendarFile(ics, payload.fileName);
 }
 
 function hydrateCalendarIntentFromUrl() {
@@ -5776,6 +5837,7 @@ function hydrateCalendarIntentFromUrl() {
   const shouldOpenCalendar = params.get('calendar') === '1';
   const pickupDate = params.get('pickupDate') || '';
   const phoneLast4 = sanitizeFourDigitInput(params.get('phoneLast4') || '');
+  const selectedCustomerLabel = params.get('customerLabel') || '';
 
   if (!shouldOpenCalendar || !/^\d{4}$/.test(phoneLast4)) return;
 
@@ -5784,7 +5846,7 @@ function hydrateCalendarIntentFromUrl() {
   keywordInput.value = phoneLast4;
   if (typeof rhKeyword !== 'undefined' && rhKeyword) rhKeyword.value = phoneLast4;
   updateSearchState();
-  search();
+  search(selectedCustomerLabel);
 }
 
 function openPendingCalendarIntentIfNeeded() {
@@ -8257,6 +8319,8 @@ function renderScheduleDateSection(date, items) {
   const metricClass = hasPickup ? 'has-pickup' : 'no-pickup';
   const productTypeCount = items.length;
   const totalQuantity = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+  const productHash = hasPickup ? getCalendarProductHash(items) : '';
+  const calendarButtonLabel = calendarLandingMode ? '캘린더 앱 열기' : '픽업 알림 등록';
   const pickupMetricsHtml = hasPickup ? `
             <div class="schedule-pickup-metric">
               <span class="schedule-pickup-metric-label">픽업상품</span>
@@ -8287,6 +8351,16 @@ function renderScheduleDateSection(date, items) {
           <div class="schedule-pickup-metrics ${metricClass}" aria-label="${hasPickup ? `픽업상품 ${productTypeCount}종, 총 개수 ${totalQuantity}개` : '픽업상품 없음'}">
 ${pickupMetricsHtml}
           </div>
+          ${hasPickup ? `
+          <div class="schedule-calendar-action" data-calendar-action="${dateKey}">
+            <button
+              class="schedule-calendar-action-btn"
+              type="button"
+              data-calendar-register
+              data-date-key="${dateKey}"
+              data-product-hash="${productHash}"
+            ><img class="schedule-calendar-action-icon" src="/calendar-register.png" alt="" aria-hidden="true" loading="lazy" decoding="async"><span>${escapeHtml(calendarButtonLabel)}</span></button>
+          </div>` : ''}
         </div>
         <div class="schedule-date-right">
           ${hasPickup ? renderScheduleProductGrid(items) : renderScheduleEmptyDay(date)}
