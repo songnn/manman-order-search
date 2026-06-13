@@ -166,27 +166,86 @@ function formatManmanDateTime_(date) {
 
 ```js
   let lastKakaoCsvUpload = null;
+  let lastKakaoCsvUploadKey = '';
+  let lastKakaoCsvUploadPromise = null;
 ```
 
-### 3-2. runProcess()에서 원본 업로드 호출 추가
+### 3-2. CSV 파일 선택 즉시 원본 업로드 실행
 
-`runProcess()` 안에서 아래 부분을 찾습니다.
-
-```js
-      const csvText = await readFileAsText(file, encoding);
-      log(`파일 읽기 완료: ${file.name}`);
-      log(`AI 처리 묶음 수: ${chunkSize}개`);
-      log('1단계: CSV와 상품리스트를 준비합니다.');
-```
-
-아래처럼 교체합니다.
+`window.addEventListener('load', () => { ... })` 안에서 `csvFile` input에 `change` 이벤트를 추가합니다.
+이미 `dateEl`, `holidayStartEl`, `holidayEndEl`을 잡는 두 번째 `window.addEventListener('load', ...)` 블록이 있으니 그 안에 넣는 것을 추천합니다.
 
 ```js
-      const csvText = await readFileAsText(file, encoding);
-      log(`파일 읽기 완료: ${file.name}`);
+    const csvFileEl = document.getElementById('csvFile');
 
+    csvFileEl.addEventListener('change', () => {
       lastKakaoCsvUpload = null;
+      lastKakaoCsvUploadKey = '';
+      lastKakaoCsvUploadPromise = null;
+      uploadSelectedKakaoCsvOriginal();
+    });
+
+    ['dateInput', 'timeInput', 'endDateInput', 'endTimeInput', 'encodingInput'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('change', () => {
+        if (!csvFileEl.files[0]) return;
+        lastKakaoCsvUpload = null;
+        lastKakaoCsvUploadKey = '';
+        lastKakaoCsvUploadPromise = null;
+        uploadSelectedKakaoCsvOriginal();
+      });
+    });
+```
+
+그리고 `readFileAsText` 함수 근처에 아래 함수를 추가합니다.
+
+```js
+  function getKakaoCsvUploadKey(file, encoding, dateStr, startTime, endDateStr, endTime) {
+    return [
+      file?.name || '',
+      file?.size || '',
+      file?.lastModified || '',
+      encoding || '',
+      dateStr || '',
+      startTime || '',
+      endDateStr || '',
+      endTime || ''
+    ].join('|');
+  }
+
+  async function uploadSelectedKakaoCsvOriginal() {
+    const file = document.getElementById('csvFile').files[0];
+    if (!file) return null;
+
+    const dateStr = document.getElementById('dateInput').value;
+    const startTime = document.getElementById('timeInput').value || '08:00';
+    const endDateStr = document.getElementById('endDateInput')?.value || '';
+    const endTime = document.getElementById('endTimeInput')?.value || '';
+    const encoding = document.getElementById('encodingInput').value;
+
+    if (!dateStr) {
+      log('카톡 CSV 원본 업로드 대기: 공구날짜를 먼저 선택해주세요.');
+      return null;
+    }
+
+    const uploadKey = getKakaoCsvUploadKey(file, encoding, dateStr, startTime, endDateStr, endTime);
+
+    if (lastKakaoCsvUpload && lastKakaoCsvUploadKey === uploadKey) {
+      return lastKakaoCsvUpload;
+    }
+
+    if (lastKakaoCsvUploadPromise && lastKakaoCsvUploadKey === uploadKey) {
+      return lastKakaoCsvUploadPromise;
+    }
+
+    lastKakaoCsvUploadKey = uploadKey;
+    lastKakaoCsvUpload = null;
+
+    lastKakaoCsvUploadPromise = (async () => {
       try {
+        log(`카톡 CSV 원본 업로드 시작: ${file.name}`);
+        const csvText = await readFileAsText(file, encoding);
         const uploadRes = await gasRun('uploadKakaoCsvOriginal', {
           fileContent: csvText,
           fileName: file.name,
@@ -205,17 +264,46 @@ function formatManmanDateTime_(date) {
         } else {
           log(`카톡 CSV 원본 업로드 실패 또는 건너뜀: ${(uploadRes && uploadRes.error) || '알 수 없음'}`);
         }
+
+        return uploadRes;
       } catch (uploadErr) {
         log(`카톡 CSV 원본 업로드 실패, 주문수집은 계속 진행: ${uploadErr.message}`);
+        return { ok: false, error: uploadErr.message };
+      } finally {
+        lastKakaoCsvUploadPromise = null;
       }
+    })();
 
+    return lastKakaoCsvUploadPromise;
+  }
+```
+
+중요: 이 함수는 CSV 파일을 선택하는 즉시 실행됩니다. 최종 주문입력 버튼과 연결하지 마세요.
+
+### 3-3. runProcess()에서는 업로드를 다시 하지 않음
+
+`runProcess()` 안의 파일 읽기 부분은 기존처럼 유지합니다.
+
+```js
+      const csvText = await readFileAsText(file, encoding);
+      log(`파일 읽기 완료: ${file.name}`);
       log(`AI 처리 묶음 수: ${chunkSize}개`);
       log('1단계: CSV와 상품리스트를 준비합니다.');
 ```
 
-중요: 업로드 실패는 `log`만 남기고 주문수집을 계속 진행합니다.
+다만 사용자가 파일을 선택하자마자 바로 분석 시작 버튼을 눌러 업로드가 아직 진행 중일 수 있으니, `const csvText = await readFileAsText(file, encoding);` 바로 다음 줄에 아래 정도만 추가해도 됩니다.
 
-### 3-3. 결과 객체에 업로드 ID만 보관
+```js
+      if (lastKakaoCsvUploadPromise) {
+        log('카톡 CSV 원본 업로드 진행 중 · 주문수집은 계속 진행합니다.');
+      } else if (!lastKakaoCsvUpload) {
+        uploadSelectedKakaoCsvOriginal();
+      }
+```
+
+이 코드는 업로드를 기다리지 않습니다. 원본 업로드 실패나 지연이 기존 주문수집 흐름을 막으면 안 되기 때문입니다.
+
+### 3-4. 결과 객체에 업로드 ID만 보관
 
 `const result = { ... }` 안에 아래 정도만 선택적으로 추가합니다.
 
