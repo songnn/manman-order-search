@@ -1,4 +1,5 @@
 import { aggregateDashboardRows } from '../lib/dashboard/aggregateOrders.js';
+import { buildKakaoCsvAnalytics, readKakaoCsvTelemetry } from '../lib/dashboard/kakaoCsvAnalytics.js';
 import { parseDashboardDate, parseDashboardRows, toDateKey } from '../lib/dashboard/parseOrders.js';
 import { getSheetsClient } from '../lib/googleSheetsClient.js';
 
@@ -66,6 +67,11 @@ export default async function handler(req, res) {
       to: query.to,
       customerQuery: query.customerQuery
     });
+    const kakaoCsvTelemetry = await readKakaoCsvTelemetry();
+    const kakaoCsvAnalytics = buildKakaoCsvAnalytics(parsed.validRows, kakaoCsvTelemetry, {
+      reportEndDate: aggregated.meta.reportEndDate,
+      recentDays: query.kakaoRecentDays || 30
+    });
     const warnings = getWarningsForResponse(parsed.warnings, aggregated.period, query);
 
     return res.status(200).json({
@@ -83,6 +89,7 @@ export default async function handler(req, res) {
       customerMovement: aggregated.customerMovement,
       lifecycle: aggregated.lifecycle,
       kakaoRoomMetrics: aggregated.kakaoRoomMetrics,
+      kakaoCsvAnalytics,
       dataQuality: aggregated.dataQuality,
       options: aggregated.options,
       warnings,

@@ -622,7 +622,9 @@ button {
 .frequency-metrics,
 .movement-metrics,
 .lifecycle-grid,
-.kakao-summary {
+.kakao-summary,
+.leave-bucket-list,
+.kakao-hour-list {
   display: grid;
   gap: 12px;
 }
@@ -687,6 +689,8 @@ button {
   display: block;
   margin-top: 6px;
   font-size: 18px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .growth-kpi {
@@ -757,6 +761,24 @@ button {
 .movement-metrics,
 .kakao-summary {
   grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.leave-bucket-list {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin-top: 14px;
+}
+
+.kakao-summary .ranking-empty,
+.leave-bucket-list .ranking-empty,
+.kakao-hour-list .ranking-empty,
+.kakao-match-list .ranking-empty,
+.kakao-leaver-list .ranking-empty {
+  grid-column: 1 / -1;
+}
+
+.kakao-hour-list {
+  grid-template-columns: repeat(auto-fit, minmax(82px, 1fr));
+  margin-top: 14px;
 }
 
 .panel-note {
@@ -836,68 +858,57 @@ button {
   min-height: 64px;
 }
 
-.kakao-form {
-  display: grid;
-  grid-template-columns: minmax(150px, 180px) minmax(120px, 150px) minmax(110px, 130px) minmax(110px, 130px) minmax(180px, 1fr) auto auto;
-  align-items: end;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-.kakao-form button[type="submit"] {
-  min-height: 42px;
-  padding: 0 18px;
-  border-radius: 12px;
-  background: var(--brand);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 900;
-}
-
-.kakao-record-list {
-  display: grid;
-  gap: 8px;
-}
-
-.kakao-record {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 14px;
+.leave-bucket,
+.hour-bucket {
+  min-height: 86px;
+  padding: 14px;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 16px;
   background: #fff;
 }
 
-.kakao-record strong,
-.kakao-record span {
+.leave-bucket span,
+.leave-bucket strong,
+.leave-bucket small,
+.hour-bucket span,
+.hour-bucket strong {
   display: block;
 }
 
-.kakao-record strong {
-  font-size: 14px;
+.leave-bucket span,
+.hour-bucket span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
 }
 
-.kakao-record span {
-  margin-top: 4px;
+.leave-bucket strong,
+.hour-bucket strong {
+  margin-top: 8px;
+  color: var(--text);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.leave-bucket small {
+  margin-top: 6px;
   color: var(--muted);
   font-size: 12px;
   font-weight: 800;
 }
 
-.kakao-record-actions {
-  display: flex;
-  gap: 6px;
+.kakao-leaver-list {
+  margin-top: 14px;
 }
 
-.kakao-record-actions button {
-  min-height: 32px;
-  padding: 0 10px;
-  border-radius: 999px;
-  background: var(--brand-soft);
-  color: var(--brand);
-  font-size: 12px;
+.kakao-match-list {
+  margin-top: 14px;
+}
+
+.kakao-match-head {
+  margin-bottom: 8px;
+  color: var(--text);
+  font-size: 14px;
   font-weight: 900;
 }
 
@@ -1318,20 +1329,21 @@ button {
   .advanced-range-form,
   .customer-search-form,
   .ally-form,
-    .detail-summary,
-    .detail-grid,
-    .chart-grid,
-    .ranking-grid,
-    .kpi-grid,
-    .growth-period-grid,
-    .growth-kpi-grid,
-    .growth-driver-grid,
-    .frequency-metrics,
-    .movement-metrics,
-    .lifecycle-grid,
-    .kakao-summary,
-    .kakao-form,
-    .drawer-controls {
+  .detail-summary,
+  .detail-grid,
+  .chart-grid,
+  .ranking-grid,
+  .kpi-grid,
+  .growth-period-grid,
+  .growth-kpi-grid,
+  .growth-driver-grid,
+  .frequency-metrics,
+  .movement-metrics,
+  .lifecycle-grid,
+  .kakao-summary,
+  .leave-bucket-list,
+  .kakao-hour-list,
+  .drawer-controls {
     grid-template-columns: 1fr;
   }
 

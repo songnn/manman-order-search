@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { reanalyzeKakaoCsvMatches } from '../lib/kakaoCsvProcessing.js';
 import { supabaseAdmin } from '../lib/supabaseAdmin.js';
 import { readUnifiedRowsWithRowNumbers_ } from '../lib/orders.js';
 
@@ -38,10 +39,19 @@ export default async function handler(req, res) {
 
     if (deleteError) throw deleteError;
 
+    let kakaoCsvReanalysis = { ok: false, skipped: true };
+    try {
+      kakaoCsvReanalysis = await reanalyzeKakaoCsvMatches({ maxUploads: 20 });
+    } catch (error) {
+      console.warn('kakao csv reanalysis skipped:', error.message);
+      kakaoCsvReanalysis = { ok: false, error: error.message };
+    }
+
     return res.status(200).json({
       ok: true,
       count: records.length,
-      syncRunId
+      syncRunId,
+      kakaoCsvReanalysis
     });
   } catch (error) {
     console.error('sync-orders error:', error);

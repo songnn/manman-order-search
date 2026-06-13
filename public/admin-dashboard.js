@@ -59,8 +59,6 @@ const state = {
   drawerCustomers: [],
   drawerQuery: '',
   drawerSort: 'participation',
-  kakaoRecords: [],
-  kakaoLoading: false,
   loading: false,
   allyCustomers: []
 };
@@ -120,17 +118,12 @@ function cacheElements() {
   els.movementMetrics = document.querySelector('[data-movement-metrics]');
   els.movementMatrix = document.querySelector('[data-movement-matrix]');
   els.lifecycleCards = document.querySelector('[data-lifecycle-cards]');
-  els.kakaoStatus = document.querySelector('[data-kakao-status]');
-  els.kakaoSummary = document.querySelector('[data-kakao-summary]');
-  els.kakaoForm = document.querySelector('[data-kakao-form]');
-  els.kakaoRowNumber = document.querySelector('[data-kakao-row-number]');
-  els.kakaoRecordDate = document.querySelector('[data-kakao-record-date]');
-  els.kakaoTotalMembers = document.querySelector('[data-kakao-total-members]');
-  els.kakaoNewMembers = document.querySelector('[data-kakao-new-members]');
-  els.kakaoLeftMembers = document.querySelector('[data-kakao-left-members]');
-  els.kakaoMemo = document.querySelector('[data-kakao-memo]');
-  els.kakaoCancel = document.querySelector('[data-kakao-cancel]');
-  els.kakaoRecords = document.querySelector('[data-kakao-records]');
+  els.kakaoCsvStatus = document.querySelector('[data-kakao-csv-status]');
+  els.kakaoCsvSummary = document.querySelector('[data-kakao-csv-summary]');
+  els.kakaoHourBuckets = document.querySelector('[data-kakao-hour-buckets]');
+  els.kakaoLeaveBuckets = document.querySelector('[data-kakao-leave-buckets]');
+  els.kakaoMatchSamples = document.querySelector('[data-kakao-match-samples]');
+  els.kakaoRecentLeavers = document.querySelector('[data-kakao-recent-leavers]');
   els.customerDrawer = document.querySelector('[data-customer-drawer]');
   els.customerDrawerTitle = document.querySelector('[data-customer-drawer-title]');
   els.customerDrawerSearch = document.querySelector('[data-customer-drawer-search]');
@@ -166,7 +159,6 @@ function seedDefaults() {
   state.allyCustomers = loadAllyCustomers();
   els.customFrom.value = toInputDate(addDays(new Date(), -6));
   els.customTo.value = toInputDate(new Date());
-  els.kakaoRecordDate.value = toInputDate(new Date());
 }
 
 function bindEvents() {
@@ -253,13 +245,6 @@ function bindEvents() {
 
   els.customerDrawerExport.addEventListener('click', exportDrawerCustomers);
 
-  els.kakaoForm.addEventListener('submit', event => {
-    event.preventDefault();
-    saveKakaoRecord();
-  });
-
-  els.kakaoCancel.addEventListener('click', resetKakaoForm);
-
   els.allyForm.addEventListener('submit', event => {
     event.preventDefault();
     addAllyCustomer(els.allyInput.value);
@@ -302,7 +287,6 @@ async function fetchDashboardData() {
     state.data = data;
     hydrateSelectionFromOptions();
     renderDashboard();
-    fetchKakaoMembers();
   } catch (error) {
     console.error(error);
     setStatus(error.message, true);
@@ -572,7 +556,7 @@ function renderGrowthAnalysis() {
   renderFrequencyCharts();
   renderCustomerMovement();
   renderLifecycleCards();
-  renderKakaoMembers();
+  renderKakaoCsvAnalytics();
 }
 
 function renderGrowthKpis(growth) {
@@ -761,153 +745,99 @@ function renderLifecycleCards() {
   });
 }
 
-async function fetchKakaoMembers() {
-  if (!state.token || state.kakaoLoading) return;
+function renderKakaoCsvAnalytics() {
+  const analytics = state.data?.kakaoCsvAnalytics;
 
-  state.kakaoLoading = true;
-
-  try {
-    const response = await fetch('/api/admin-kakao-members', {
-      headers: {
-        'x-admin-token': state.token
-      }
-    });
-    const data = await response.json();
-
-    if (!response.ok || !data.ok) {
-      throw new Error(data.error || '카톡방 인원 기록을 불러오지 못했습니다.');
+  if (!analytics?.latestUpload) {
+    if (els.kakaoCsvStatus) els.kakaoCsvStatus.textContent = 'CSV 기록 없음';
+    if (els.kakaoCsvSummary) {
+      els.kakaoCsvSummary.innerHTML =
+        '<div class="ranking-empty compact-empty">아직 카톡 CSV 업로드 분석 기록이 없습니다.</div>';
     }
-
-    state.kakaoRecords = data.records || [];
-    renderKakaoMembers();
-  } catch (error) {
-    console.error(error);
-    els.kakaoStatus.textContent = '불러오기 실패';
-    els.kakaoSummary.innerHTML = '<div class="ranking-empty compact-empty">카톡방 인원 기록을 불러오지 못했습니다.</div>';
-  } finally {
-    state.kakaoLoading = false;
-  }
-}
-
-async function saveKakaoRecord() {
-  const rowNumber = els.kakaoRowNumber.value;
-  const payload = {
-    rowNumber: rowNumber ? Number(rowNumber) : undefined,
-    recordDate: els.kakaoRecordDate.value,
-    totalMembers: els.kakaoTotalMembers.value,
-    newMembers: els.kakaoNewMembers.value,
-    leftMembers: els.kakaoLeftMembers.value,
-    memo: els.kakaoMemo.value
-  };
-
-  await requestKakaoMembers(rowNumber ? 'PUT' : 'POST', payload);
-  resetKakaoForm();
-}
-
-async function deleteKakaoRecord(rowNumber) {
-  if (!window.confirm('이 카톡방 인원 기록을 삭제할까요?')) return;
-  await requestKakaoMembers('DELETE', { rowNumber });
-}
-
-async function requestKakaoMembers(method, payload) {
-  els.kakaoStatus.textContent = '저장 중';
-
-  try {
-    const response = await fetch('/api/admin-kakao-members', {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        'x-admin-token': state.token
-      },
-      body: JSON.stringify(payload)
-    });
-    const data = await response.json();
-
-    if (!response.ok || !data.ok) {
-      throw new Error(data.error || '카톡방 인원 기록을 저장하지 못했습니다.');
-    }
-
-    state.kakaoRecords = data.records || [];
-    renderKakaoMembers();
-  } catch (error) {
-    console.error(error);
-    window.alert(error.message);
-    renderKakaoMembers();
-  }
-}
-
-function renderKakaoMembers() {
-  const latest = state.kakaoRecords[0];
-  const metrics = state.data?.kakaoRoomMetrics || {};
-
-  if (!latest) {
-    els.kakaoStatus.textContent = '기록 없음';
-    els.kakaoSummary.innerHTML = '<div class="ranking-empty compact-empty">카톡방 인원 기록 없음</div>';
-  } else {
-    const activeRate = percentLike(metrics.recent30ActiveCustomers || 0, latest.totalMembers);
-    const activePer100 = latest.totalMembers
-      ? ((metrics.recent30ActiveCustomers || 0) / latest.totalMembers) * 100
-      : 0;
-    const revenuePer100 = latest.totalMembers
-      ? ((metrics.recent30Revenue || 0) / latest.totalMembers) * 100
-      : 0;
-
-    els.kakaoStatus.textContent = `${formatDateShort(latest.recordDate)} 기준`;
-    els.kakaoSummary.innerHTML = `
-      ${kakaoMetric('현재 카톡방 인원', `${formatNumber(latest.totalMembers)}명`)}
-      ${kakaoMetric('최근 30일 구매 고객', `${formatNumber(metrics.recent30ActiveCustomers)}명`)}
-      ${kakaoMetric('구매 활성률', formatRate(activeRate))}
-      ${kakaoMetric('회원 100명당 구매 고객', `${formatDecimal(activePer100)}명`)}
-      ${kakaoMetric('회원 100명당 공구매출', formatWon(revenuePer100))}
-    `;
-  }
-
-  if (!state.kakaoRecords.length) {
-    els.kakaoRecords.innerHTML = '';
+    if (els.kakaoHourBuckets) els.kakaoHourBuckets.innerHTML = '';
+    if (els.kakaoLeaveBuckets) els.kakaoLeaveBuckets.innerHTML = '';
+    if (els.kakaoMatchSamples) els.kakaoMatchSamples.innerHTML = '';
+    if (els.kakaoRecentLeavers) els.kakaoRecentLeavers.innerHTML = '';
     return;
   }
 
-  els.kakaoRecords.innerHTML = state.kakaoRecords.slice(0, 12).map(record => `
-    <article class="kakao-record">
-      <div>
-        <strong>${formatDateShort(record.recordDate)} · ${formatNumber(record.totalMembers)}명</strong>
-        <span>신규 ${record.newMembers == null ? '-' : formatNumber(record.newMembers)} · 퇴장 ${record.leftMembers == null ? '-' : formatNumber(record.leftMembers)} · ${escapeHtml(record.memo || '메모 없음')}</span>
-      </div>
-      <div class="kakao-record-actions">
-        <button type="button" data-kakao-edit="${record.rowNumber}">수정</button>
-        <button type="button" data-kakao-delete="${record.rowNumber}">삭제</button>
-      </div>
-    </article>
-  `).join('');
+  const latest = analytics.latestUpload;
+  const events = analytics.memberEvents || {};
+  const matching = analytics.matching || {};
+  const latestDate = latest.orderDate || isoDateOnly(latest.uploadedAt);
 
-  els.kakaoRecords.querySelectorAll('[data-kakao-edit]').forEach(button => {
-    button.addEventListener('click', () => {
-      const record = state.kakaoRecords.find(item => String(item.rowNumber) === button.dataset.kakaoEdit);
-      if (record) editKakaoRecord(record);
-    });
-  });
+  if (els.kakaoCsvStatus) {
+    els.kakaoCsvStatus.textContent = `${formatDateShort(latestDate)} CSV 기준`;
+  }
 
-  els.kakaoRecords.querySelectorAll('[data-kakao-delete]').forEach(button => {
-    button.addEventListener('click', () => deleteKakaoRecord(Number(button.dataset.kakaoDelete)));
-  });
-}
+  if (els.kakaoCsvSummary) {
+    els.kakaoCsvSummary.innerHTML = `
+      ${kakaoMetric('최근 CSV', latest.fileName || latest.uploadId || '-')}
+      ${kakaoMetric('CSV 주문 메시지', `${formatNumber(matching.csvOrderMessageCount || 0)}개`)}
+      ${kakaoMetric('입장/퇴장', `${formatNumber(events.totalJoinCount || 0)}명 / ${formatNumber(events.totalLeaveCount || 0)}명`)}
+      ${kakaoMetric('추정 현재 인원', `${formatNumber(events.estimatedCurrentMembers || 0)}명`)}
+      ${kakaoMetric('입장 후 주문 전환율', formatRate(events.joinToOrderConversionRate || 0))}
+      ${kakaoMetric('무구매 퇴장 비율', formatRate(events.recentZeroPurchaseLeaveRate || 0))}
+      ${kakaoMetric('Raw 매칭', `${formatNumber(matching.matchedRawOrderCount || 0)} / ${formatNumber(matching.rawOrderCount || 0)}줄`)}
+      ${kakaoMetric('미매칭 CSV/Raw', `${formatNumber(matching.unmatchedCsvOrderCount || 0)} / ${formatNumber(matching.unmatchedRawOrderCount || 0)}`)}
+      ${kakaoMetric('평균 주문시각', compactDateTime(matching.avgOrderedAt))}
+      ${kakaoMetric('첫 주문까지', matching.firstOrderAfterMinutes == null ? '-' : `${formatNumber(matching.firstOrderAfterMinutes)}분`)}
+    `;
+  }
 
-function editKakaoRecord(record) {
-  els.kakaoRowNumber.value = record.rowNumber;
-  els.kakaoRecordDate.value = record.recordDate;
-  els.kakaoTotalMembers.value = record.totalMembers;
-  els.kakaoNewMembers.value = record.newMembers ?? '';
-  els.kakaoLeftMembers.value = record.leftMembers ?? '';
-  els.kakaoMemo.value = record.memo || '';
-}
+  if (els.kakaoHourBuckets) {
+    const hours = analytics.orderTimeline?.hourlyOrderCounts || [];
+    els.kakaoHourBuckets.innerHTML = hours.length
+      ? hours.map(item => `
+          <article class="hour-bucket">
+            <span>${escapeHtml(item.hour)}</span>
+            <strong>${formatNumber(item.count)}건</strong>
+          </article>
+        `).join('')
+      : '<div class="ranking-empty compact-empty">시간대별 실제 주문 데이터가 없습니다.</div>';
+  }
 
-function resetKakaoForm() {
-  els.kakaoRowNumber.value = '';
-  els.kakaoRecordDate.value = toInputDate(new Date());
-  els.kakaoTotalMembers.value = '';
-  els.kakaoNewMembers.value = '';
-  els.kakaoLeftMembers.value = '';
-  els.kakaoMemo.value = '';
+  if (els.kakaoLeaveBuckets) {
+    const buckets = analytics.leavePurchaseBuckets || [];
+    els.kakaoLeaveBuckets.innerHTML = buckets.length
+      ? buckets.map(bucket => `
+          <article class="leave-bucket">
+            <span>${escapeHtml(bucket.label)}</span>
+            <strong>${formatNumber(bucket.count || 0)}명</strong>
+            <small>${formatRate(bucket.rate || 0)}</small>
+          </article>
+        `).join('')
+      : '<div class="ranking-empty compact-empty">최근 퇴장자 구매수 분포가 없습니다.</div>';
+  }
+
+  if (els.kakaoMatchSamples) {
+    const samples = analytics.matchSamples || [];
+    els.kakaoMatchSamples.innerHTML = samples.length
+      ? `
+        <div class="kakao-match-head">최근 매칭 결과</div>
+        <div class="mini-list">
+          ${samples.slice(0, 20).map(item => miniRow(
+            `${item.customerName || '-'} · ${item.productName || '-'} × ${formatNumber(item.quantity || 0)}`,
+            `${compactDateTime(item.actualOrderedAt)} · ${formatRate((item.matchConfidence || 0) * 100)} · ${item.matchMethod || '-'} · row ${item.currentSourceRowNumber || '-'}`
+          )).join('')}
+        </div>
+      `
+      : '<div class="ranking-empty compact-empty">매칭된 주문행이 없습니다.</div>';
+  }
+
+  if (els.kakaoRecentLeavers) {
+    const leavers = analytics.recentLeavers || [];
+    els.kakaoRecentLeavers.innerHTML = leavers.length
+      ? `
+        <div class="mini-list">
+          ${leavers.slice(0, 20).map(item => miniRow(
+            `${item.userName || '-'} · ${formatDateShort(isoDateOnly(item.leftAt) || item.leftAtRaw || '')}`,
+            `누적 ${formatNumber(item.cumulativeQuantity || 0)}개 · ${formatWon(item.cumulativeRevenue || 0)}`
+          )).join('')}
+        </div>
+      `
+      : '<div class="ranking-empty compact-empty">최근 퇴장자 데이터가 없습니다.</div>';
+  }
 }
 
 function kakaoMetric(label, value) {
@@ -1693,6 +1623,18 @@ function formatDateShort(dateKey) {
   const [year, month, day] = String(dateKey).split('-');
   if (!year || !month || !day) return String(dateKey);
   return `${Number(month)}/${Number(day)}`;
+}
+
+function compactDateTime(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '-';
+  const date = raw.slice(0, 10);
+  const time = raw.slice(11, 16);
+  return time ? `${formatDateShort(date)} ${time}` : formatDateShort(date);
+}
+
+function isoDateOnly(value) {
+  return String(value || '').slice(0, 10);
 }
 
 function formatNumber(value) {

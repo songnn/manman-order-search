@@ -264,38 +264,17 @@
           <article class="panel kakao-panel" id="kakao-members">
             <div class="panel-head">
               <div>
-                <p class="eyebrow">Kakao Room</p>
-                <h2>카톡방 현황</h2>
+                <p class="eyebrow">Kakao CSV</p>
+                <h2>카톡 CSV 이탈·주문시간 분석</h2>
               </div>
-              <span class="warning-count" data-kakao-status>기록 없음</span>
+              <span class="warning-count" data-kakao-csv-status>CSV 기록 없음</span>
             </div>
-            <div class="kakao-summary" data-kakao-summary></div>
-            <form class="kakao-form" data-kakao-form>
-              <input type="hidden" data-kakao-row-number />
-              <label class="field compact">
-                <span>기록일</span>
-                <input type="date" data-kakao-record-date required />
-              </label>
-              <label class="field compact">
-                <span>전체 인원</span>
-                <input type="number" min="0" inputmode="numeric" data-kakao-total-members required />
-              </label>
-              <label class="field compact">
-                <span>신규 입장</span>
-                <input type="number" min="0" inputmode="numeric" data-kakao-new-members />
-              </label>
-              <label class="field compact">
-                <span>퇴장</span>
-                <input type="number" min="0" inputmode="numeric" data-kakao-left-members />
-              </label>
-              <label class="field compact">
-                <span>메모</span>
-                <input type="text" data-kakao-memo />
-              </label>
-              <button type="submit">저장</button>
-              <button class="ghost-button" type="button" data-kakao-cancel>취소</button>
-            </form>
-            <div class="kakao-record-list" data-kakao-records></div>
+            <div class="kakao-summary" data-kakao-csv-summary></div>
+            <div class="kakao-hour-list" data-kakao-hour-buckets></div>
+            <div class="leave-bucket-list" data-kakao-leave-buckets></div>
+            <div class="kakao-match-list" data-kakao-match-samples></div>
+            <div class="kakao-leaver-list" data-kakao-recent-leavers></div>
+            <p class="panel-note">구글스크립트는 원본 CSV/TXT만 업로드하고, 파싱·입퇴장 분석·실제 주문시간 매칭은 Vercel 서버가 처리합니다.</p>
           </article>
         </section>
 
