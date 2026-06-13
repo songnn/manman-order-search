@@ -359,7 +359,7 @@ async function handleKakaoCsvUpload() {
         storeName: '전농래미안크레시티점',
         orderDate,
         startAt: `${orderDate} ${startTime}`,
-        endAt: '',
+        endAt: `${nextInputDate(orderDate)} 00:00`,
         uploadedAt: formatLocalDateTime(new Date()),
         source: 'admin_dashboard_manual_upload'
       })
@@ -1713,6 +1713,12 @@ function formatLocalDateTime(date) {
 function inferDateFromKakaoFileName(fileName) {
   const match = String(fileName || '').match(/(20\d{2})-(\d{2})-(\d{2})/);
   return match ? `${match[1]}-${match[2]}-${match[3]}` : '';
+}
+
+function nextInputDate(dateKey) {
+  const [year, month, day] = String(dateKey || '').split('-').map(Number);
+  if (!year || !month || !day) return dateKey;
+  return toInputDate(addDays(new Date(year, month - 1, day), 1));
 }
 
 function readFileAsText(file) {
