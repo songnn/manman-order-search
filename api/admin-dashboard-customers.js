@@ -1,5 +1,6 @@
 import { aggregateDashboardRows } from '../lib/dashboard/aggregateOrders.js';
-import { parseDashboardDate, parseDashboardRows, toDateKey } from '../lib/dashboard/parseOrders.js';
+import { buildGrowthCustomerList, getGrowthRows } from '../lib/dashboard/growthAnalysis.js';
+import { parseDashboardDate, parseDashboardRows } from '../lib/dashboard/parseOrders.js';
 import { getSheetsClient } from '../lib/googleSheetsClient.js';
 
 const CONFIG = {
@@ -49,12 +50,11 @@ export default async function handler(req, res) {
     const query = getQuery(req);
     const basis = BASIS_VALUES.has(query.basis) ? query.basis : 'groupDate';
     const mode = MODE_VALUES.has(query.mode) ? query.mode : 'recent';
-    const excludedCustomerNames = getExcludedCustomerNames(query);
     const rows = await readDashboardSheetRows();
     const parsed = parseDashboardRows(rows, {
       basis,
       startRowNumber: CONFIG.READ_START_ROW,
-      excludedCustomerNames
+      excludedCustomerNames: getExcludedCustomerNames(query)
     });
     const aggregated = aggregateDashboardRows(parsed.validRows, {
       mode,
@@ -63,67 +63,62 @@ export default async function handler(req, res) {
       month: query.month,
       weekIndex: query.weekIndex,
       from: query.from,
-      to: query.to,
-      customerQuery: query.customerQuery
+      to: query.to
     });
-    const warnings = getWarningsForResponse(parsed.warnings, aggregated.period, query);
+    const today = parseDashboardDate(aggregated.meta.today);
+    const growthRows = getGrowthRows(parsed.validRows, today);
+    const customerList = buildGrowthCustomerList(growthRows, {
+      mode,
+      period: {
+        label: aggregated.period.label,
+        from: parseDashboardDate(aggregated.period.from),
+        to: parseDashboardDate(aggregated.period.to)
+      },
+      segment: {
+        type: query.segmentType,
+        key: query.segmentKey,
+        previousBucket: query.previousBucket,
+        currentBucket: query.currentBucket,
+        frequencyType: query.frequencyType,
+        bucketKey: query.bucketKey,
+        periodStart: query.periodStart,
+        periodEnd: query.periodEnd
+      },
+      limit: query.limit
+    });
 
     return res.status(200).json({
       ok: true,
-      mode: aggregated.mode,
-      basis,
-      sheetName: CONFIG.RAW_SHEET_NAME,
-      period: aggregated.period,
-      summary: aggregated.summary,
-      series: aggregated.series,
-      rankings: aggregated.rankings,
-      totals: aggregated.totals,
-      growthAnalysis: aggregated.growthAnalysis,
-      participationFrequency: aggregated.participationFrequency,
-      customerMovement: aggregated.customerMovement,
-      lifecycle: aggregated.lifecycle,
-      kakaoRoomMetrics: aggregated.kakaoRoomMetrics,
-      dataQuality: aggregated.dataQuality,
-      options: aggregated.options,
-      warnings,
+      ...customerList,
       meta: {
-        ...aggregated.meta,
-        validRowCount: aggregated.meta.analyzedRowCount,
         totalValidRowCount: parsed.validRows.length,
-        warningCount: warnings.length,
-        totalWarningCount: parsed.warnings.length,
-        readStartRow: CONFIG.READ_START_ROW,
-        excludedAllyRowCount: parsed.excludedAllyRowCount,
-        excludedCustomerNames
+        growthAnalyzedRowCount: growthRows.length,
+        returnedCustomerCount: customerList.customers.length
       }
     });
   } catch (error) {
-    console.error('admin-dashboard-data error:', error);
+    console.error('admin-dashboard-customers error:', error);
 
     return res.status(500).json({
       ok: false,
-      error: '관리자 대시보드 데이터를 불러오지 못했습니다.',
+      error: '고객 목록을 불러오지 못했습니다.',
       detail: error.message
     });
   }
 }
 
-function getWarningsForResponse(warnings, period, query) {
-  if (query.warningsScope === 'all') return warnings;
-  if (!period?.from || !period?.to) return warnings;
+async function readDashboardSheetRows() {
+  const sheets = await getSheetsClient();
+  const start = Math.max(1, Number(CONFIG.READ_START_ROW || 1));
 
-  const from = parseDashboardDate(period.from);
-  const to = parseDashboardDate(period.to);
-
-  if (!from || !to) return warnings;
-
-  return warnings.filter(warning => {
-    if (!warning.basisDate) return false;
-    const date = parseDashboardDate(warning.basisDate);
-    if (!date) return false;
-
-    return toDateKey(date) >= toDateKey(from) && toDateKey(date) <= toDateKey(to);
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: CONFIG.SPREADSHEET_ID,
+    range: `${CONFIG.RAW_SHEET_NAME}!A${start}:J`,
+    valueRenderOption: 'UNFORMATTED_VALUE',
+    dateTimeRenderOption: 'SERIAL_NUMBER'
   });
+
+  return response.data.values || [];
 }
 
 function getExcludedCustomerNames(query) {
@@ -155,20 +150,6 @@ function sanitizeCustomerNames(names) {
         .filter(Boolean)
     )
   );
-}
-
-async function readDashboardSheetRows() {
-  const sheets = await getSheetsClient();
-  const start = Math.max(1, Number(CONFIG.READ_START_ROW || 1));
-
-  const response = await sheets.spreadsheets.values.get({
-    spreadsheetId: CONFIG.SPREADSHEET_ID,
-    range: `${CONFIG.RAW_SHEET_NAME}!A${start}:J`,
-    valueRenderOption: 'UNFORMATTED_VALUE',
-    dateTimeRenderOption: 'SERIAL_NUMBER'
-  });
-
-  return response.data.values || [];
 }
 
 function getQuery(req) {

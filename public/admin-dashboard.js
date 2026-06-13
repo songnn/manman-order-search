@@ -54,6 +54,13 @@ const state = {
   orderMetric: 'quantity',
   orderChart: null,
   revenueChart: null,
+  weeklyFrequencyChart: null,
+  monthlyFrequencyChart: null,
+  drawerCustomers: [],
+  drawerQuery: '',
+  drawerSort: 'participation',
+  kakaoRecords: [],
+  kakaoLoading: false,
   loading: false,
   allyCustomers: []
 };
@@ -100,6 +107,38 @@ function cacheElements() {
   els.customFrom = document.querySelector('[data-custom-from]');
   els.customTo = document.querySelector('[data-custom-to]');
   els.currentPeriod = document.querySelector('[data-current-period]');
+  els.growthCurrentPeriod = document.querySelector('[data-growth-current-period]');
+  els.growthPreviousPeriod = document.querySelector('[data-growth-previous-period]');
+  els.growthProgress = document.querySelector('[data-growth-progress]');
+  els.growthKpis = document.querySelector('[data-growth-kpis]');
+  els.growthDrivers = document.querySelector('[data-growth-drivers]');
+  els.growthDiagnosis = document.querySelector('[data-growth-diagnosis]');
+  els.weeklyFrequencyCanvas = document.querySelector('[data-weekly-frequency-chart]');
+  els.monthlyFrequencyCanvas = document.querySelector('[data-monthly-frequency-chart]');
+  els.weeklyFrequencyMetrics = document.querySelector('[data-weekly-frequency-metrics]');
+  els.monthlyFrequencyMetrics = document.querySelector('[data-monthly-frequency-metrics]');
+  els.movementMetrics = document.querySelector('[data-movement-metrics]');
+  els.movementMatrix = document.querySelector('[data-movement-matrix]');
+  els.lifecycleCards = document.querySelector('[data-lifecycle-cards]');
+  els.kakaoStatus = document.querySelector('[data-kakao-status]');
+  els.kakaoSummary = document.querySelector('[data-kakao-summary]');
+  els.kakaoForm = document.querySelector('[data-kakao-form]');
+  els.kakaoRowNumber = document.querySelector('[data-kakao-row-number]');
+  els.kakaoRecordDate = document.querySelector('[data-kakao-record-date]');
+  els.kakaoTotalMembers = document.querySelector('[data-kakao-total-members]');
+  els.kakaoNewMembers = document.querySelector('[data-kakao-new-members]');
+  els.kakaoLeftMembers = document.querySelector('[data-kakao-left-members]');
+  els.kakaoMemo = document.querySelector('[data-kakao-memo]');
+  els.kakaoCancel = document.querySelector('[data-kakao-cancel]');
+  els.kakaoRecords = document.querySelector('[data-kakao-records]');
+  els.customerDrawer = document.querySelector('[data-customer-drawer]');
+  els.customerDrawerTitle = document.querySelector('[data-customer-drawer-title]');
+  els.customerDrawerSearch = document.querySelector('[data-customer-drawer-search]');
+  els.customerDrawerSort = document.querySelector('[data-customer-drawer-sort]');
+  els.customerDrawerExport = document.querySelector('[data-customer-drawer-export]');
+  els.customerDrawerCount = document.querySelector('[data-customer-drawer-count]');
+  els.customerDrawerList = document.querySelector('[data-customer-drawer-list]');
+  els.customerDrawerCloseButtons = Array.from(document.querySelectorAll('[data-customer-drawer-close]'));
   els.orderMetric = document.querySelector('[data-order-metric]');
   els.orderCanvas = document.querySelector('[data-order-chart]');
   els.revenueCanvas = document.querySelector('[data-revenue-chart]');
@@ -127,6 +166,7 @@ function seedDefaults() {
   state.allyCustomers = loadAllyCustomers();
   els.customFrom.value = toInputDate(addDays(new Date(), -6));
   els.customTo.value = toInputDate(new Date());
+  els.kakaoRecordDate.value = toInputDate(new Date());
 }
 
 function bindEvents() {
@@ -197,6 +237,29 @@ function bindEvents() {
     renderCharts();
   });
 
+  els.customerDrawerCloseButtons.forEach(button => {
+    button.addEventListener('click', closeCustomerDrawer);
+  });
+
+  els.customerDrawerSearch.addEventListener('input', () => {
+    state.drawerQuery = els.customerDrawerSearch.value.trim();
+    renderCustomerDrawerList();
+  });
+
+  els.customerDrawerSort.addEventListener('change', () => {
+    state.drawerSort = els.customerDrawerSort.value;
+    renderCustomerDrawerList();
+  });
+
+  els.customerDrawerExport.addEventListener('click', exportDrawerCustomers);
+
+  els.kakaoForm.addEventListener('submit', event => {
+    event.preventDefault();
+    saveKakaoRecord();
+  });
+
+  els.kakaoCancel.addEventListener('click', resetKakaoForm);
+
   els.allyForm.addEventListener('submit', event => {
     event.preventDefault();
     addAllyCustomer(els.allyInput.value);
@@ -239,6 +302,7 @@ async function fetchDashboardData() {
     state.data = data;
     hydrateSelectionFromOptions();
     renderDashboard();
+    fetchKakaoMembers();
   } catch (error) {
     console.error(error);
     setStatus(error.message, true);
@@ -301,6 +365,7 @@ function renderDashboard() {
 
   renderStaticControls();
   renderKpis();
+  renderGrowthAnalysis();
   renderCharts();
   renderRankings();
   renderTotalDetail();
@@ -491,6 +556,367 @@ function renderCharts() {
     backgroundColor: 'rgba(15, 159, 110, 0.12)',
     yFormatter: value => compactWon(value)
   });
+}
+
+function renderGrowthAnalysis() {
+  const growth = state.data?.growthAnalysis;
+  if (!growth) return;
+
+  els.growthCurrentPeriod.textContent = formatPeriod(growth.currentPeriod);
+  els.growthPreviousPeriod.textContent = formatPeriod(growth.previousPeriod);
+  els.growthProgress.textContent = growth.isInProgress ? '진행 중 기간' : '완료 기간';
+  els.growthDiagnosis.textContent = growth.diagnosis || '비교 가능한 이전 데이터가 부족합니다.';
+
+  renderGrowthKpis(growth);
+  renderGrowthDrivers(growth);
+  renderFrequencyCharts();
+  renderCustomerMovement();
+  renderLifecycleCards();
+  renderKakaoMembers();
+}
+
+function renderGrowthKpis(growth) {
+  const current = growth.current || {};
+  const previous = growth.previous || {};
+  const kpis = [
+    ['공구매출', formatWon(current.revenue), formatWon(previous.revenue), growth.changes?.revenueRate, 'C × F × V'],
+    ['구매 고객 수', `${formatNumber(current.activeCustomers)}명`, `${formatNumber(previous.activeCustomers)}명`, growth.changes?.customerRate, '선택 기간 1회 이상 구매'],
+    ['활성 고객당 참여일수', `${formatDecimal(current.avgParticipationDays)}일`, `${formatDecimal(previous.avgParticipationDays)}일`, growth.changes?.frequencyRate, '고객별 서로 다른 공구일자'],
+    ['활성 고객당 공구매출', formatWon(current.revenuePerActiveCustomer), formatWon(previous.revenuePerActiveCustomer), null, '공구매출 / 구매 고객 수'],
+    ['참여 1일당 주문금액', formatWon(current.revenuePerParticipationDay), formatWon(previous.revenuePerParticipationDay), growth.changes?.valueRate, '공구매출 / 총 참여일수'],
+    ['2회 이상 참여 고객', `${formatNumber(current.twoPlusCustomerCount)}명`, formatRate(current.twoPlusRate), null, '기간 내 2일 이상 참여 비율'],
+    ['신규 구매 고객', `${formatNumber(current.newCustomerCount)}명`, '-', null, '전체 이력 최초 공구일자'],
+    ['복귀 구매 고객', `${formatNumber(current.returningCustomerCount)}명`, '-', null, '직전 기간 미구매 후 재구매']
+  ];
+
+  els.growthKpis.innerHTML = kpis.map(([label, value, previousValue, change, note]) => `
+    <article class="growth-kpi">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+      <small>이전 ${escapeHtml(previousValue)}${change == null ? '' : ` · ${formatSignedRate(change)}`}</small>
+      <em>${escapeHtml(note)}</em>
+    </article>
+  `).join('');
+}
+
+function renderGrowthDrivers(growth) {
+  const driver = growth.changes?.dominantDriver;
+  const drivers = [
+    ['customerRate', '구매 고객 수', 'customer'],
+    ['frequencyRate', '고객당 참여일수', 'frequency'],
+    ['valueRate', '참여 1일당 주문금액', 'value']
+  ];
+
+  els.growthDrivers.innerHTML = drivers.map(([key, label, driverKey]) => {
+    const value = growth.changes?.[key];
+    const isDominant = driver?.key === driverKey;
+
+    return `
+      <article class="driver-card ${isDominant ? 'is-dominant' : ''}">
+        <span>${escapeHtml(label)}</span>
+        <strong>${value == null ? '비교 불가' : formatSignedRate(value)}</strong>
+        <small>${isDominant ? '주요 변화 요인' : '직전 동일 기간 대비'}</small>
+      </article>
+    `;
+  }).join('');
+}
+
+function renderFrequencyCharts() {
+  if (typeof Chart === 'undefined') return;
+
+  const weekly = state.data?.participationFrequency?.weekly || [];
+  const monthly = state.data?.participationFrequency?.monthly || [];
+
+  state.weeklyFrequencyChart = upsertStackedBarChart(
+    state.weeklyFrequencyChart,
+    els.weeklyFrequencyCanvas,
+    weekly,
+    [
+      ['one', '1일', '#0051A0'],
+      ['two', '2일', '#0F9F6E'],
+      ['three', '3일', '#F59E0B'],
+      ['four', '4일', '#EF4444'],
+      ['five', '5일', '#7C3AED'],
+      ['six', '6일', '#0891B2'],
+      ['seven', '7일', '#111827']
+    ],
+    'weekly'
+  );
+
+  state.monthlyFrequencyChart = upsertStackedBarChart(
+    state.monthlyFrequencyChart,
+    els.monthlyFrequencyCanvas,
+    monthly,
+    [
+      ['one', '1회', '#0051A0'],
+      ['two', '2회', '#0F9F6E'],
+      ['three', '3회', '#F59E0B'],
+      ['four', '4회', '#EF4444'],
+      ['fiveToSeven', '5~7회', '#7C3AED'],
+      ['eightToEleven', '8~11회', '#0891B2'],
+      ['twelvePlus', '12회 이상', '#111827']
+    ],
+    'monthly'
+  );
+
+  renderFrequencyMetrics(els.weeklyFrequencyMetrics, weekly[weekly.length - 1], [
+    ['1일 고객', item => `${formatNumber(item.buckets?.one)}명 · ${formatRate(item.oneRate)}`],
+    ['2일 이상', item => formatRate(item.twoPlusRate)],
+    ['3일 이상', item => formatRate(item.threePlusRate)],
+    ['평균', item => `${formatDecimal(item.avgDays)}일`],
+    ['중앙값', item => `${formatDecimal(item.medianDays)}일`]
+  ]);
+
+  renderFrequencyMetrics(els.monthlyFrequencyMetrics, monthly[monthly.length - 1], [
+    ['1회 고객', item => `${formatNumber(item.buckets?.one)}명 · ${formatRate(item.oneRate)}`],
+    ['2~3회', item => formatRate(percentLike((item.buckets?.two || 0) + (item.buckets?.three || 0), item.activeCustomers))],
+    ['4회 이상', item => formatRate(item.fourPlusRate)],
+    ['8회 이상', item => formatRate(item.eightPlusRate)],
+    ['평균', item => `${formatDecimal(item.avgDays)}회`],
+    ['중앙값', item => `${formatDecimal(item.medianDays)}회`]
+  ]);
+}
+
+function renderFrequencyMetrics(container, item, metrics) {
+  if (!item) {
+    container.innerHTML = '<div class="ranking-empty compact-empty">빈도 데이터가 없습니다.</div>';
+    return;
+  }
+
+  container.innerHTML = metrics.map(([label, getValue]) => `
+    <div class="frequency-metric">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(getValue(item))}</strong>
+    </div>
+  `).join('');
+}
+
+function renderCustomerMovement() {
+  const movement = state.data?.customerMovement;
+  if (!movement) return;
+
+  const metrics = movement.metrics || {};
+  const metricItems = [
+    ['1회 → 2회+', metrics.oneToTwoPlusRate],
+    ['2회+ 유지', metrics.twoPlusRetentionRate],
+    ['2회+ → 1회', metrics.twoPlusToOneRate],
+    ['활성 → 0회', metrics.churnRate],
+    ['0회 → 활성', metrics.activationRate]
+  ];
+
+  els.movementMetrics.innerHTML = metricItems.map(([label, value]) => `
+    <div class="movement-metric">
+      <span>${escapeHtml(label)}</span>
+      <strong>${formatRate(value)}</strong>
+    </div>
+  `).join('');
+
+  const currentLabels = ['0회', '1회', '2회', '3회 이상'];
+  els.movementMatrix.innerHTML = `
+    <div class="movement-cell movement-axis"></div>
+    ${currentLabels.map(label => `<div class="movement-cell movement-axis">현재 ${label}</div>`).join('')}
+    ${(movement.matrix || []).map(row => `
+      <div class="movement-cell movement-axis">이전 ${escapeHtml(row.previousLabel)}</div>
+      ${(row.cells || []).map(cell => `
+        <button class="movement-cell movement-button" type="button" data-customer-segment="movement" data-previous-bucket="${escapeAttribute(row.previousBucket)}" data-current-bucket="${escapeAttribute(cell.currentBucket)}">
+          <strong>${formatNumber(cell.count)}명</strong>
+          <span>${formatRate(cell.rate)}</span>
+        </button>
+      `).join('')}
+    `).join('')}
+  `;
+
+  els.movementMatrix.querySelectorAll('[data-customer-segment="movement"]').forEach(button => {
+    button.addEventListener('click', () => openCustomerDrawerFromSegment({
+      segmentType: 'movement',
+      previousBucket: button.dataset.previousBucket,
+      currentBucket: button.dataset.currentBucket
+    }));
+  });
+}
+
+function renderLifecycleCards() {
+  const lifecycle = state.data?.lifecycle || {};
+  const cards = [
+    ['신규 고객', 'new', lifecycle.newCustomers?.count || 0],
+    ['유지 고객', 'retained', lifecycle.retainedCustomers?.count || 0],
+    ['복귀 고객', 'returning', lifecycle.returningCustomers?.count || 0],
+    ['관심 필요 고객', 'atRisk', lifecycle.atRiskCustomers?.count || 0],
+    ['휴면 고객', 'dormant', lifecycle.dormantCustomers?.count || 0],
+    ['장기 휴면 고객', 'longDormant', lifecycle.longDormantCustomers?.count || 0]
+  ];
+
+  els.lifecycleCards.innerHTML = cards.map(([label, key, count]) => `
+    <button class="lifecycle-card" type="button" data-customer-segment="lifecycle" data-segment-key="${escapeAttribute(key)}">
+      <span>${escapeHtml(label)}</span>
+      <strong>${formatNumber(count)}명</strong>
+    </button>
+  `).join('');
+
+  els.lifecycleCards.querySelectorAll('[data-customer-segment="lifecycle"]').forEach(button => {
+    button.addEventListener('click', () => openCustomerDrawerFromSegment({
+      segmentType: 'lifecycle',
+      segmentKey: button.dataset.segmentKey
+    }));
+  });
+}
+
+async function fetchKakaoMembers() {
+  if (!state.token || state.kakaoLoading) return;
+
+  state.kakaoLoading = true;
+
+  try {
+    const response = await fetch('/api/admin-kakao-members', {
+      headers: {
+        'x-admin-token': state.token
+      }
+    });
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      throw new Error(data.error || '카톡방 인원 기록을 불러오지 못했습니다.');
+    }
+
+    state.kakaoRecords = data.records || [];
+    renderKakaoMembers();
+  } catch (error) {
+    console.error(error);
+    els.kakaoStatus.textContent = '불러오기 실패';
+    els.kakaoSummary.innerHTML = '<div class="ranking-empty compact-empty">카톡방 인원 기록을 불러오지 못했습니다.</div>';
+  } finally {
+    state.kakaoLoading = false;
+  }
+}
+
+async function saveKakaoRecord() {
+  const rowNumber = els.kakaoRowNumber.value;
+  const payload = {
+    rowNumber: rowNumber ? Number(rowNumber) : undefined,
+    recordDate: els.kakaoRecordDate.value,
+    totalMembers: els.kakaoTotalMembers.value,
+    newMembers: els.kakaoNewMembers.value,
+    leftMembers: els.kakaoLeftMembers.value,
+    memo: els.kakaoMemo.value
+  };
+
+  await requestKakaoMembers(rowNumber ? 'PUT' : 'POST', payload);
+  resetKakaoForm();
+}
+
+async function deleteKakaoRecord(rowNumber) {
+  if (!window.confirm('이 카톡방 인원 기록을 삭제할까요?')) return;
+  await requestKakaoMembers('DELETE', { rowNumber });
+}
+
+async function requestKakaoMembers(method, payload) {
+  els.kakaoStatus.textContent = '저장 중';
+
+  try {
+    const response = await fetch('/api/admin-kakao-members', {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-token': state.token
+      },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      throw new Error(data.error || '카톡방 인원 기록을 저장하지 못했습니다.');
+    }
+
+    state.kakaoRecords = data.records || [];
+    renderKakaoMembers();
+  } catch (error) {
+    console.error(error);
+    window.alert(error.message);
+    renderKakaoMembers();
+  }
+}
+
+function renderKakaoMembers() {
+  const latest = state.kakaoRecords[0];
+  const metrics = state.data?.kakaoRoomMetrics || {};
+
+  if (!latest) {
+    els.kakaoStatus.textContent = '기록 없음';
+    els.kakaoSummary.innerHTML = '<div class="ranking-empty compact-empty">카톡방 인원 기록 없음</div>';
+  } else {
+    const activeRate = percentLike(metrics.recent30ActiveCustomers || 0, latest.totalMembers);
+    const activePer100 = latest.totalMembers
+      ? ((metrics.recent30ActiveCustomers || 0) / latest.totalMembers) * 100
+      : 0;
+    const revenuePer100 = latest.totalMembers
+      ? ((metrics.recent30Revenue || 0) / latest.totalMembers) * 100
+      : 0;
+
+    els.kakaoStatus.textContent = `${formatDateShort(latest.recordDate)} 기준`;
+    els.kakaoSummary.innerHTML = `
+      ${kakaoMetric('현재 카톡방 인원', `${formatNumber(latest.totalMembers)}명`)}
+      ${kakaoMetric('최근 30일 구매 고객', `${formatNumber(metrics.recent30ActiveCustomers)}명`)}
+      ${kakaoMetric('구매 활성률', formatRate(activeRate))}
+      ${kakaoMetric('회원 100명당 구매 고객', `${formatDecimal(activePer100)}명`)}
+      ${kakaoMetric('회원 100명당 공구매출', formatWon(revenuePer100))}
+    `;
+  }
+
+  if (!state.kakaoRecords.length) {
+    els.kakaoRecords.innerHTML = '';
+    return;
+  }
+
+  els.kakaoRecords.innerHTML = state.kakaoRecords.slice(0, 12).map(record => `
+    <article class="kakao-record">
+      <div>
+        <strong>${formatDateShort(record.recordDate)} · ${formatNumber(record.totalMembers)}명</strong>
+        <span>신규 ${record.newMembers == null ? '-' : formatNumber(record.newMembers)} · 퇴장 ${record.leftMembers == null ? '-' : formatNumber(record.leftMembers)} · ${escapeHtml(record.memo || '메모 없음')}</span>
+      </div>
+      <div class="kakao-record-actions">
+        <button type="button" data-kakao-edit="${record.rowNumber}">수정</button>
+        <button type="button" data-kakao-delete="${record.rowNumber}">삭제</button>
+      </div>
+    </article>
+  `).join('');
+
+  els.kakaoRecords.querySelectorAll('[data-kakao-edit]').forEach(button => {
+    button.addEventListener('click', () => {
+      const record = state.kakaoRecords.find(item => String(item.rowNumber) === button.dataset.kakaoEdit);
+      if (record) editKakaoRecord(record);
+    });
+  });
+
+  els.kakaoRecords.querySelectorAll('[data-kakao-delete]').forEach(button => {
+    button.addEventListener('click', () => deleteKakaoRecord(Number(button.dataset.kakaoDelete)));
+  });
+}
+
+function editKakaoRecord(record) {
+  els.kakaoRowNumber.value = record.rowNumber;
+  els.kakaoRecordDate.value = record.recordDate;
+  els.kakaoTotalMembers.value = record.totalMembers;
+  els.kakaoNewMembers.value = record.newMembers ?? '';
+  els.kakaoLeftMembers.value = record.leftMembers ?? '';
+  els.kakaoMemo.value = record.memo || '';
+}
+
+function resetKakaoForm() {
+  els.kakaoRowNumber.value = '';
+  els.kakaoRecordDate.value = toInputDate(new Date());
+  els.kakaoTotalMembers.value = '';
+  els.kakaoNewMembers.value = '';
+  els.kakaoLeftMembers.value = '';
+  els.kakaoMemo.value = '';
+}
+
+function kakaoMetric(label, value) {
+  return `
+    <div class="kakao-metric">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+    </div>
+  `;
 }
 
 function renderRankings() {
@@ -793,6 +1219,251 @@ function upsertLineChart(chart, canvas, config) {
   });
 }
 
+function upsertStackedBarChart(chart, canvas, items, buckets, frequencyType) {
+  const labels = items.map(item => {
+    const label = item.periodStart && item.periodEnd
+      ? `${compactDate(item.periodStart)}~${compactDate(item.periodEnd)}`
+      : '-';
+    return item.isInProgress ? `${label} 진행 중` : label;
+  });
+  const datasets = buckets.map(([key, label, color]) => ({
+    label,
+    bucketKey: key,
+    data: items.map(item => percentLike(item.buckets?.[key] || 0, item.activeCustomers)),
+    counts: items.map(item => item.buckets?.[key] || 0),
+    backgroundColor: color,
+    borderRadius: 6,
+    borderSkipped: false
+  }));
+  const chartData = { labels, datasets };
+  const handleClick = (event, elements, chartInstance) => {
+    const point = elements?.[0];
+    if (!point) return;
+
+    const item = items[point.index];
+    const dataset = chartInstance.data.datasets[point.datasetIndex];
+    if (!item || !dataset) return;
+
+    openCustomerDrawerFromSegment({
+      segmentType: 'frequency',
+      frequencyType,
+      bucketKey: dataset.bucketKey,
+      periodStart: item.periodStart,
+      periodEnd: item.periodEnd
+    });
+  };
+
+  if (chart) {
+    chart.data = chartData;
+    chart.options.onClick = handleClick;
+    chart.update();
+    return chart;
+  }
+
+  return new Chart(canvas, {
+    type: 'bar',
+    data: chartData,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { intersect: true, mode: 'nearest' },
+      onClick: handleClick,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            boxWidth: 10,
+            color: '#4B5563',
+            font: { weight: 800 }
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: context => {
+              const count = context.dataset.counts?.[context.dataIndex] || 0;
+              return `${context.dataset.label}: ${formatNumber(count)}명 · ${formatRate(context.parsed.y)}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          stacked: true,
+          grid: { display: false },
+          ticks: { color: '#6B7280', maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }
+        },
+        y: {
+          stacked: true,
+          min: 0,
+          max: 100,
+          grid: { color: '#EEF2F7' },
+          ticks: { color: '#6B7280', callback: value => `${value}%` }
+        }
+      }
+    }
+  });
+}
+
+async function openCustomerDrawerFromSegment(segmentParams) {
+  openCustomerDrawer('고객 목록', [], true);
+
+  try {
+    const params = buildRequestParams();
+    Object.entries(segmentParams || {}).forEach(([key, value]) => {
+      if (value != null && value !== '') params.set(key, value);
+    });
+    params.set('limit', '500');
+
+    const response = await fetch(`/api/admin-dashboard-customers?${params.toString()}`, {
+      headers: {
+        'x-admin-token': state.token
+      }
+    });
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      throw new Error(data.detail || data.error || '고객 목록을 불러오지 못했습니다.');
+    }
+
+    openCustomerDrawer(data.title || '고객 목록', data.customers || []);
+  } catch (error) {
+    console.error(error);
+    els.customerDrawerTitle.textContent = '고객 목록 오류';
+    els.customerDrawerList.innerHTML = `
+      <tr>
+        <td colspan="7" class="customer-table-empty">${escapeHtml(error.message)}</td>
+      </tr>
+    `;
+  }
+}
+
+function openCustomerDrawer(title, customers, isLoading = false) {
+  state.drawerCustomers = Array.isArray(customers) ? customers : [];
+  state.drawerQuery = '';
+  els.customerDrawerTitle.textContent = title || '고객 목록';
+  els.customerDrawerSearch.value = '';
+  els.customerDrawerSort.value = state.drawerSort;
+  els.customerDrawer.classList.add('is-open');
+  els.customerDrawer.setAttribute('aria-hidden', 'false');
+
+  if (isLoading) {
+    els.customerDrawerCount.textContent = '불러오는 중';
+    els.customerDrawerList.innerHTML = `
+      <tr>
+        <td colspan="7" class="customer-table-empty">고객 목록을 불러오는 중입니다...</td>
+      </tr>
+    `;
+    return;
+  }
+
+  renderCustomerDrawerList();
+}
+
+function closeCustomerDrawer() {
+  els.customerDrawer.classList.remove('is-open');
+  els.customerDrawer.setAttribute('aria-hidden', 'true');
+}
+
+function renderCustomerDrawerList() {
+  const customers = getVisibleDrawerCustomers();
+  els.customerDrawerCount.textContent = `${formatNumber(customers.length)}명`;
+
+  if (!customers.length) {
+    els.customerDrawerList.innerHTML = `
+      <tr>
+        <td colspan="7" class="customer-table-empty">표시할 고객이 없습니다.</td>
+      </tr>
+    `;
+    return;
+  }
+
+  els.customerDrawerList.innerHTML = customers.slice(0, 500).map(customer => `
+    <tr>
+      <td>${escapeHtml(customer.customerName || '-')}</td>
+      <td>${escapeHtml(customer.customerDigits4 || '-')}</td>
+      <td>${formatNumber(customer.currentParticipationDays)}일 / 이전 ${formatNumber(customer.previousParticipationDays)}일</td>
+      <td>${formatWon(customer.currentRevenue)}</td>
+      <td>${formatNumber(customer.cumulativeParticipationDays)}일 · ${formatWon(customer.cumulativeRevenue)}</td>
+      <td>${escapeHtml((customer.recentProducts || []).join(', ') || '-')}</td>
+      <td>${escapeHtml(customer.status || '-')}</td>
+    </tr>
+  `).join('');
+}
+
+function getVisibleDrawerCustomers() {
+  const query = normalizeSearch(state.drawerQuery);
+  const digits = String(state.drawerQuery || '').replace(/\D/g, '');
+  const filtered = state.drawerCustomers.filter(customer => {
+    if (!query && !digits) return true;
+
+    const name = normalizeSearch(customer.customerName);
+    const customerDigits = String(customer.customerDigits4 || customer.customerName || '').replace(/\D/g, '');
+
+    return name.includes(query) || (digits && customerDigits.endsWith(digits.slice(-4)));
+  });
+
+  return [...filtered].sort((a, b) => {
+    if (state.drawerSort === 'revenue') return (b.currentRevenue || 0) - (a.currentRevenue || 0);
+    if (state.drawerSort === 'lastOrder') return String(b.lastOrderDate || '').localeCompare(String(a.lastOrderDate || ''));
+    if (state.drawerSort === 'name') return String(a.customerName || '').localeCompare(String(b.customerName || ''), 'ko');
+
+    if ((b.currentParticipationDays || 0) !== (a.currentParticipationDays || 0)) {
+      return (b.currentParticipationDays || 0) - (a.currentParticipationDays || 0);
+    }
+
+    return (b.currentRevenue || 0) - (a.currentRevenue || 0);
+  });
+}
+
+function exportDrawerCustomers() {
+  const customers = getVisibleDrawerCustomers();
+  const headers = [
+    '고객명',
+    '뒤4',
+    '최초주문일',
+    '최근주문일',
+    '현재기간참여일수',
+    '직전기간참여일수',
+    '현재기간주문라인수',
+    '현재기간구매수량',
+    '현재기간주문금액',
+    '직전기간주문금액',
+    '누적참여일수',
+    '누적주문금액',
+    '최근구매상품',
+    '고객상태'
+  ];
+  const rows = customers.map(customer => [
+    customer.customerName,
+    customer.customerDigits4,
+    customer.firstOrderDate,
+    customer.lastOrderDate,
+    customer.currentParticipationDays,
+    customer.previousParticipationDays,
+    customer.currentOrderLines,
+    customer.currentQuantity,
+    customer.currentRevenue,
+    customer.previousRevenue,
+    customer.cumulativeParticipationDays,
+    customer.cumulativeRevenue,
+    (customer.recentProducts || []).join(' / '),
+    customer.status
+  ]);
+  const csv = [headers, ...rows]
+    .map(row => row.map(value => `"${String(value == null ? '' : value).replace(/"/g, '""')}"`).join(','))
+    .join('\n');
+  const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+
+  link.href = url;
+  link.download = `manman-customers-${Date.now()}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 function getChartSeries() {
   if (!state.data) return [];
   if (state.mode === 'total') return state.data.series.monthly || [];
@@ -943,7 +1614,7 @@ function updateStatusLine() {
 
   els.currentPeriod.textContent = data.period?.label || '-';
   setStatus(
-    `${data.sheetName} · ${MODE_LABELS[state.mode] || data.mode} · 기준 ${getBasisLabel(data.basis)} · 그래프 ${formatNumber(pointCount)}구간 · 오늘 제외 ${formatNumber(data.meta.excludedTodayRowCount)}행 · 아군 제외 ${formatNumber(data.meta.excludedAllyRowCount)}행 · 유효 ${formatNumber(data.meta.validRowCount)}행 · 확인 필요 ${formatNumber(data.meta.warningCount)}건`
+    `${data.sheetName} · ${MODE_LABELS[state.mode] || data.mode} · 기준 ${getBasisLabel(data.basis)} · 그래프 ${formatNumber(pointCount)}구간 · 오늘 제외 ${formatNumber(data.meta.excludedTodayRowCount)}행 · 아군 제외 ${formatNumber(data.meta.excludedAllyRowCount)}행 · 유효 ${formatNumber(data.meta.validRowCount)}행 · 성장분석 ${formatNumber(data.meta.growthAnalyzedRowCount)}행 · 확인 필요 ${formatNumber(data.meta.warningCount)}건`
   );
 }
 
@@ -1039,6 +1710,40 @@ function compactWon(value) {
   return formatWon(n);
 }
 
+function formatDecimal(value) {
+  const n = Number(value || 0);
+  if (Number.isInteger(n)) return formatNumber(n);
+  return n.toLocaleString('ko-KR', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 2
+  });
+}
+
+function formatRate(value) {
+  if (value == null || Number.isNaN(Number(value))) return '-';
+  return `${Number(value).toLocaleString('ko-KR', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  })}%`;
+}
+
+function formatSignedRate(value) {
+  if (value == null || Number.isNaN(Number(value))) return '비교 불가';
+  const sign = Number(value) > 0 ? '+' : '';
+  return `${sign}${formatRate(value)}`;
+}
+
+function percentLike(value, total) {
+  return total ? Math.round((Number(value || 0) / total) * 1000) / 10 : 0;
+}
+
+function formatPeriod(period) {
+  if (!period) return '-';
+  const from = compactDate(period.from);
+  const to = compactDate(period.to);
+  return from === to ? from : `${from} ~ ${to}`;
+}
+
 function getBasisLabel(basis) {
   if (basis === 'pickupDate') return '픽업일자';
   if (basis === 'orderDate') return '주문일자';
@@ -1046,6 +1751,10 @@ function getBasisLabel(basis) {
 }
 
 function normalizeAllyName(value) {
+  return String(value == null ? '' : value).trim().toLowerCase().replace(/\s+/g, '');
+}
+
+function normalizeSearch(value) {
   return String(value == null ? '' : value).trim().toLowerCase().replace(/\s+/g, '');
 }
 
