@@ -60,6 +60,7 @@ const state = {
   drawerQuery: '',
   drawerSort: 'participation',
   loading: false,
+  kakaoUploading: false,
   allyCustomers: []
 };
 
@@ -124,6 +125,12 @@ function cacheElements() {
   els.kakaoLeaveBuckets = document.querySelector('[data-kakao-leave-buckets]');
   els.kakaoMatchSamples = document.querySelector('[data-kakao-match-samples]');
   els.kakaoRecentLeavers = document.querySelector('[data-kakao-recent-leavers]');
+  els.kakaoUploadDate = document.querySelector('[data-kakao-upload-date]');
+  els.kakaoUploadStart = document.querySelector('[data-kakao-upload-start]');
+  els.kakaoUploadFile = document.querySelector('[data-kakao-upload-file]');
+  els.kakaoUploadFileLabel = document.querySelector('[data-kakao-upload-file-label]');
+  els.kakaoUploadButton = document.querySelector('[data-kakao-upload-button]');
+  els.kakaoUploadStatus = document.querySelector('[data-kakao-upload-status]');
   els.customerDrawer = document.querySelector('[data-customer-drawer]');
   els.customerDrawerTitle = document.querySelector('[data-customer-drawer-title]');
   els.customerDrawerSearch = document.querySelector('[data-customer-drawer-search]');
@@ -159,6 +166,8 @@ function seedDefaults() {
   state.allyCustomers = loadAllyCustomers();
   els.customFrom.value = toInputDate(addDays(new Date(), -6));
   els.customTo.value = toInputDate(new Date());
+  if (els.kakaoUploadDate) els.kakaoUploadDate.value = toInputDate(new Date());
+  if (els.kakaoUploadStart) els.kakaoUploadStart.value = '08:00';
 }
 
 function bindEvents() {
@@ -245,6 +254,23 @@ function bindEvents() {
 
   els.customerDrawerExport.addEventListener('click', exportDrawerCustomers);
 
+  els.kakaoUploadFile?.addEventListener('change', () => {
+    const file = els.kakaoUploadFile.files?.[0];
+    if (!file) {
+      els.kakaoUploadFileLabel.textContent = 'CSV/TXT 선택';
+      return;
+    }
+
+    els.kakaoUploadFileLabel.textContent = file.name;
+    const inferredDate = inferDateFromKakaoFileName(file.name);
+    if (inferredDate && els.kakaoUploadDate) {
+      els.kakaoUploadDate.value = inferredDate;
+    }
+    setKakaoUploadStatus('');
+  });
+
+  els.kakaoUploadButton?.addEventListener('click', handleKakaoCsvUpload);
+
   els.allyForm.addEventListener('submit', event => {
     event.preventDefault();
     addAllyCustomer(els.allyInput.value);
@@ -292,6 +318,70 @@ async function fetchDashboardData() {
     setStatus(error.message, true);
   } finally {
     state.loading = false;
+  }
+}
+
+async function handleKakaoCsvUpload() {
+  if (state.kakaoUploading) return;
+
+  const file = els.kakaoUploadFile?.files?.[0];
+  const orderDate = els.kakaoUploadDate?.value || '';
+  const startTime = els.kakaoUploadStart?.value || '08:00';
+
+  if (!file) {
+    setKakaoUploadStatus('CSV/TXT 파일을 선택해주세요.', true);
+    return;
+  }
+
+  if (!orderDate) {
+    setKakaoUploadStatus('공구날짜를 선택해주세요.', true);
+    return;
+  }
+
+  state.kakaoUploading = true;
+  els.kakaoUploadButton.disabled = true;
+  setKakaoUploadStatus('업로드 중...');
+
+  try {
+    const fileContent = await readFileAsText(file);
+    const response = await fetch('/api/kakao-csv-uploads', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-token': state.token,
+        'x-kakao-csv-token': state.token
+      },
+      body: JSON.stringify({
+        fileContent,
+        fileName: file.name,
+        fileSize: file.size,
+        mimeType: file.type || 'text/plain',
+        storeName: '전농래미안크레시티점',
+        orderDate,
+        startAt: `${orderDate} ${startTime}`,
+        endAt: '',
+        uploadedAt: formatLocalDateTime(new Date()),
+        source: 'admin_dashboard_manual_upload'
+      })
+    });
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      throw new Error(data.detail || data.error || 'CSV 업로드에 실패했습니다.');
+    }
+
+    setKakaoUploadStatus(
+      `완료 · 메시지 ${formatNumber(data.windowMessageCount || data.messageCount || 0)}개 · 입장 ${formatNumber(data.joinCount || 0)} / 퇴장 ${formatNumber(data.leaveCount || 0)}`,
+      false,
+      true
+    );
+    await fetchDashboardData();
+  } catch (error) {
+    console.error(error);
+    setKakaoUploadStatus(error.message, true);
+  } finally {
+    state.kakaoUploading = false;
+    els.kakaoUploadButton.disabled = false;
   }
 }
 
@@ -1567,6 +1657,13 @@ function setStatus(message, isError = false) {
   els.status.classList.toggle('is-error', isError);
 }
 
+function setKakaoUploadStatus(message, isError = false, isSuccess = false) {
+  if (!els.kakaoUploadStatus) return;
+  els.kakaoUploadStatus.textContent = message;
+  els.kakaoUploadStatus.classList.toggle('is-error', isError);
+  els.kakaoUploadStatus.classList.toggle('is-success', isSuccess);
+}
+
 function setText(selector, value) {
   const el = document.querySelector(selector);
   if (el) el.textContent = value;
@@ -1605,6 +1702,26 @@ function toInputDate(date) {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+function formatLocalDateTime(date) {
+  const hour = String(date.getHours()).padStart(2, '0');
+  const minute = String(date.getMinutes()).padStart(2, '0');
+  return `${toInputDate(date)} ${hour}:${minute}`;
+}
+
+function inferDateFromKakaoFileName(fileName) {
+  const match = String(fileName || '').match(/(20\d{2})-(\d{2})-(\d{2})/);
+  return match ? `${match[1]}-${match[2]}-${match[3]}` : '';
+}
+
+function readFileAsText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(reader.error || new Error('파일을 읽지 못했습니다.'));
+    reader.readAsText(file, 'utf-8');
+  });
 }
 
 function compactDate(dateKey) {

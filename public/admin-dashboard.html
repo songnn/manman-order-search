@@ -269,6 +269,22 @@
               </div>
               <span class="warning-count" data-kakao-csv-status>CSV 기록 없음</span>
             </div>
+            <div class="kakao-upload" data-kakao-upload>
+              <label class="kakao-upload-field">
+                <span>공구날짜</span>
+                <input type="date" data-kakao-upload-date>
+              </label>
+              <label class="kakao-upload-field">
+                <span>시작시간</span>
+                <input type="time" value="08:00" data-kakao-upload-start>
+              </label>
+              <label class="kakao-upload-file">
+                <span data-kakao-upload-file-label>CSV/TXT 선택</span>
+                <input type="file" accept=".csv,.txt,text/csv,text/plain" data-kakao-upload-file>
+              </label>
+              <button class="ghost-button" type="button" data-kakao-upload-button>업로드</button>
+              <span class="kakao-upload-status" data-kakao-upload-status></span>
+            </div>
             <div class="kakao-summary" data-kakao-csv-summary></div>
             <div class="kakao-hour-list" data-kakao-hour-buckets></div>
             <div class="leave-bucket-list" data-kakao-leave-buckets></div>

@@ -629,6 +629,75 @@ button {
   gap: 12px;
 }
 
+.kakao-upload {
+  display: grid;
+  grid-template-columns: 150px 130px minmax(220px, 1fr) auto minmax(160px, auto);
+  align-items: end;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.kakao-upload-field,
+.kakao-upload-file {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.kakao-upload-field span,
+.kakao-upload-file span,
+.kakao-upload-status {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.kakao-upload-field input {
+  width: 100%;
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 800;
+  outline: none;
+}
+
+.kakao-upload-file {
+  min-height: 38px;
+  padding: 9px 12px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 10px;
+  background: #f8fafc;
+  cursor: pointer;
+}
+
+.kakao-upload-file input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.kakao-upload-status {
+  line-height: 1.35;
+}
+
+.kakao-upload-status.is-error {
+  color: var(--danger);
+}
+
+.kakao-upload-status.is-success {
+  color: var(--success);
+}
+
 .growth-period-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   margin-bottom: 16px;
@@ -1340,6 +1409,7 @@ button {
   .frequency-metrics,
   .movement-metrics,
   .lifecycle-grid,
+  .kakao-upload,
   .kakao-summary,
   .leave-bucket-list,
   .kakao-hour-list,
