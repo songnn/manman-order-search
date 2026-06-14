@@ -361,7 +361,8 @@ async function handleKakaoCsvUpload() {
         startAt: `${orderDate} ${startTime}`,
         endAt: `${nextInputDate(orderDate)} 00:00`,
         uploadedAt: formatLocalDateTime(new Date()),
-        source: 'admin_dashboard_manual_upload'
+        source: 'admin_dashboard_manual_upload',
+        fullSync: true
       })
     });
     const data = await response.json();
