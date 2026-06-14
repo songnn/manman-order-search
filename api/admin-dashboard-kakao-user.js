@@ -1,6 +1,7 @@
 import { aggregateDashboardRows } from '../lib/dashboard/aggregateOrders.js';
 import { buildKakaoCsvAnalytics, readKakaoCsvTelemetry } from '../lib/dashboard/kakaoCsvAnalytics.js';
 import { parseDashboardDate, parseDashboardRows, toDateKey } from '../lib/dashboard/parseOrders.js';
+import { getProductCategoryLookup } from '../lib/dashboard/productCategories.js';
 import { getSheetsClient } from '../lib/googleSheetsClient.js';
 
 const CONFIG = {
@@ -11,22 +12,6 @@ const CONFIG = {
 
 const BASIS_VALUES = new Set(['groupDate', 'orderDate', 'pickupDate']);
 const MODE_VALUES = new Set(['recent', 'week', 'month', 'total', 'custom']);
-const PRODUCT_CATEGORY_CACHE = new Map();
-const PRODUCT_CATEGORIES = [
-  '축산/정육',
-  '수산/해산',
-  '과일',
-  '채소',
-  '반찬/간편식',
-  '유제품/치즈',
-  '베이커리/디저트',
-  '음료/커피',
-  '간식/스낵',
-  '냉동/냉장식품',
-  '생활/주방',
-  '건강/뷰티',
-  '기타'
-];
 const DEFAULT_EXCLUDED_CUSTOMER_NAMES = [
   '로지4298',
   '로지4739',
@@ -99,15 +84,15 @@ export default async function handler(req, res) {
     const customerRows = analysisRows.filter(row => normalizeCustomerKey(row.customerName) === targetKey);
     const customerPeriodRows = periodRows.filter(row => normalizeCustomerKey(row.customerName) === targetKey);
     const productNames = Array.from(new Set(customerRows.map(row => row.productName).filter(Boolean)));
-    const categoryResult = await categorizeProducts(productNames);
+    const categoryResult = await getProductCategoryLookup(productNames);
     const categoryByProduct = categoryResult.categories;
     const categorizedRows = customerRows.map(row => ({
       ...row,
-      category: categoryByProduct[row.productName] || inferProductCategory(row.productName)
+      category: categoryByProduct[row.productName] || '분류확인'
     }));
     const categorizedPeriodRows = customerPeriodRows.map(row => ({
       ...row,
-      category: categoryByProduct[row.productName] || inferProductCategory(row.productName)
+      category: categoryByProduct[row.productName] || '분류확인'
     }));
     const cumulativeStats = buildCustomerStats(analysisRows);
     const periodStats = buildCustomerStats(periodRows);
@@ -149,6 +134,11 @@ export default async function handler(req, res) {
         periodRevenueRank: rankCustomer(periodStats, targetKey, 'revenue')
       },
       categorySource: categoryResult.source,
+      categorySheetName: categoryResult.sheetName,
+      categoryStoredHitCount: categoryResult.storedHitCount,
+      categorySheetHitCount: categoryResult.sheetHitCount,
+      categoryRuleFallbackCount: categoryResult.ruleFallbackCount,
+      categoryTableUnavailable: categoryResult.tableUnavailable,
       categoryBreakdown,
       topCategoriesByRevenue: categoryBreakdown,
       topProductsByOrderCount,
@@ -190,75 +180,6 @@ async function readDashboardSheetRows() {
   return response.data.values || [];
 }
 
-async function categorizeProducts(productNames) {
-  const uncached = productNames.filter(name => !PRODUCT_CATEGORY_CACHE.has(name));
-  let usedAi = false;
-  let usedFallback = false;
-
-  if (uncached.length && process.env.OPENAI_API_KEY) {
-    try {
-      const aiCategories = await categorizeProductsWithOpenAI(uncached);
-      Object.entries(aiCategories).forEach(([productName, category]) => {
-        PRODUCT_CATEGORY_CACHE.set(productName, normalizeCategory(category));
-      });
-      usedAi = Object.keys(aiCategories).length > 0;
-    } catch (error) {
-      console.warn('product category AI fallback:', error.message);
-    }
-  }
-
-  uncached.forEach(name => {
-    if (!PRODUCT_CATEGORY_CACHE.has(name)) {
-      PRODUCT_CATEGORY_CACHE.set(name, inferProductCategory(name));
-      usedFallback = true;
-    }
-  });
-
-  return {
-    source: usedAi && usedFallback
-      ? 'AI+로컬 카테고리 분류'
-      : usedAi
-        ? 'AI 카테고리 분류'
-        : '로컬 카테고리 분류',
-    categories: Object.fromEntries(productNames.map(name => [name, PRODUCT_CATEGORY_CACHE.get(name)]))
-  };
-}
-
-async function categorizeProductsWithOpenAI(productNames) {
-  const prompt = [
-    'You categorize Korean grocery/market product names for an admin dashboard.',
-    `Use only one of these categories: ${PRODUCT_CATEGORIES.join(', ')}`,
-    'Return only JSON with this shape: {"items":[{"productName":"...","category":"..."}]}',
-    'Do not invent product names. Keep productName exactly as provided.',
-    `Product names:\n${productNames.map((name, index) => `${index + 1}. ${name}`).join('\n')}`
-  ].join('\n');
-  const response = await fetch('https://api.openai.com/v1/responses', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: process.env.OPENAI_TEXT_MODEL || 'gpt-4o-mini',
-      input: prompt
-    })
-  });
-  const text = await response.text();
-  const json = text ? JSON.parse(text) : {};
-
-  if (!response.ok) {
-    throw new Error(json?.error?.message || text || `OpenAI request failed (${response.status})`);
-  }
-
-  const parsed = parseJsonObject(extractOpenAIText(json));
-  const items = Array.isArray(parsed.items) ? parsed.items : [];
-  return Object.fromEntries(
-    items
-      .filter(item => productNames.includes(item.productName))
-      .map(item => [item.productName, item.category])
-  );
-}
-
 function buildCustomerStats(rows) {
   const map = new Map();
   rows.forEach(row => {
@@ -283,7 +204,7 @@ function buildCustomerStats(rows) {
 function buildCategoryBreakdown(rows) {
   const map = new Map();
   rows.forEach(row => {
-    const category = row.category || '기타';
+    const category = row.category || '분류확인';
     const current = map.get(category) || {
       category,
       orderCount: 0,
@@ -305,7 +226,7 @@ function buildProductBreakdown(rows) {
   rows.forEach(row => {
     const current = map.get(row.productName) || {
       productName: row.productName,
-      category: row.category || '기타',
+      category: row.category || '분류확인',
       orderCount: 0,
       quantity: 0,
       revenue: 0
@@ -428,53 +349,6 @@ function filterRowsForPeriod(rows, period) {
     row.basisDate.getTime() >= from.getTime() &&
     row.basisDate.getTime() <= to.getTime()
   );
-}
-
-function inferProductCategory(productName) {
-  const text = clean(productName).toLowerCase();
-  if (/한우|소고기|돼지|삼겹|목살|갈비|닭|오리|스테이크|불고기|제육|육|고기/.test(text)) return '축산/정육';
-  if (/고등어|갈치|새우|오징어|낙지|문어|전복|가리비|조개|생선|연어|대구|명태|수산|해물/.test(text)) return '수산/해산';
-  if (/사과|배|귤|오렌지|망고|바나나|딸기|포도|수박|참외|복숭아|과일/.test(text)) return '과일';
-  if (/상추|양파|대파|마늘|감자|고구마|버섯|토마토|채소|나물|오이|호박/.test(text)) return '채소';
-  if (/치즈|우유|요거트|요구르트|버터|크림|유청/.test(text)) return '유제품/치즈';
-  if (/빵|브레드|케이크|쿠키|약과|떡|도넛|베이커리|디저트/.test(text)) return '베이커리/디저트';
-  if (/커피|음료|주스|차|콜라|사이다|물|탄산|에이드/.test(text)) return '음료/커피';
-  if (/과자|스낵|칩|초콜릿|젤리|사탕|간식/.test(text)) return '간식/스낵';
-  if (/냉동|냉장|만두|돈까스|핫도그|튀김|피자/.test(text)) return '냉동/냉장식품';
-  if (/국|탕|찌개|반찬|김치|볶음|도시락|밀키트|간편|조림|구이/.test(text)) return '반찬/간편식';
-  if (/세제|청소|주방|휴지|티슈|수세미|살림|생활/.test(text)) return '생활/주방';
-  if (/비타민|영양|건강|샴푸|크림|화장|뷰티/.test(text)) return '건강/뷰티';
-  return '기타';
-}
-
-function normalizeCategory(value) {
-  const text = clean(value);
-  return PRODUCT_CATEGORIES.includes(text) ? text : '기타';
-}
-
-function extractOpenAIText(result) {
-  if (typeof result?.output_text === 'string') return result.output_text;
-  const chunks = [];
-  const output = Array.isArray(result?.output) ? result.output : [];
-  output.forEach(item => {
-    const content = Array.isArray(item?.content) ? item.content : [];
-    content.forEach(part => {
-      if (typeof part?.text === 'string') chunks.push(part.text);
-      if (typeof part?.output_text === 'string') chunks.push(part.output_text);
-    });
-  });
-  return chunks.join('\n').trim();
-}
-
-function parseJsonObject(text) {
-  const raw = clean(text);
-  if (!raw) return {};
-  try {
-    return JSON.parse(raw);
-  } catch {
-    const match = raw.match(/\{[\s\S]*\}/);
-    return match ? JSON.parse(match[0]) : {};
-  }
 }
 
 function getExcludedCustomerNames(query) {

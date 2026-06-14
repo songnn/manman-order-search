@@ -532,7 +532,7 @@ function renderKakaoUserDetail(data) {
         <div class="mini-list">
           ${recentOrders.slice(0, 10).map(item => miniRow(
             `${formatDateShort(item.date)} · ${item.productName}`,
-            `${formatNumber(item.quantity || 0)}개 · ${formatWon(item.revenue || 0)} · ${item.category || '기타'}`
+            `${formatNumber(item.quantity || 0)}개 · ${formatWon(item.revenue || 0)} · ${item.category || '분류확인'}`
           )).join('') || emptyMiniRow()}
         </div>
       </section>

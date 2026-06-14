@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { syncProductCategoryCache } from '../lib/dashboard/productCategories.js';
 import { reanalyzeKakaoCsvMatches } from '../lib/kakaoCsvProcessing.js';
 import { supabaseAdmin } from '../lib/supabaseAdmin.js';
 import { readUnifiedRowsWithRowNumbers_ } from '../lib/orders.js';
@@ -39,6 +40,14 @@ export default async function handler(req, res) {
 
     if (deleteError) throw deleteError;
 
+    let productCategorySync = { ok: false, skipped: true };
+    try {
+      productCategorySync = await syncProductCategoryCache();
+    } catch (error) {
+      console.warn('product category sync skipped:', error.message);
+      productCategorySync = { ok: false, error: error.message };
+    }
+
     let kakaoCsvReanalysis = { ok: false, skipped: true };
     try {
       kakaoCsvReanalysis = await reanalyzeKakaoCsvMatches({ maxUploads: 20 });
@@ -51,6 +60,7 @@ export default async function handler(req, res) {
       ok: true,
       count: records.length,
       syncRunId,
+      productCategorySync,
       kakaoCsvReanalysis
     });
   } catch (error) {
