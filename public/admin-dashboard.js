@@ -57,6 +57,11 @@ const state = {
   weeklyFrequencyChart: null,
   monthlyFrequencyChart: null,
   kakaoMemberChart: null,
+  kakaoHourChart: null,
+  kakaoUserCategoryChart: null,
+  kakaoUserPeriodChart: null,
+  loadingProgress: 0,
+  loadingTimer: null,
   drawerCustomers: [],
   drawerQuery: '',
   drawerSort: 'participation',
@@ -93,6 +98,10 @@ function cacheElements() {
   els.refresh = document.querySelector('[data-refresh]');
   els.logout = document.querySelector('[data-logout]');
   els.status = document.querySelector('[data-status]');
+  els.loadingPanel = document.querySelector('[data-loading-panel]');
+  els.loadingMessage = document.querySelector('[data-loading-message]');
+  els.loadingPercent = document.querySelector('[data-loading-percent]');
+  els.loadingBar = document.querySelector('[data-loading-bar]');
   els.modeButtons = Array.from(document.querySelectorAll('[data-mode]'));
   els.modePanels = Array.from(document.querySelectorAll('[data-mode-panel]'));
   els.recentButtons = document.querySelector('[data-recent-buttons]');
@@ -124,10 +133,13 @@ function cacheElements() {
   els.kakaoCsvSummary = document.querySelector('[data-kakao-csv-summary]');
   els.kakaoMemberCanvas = document.querySelector('[data-kakao-member-chart]');
   els.kakaoFunnel = document.querySelector('[data-kakao-funnel]');
+  els.kakaoHourCanvas = document.querySelector('[data-kakao-hour-chart]');
+  els.kakaoHourPeriod = document.querySelector('[data-kakao-hour-period]');
   els.kakaoHourBuckets = document.querySelector('[data-kakao-hour-buckets]');
   els.kakaoLeaveBuckets = document.querySelector('[data-kakao-leave-buckets]');
-  els.kakaoMemberProfiles = document.querySelector('[data-kakao-member-profiles]');
-  els.kakaoMatchSamples = document.querySelector('[data-kakao-match-samples]');
+  els.kakaoUserSearchForm = document.querySelector('[data-kakao-user-search-form]');
+  els.kakaoUserSearchInput = document.querySelector('[data-kakao-user-search-input]');
+  els.kakaoUserDetail = document.querySelector('[data-kakao-user-detail]');
   els.kakaoRecentLeavers = document.querySelector('[data-kakao-recent-leavers]');
   els.kakaoUploadDate = document.querySelector('[data-kakao-upload-date]');
   els.kakaoUploadStart = document.querySelector('[data-kakao-upload-start]');
@@ -274,6 +286,7 @@ function bindEvents() {
   });
 
   els.kakaoUploadButton?.addEventListener('click', handleKakaoCsvUpload);
+  els.kakaoUserSearchForm?.addEventListener('submit', handleKakaoUserSearch);
 
   els.allyForm.addEventListener('submit', event => {
     event.preventDefault();
@@ -292,15 +305,17 @@ async function fetchDashboardData() {
   if (state.loading) return;
 
   state.loading = true;
-  setStatus('데이터를 불러오는 중입니다...');
+  startLoadingProgress('데이터를 로딩하고 있습니다.', 8);
 
   try {
     const params = buildRequestParams();
+    updateLoadingProgress(22, '주문 데이터를 가져오는 중입니다.');
     const response = await fetch(`/api/admin-dashboard-data?${params.toString()}`, {
       headers: {
         'x-admin-token': state.token
       }
     });
+    updateLoadingProgress(62, '주문·카톡 데이터를 분석하는 중입니다.');
     const data = await response.json();
 
     if (response.status === 401) {
@@ -315,13 +330,17 @@ async function fetchDashboardData() {
     }
 
     state.data = data;
+    updateLoadingProgress(86, '화면을 그리는 중입니다.');
     hydrateSelectionFromOptions();
     renderDashboard();
+    updateLoadingProgress(100, '로딩 완료');
   } catch (error) {
     console.error(error);
+    updateLoadingProgress(100, '로딩 실패');
     setStatus(error.message, true);
   } finally {
     state.loading = false;
+    finishLoadingProgress();
   }
 }
 
@@ -387,6 +406,231 @@ async function handleKakaoCsvUpload() {
   } finally {
     state.kakaoUploading = false;
     els.kakaoUploadButton.disabled = false;
+  }
+}
+
+async function handleKakaoUserSearch(event) {
+  event.preventDefault();
+
+  const query = els.kakaoUserSearchInput?.value?.trim() || '';
+  if (!query) {
+    if (els.kakaoUserDetail) {
+      els.kakaoUserDetail.innerHTML = '<div class="ranking-empty compact-empty">카톡 닉네임 또는 뒤 4자리를 입력해주세요.</div>';
+    }
+    return;
+  }
+
+  if (!state.token) return;
+  destroyKakaoUserCharts();
+  els.kakaoUserDetail.innerHTML = `
+    <div class="kakao-user-loading">
+      <strong>유저 데이터를 분석하고 있습니다.</strong>
+      <span>주문 이력, 카테고리, 매출 순위를 계산하는 중입니다.</span>
+    </div>
+  `;
+
+  try {
+    const params = buildRequestParams();
+    params.set('customerQuery', query);
+    const response = await fetch(`/api/admin-dashboard-kakao-user?${params.toString()}`, {
+      headers: {
+        'x-admin-token': state.token
+      }
+    });
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      throw new Error(data.detail || data.error || '유저 상세 데이터를 불러오지 못했습니다.');
+    }
+
+    renderKakaoUserDetail(data);
+  } catch (error) {
+    console.error(error);
+    els.kakaoUserDetail.innerHTML = `<div class="ranking-empty compact-empty">${escapeHtml(error.message)}</div>`;
+  }
+}
+
+function renderKakaoUserDetail(data) {
+  const profile = data.profile || {};
+  const summary = data.summary || {};
+  const ranks = data.ranks || {};
+  const period = data.period || {};
+  const categoryBreakdown = data.categoryBreakdown || [];
+  const topProducts = data.topProductsByOrderCount || [];
+  const topRevenueCategories = data.topCategoriesByRevenue || [];
+  const matchedOrders = data.matchedOrders || [];
+  const recentOrders = data.recentOrders || [];
+
+  destroyKakaoUserCharts();
+  els.kakaoUserDetail.innerHTML = `
+    <div class="kakao-user-head">
+      <div>
+        <p class="eyebrow">User Detail</p>
+        <h3>${escapeHtml(data.customerName || profile.userName || '-')}</h3>
+        <p>${escapeHtml(period.label || '')}</p>
+      </div>
+      <span class="warning-count">${escapeHtml(data.categorySource || 'category')}</span>
+    </div>
+    <div class="kakao-user-metrics">
+      ${detailMetric('카톡 가입일', compactDateTime(profile.firstJoinedAt))}
+      ${detailMetric('첫 주문일', compactDateTime(profile.firstActualOrderedAt || profile.firstOrderDate))}
+      ${detailMetric('누적 주문', `${formatNumber(summary.cumulativeOrderLines || 0)}건 · ${formatNumber(summary.cumulativeQuantity || 0)}개`)}
+      ${detailMetric('누적 매출', formatWon(summary.cumulativeRevenue || 0))}
+      ${detailMetric('기간 주문', `${formatNumber(summary.periodOrderLines || 0)}건 · ${formatNumber(summary.periodQuantity || 0)}개`)}
+      ${detailMetric('기간 매출', formatWon(summary.periodRevenue || 0))}
+      ${detailMetric('누적 주문량 순위', formatRank(ranks.cumulativeQuantityRank))}
+      ${detailMetric('누적 매출 순위', formatRank(ranks.cumulativeRevenueRank))}
+      ${detailMetric('기간 주문량 순위', formatRank(ranks.periodQuantityRank))}
+      ${detailMetric('기간 매출 순위', formatRank(ranks.periodRevenueRank))}
+      ${detailMetric('가입→첫 주문', formatDays(profile.daysFromJoinToFirstOrder))}
+      ${detailMetric('가입→두번째 주문', formatDays(profile.daysFromJoinToSecondOrder))}
+    </div>
+    <div class="kakao-user-chart-grid">
+      <section>
+        <h4>카테고리별 구매금액</h4>
+        <div class="chart-wrap kakao-user-chart-wrap">
+          <canvas data-kakao-user-category-chart></canvas>
+        </div>
+      </section>
+      <section>
+        <h4>기간별 주문량·매출</h4>
+        <div class="chart-wrap kakao-user-chart-wrap">
+          <canvas data-kakao-user-period-chart></canvas>
+        </div>
+      </section>
+    </div>
+    <div class="kakao-user-columns">
+      <section>
+        <h4>많이 주문한 상품</h4>
+        <div class="mini-list">
+          ${topProducts.slice(0, 8).map(item => miniRow(
+            item.productName,
+            `${formatNumber(item.orderCount || 0)}건 · ${formatNumber(item.quantity || 0)}개 · ${formatWon(item.revenue || 0)}`
+          )).join('') || emptyMiniRow()}
+        </div>
+      </section>
+      <section>
+        <h4>매출 높은 카테고리</h4>
+        <div class="mini-list">
+          ${topRevenueCategories.slice(0, 8).map(item => miniRow(
+            item.category,
+            `${formatWon(item.revenue || 0)} · ${formatNumber(item.quantity || 0)}개`
+          )).join('') || emptyMiniRow()}
+        </div>
+      </section>
+      <section>
+        <h4>실제 카톡 주문 매칭</h4>
+        <div class="mini-list">
+          ${matchedOrders.slice(0, 10).map(item => miniRow(
+            `${compactDateTime(item.actualOrderedAt)} · ${item.productName || '-'}`,
+            `${formatNumber(item.quantity || 0)}개 · ${escapeHtml(item.messageRaw || '')}`
+          )).join('') || emptyMiniRow()}
+        </div>
+      </section>
+      <section>
+        <h4>최근 주문</h4>
+        <div class="mini-list">
+          ${recentOrders.slice(0, 10).map(item => miniRow(
+            `${formatDateShort(item.date)} · ${item.productName}`,
+            `${formatNumber(item.quantity || 0)}개 · ${formatWon(item.revenue || 0)} · ${item.category || '기타'}`
+          )).join('') || emptyMiniRow()}
+        </div>
+      </section>
+    </div>
+  `;
+
+  window.requestAnimationFrame(() => {
+    renderKakaoUserCharts(categoryBreakdown, data.periodSeries || []);
+  });
+}
+
+function renderKakaoUserCharts(categoryBreakdown, periodSeries) {
+  const categoryCanvas = document.querySelector('[data-kakao-user-category-chart]');
+  const periodCanvas = document.querySelector('[data-kakao-user-period-chart]');
+
+  if (categoryCanvas && typeof Chart !== 'undefined') {
+    state.kakaoUserCategoryChart = new Chart(categoryCanvas, {
+      type: 'bar',
+      data: {
+        labels: categoryBreakdown.map(item => item.category),
+        datasets: [{
+          label: '구매금액',
+          data: categoryBreakdown.map(item => item.revenue || 0),
+          backgroundColor: 'rgba(0, 81, 160, 0.76)',
+          borderRadius: 7,
+          borderSkipped: false
+        }]
+      },
+      options: compactBarChartOptions(value => compactWon(value))
+    });
+  }
+
+  if (periodCanvas && typeof Chart !== 'undefined') {
+    state.kakaoUserPeriodChart = new Chart(periodCanvas, {
+      type: 'bar',
+      data: {
+        labels: periodSeries.map(item => item.label),
+        datasets: [
+          {
+            type: 'bar',
+            label: '주문수량',
+            data: periodSeries.map(item => item.quantity || 0),
+            backgroundColor: 'rgba(17, 24, 39, 0.76)',
+            borderRadius: 7,
+            borderSkipped: false,
+            yAxisID: 'y'
+          },
+          {
+            type: 'line',
+            label: '매출',
+            data: periodSeries.map(item => item.revenue || 0),
+            borderColor: '#0F9F6E',
+            backgroundColor: 'rgba(15, 159, 110, 0.12)',
+            tension: 0.3,
+            yAxisID: 'y1'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: { legend: { position: 'bottom' } },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: '#6B7280', maxTicksLimit: 8 } },
+          y: { beginAtZero: true, grid: { color: '#EEF2F7' }, ticks: { color: '#6B7280', callback: value => formatNumber(value) } },
+          y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#6B7280', callback: value => compactWon(value) } }
+        }
+      }
+    });
+  }
+}
+
+function compactBarChartOptions(yFormatter) {
+  return {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: {
+        beginAtZero: true,
+        grid: { color: '#EEF2F7' },
+        ticks: { color: '#6B7280', callback: yFormatter }
+      },
+      y: { grid: { display: false }, ticks: { color: '#4B5563' } }
+    }
+  };
+}
+
+function destroyKakaoUserCharts() {
+  if (state.kakaoUserCategoryChart) {
+    state.kakaoUserCategoryChart.destroy();
+    state.kakaoUserCategoryChart = null;
+  }
+  if (state.kakaoUserPeriodChart) {
+    state.kakaoUserPeriodChart.destroy();
+    state.kakaoUserPeriodChart = null;
   }
 }
 
@@ -851,13 +1095,17 @@ function renderKakaoCsvAnalytics() {
     }
     if (els.kakaoFunnel) els.kakaoFunnel.innerHTML = '';
     if (els.kakaoHourBuckets) els.kakaoHourBuckets.innerHTML = '';
+    if (els.kakaoHourPeriod) els.kakaoHourPeriod.textContent = '-';
     if (els.kakaoLeaveBuckets) els.kakaoLeaveBuckets.innerHTML = '';
-    if (els.kakaoMemberProfiles) els.kakaoMemberProfiles.innerHTML = '';
-    if (els.kakaoMatchSamples) els.kakaoMatchSamples.innerHTML = '';
+    if (els.kakaoUserDetail) els.kakaoUserDetail.innerHTML = '';
     if (els.kakaoRecentLeavers) els.kakaoRecentLeavers.innerHTML = '';
     if (state.kakaoMemberChart) {
       state.kakaoMemberChart.destroy();
       state.kakaoMemberChart = null;
+    }
+    if (state.kakaoHourChart) {
+      state.kakaoHourChart.destroy();
+      state.kakaoHourChart = null;
     }
     return;
   }
@@ -892,6 +1140,7 @@ function renderKakaoCsvAnalytics() {
   }
 
   renderKakaoMemberTimelineChart(analytics.orderTimeline?.memberTimeline || []);
+  renderKakaoHourlyOrderChart(analytics.orderTimeline?.hourlyOrderCounts || [], analytics.orderTimeline?.period);
 
   if (els.kakaoFunnel) {
     els.kakaoFunnel.innerHTML = `
@@ -903,8 +1152,9 @@ function renderKakaoCsvAnalytics() {
 
   if (els.kakaoHourBuckets) {
     const hours = analytics.orderTimeline?.hourlyOrderCounts || [];
-    els.kakaoHourBuckets.innerHTML = hours.length
-      ? hours.map(item => `
+    const topHours = [...hours].sort((a, b) => (b.count || 0) - (a.count || 0)).slice(0, 5);
+    els.kakaoHourBuckets.innerHTML = topHours.some(item => item.count > 0)
+      ? topHours.map(item => `
           <article class="hour-bucket">
             <span>${escapeHtml(item.hour)}</span>
             <strong>${formatNumber(item.count)}건</strong>
@@ -924,36 +1174,6 @@ function renderKakaoCsvAnalytics() {
           </article>
         `).join('')
       : '<div class="ranking-empty compact-empty">최근 퇴장자 구매수 분포가 없습니다.</div>';
-  }
-
-  if (els.kakaoMemberProfiles) {
-    const profiles = analytics.customerProfiles || [];
-    els.kakaoMemberProfiles.innerHTML = profiles.length
-      ? `
-        <div class="kakao-match-head">카톡 유저 프로필</div>
-        <div class="mini-list">
-          ${profiles.slice(0, 40).map(profile => miniRow(
-            `${profile.userName || profile.customerName || '-'} · 가입 ${compactDateTime(profile.firstJoinedAt)}`,
-            `첫주문 ${compactDateTime(profile.firstActualOrderedAt || profile.firstOrderDate)} · 누적 ${formatNumber(profile.totalOrderLines || 0)}건/${formatNumber(profile.totalQuantity || 0)}개 · ${formatWon(profile.totalRevenue || 0)} · ${profile.hasNicknameDigits4 ? '뒤4 입력' : '뒤4 없음'}`
-          )).join('')}
-        </div>
-      `
-      : '<div class="ranking-empty compact-empty">카톡 유저 프로필 데이터가 없습니다.</div>';
-  }
-
-  if (els.kakaoMatchSamples) {
-    const samples = analytics.matchSamples || [];
-    els.kakaoMatchSamples.innerHTML = samples.length
-      ? `
-        <div class="kakao-match-head">최근 매칭 결과</div>
-        <div class="mini-list">
-          ${samples.slice(0, 20).map(item => miniRow(
-            `${item.customerName || '-'} · ${item.productName || '-'} × ${formatNumber(item.quantity || 0)}`,
-            `${compactDateTime(item.actualOrderedAt)} · ${formatRate((item.matchConfidence || 0) * 100)} · ${item.matchMethod || '-'} · row ${item.currentSourceRowNumber || '-'}`
-          )).join('')}
-        </div>
-      `
-      : '<div class="ranking-empty compact-empty">매칭된 주문행이 없습니다.</div>';
   }
 
   if (els.kakaoRecentLeavers) {
@@ -1008,6 +1228,63 @@ function renderKakaoMemberTimelineChart(timeline) {
     borderColor: '#111827',
     backgroundColor: 'rgba(17, 24, 39, 0.10)',
     yFormatter: value => `${formatNumber(value)}명`
+  });
+}
+
+function renderKakaoHourlyOrderChart(hours, period) {
+  if (!els.kakaoHourCanvas || typeof Chart === 'undefined') return;
+
+  if (els.kakaoHourPeriod) {
+    els.kakaoHourPeriod.textContent = period ? formatPeriod(period) : '-';
+  }
+
+  const labels = (hours || []).map(item => item.hour);
+  const data = (hours || []).map(item => item.count || 0);
+  const max = Math.max(...data, 0);
+  const chartData = {
+    labels,
+    datasets: [{
+      label: '주문건수',
+      data,
+      backgroundColor: data.map(value => value === max && max > 0 ? '#111827' : 'rgba(0, 81, 160, 0.72)'),
+      borderRadius: 7,
+      borderSkipped: false
+    }]
+  };
+
+  if (state.kakaoHourChart) {
+    state.kakaoHourChart.data = chartData;
+    state.kakaoHourChart.update();
+    return;
+  }
+
+  state.kakaoHourChart = new Chart(els.kakaoHourCanvas, {
+    type: 'bar',
+    data: chartData,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: context => `주문건수: ${formatNumber(context.parsed.y)}건`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: '#6B7280', maxRotation: 0, autoSkip: true, maxTicksLimit: 12 }
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: '#EEF2F7' },
+          ticks: { color: '#6B7280', callback: value => `${formatNumber(value)}건` }
+        }
+      }
+    }
   });
 }
 
@@ -1776,6 +2053,35 @@ function setStatus(message, isError = false) {
   els.status.classList.toggle('is-error', isError);
 }
 
+function startLoadingProgress(message, initialPercent = 5) {
+  state.loadingProgress = initialPercent;
+  if (els.loadingPanel) els.loadingPanel.classList.remove('is-hidden');
+  updateLoadingProgress(initialPercent, message);
+  window.clearInterval(state.loadingTimer);
+  state.loadingTimer = window.setInterval(() => {
+    const next = Math.min(88, state.loadingProgress + Math.max(1, Math.round((90 - state.loadingProgress) * 0.08)));
+    updateLoadingProgress(next);
+  }, 420);
+}
+
+function updateLoadingProgress(percent, message) {
+  const nextPercent = Math.max(0, Math.min(100, Number(percent || state.loadingProgress || 0)));
+  state.loadingProgress = nextPercent;
+  if (message) setStatus(`${message} ${Math.round(nextPercent)}%`);
+  if (els.loadingMessage && message) els.loadingMessage.textContent = message;
+  if (els.loadingPercent) els.loadingPercent.textContent = `${Math.round(nextPercent)}%`;
+  if (els.loadingBar) els.loadingBar.style.width = `${nextPercent}%`;
+}
+
+function finishLoadingProgress() {
+  window.clearInterval(state.loadingTimer);
+  state.loadingTimer = null;
+  window.setTimeout(() => {
+    if (state.loading) return;
+    if (els.loadingPanel) els.loadingPanel.classList.add('is-hidden');
+  }, 420);
+}
+
 function setKakaoUploadStatus(message, isError = false, isSuccess = false) {
   if (!els.kakaoUploadStatus) return;
   els.kakaoUploadStatus.textContent = message;
@@ -1910,6 +2216,10 @@ function formatDays(value) {
     minimumFractionDigits: Number.isInteger(n) ? 0 : 1,
     maximumFractionDigits: 1
   })}일`;
+}
+
+function formatRank(rank) {
+  return rank ? `${formatNumber(rank)}위` : '-';
 }
 
 function formatRate(value) {

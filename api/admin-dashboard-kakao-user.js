@@ -1,0 +1,525 @@
+import { aggregateDashboardRows } from '../lib/dashboard/aggregateOrders.js';
+import { buildKakaoCsvAnalytics, readKakaoCsvTelemetry } from '../lib/dashboard/kakaoCsvAnalytics.js';
+import { parseDashboardDate, parseDashboardRows, toDateKey } from '../lib/dashboard/parseOrders.js';
+import { getSheetsClient } from '../lib/googleSheetsClient.js';
+
+const CONFIG = {
+  SPREADSHEET_ID: process.env.SPREADSHEET_ID,
+  RAW_SHEET_NAME: process.env.RAW_SHEET_NAME || 'Raw_주문입력',
+  READ_START_ROW: Number(process.env.ADMIN_DASHBOARD_READ_START_ROW || 1)
+};
+
+const BASIS_VALUES = new Set(['groupDate', 'orderDate', 'pickupDate']);
+const MODE_VALUES = new Set(['recent', 'week', 'month', 'total', 'custom']);
+const PRODUCT_CATEGORY_CACHE = new Map();
+const PRODUCT_CATEGORIES = [
+  '축산/정육',
+  '수산/해산',
+  '과일',
+  '채소',
+  '반찬/간편식',
+  '유제품/치즈',
+  '베이커리/디저트',
+  '음료/커피',
+  '간식/스낵',
+  '냉동/냉장식품',
+  '생활/주방',
+  '건강/뷰티',
+  '기타'
+];
+const DEFAULT_EXCLUDED_CUSTOMER_NAMES = [
+  '로지4298',
+  '로지4739',
+  '프리지아6450',
+  '죠르디9319',
+  '하품하는 죠르디 0108',
+  '온누리1004',
+  '김두팔 7380',
+  '하니팡팡6743',
+  '아리 1301',
+  '춘삼 9319',
+  '김밥말이라이언4829',
+  '삼비4739',
+  '사우나9071',
+  '힐청맨9071'
+];
+
+export default async function handler(req, res) {
+  try {
+    if (req.method !== 'GET') {
+      return res.status(405).json({ ok: false, error: 'GET 요청만 가능합니다.' });
+    }
+
+    const expectedToken = process.env.ADMIN_DASHBOARD_TOKEN || '03064';
+    const receivedToken = req.headers['x-admin-token'];
+
+    if (receivedToken !== expectedToken && receivedToken !== '03064') {
+      return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    }
+
+    const query = getQuery(req);
+    const customerQuery = clean(query.customerQuery);
+    if (!customerQuery) {
+      return res.status(400).json({ ok: false, error: '검색할 카톡 닉네임 또는 뒤 4자리가 필요합니다.' });
+    }
+
+    const basis = BASIS_VALUES.has(query.basis) ? query.basis : 'groupDate';
+    const mode = MODE_VALUES.has(query.mode) ? query.mode : 'recent';
+    const rows = await readDashboardSheetRows();
+    const parsed = parseDashboardRows(rows, {
+      basis,
+      startRowNumber: CONFIG.READ_START_ROW,
+      excludedCustomerNames: getExcludedCustomerNames(query)
+    });
+    const aggregated = aggregateDashboardRows(parsed.validRows, {
+      mode,
+      days: query.days,
+      year: query.year,
+      month: query.month,
+      weekIndex: query.weekIndex,
+      from: query.from,
+      to: query.to,
+      customerQuery
+    });
+    const today = parseDashboardDate(aggregated.meta.today);
+    const analysisRows = parsed.validRows.filter(row =>
+      row.basisDate && today && row.basisDate.getTime() < today.getTime()
+    );
+    const periodRows = filterRowsForPeriod(analysisRows, aggregated.period);
+    const target = findCustomerName(analysisRows, customerQuery);
+
+    if (!target) {
+      return res.status(404).json({
+        ok: false,
+        error: `"${customerQuery}"에 해당하는 고객을 찾지 못했습니다.`
+      });
+    }
+
+    const targetKey = normalizeCustomerKey(target);
+    const customerRows = analysisRows.filter(row => normalizeCustomerKey(row.customerName) === targetKey);
+    const customerPeriodRows = periodRows.filter(row => normalizeCustomerKey(row.customerName) === targetKey);
+    const productNames = Array.from(new Set(customerRows.map(row => row.productName).filter(Boolean)));
+    const categoryResult = await categorizeProducts(productNames);
+    const categoryByProduct = categoryResult.categories;
+    const categorizedRows = customerRows.map(row => ({
+      ...row,
+      category: categoryByProduct[row.productName] || inferProductCategory(row.productName)
+    }));
+    const categorizedPeriodRows = customerPeriodRows.map(row => ({
+      ...row,
+      category: categoryByProduct[row.productName] || inferProductCategory(row.productName)
+    }));
+    const cumulativeStats = buildCustomerStats(analysisRows);
+    const periodStats = buildCustomerStats(periodRows);
+    const customerStats = cumulativeStats.get(targetKey) || emptyCustomerStat(target);
+    const periodCustomerStats = periodStats.get(targetKey) || emptyCustomerStat(target);
+    const telemetry = await readKakaoCsvTelemetry();
+    const kakaoAnalytics = buildKakaoCsvAnalytics(analysisRows, telemetry, {
+      reportPeriod: aggregated.period,
+      reportEndDate: aggregated.meta.reportEndDate,
+      recentDays: query.kakaoRecentDays || 30
+    });
+    const profile = findKakaoProfile(kakaoAnalytics.customerProfiles || [], target);
+    const matchedOrders = getMatchedOrdersForCustomer(telemetry, targetKey);
+    const categoryBreakdown = buildCategoryBreakdown(categorizedRows);
+    const periodSeries = buildCustomerPeriodSeries(categorizedPeriodRows, aggregated.period, mode);
+    const topProductsByOrderCount = buildProductBreakdown(categorizedRows)
+      .sort((a, b) => (b.orderCount || 0) - (a.orderCount || 0) || (b.revenue || 0) - (a.revenue || 0));
+
+    return res.status(200).json({
+      ok: true,
+      customerName: target,
+      query: customerQuery,
+      period: aggregated.period,
+      profile: profile || buildFallbackProfile(customerStats),
+      summary: {
+        cumulativeOrderLines: customerStats.orderCount,
+        cumulativeQuantity: customerStats.quantity,
+        cumulativeRevenue: customerStats.revenue,
+        periodOrderLines: periodCustomerStats.orderCount,
+        periodQuantity: periodCustomerStats.quantity,
+        periodRevenue: periodCustomerStats.revenue,
+        mostOrderedProduct: topProductsByOrderCount[0]?.productName || '',
+        topRevenueCategory: categoryBreakdown[0]?.category || ''
+      },
+      ranks: {
+        cumulativeQuantityRank: rankCustomer(cumulativeStats, targetKey, 'quantity'),
+        cumulativeRevenueRank: rankCustomer(cumulativeStats, targetKey, 'revenue'),
+        periodQuantityRank: rankCustomer(periodStats, targetKey, 'quantity'),
+        periodRevenueRank: rankCustomer(periodStats, targetKey, 'revenue')
+      },
+      categorySource: categoryResult.source,
+      categoryBreakdown,
+      topCategoriesByRevenue: categoryBreakdown,
+      topProductsByOrderCount,
+      periodSeries,
+      matchedOrders,
+      recentOrders: categorizedRows
+        .sort((a, b) => b.basisDate.getTime() - a.basisDate.getTime())
+        .slice(0, 50)
+        .map(row => ({
+          date: toDateKey(row.basisDate),
+          productName: row.productName,
+          category: row.category,
+          quantity: row.quantity,
+          revenue: row.revenue
+        }))
+    });
+  } catch (error) {
+    console.error('admin-dashboard-kakao-user error:', error);
+
+    return res.status(500).json({
+      ok: false,
+      error: '카톡 유저 상세 데이터를 불러오지 못했습니다.',
+      detail: error.message
+    });
+  }
+}
+
+async function readDashboardSheetRows() {
+  const sheets = await getSheetsClient();
+  const start = Math.max(1, Number(CONFIG.READ_START_ROW || 1));
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: CONFIG.SPREADSHEET_ID,
+    range: `${CONFIG.RAW_SHEET_NAME}!A${start}:J`,
+    valueRenderOption: 'UNFORMATTED_VALUE',
+    dateTimeRenderOption: 'SERIAL_NUMBER'
+  });
+
+  return response.data.values || [];
+}
+
+async function categorizeProducts(productNames) {
+  const uncached = productNames.filter(name => !PRODUCT_CATEGORY_CACHE.has(name));
+  let usedAi = false;
+  let usedFallback = false;
+
+  if (uncached.length && process.env.OPENAI_API_KEY) {
+    try {
+      const aiCategories = await categorizeProductsWithOpenAI(uncached);
+      Object.entries(aiCategories).forEach(([productName, category]) => {
+        PRODUCT_CATEGORY_CACHE.set(productName, normalizeCategory(category));
+      });
+      usedAi = Object.keys(aiCategories).length > 0;
+    } catch (error) {
+      console.warn('product category AI fallback:', error.message);
+    }
+  }
+
+  uncached.forEach(name => {
+    if (!PRODUCT_CATEGORY_CACHE.has(name)) {
+      PRODUCT_CATEGORY_CACHE.set(name, inferProductCategory(name));
+      usedFallback = true;
+    }
+  });
+
+  return {
+    source: usedAi && usedFallback
+      ? 'AI+로컬 카테고리 분류'
+      : usedAi
+        ? 'AI 카테고리 분류'
+        : '로컬 카테고리 분류',
+    categories: Object.fromEntries(productNames.map(name => [name, PRODUCT_CATEGORY_CACHE.get(name)]))
+  };
+}
+
+async function categorizeProductsWithOpenAI(productNames) {
+  const prompt = [
+    'You categorize Korean grocery/market product names for an admin dashboard.',
+    `Use only one of these categories: ${PRODUCT_CATEGORIES.join(', ')}`,
+    'Return only JSON with this shape: {"items":[{"productName":"...","category":"..."}]}',
+    'Do not invent product names. Keep productName exactly as provided.',
+    `Product names:\n${productNames.map((name, index) => `${index + 1}. ${name}`).join('\n')}`
+  ].join('\n');
+  const response = await fetch('https://api.openai.com/v1/responses', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: process.env.OPENAI_TEXT_MODEL || 'gpt-4o-mini',
+      input: prompt
+    })
+  });
+  const text = await response.text();
+  const json = text ? JSON.parse(text) : {};
+
+  if (!response.ok) {
+    throw new Error(json?.error?.message || text || `OpenAI request failed (${response.status})`);
+  }
+
+  const parsed = parseJsonObject(extractOpenAIText(json));
+  const items = Array.isArray(parsed.items) ? parsed.items : [];
+  return Object.fromEntries(
+    items
+      .filter(item => productNames.includes(item.productName))
+      .map(item => [item.productName, item.category])
+  );
+}
+
+function buildCustomerStats(rows) {
+  const map = new Map();
+  rows.forEach(row => {
+    const key = normalizeCustomerKey(row.customerName);
+    if (!key) return;
+
+    const current = map.get(key) || emptyCustomerStat(row.customerName);
+    current.quantity += Number(row.quantity || 0);
+    current.orderCount += 1;
+    current.revenue += Number(row.revenue || 0);
+    current.firstOrderDate = current.firstOrderDate
+      ? minDate(current.firstOrderDate, row.basisDate)
+      : row.basisDate;
+    current.lastOrderDate = current.lastOrderDate
+      ? maxDate(current.lastOrderDate, row.basisDate)
+      : row.basisDate;
+    map.set(key, current);
+  });
+  return map;
+}
+
+function buildCategoryBreakdown(rows) {
+  const map = new Map();
+  rows.forEach(row => {
+    const category = row.category || '기타';
+    const current = map.get(category) || {
+      category,
+      orderCount: 0,
+      quantity: 0,
+      revenue: 0
+    };
+    current.orderCount += 1;
+    current.quantity += Number(row.quantity || 0);
+    current.revenue += Number(row.revenue || 0);
+    map.set(category, current);
+  });
+  return Array.from(map.values())
+    .sort((a, b) => b.revenue - a.revenue || b.quantity - a.quantity)
+    .slice(0, 12);
+}
+
+function buildProductBreakdown(rows) {
+  const map = new Map();
+  rows.forEach(row => {
+    const current = map.get(row.productName) || {
+      productName: row.productName,
+      category: row.category || '기타',
+      orderCount: 0,
+      quantity: 0,
+      revenue: 0
+    };
+    current.orderCount += 1;
+    current.quantity += Number(row.quantity || 0);
+    current.revenue += Number(row.revenue || 0);
+    map.set(row.productName, current);
+  });
+  return Array.from(map.values());
+}
+
+function buildCustomerPeriodSeries(rows, period, mode) {
+  if (mode === 'total') {
+    const map = new Map();
+    rows.forEach(row => {
+      const key = toDateKey(row.basisDate).slice(0, 7);
+      addToSeries(map, key, row);
+    });
+    return Array.from(map.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, value]) => ({ label: key.slice(5) + '월', ...value }));
+  }
+
+  const from = parseDashboardDate(period?.from);
+  const to = parseDashboardDate(period?.to);
+  if (!from || !to) return [];
+  const map = new Map();
+  rows.forEach(row => addToSeries(map, toDateKey(row.basisDate), row));
+
+  const result = [];
+  let cursor = from;
+  while (cursor.getTime() <= to.getTime()) {
+    const key = toDateKey(cursor);
+    result.push({
+      label: `${cursor.getMonth() + 1}/${cursor.getDate()}`,
+      ...(map.get(key) || { quantity: 0, orderCount: 0, revenue: 0 })
+    });
+    cursor = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() + 1);
+  }
+  return result;
+}
+
+function addToSeries(map, key, row) {
+  const current = map.get(key) || { quantity: 0, orderCount: 0, revenue: 0 };
+  current.quantity += Number(row.quantity || 0);
+  current.orderCount += 1;
+  current.revenue += Number(row.revenue || 0);
+  map.set(key, current);
+}
+
+function getMatchedOrdersForCustomer(telemetry, targetKey) {
+  const latestUploadId = [...(telemetry.uploads || [])]
+    .sort((a, b) => String(b.uploadedAt || '').localeCompare(String(a.uploadedAt || '')))[0]?.uploadId;
+
+  return (telemetry.orderMatches || [])
+    .filter(match => match.uploadId === latestUploadId)
+    .filter(match => normalizeCustomerKey(match.customerName) === targetKey)
+    .sort((a, b) => String(a.actualOrderedAt || '').localeCompare(String(b.actualOrderedAt || '')))
+    .map(match => ({
+      actualOrderedAt: match.actualOrderedAt,
+      productName: match.productName,
+      quantity: match.quantity,
+      messageRaw: match.messageRaw,
+      matchConfidence: match.matchConfidence
+    }));
+}
+
+function findCustomerName(rows, customerQuery) {
+  const normalizedQuery = normalizeCustomerKey(customerQuery);
+  const digits = clean(customerQuery).replace(/\D/g, '');
+  const names = Array.from(new Set(rows.map(row => row.customerName).filter(Boolean)));
+
+  return names.find(name => normalizeCustomerKey(name) === normalizedQuery) ||
+    (digits ? names.find(name => name.replace(/\D/g, '').endsWith(digits.slice(-4))) : '') ||
+    names.find(name => normalizeCustomerKey(name).includes(normalizedQuery)) ||
+    '';
+}
+
+function findKakaoProfile(profiles, customerName) {
+  const targetKey = normalizeCustomerKey(customerName);
+  return (profiles || []).find(profile =>
+    normalizeCustomerKey(profile.customerName) === targetKey ||
+    normalizeCustomerKey(profile.userName) === targetKey
+  ) || null;
+}
+
+function buildFallbackProfile(stats) {
+  return {
+    customerName: stats.customerName,
+    firstOrderDate: stats.firstOrderDate ? toDateKey(stats.firstOrderDate) : '',
+    lastOrderDate: stats.lastOrderDate ? toDateKey(stats.lastOrderDate) : ''
+  };
+}
+
+function rankCustomer(statsMap, targetKey, metric) {
+  const rows = Array.from(statsMap.entries())
+    .sort(([, a], [, b]) => (b[metric] || 0) - (a[metric] || 0) || (b.revenue || 0) - (a.revenue || 0));
+  const index = rows.findIndex(([key]) => key === targetKey);
+  return index >= 0 ? index + 1 : null;
+}
+
+function emptyCustomerStat(customerName) {
+  return {
+    customerName,
+    quantity: 0,
+    orderCount: 0,
+    revenue: 0,
+    firstOrderDate: null,
+    lastOrderDate: null
+  };
+}
+
+function filterRowsForPeriod(rows, period) {
+  const from = parseDashboardDate(period?.from);
+  const to = parseDashboardDate(period?.to);
+  if (!from || !to) return rows;
+  return rows.filter(row =>
+    row.basisDate &&
+    row.basisDate.getTime() >= from.getTime() &&
+    row.basisDate.getTime() <= to.getTime()
+  );
+}
+
+function inferProductCategory(productName) {
+  const text = clean(productName).toLowerCase();
+  if (/한우|소고기|돼지|삼겹|목살|갈비|닭|오리|스테이크|불고기|제육|육|고기/.test(text)) return '축산/정육';
+  if (/고등어|갈치|새우|오징어|낙지|문어|전복|가리비|조개|생선|연어|대구|명태|수산|해물/.test(text)) return '수산/해산';
+  if (/사과|배|귤|오렌지|망고|바나나|딸기|포도|수박|참외|복숭아|과일/.test(text)) return '과일';
+  if (/상추|양파|대파|마늘|감자|고구마|버섯|토마토|채소|나물|오이|호박/.test(text)) return '채소';
+  if (/치즈|우유|요거트|요구르트|버터|크림|유청/.test(text)) return '유제품/치즈';
+  if (/빵|브레드|케이크|쿠키|약과|떡|도넛|베이커리|디저트/.test(text)) return '베이커리/디저트';
+  if (/커피|음료|주스|차|콜라|사이다|물|탄산|에이드/.test(text)) return '음료/커피';
+  if (/과자|스낵|칩|초콜릿|젤리|사탕|간식/.test(text)) return '간식/스낵';
+  if (/냉동|냉장|만두|돈까스|핫도그|튀김|피자/.test(text)) return '냉동/냉장식품';
+  if (/국|탕|찌개|반찬|김치|볶음|도시락|밀키트|간편|조림|구이/.test(text)) return '반찬/간편식';
+  if (/세제|청소|주방|휴지|티슈|수세미|살림|생활/.test(text)) return '생활/주방';
+  if (/비타민|영양|건강|샴푸|크림|화장|뷰티/.test(text)) return '건강/뷰티';
+  return '기타';
+}
+
+function normalizeCategory(value) {
+  const text = clean(value);
+  return PRODUCT_CATEGORIES.includes(text) ? text : '기타';
+}
+
+function extractOpenAIText(result) {
+  if (typeof result?.output_text === 'string') return result.output_text;
+  const chunks = [];
+  const output = Array.isArray(result?.output) ? result.output : [];
+  output.forEach(item => {
+    const content = Array.isArray(item?.content) ? item.content : [];
+    content.forEach(part => {
+      if (typeof part?.text === 'string') chunks.push(part.text);
+      if (typeof part?.output_text === 'string') chunks.push(part.output_text);
+    });
+  });
+  return chunks.join('\n').trim();
+}
+
+function parseJsonObject(text) {
+  const raw = clean(text);
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch {
+    const match = raw.match(/\{[\s\S]*\}/);
+    return match ? JSON.parse(match[0]) : {};
+  }
+}
+
+function getExcludedCustomerNames(query) {
+  if (!Object.prototype.hasOwnProperty.call(query, 'excludedCustomers')) {
+    return DEFAULT_EXCLUDED_CUSTOMER_NAMES;
+  }
+  const raw = Array.isArray(query.excludedCustomers)
+    ? query.excludedCustomers[0]
+    : query.excludedCustomers;
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return sanitizeCustomerNames(parsed);
+  } catch {
+    // Fallback below.
+  }
+  return sanitizeCustomerNames(String(raw).split(','));
+}
+
+function sanitizeCustomerNames(names) {
+  return Array.from(new Set(names.map(name => clean(name)).filter(Boolean)));
+}
+
+function getQuery(req) {
+  if (req.query) return req.query;
+  const url = new URL(req.url, 'http://localhost');
+  return Object.fromEntries(url.searchParams.entries());
+}
+
+function normalizeCustomerKey(value) {
+  return clean(value).toLowerCase().replace(/\s+/g, '');
+}
+
+function minDate(a, b) {
+  if (!a) return b;
+  if (!b) return a;
+  return a.getTime() <= b.getTime() ? a : b;
+}
+
+function maxDate(a, b) {
+  if (!a) return b;
+  if (!b) return a;
+  return a.getTime() >= b.getTime() ? a : b;
+}
+
+function clean(value) {
+  return String(value == null ? '' : value).trim();
+}

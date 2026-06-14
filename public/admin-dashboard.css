@@ -440,6 +440,49 @@ button {
   color: var(--danger);
 }
 
+.loading-panel {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border: 1px solid rgba(0, 81, 160, 0.16);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(244, 249, 255, 0.96));
+  box-shadow: var(--soft-shadow);
+}
+
+.loading-panel > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.loading-panel strong {
+  color: var(--brand);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.loading-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e5edf7;
+}
+
+.loading-track span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #111827, #0051a0);
+  transition: width 220ms cubic-bezier(.2, .8, .2, 1);
+}
+
 .ally-panel {
   margin-top: 16px;
 }
@@ -845,23 +888,122 @@ button {
 }
 
 .kakao-insight-card,
+.kakao-order-hour-card,
+.kakao-user-search-card,
 .kakao-funnel-item {
   border: 1px solid var(--line);
   border-radius: 16px;
   background: #fff;
 }
 
-.kakao-insight-card {
+.kakao-insight-card,
+.kakao-order-hour-card,
+.kakao-user-search-card {
   min-width: 0;
   padding: 14px;
+}
+
+.kakao-order-hour-card,
+.kakao-user-search-card {
+  margin-top: 14px;
+}
+
+.compact-panel-head {
+  margin-bottom: 12px;
 }
 
 .kakao-member-chart-wrap {
   height: 260px;
 }
 
+.kakao-hour-chart-wrap {
+  height: 300px;
+}
+
 .kakao-funnel-list {
   grid-template-columns: 1fr;
+}
+
+.kakao-user-search-form {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 14px;
+}
+
+.kakao-user-loading {
+  display: grid;
+  gap: 6px;
+  min-height: 96px;
+  place-items: center;
+  border: 1px dashed var(--line-strong);
+  border-radius: 16px;
+  color: var(--muted);
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.kakao-user-loading strong {
+  color: var(--text);
+  font-size: 15px;
+}
+
+.kakao-user-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.kakao-user-head h3 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.25;
+}
+
+.kakao-user-head p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.kakao-user-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.kakao-user-chart-grid,
+.kakao-user-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.kakao-user-chart-grid section,
+.kakao-user-columns section {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #f8fafc;
+}
+
+.kakao-user-chart-grid h4,
+.kakao-user-columns h4 {
+  margin: 0 0 10px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.kakao-user-chart-wrap {
+  height: 260px;
 }
 
 .kakao-funnel-item {
@@ -899,9 +1041,7 @@ button {
 .kakao-summary .ranking-empty,
 .leave-bucket-list .ranking-empty,
 .kakao-hour-list .ranking-empty,
-.kakao-match-list .ranking-empty,
-.kakao-leaver-list .ranking-empty,
-.kakao-profile-list .ranking-empty {
+.kakao-leaver-list .ranking-empty {
   grid-column: 1 / -1;
 }
 
@@ -1454,6 +1594,12 @@ button {
   .kakao-insight-grid {
     grid-template-columns: 1fr;
   }
+
+  .kakao-user-metrics,
+  .kakao-user-chart-grid,
+  .kakao-user-columns {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 840px) {
@@ -1479,9 +1625,13 @@ button {
   .movement-metrics,
   .lifecycle-grid,
   .kakao-upload,
+  .kakao-user-search-form,
   .kakao-summary,
   .kakao-insight-grid,
   .kakao-funnel-list,
+  .kakao-user-metrics,
+  .kakao-user-chart-grid,
+  .kakao-user-columns,
   .leave-bucket-list,
   .kakao-hour-list,
   .drawer-controls {

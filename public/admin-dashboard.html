@@ -146,6 +146,15 @@
         </section>
 
         <div class="status-line" data-status></div>
+        <div class="loading-panel is-hidden" data-loading-panel>
+          <div>
+            <span data-loading-message>데이터를 로딩하고 있습니다.</span>
+            <strong data-loading-percent>0%</strong>
+          </div>
+          <div class="loading-track">
+            <span data-loading-bar></span>
+          </div>
+        </div>
 
         <section class="kpi-grid" aria-label="핵심 지표">
           <article class="kpi-card">
@@ -298,10 +307,36 @@
                 <div class="kakao-funnel-list" data-kakao-funnel></div>
               </article>
             </section>
-            <div class="kakao-hour-list" data-kakao-hour-buckets></div>
+            <section class="kakao-order-hour-card">
+              <div class="panel-head compact-panel-head">
+                <div>
+                  <p class="eyebrow">Order Time</p>
+                  <h2>선택 기간 시간대별 주문건수</h2>
+                </div>
+                <span class="warning-count" data-kakao-hour-period>-</span>
+              </div>
+              <div class="chart-wrap kakao-hour-chart-wrap">
+                <canvas data-kakao-hour-chart></canvas>
+              </div>
+              <div class="kakao-hour-list" data-kakao-hour-buckets></div>
+            </section>
+            <section class="kakao-user-search-card">
+              <div class="panel-head compact-panel-head">
+                <div>
+                  <p class="eyebrow">Kakao User Search</p>
+                  <h2>카톡 유저 상세 검색</h2>
+                </div>
+              </div>
+              <form class="kakao-user-search-form" data-kakao-user-search-form>
+                <label class="field compact">
+                  <span>카톡 닉네임 또는 뒤 4자리</span>
+                  <input type="search" placeholder="예: 1374 / 장1374" data-kakao-user-search-input>
+                </label>
+                <button class="ghost-button" type="submit">검색</button>
+              </form>
+              <div class="kakao-user-detail" data-kakao-user-detail></div>
+            </section>
             <div class="leave-bucket-list" data-kakao-leave-buckets></div>
-            <div class="kakao-profile-list" data-kakao-member-profiles></div>
-            <div class="kakao-match-list" data-kakao-match-samples></div>
             <div class="kakao-leaver-list" data-kakao-recent-leavers></div>
             <p class="panel-note">구글스크립트는 원본 CSV/TXT만 업로드하고, 파싱·입퇴장 분석·실제 주문시간 매칭은 Vercel 서버가 처리합니다.</p>
           </article>

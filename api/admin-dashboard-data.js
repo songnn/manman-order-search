@@ -69,6 +69,7 @@ export default async function handler(req, res) {
     });
     const kakaoCsvTelemetry = await readKakaoCsvTelemetry();
     const kakaoCsvAnalytics = buildKakaoCsvAnalytics(parsed.validRows, kakaoCsvTelemetry, {
+      reportPeriod: aggregated.period,
       reportEndDate: aggregated.meta.reportEndDate,
       recentDays: query.kakaoRecentDays || 30
     });
