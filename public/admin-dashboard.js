@@ -56,6 +56,7 @@ const state = {
   revenueChart: null,
   weeklyFrequencyChart: null,
   monthlyFrequencyChart: null,
+  kakaoMemberChart: null,
   drawerCustomers: [],
   drawerQuery: '',
   drawerSort: 'participation',
@@ -121,8 +122,11 @@ function cacheElements() {
   els.lifecycleCards = document.querySelector('[data-lifecycle-cards]');
   els.kakaoCsvStatus = document.querySelector('[data-kakao-csv-status]');
   els.kakaoCsvSummary = document.querySelector('[data-kakao-csv-summary]');
+  els.kakaoMemberCanvas = document.querySelector('[data-kakao-member-chart]');
+  els.kakaoFunnel = document.querySelector('[data-kakao-funnel]');
   els.kakaoHourBuckets = document.querySelector('[data-kakao-hour-buckets]');
   els.kakaoLeaveBuckets = document.querySelector('[data-kakao-leave-buckets]');
+  els.kakaoMemberProfiles = document.querySelector('[data-kakao-member-profiles]');
   els.kakaoMatchSamples = document.querySelector('[data-kakao-match-samples]');
   els.kakaoRecentLeavers = document.querySelector('[data-kakao-recent-leavers]');
   els.kakaoUploadDate = document.querySelector('[data-kakao-upload-date]');
@@ -845,16 +849,24 @@ function renderKakaoCsvAnalytics() {
       els.kakaoCsvSummary.innerHTML =
         '<div class="ranking-empty compact-empty">아직 카톡 CSV 업로드 분석 기록이 없습니다.</div>';
     }
+    if (els.kakaoFunnel) els.kakaoFunnel.innerHTML = '';
     if (els.kakaoHourBuckets) els.kakaoHourBuckets.innerHTML = '';
     if (els.kakaoLeaveBuckets) els.kakaoLeaveBuckets.innerHTML = '';
+    if (els.kakaoMemberProfiles) els.kakaoMemberProfiles.innerHTML = '';
     if (els.kakaoMatchSamples) els.kakaoMatchSamples.innerHTML = '';
     if (els.kakaoRecentLeavers) els.kakaoRecentLeavers.innerHTML = '';
+    if (state.kakaoMemberChart) {
+      state.kakaoMemberChart.destroy();
+      state.kakaoMemberChart = null;
+    }
     return;
   }
 
   const latest = analytics.latestUpload;
   const events = analytics.memberEvents || {};
   const matching = analytics.matching || {};
+  const nicknameDigitStats = events.nicknameDigitStats || {};
+  const orderDelay = analytics.orderDelay || {};
   const latestDate = latest.orderDate || isoDateOnly(latest.uploadedAt);
 
   if (els.kakaoCsvStatus) {
@@ -867,12 +879,25 @@ function renderKakaoCsvAnalytics() {
       ${kakaoMetric('CSV 주문 메시지', `${formatNumber(matching.csvOrderMessageCount || 0)}개`)}
       ${kakaoMetric('입장/퇴장', `${formatNumber(events.totalJoinCount || 0)}명 / ${formatNumber(events.totalLeaveCount || 0)}명`)}
       ${kakaoMetric('추정 현재 인원', `${formatNumber(events.estimatedCurrentMembers || 0)}명`)}
+      ${kakaoMetric('4자리 미입력', `${formatNumber(nicknameDigitStats.missingDigitCount || 0)}명 · ${formatRate(nicknameDigitStats.missingDigitRate || 0)}`)}
       ${kakaoMetric('입장 후 주문 전환율', formatRate(events.joinToOrderConversionRate || 0))}
       ${kakaoMetric('무구매 퇴장 비율', formatRate(events.recentZeroPurchaseLeaveRate || 0))}
       ${kakaoMetric('Raw 매칭', `${formatNumber(matching.matchedRawOrderCount || 0)} / ${formatNumber(matching.rawOrderCount || 0)}줄`)}
       ${kakaoMetric('미매칭 CSV/Raw', `${formatNumber(matching.unmatchedCsvOrderCount || 0)} / ${formatNumber(matching.unmatchedRawOrderCount || 0)}`)}
       ${kakaoMetric('평균 주문시각', compactDateTime(matching.avgOrderedAt))}
       ${kakaoMetric('첫 주문까지', matching.firstOrderAfterMinutes == null ? '-' : `${formatNumber(matching.firstOrderAfterMinutes)}분`)}
+      ${kakaoMetric('가입→1회 주문', formatDays(orderDelay.avgDaysToFirstOrder))}
+      ${kakaoMetric('가입→2회 주문', formatDays(orderDelay.avgDaysToSecondOrder))}
+    `;
+  }
+
+  renderKakaoMemberTimelineChart(analytics.orderTimeline?.memberTimeline || []);
+
+  if (els.kakaoFunnel) {
+    els.kakaoFunnel.innerHTML = `
+      ${kakaoFunnelMetric('1회 주문 평균', formatDays(orderDelay.avgDaysToFirstOrder), `${formatNumber(orderDelay.firstOrderCustomerCount || 0)}명 기준 · 중앙값 ${formatDays(orderDelay.medianDaysToFirstOrder)}`)}
+      ${kakaoFunnelMetric('2회 주문 평균', formatDays(orderDelay.avgDaysToSecondOrder), `${formatNumber(orderDelay.secondOrderCustomerCount || 0)}명 기준 · 중앙값 ${formatDays(orderDelay.medianDaysToSecondOrder)}`)}
+      ${kakaoFunnelMetric('닉네임 4자리 미입력', `${formatNumber(nicknameDigitStats.missingDigitCount || 0)}명`, `현재 추정 ${formatNumber(nicknameDigitStats.activeMemberCount || 0)}명 중 ${formatRate(nicknameDigitStats.missingDigitRate || 0)}`)}
     `;
   }
 
@@ -899,6 +924,21 @@ function renderKakaoCsvAnalytics() {
           </article>
         `).join('')
       : '<div class="ranking-empty compact-empty">최근 퇴장자 구매수 분포가 없습니다.</div>';
+  }
+
+  if (els.kakaoMemberProfiles) {
+    const profiles = analytics.customerProfiles || [];
+    els.kakaoMemberProfiles.innerHTML = profiles.length
+      ? `
+        <div class="kakao-match-head">카톡 유저 프로필</div>
+        <div class="mini-list">
+          ${profiles.slice(0, 40).map(profile => miniRow(
+            `${profile.userName || profile.customerName || '-'} · 가입 ${compactDateTime(profile.firstJoinedAt)}`,
+            `첫주문 ${compactDateTime(profile.firstActualOrderedAt || profile.firstOrderDate)} · 누적 ${formatNumber(profile.totalOrderLines || 0)}건/${formatNumber(profile.totalQuantity || 0)}개 · ${formatWon(profile.totalRevenue || 0)} · ${profile.hasNicknameDigits4 ? '뒤4 입력' : '뒤4 없음'}`
+          )).join('')}
+        </div>
+      `
+      : '<div class="ranking-empty compact-empty">카톡 유저 프로필 데이터가 없습니다.</div>';
   }
 
   if (els.kakaoMatchSamples) {
@@ -940,6 +980,37 @@ function kakaoMetric(label, value) {
   `;
 }
 
+function kakaoFunnelMetric(label, value, note) {
+  return `
+    <article class="kakao-funnel-item">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+      <small>${escapeHtml(note || '')}</small>
+    </article>
+  `;
+}
+
+function renderKakaoMemberTimelineChart(timeline) {
+  if (!els.kakaoMemberCanvas || typeof Chart === 'undefined') return;
+
+  if (!timeline.length) {
+    if (state.kakaoMemberChart) {
+      state.kakaoMemberChart.destroy();
+      state.kakaoMemberChart = null;
+    }
+    return;
+  }
+
+  state.kakaoMemberChart = upsertLineChart(state.kakaoMemberChart, els.kakaoMemberCanvas, {
+    labels: timeline.map(item => compactDate(item.date)),
+    label: '카톡방 인원수',
+    data: timeline.map(item => item.memberCount || 0),
+    borderColor: '#111827',
+    backgroundColor: 'rgba(17, 24, 39, 0.10)',
+    yFormatter: value => `${formatNumber(value)}명`
+  });
+}
+
 function renderRankings() {
   const label = state.data.period?.label || MODE_LABELS[state.mode];
   const rankings = state.data.rankings;
@@ -972,6 +1043,7 @@ function renderCustomerRanking(container, items, metric) {
 
   container.innerHTML = items.slice(0, 10).map(item => {
     const value = metric === 'revenue' ? formatWon(item.revenue) : `${formatNumber(item.quantity)}개`;
+    const kakaoProfile = findKakaoCustomerProfile(item.customerName);
     return `
       <article class="ranking-item">
         <span class="rank-badge">${item.rank}</span>
@@ -982,12 +1054,30 @@ function renderCustomerRanking(container, items, metric) {
             <span>건수 ${formatNumber(item.orderCount)}건</span>
             <span>금액 ${formatWon(item.revenue)}</span>
             <span>마지막 ${formatDateShort(item.lastOrderDate)}</span>
+            ${kakaoProfile ? `<span>카톡가입 ${compactDateTime(kakaoProfile.firstJoinedAt)}</span>` : ''}
+            ${kakaoProfile ? `<span>첫주문 ${compactDateTime(kakaoProfile.firstActualOrderedAt || kakaoProfile.firstOrderDate || item.firstOrderDate)}</span>` : ''}
+            ${kakaoProfile ? `<span>누적 ${formatNumber(kakaoProfile.totalOrderLines || item.orderCount)}건 · ${formatWon(kakaoProfile.totalRevenue || item.revenue)}</span>` : ''}
           </div>
         </div>
         <strong class="ranking-value">${value}</strong>
       </article>
     `;
   }).join('');
+}
+
+function findKakaoCustomerProfile(customerName) {
+  const key = normalizeSearch(customerName);
+  if (!key) return null;
+
+  return (state.data?.kakaoCsvAnalytics?.customerProfiles || []).find(profile => {
+    const customerKey = normalizeSearch(profile.customerName);
+    const userKey = normalizeSearch(profile.userName);
+
+    return (
+      (customerKey && (customerKey.includes(key) || key.includes(customerKey))) ||
+      (userKey && (userKey.includes(key) || key.includes(userKey)))
+    );
+  }) || null;
 }
 
 function renderProductRanking(container, items, metric) {
@@ -1352,7 +1442,7 @@ async function openCustomerDrawerFromSegment(segmentParams) {
     els.customerDrawerTitle.textContent = '고객 목록 오류';
     els.customerDrawerList.innerHTML = `
       <tr>
-        <td colspan="7" class="customer-table-empty">${escapeHtml(error.message)}</td>
+        <td colspan="8" class="customer-table-empty">${escapeHtml(error.message)}</td>
       </tr>
     `;
   }
@@ -1371,7 +1461,7 @@ function openCustomerDrawer(title, customers, isLoading = false) {
     els.customerDrawerCount.textContent = '불러오는 중';
     els.customerDrawerList.innerHTML = `
       <tr>
-        <td colspan="7" class="customer-table-empty">고객 목록을 불러오는 중입니다...</td>
+        <td colspan="8" class="customer-table-empty">고객 목록을 불러오는 중입니다...</td>
       </tr>
     `;
     return;
@@ -1392,7 +1482,7 @@ function renderCustomerDrawerList() {
   if (!customers.length) {
     els.customerDrawerList.innerHTML = `
       <tr>
-        <td colspan="7" class="customer-table-empty">표시할 고객이 없습니다.</td>
+        <td colspan="8" class="customer-table-empty">표시할 고객이 없습니다.</td>
       </tr>
     `;
     return;
@@ -1402,13 +1492,21 @@ function renderCustomerDrawerList() {
     <tr>
       <td>${escapeHtml(customer.customerName || '-')}</td>
       <td>${escapeHtml(customer.customerDigits4 || '-')}</td>
-      <td>${formatNumber(customer.currentParticipationDays)}일 / 이전 ${formatNumber(customer.previousParticipationDays)}일</td>
-      <td>${formatWon(customer.currentRevenue)}</td>
-      <td>${formatNumber(customer.cumulativeParticipationDays)}일 · ${formatWon(customer.cumulativeRevenue)}</td>
+      <td>${compactDateTime(customer.firstJoinedAt)}</td>
+      <td>${compactDateTime(customer.firstActualOrderedAt || customer.firstOrderDate)}</td>
+      <td>${formatNumber(customer.currentParticipationDays)}일 / 누적 ${formatNumber(customer.cumulativeParticipationDays)}일</td>
+      <td>${formatNumber(customer.cumulativeOrderLines || 0)}건 · ${formatNumber(customer.cumulativeQuantity || 0)}개 · ${formatWon(customer.cumulativeRevenue)}</td>
       <td>${escapeHtml((customer.recentProducts || []).join(', ') || '-')}</td>
-      <td>${escapeHtml(customer.status || '-')}</td>
+      <td>${escapeHtml(getCustomerDrawerStatus(customer))}</td>
     </tr>
   `).join('');
+}
+
+function getCustomerDrawerStatus(customer) {
+  const status = [customer.status].filter(Boolean);
+  if (customer.firstJoinedAt) status.push(customer.isCurrentKakaoMember ? '카톡방 있음' : '카톡방 이탈');
+  if (customer.firstJoinedAt) status.push(customer.hasNicknameDigits4 ? '뒤4 입력' : '뒤4 없음');
+  return status.join(' · ') || '-';
 }
 
 function getVisibleDrawerCustomers() {
@@ -1425,6 +1523,8 @@ function getVisibleDrawerCustomers() {
 
   return [...filtered].sort((a, b) => {
     if (state.drawerSort === 'revenue') return (b.currentRevenue || 0) - (a.currentRevenue || 0);
+    if (state.drawerSort === 'joinedAt') return String(a.firstJoinedAt || '9999').localeCompare(String(b.firstJoinedAt || '9999'));
+    if (state.drawerSort === 'firstOrder') return String(a.firstActualOrderedAt || a.firstOrderDate || '9999').localeCompare(String(b.firstActualOrderedAt || b.firstOrderDate || '9999'));
     if (state.drawerSort === 'lastOrder') return String(b.lastOrderDate || '').localeCompare(String(a.lastOrderDate || ''));
     if (state.drawerSort === 'name') return String(a.customerName || '').localeCompare(String(b.customerName || ''), 'ko');
 
@@ -1441,7 +1541,14 @@ function exportDrawerCustomers() {
   const headers = [
     '고객명',
     '뒤4',
+    '카톡가입일',
+    '카톡방현재여부',
+    '닉네임뒤4입력여부',
     '최초주문일',
+    '실제첫주문시각',
+    '실제두번째주문시각',
+    '가입후첫주문소요일',
+    '가입후두번째주문소요일',
     '최근주문일',
     '현재기간참여일수',
     '직전기간참여일수',
@@ -1450,6 +1557,8 @@ function exportDrawerCustomers() {
     '현재기간주문금액',
     '직전기간주문금액',
     '누적참여일수',
+    '누적주문라인수',
+    '누적구매수량',
     '누적주문금액',
     '최근구매상품',
     '고객상태'
@@ -1457,7 +1566,14 @@ function exportDrawerCustomers() {
   const rows = customers.map(customer => [
     customer.customerName,
     customer.customerDigits4,
+    customer.firstJoinedAt,
+    customer.isCurrentKakaoMember ? 'Y' : 'N',
+    customer.hasNicknameDigits4 ? 'Y' : 'N',
     customer.firstOrderDate,
+    customer.firstActualOrderedAt,
+    customer.secondActualOrderedAt,
+    customer.daysFromJoinToFirstOrder,
+    customer.daysFromJoinToSecondOrder,
     customer.lastOrderDate,
     customer.currentParticipationDays,
     customer.previousParticipationDays,
@@ -1466,9 +1582,11 @@ function exportDrawerCustomers() {
     customer.currentRevenue,
     customer.previousRevenue,
     customer.cumulativeParticipationDays,
+    customer.cumulativeOrderLines,
+    customer.cumulativeQuantity,
     customer.cumulativeRevenue,
     (customer.recentProducts || []).join(' / '),
-    customer.status
+    getCustomerDrawerStatus(customer)
   ]);
   const csv = [headers, ...rows]
     .map(row => row.map(value => `"${String(value == null ? '' : value).replace(/"/g, '""')}"`).join(','))
@@ -1783,6 +1901,15 @@ function formatDecimal(value) {
     minimumFractionDigits: 1,
     maximumFractionDigits: 2
   });
+}
+
+function formatDays(value) {
+  if (value == null || Number.isNaN(Number(value))) return '-';
+  const n = Number(value);
+  return `${n.toLocaleString('ko-KR', {
+    minimumFractionDigits: Number.isInteger(n) ? 0 : 1,
+    maximumFractionDigits: 1
+  })}일`;
 }
 
 function formatRate(value) {

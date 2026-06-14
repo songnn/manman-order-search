@@ -1,5 +1,6 @@
 import { aggregateDashboardRows } from '../lib/dashboard/aggregateOrders.js';
 import { buildGrowthCustomerList, getGrowthRows } from '../lib/dashboard/growthAnalysis.js';
+import { enrichCustomersWithKakaoProfiles, readKakaoCsvTelemetry } from '../lib/dashboard/kakaoCsvAnalytics.js';
 import { parseDashboardDate, parseDashboardRows } from '../lib/dashboard/parseOrders.js';
 import { getSheetsClient } from '../lib/googleSheetsClient.js';
 
@@ -86,14 +87,21 @@ export default async function handler(req, res) {
       },
       limit: query.limit
     });
+    const kakaoCsvTelemetry = await readKakaoCsvTelemetry();
+    const enrichedCustomers = enrichCustomersWithKakaoProfiles(
+      customerList.customers,
+      parsed.validRows,
+      kakaoCsvTelemetry
+    );
 
     return res.status(200).json({
       ok: true,
       ...customerList,
+      customers: enrichedCustomers,
       meta: {
         totalValidRowCount: parsed.validRows.length,
         growthAnalyzedRowCount: growthRows.length,
-        returnedCustomerCount: customerList.customers.length
+        returnedCustomerCount: enrichedCustomers.length
       }
     });
   } catch (error) {

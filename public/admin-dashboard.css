@@ -623,6 +623,8 @@ button {
 .movement-metrics,
 .lifecycle-grid,
 .kakao-summary,
+.kakao-insight-grid,
+.kakao-funnel-list,
 .leave-bucket-list,
 .kakao-hour-list {
   display: grid;
@@ -837,11 +839,69 @@ button {
   margin-top: 14px;
 }
 
+.kakao-insight-grid {
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+  margin-top: 14px;
+}
+
+.kakao-insight-card,
+.kakao-funnel-item {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.kakao-insight-card {
+  min-width: 0;
+  padding: 14px;
+}
+
+.kakao-member-chart-wrap {
+  height: 260px;
+}
+
+.kakao-funnel-list {
+  grid-template-columns: 1fr;
+}
+
+.kakao-funnel-item {
+  min-height: 80px;
+  padding: 14px;
+}
+
+.kakao-funnel-item span,
+.kakao-funnel-item strong,
+.kakao-funnel-item small {
+  display: block;
+}
+
+.kakao-funnel-item span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.kakao-funnel-item strong {
+  margin-top: 8px;
+  color: var(--text);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.kakao-funnel-item small {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
 .kakao-summary .ranking-empty,
 .leave-bucket-list .ranking-empty,
 .kakao-hour-list .ranking-empty,
 .kakao-match-list .ranking-empty,
-.kakao-leaver-list .ranking-empty {
+.kakao-leaver-list .ranking-empty,
+.kakao-profile-list .ranking-empty {
   grid-column: 1 / -1;
 }
 
@@ -967,6 +1027,10 @@ button {
 }
 
 .kakao-leaver-list {
+  margin-top: 14px;
+}
+
+.kakao-profile-list {
   margin-top: 14px;
 }
 
@@ -1304,6 +1368,7 @@ button {
 
 .customer-table {
   width: 100%;
+  min-width: 1080px;
   border-collapse: collapse;
   font-size: 13px;
 }
@@ -1331,7 +1396,7 @@ button {
 }
 
 .customer-table td:nth-child(1),
-.customer-table td:nth-child(6) {
+.customer-table td:nth-child(7) {
   max-width: 220px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1385,6 +1450,10 @@ button {
   .growth-chart-grid {
     grid-template-columns: 1fr;
   }
+
+  .kakao-insight-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 840px) {
@@ -1411,6 +1480,8 @@ button {
   .lifecycle-grid,
   .kakao-upload,
   .kakao-summary,
+  .kakao-insight-grid,
+  .kakao-funnel-list,
   .leave-bucket-list,
   .kakao-hour-list,
   .drawer-controls {

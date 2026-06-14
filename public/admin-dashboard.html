@@ -286,8 +286,21 @@
               <span class="kakao-upload-status" data-kakao-upload-status></span>
             </div>
             <div class="kakao-summary" data-kakao-csv-summary></div>
+            <section class="kakao-insight-grid">
+              <article class="kakao-insight-card">
+                <div class="kakao-match-head">카톡방 인원수 추이</div>
+                <div class="chart-wrap kakao-member-chart-wrap">
+                  <canvas data-kakao-member-chart></canvas>
+                </div>
+              </article>
+              <article class="kakao-insight-card">
+                <div class="kakao-match-head">가입 후 주문 전환</div>
+                <div class="kakao-funnel-list" data-kakao-funnel></div>
+              </article>
+            </section>
             <div class="kakao-hour-list" data-kakao-hour-buckets></div>
             <div class="leave-bucket-list" data-kakao-leave-buckets></div>
+            <div class="kakao-profile-list" data-kakao-member-profiles></div>
             <div class="kakao-match-list" data-kakao-match-samples></div>
             <div class="kakao-leaver-list" data-kakao-recent-leavers></div>
             <p class="panel-note">구글스크립트는 원본 CSV/TXT만 업로드하고, 파싱·입퇴장 분석·실제 주문시간 매칭은 Vercel 서버가 처리합니다.</p>
@@ -426,6 +439,8 @@
             <select data-customer-drawer-sort>
               <option value="participation">참여일수 높은순</option>
               <option value="revenue">현재 주문금액 높은순</option>
+              <option value="joinedAt">카톡 가입일 오래된순</option>
+              <option value="firstOrder">첫 주문일 오래된순</option>
               <option value="lastOrder">최근 주문일 최신순</option>
               <option value="name">고객명 가나다순</option>
             </select>
@@ -439,9 +454,10 @@
               <tr>
                 <th>고객명</th>
                 <th>뒤4</th>
-                <th>참여일수</th>
-                <th>주문금액</th>
-                <th>누적</th>
+                <th>카톡가입</th>
+                <th>첫주문</th>
+                <th>참여</th>
+                <th>주문/매출</th>
                 <th>최근상품</th>
                 <th>상태</th>
               </tr>
