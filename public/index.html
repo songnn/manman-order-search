@@ -5070,6 +5070,7 @@ body.has-results .discount-products {
   };
 
   const SECTION_KEYS = {
+    TIME_SALE: 'timeSale',
     MY_ORDERS: 'myOrders',
     TODAY_PICKUP: 'todayPickup',
     TOMORROW_PICKUP: 'tomorrowPickup',
@@ -5079,6 +5080,7 @@ body.has-results .discount-products {
   const STORE_DISPLAY_NAME = '만만마켓 전농래미안크레시티점';
 
   let sectionViewState = {
+    [SECTION_KEYS.TIME_SALE]: false,
     [SECTION_KEYS.MY_ORDERS]: false,
     [SECTION_KEYS.TODAY_PICKUP]: false,
     [SECTION_KEYS.TOMORROW_PICKUP]: false,
@@ -5087,6 +5089,7 @@ body.has-results .discount-products {
 
   function resetSectionViewState() {
     sectionViewState = {
+      [SECTION_KEYS.TIME_SALE]: false,
       [SECTION_KEYS.MY_ORDERS]: false,
       [SECTION_KEYS.TODAY_PICKUP]: false,
       [SECTION_KEYS.TOMORROW_PICKUP]: false,
@@ -7581,19 +7584,31 @@ function buildSectionsData(items) {
   const seoulToday = getSeoulTodayInfo();
   const targets = getDisplayTargets();
 
+  const timeSaleOrders = sortItemsByOrderSheetDate(
+    normalized.filter(item => item.isTimeSaleOrder)
+  );
   const myOrders = sortItemsByOrderSheetDate(normalized);
 
-  const sections = [
-    {
-      key: SECTION_KEYS.MY_ORDERS,
-      title: '나의 주문',
-      subtitle: '최근 7일'
-    }
-  ];
+  const sections = [];
 
   const sectionItemsMap = {
+    [SECTION_KEYS.TIME_SALE]: timeSaleOrders,
     [SECTION_KEYS.MY_ORDERS]: myOrders
   };
+
+  if (timeSaleOrders.length) {
+    sections.push({
+      key: SECTION_KEYS.TIME_SALE,
+      title: '⚡ 방금 주문한 타임특가',
+      subtitle: '주문 후 바로 확인'
+    });
+  }
+
+  sections.push({
+    key: SECTION_KEYS.MY_ORDERS,
+    title: '나의 주문',
+    subtitle: '최근 7일'
+  });
 
   targets.forEach(target => {
     const targetItems = sortItemsByOrderSheetDate(
