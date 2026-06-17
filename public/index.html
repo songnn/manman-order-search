@@ -4534,6 +4534,40 @@ body.has-results .discount-products {
   display: none;
 }
 
+.discount-card__stock-alert {
+  position: absolute;
+  left: clamp(10px, 2.5vw, 36px);
+  bottom: clamp(10px, 2.5vw, 36px);
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: min(45vw, 520px);
+  min-height: clamp(30px, 5.4167vw, 78px);
+  padding:
+    clamp(5px, 1.1111vw, 16px)
+    clamp(11px, 2.2222vw, 32px);
+  border: clamp(1px, 0.2083vw, 3px) solid rgba(255, 255, 255, 0.96);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0)),
+    linear-gradient(135deg, #ef233c 0%, #c1121f 100%);
+  color: #fff;
+  box-shadow:
+    0 clamp(5px, 1.25vw, 18px) clamp(14px, 3.3333vw, 48px) rgba(193, 18, 31, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.42);
+  font-family: var(--discount-base);
+  font-size: clamp(12px, 2.9167vw, 42px);
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: 0;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
 .discount-badge {
   position: relative;
   width: 100%;
@@ -6271,6 +6305,32 @@ function splitDiscountDescriptionChips(description = '') {
     .slice(0, 6);
 }
 
+function getDiscountCategoryLabel(item) {
+  return String(item?.category || '').trim();
+}
+
+function getDiscountStockQuantity(item) {
+  const stock = Number(item?.stockQuantity);
+  return Number.isFinite(stock) && stock >= 0 ? Math.floor(stock) : null;
+}
+
+function isDiscountLowStock(item) {
+  const stock = getDiscountStockQuantity(item);
+  return stock != null && stock < 10;
+}
+
+function createDiscountStockAlert(item) {
+  const stock = getDiscountStockQuantity(item);
+  if (stock == null || stock >= 10) return null;
+
+  const alert = document.createElement('div');
+  alert.className = 'discount-card__stock-alert';
+  alert.textContent = `품절임박 · ${stock}개 남음`;
+  alert.setAttribute('aria-label', `품절임박, 남은 재고 ${stock}개`);
+
+  return alert;
+}
+
 function getDiscountFallbackIcon(productName = '') {
   const name = String(productName);
   if (/계란|대란|특란|유정란|난각|egg/i.test(name)) return '🥚';
@@ -6617,7 +6677,9 @@ function createDiscountProductCard(item, index = 0, total = 1) {
   card.className = 'discount-card';
   card.dataset.discountProductId = item.id || '';
   card.style.setProperty('--discount-theme-color', getDiscountThemeColor(item));
-  card.setAttribute('aria-label', `총 ${total}개 중 ${index + 1}번째 할인상품`);
+  const stockQuantity = getDiscountStockQuantity(item);
+  const lowStockLabel = isDiscountLowStock(item) ? `, 품절임박 남은 재고 ${stockQuantity}개` : '';
+  card.setAttribute('aria-label', `총 ${total}개 중 ${index + 1}번째 할인상품${lowStockLabel}`);
 
   const img = document.createElement('img');
   img.className = 'discount-card__image';
@@ -6641,7 +6703,14 @@ function createDiscountProductCard(item, index = 0, total = 1) {
   name.textContent = item.productName || '';
   top.append(name);
 
-  const descriptionChips = splitDiscountDescriptionChips(item.description || '');
+  const categoryLabel = getDiscountCategoryLabel(item);
+  const descriptionChips = [
+    categoryLabel,
+    ...splitDiscountDescriptionChips(item.description || '')
+  ]
+    .filter(Boolean)
+    .filter((text, chipIndex, list) => list.indexOf(text) === chipIndex)
+    .slice(0, 6);
   if (descriptionChips.length) {
     const chips = document.createElement('div');
     chips.className = 'discount-card__chips';
@@ -6720,6 +6789,8 @@ function createDiscountProductCard(item, index = 0, total = 1) {
 
   const children = [img, top];
   if (rate) children.push(rate);
+  const stockAlert = createDiscountStockAlert(item);
+  if (stockAlert) children.push(stockAlert);
   children.push(bottomGroup);
   card.append(...children);
 

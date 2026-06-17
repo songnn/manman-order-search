@@ -18,7 +18,8 @@ export default async function handler(req, res) {
     const result = await getActiveDiscountProducts({
       preferSnapshot: true,
       refreshInBackground: true,
-      sheetTimeoutMs: 1200
+      sheetTimeoutMs: 1200,
+      maxSheetRow: 199
     });
 
     return res.status(200).json({

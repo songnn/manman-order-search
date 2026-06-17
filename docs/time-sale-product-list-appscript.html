@@ -1,0 +1,2038 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>만만마켓</title>
+
+  <style>
+    @font-face {
+      font-family: 'TheJamsil5Bold';
+      src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2302_01@1.0/TheJamsil5Bold.woff2') format('woff2');
+      font-weight: 700;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'TheJamsil4Medium';
+      src: url('https://cdn.jsdelivr.net/gh/fontbee/font@main/LOTTE/TheJamsil4Medium.woff2') format('woff2');
+      font-weight: 500;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Cafe24Ssukssuk';
+      src: url('https://cdn.jsdelivr.net/gh/fonts-archive/Cafe24Ssukssuk/Cafe24Ssukssuk.woff2') format('woff2'),
+           url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_twelve@1.1/Cafe24Ssurround.woff') format('woff');
+      font-weight: 700;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Pretendard';
+      src: url('https://cdn.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Medium.woff') format('woff');
+      font-weight: 500;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Pretendard';
+      src: url('https://cdn.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Bold.woff') format('woff');
+      font-weight: 700;
+      font-style: normal;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin:0; padding:0; width:100%; min-height:100%; background:#fff; color:#050505; font-family:'Pretendard','Apple SD Gothic Neo','Noto Sans KR',sans-serif; }
+    body { padding-bottom:140px; }
+    button, input { font-family:inherit; }
+
+    .app { max-width:820px; margin:0 auto; min-height:100vh; background:#fff; }
+    .screen { display:none; max-width:820px; margin:0 auto; min-height:calc(100vh - 140px); background:#fff; }
+    .screen.active { display:block; }
+
+    .topHeader { position:sticky; top:0; z-index:50; height:104px; background:#050505; color:#fff; display:flex; align-items:center; padding:0 22px; gap:18px; }
+    .backBtn { width:56px; height:56px; border:0; border-radius:8px; background:#fff; color:#000; display:flex; align-items:center; justify-content:center; flex:0 0 auto; box-shadow:0 1px 4px rgba(0,0,0,.25); }
+    .backIcon { width:24px; height:24px; border-left:6px solid #000; border-bottom:6px solid #000; transform:rotate(45deg); margin-left:9px; }
+    .headerTitle { flex:1; min-width:0; display:flex; align-items:flex-end; gap:14px; }
+    .headerTitleMain { font-family:'TheJamsil5Bold'; font-size:34px; line-height:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:-.04em; }
+    .headerTime { font-size:14px; color:#cfcfcf; white-space:nowrap; padding-bottom:4px; }
+    .logoText { text-align:right; line-height:1; flex:0 0 auto; }
+    .logoMain { font-family:'TheJamsil5Bold'; font-size:34px; letter-spacing:-.05em; }
+    .logoSub { margin-top:4px; font-size:11px; color:#eee; }
+
+    .tabsWrap { position:sticky; top:104px; z-index:45; background:#fff; border-bottom:1px solid #eee; overflow:hidden; }
+    .tabs { display:flex; gap:25px; overflow-x:auto; padding:22px 22px 16px; scrollbar-width:none; position:relative; }
+    .tabs::-webkit-scrollbar { display:none; }
+    .tab { flex:0 0 auto; border:0; background:transparent; padding:0; font-size:17px; font-weight:700; color:#111; white-space:nowrap; }
+    .tab.active { color:#000; }
+    .tabBar { position:absolute; left:22px; bottom:0; height:3px; width:64px; background:#111; border-radius:3px; transition: transform .28s ease, width .28s ease; }
+
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:76px 22px; padding:24px 22px 168px; }
+    .card { cursor:pointer; min-width:0; }
+    .thumbBox { position:relative; width:100%; aspect-ratio:1/1; overflow:hidden; border-radius:4px; background:#f4f4f4; box-shadow:0 8px 22px rgba(0,0,0,.105), 0 1px 4px rgba(0,0,0,.08); }
+    .thumb { width:100%; height:100%; object-fit:cover; display:block; }
+    .rankBadge { position:absolute; left:14px; top:14px; z-index:3; height:34px; min-width:64px; padding:0 12px; display:flex; align-items:center; justify-content:center; gap:8px; background:rgba(0,0,0,.68); color:#fff; font-size:18px; font-weight:800; border-radius:2px; }
+    .rankArrow.up { color:#ff3b3b; }
+    .rankArrow.down { color:#28d94f; }
+    .rankArrow.same { color:#fff; }
+    .ticker { position:absolute; left:0; right:0; bottom:0; height:38px; background:rgba(0,0,0,.82); color:#fff; overflow:hidden; display:flex; align-items:center; }
+    .tickerInner { display:inline-flex; white-space:nowrap; animation:tickerMove var(--ticker-duration, 52s) linear infinite; will-change:transform; transform:translate3d(0,0,0); }
+    .tickerItem { display:inline-flex; align-items:center; padding-right:34px; font-size:17px; font-weight:700; }
+    .tickerItem:before { content:'👩‍🍳'; margin-right:7px; font-size:18px; }
+    @keyframes tickerMove { 0% { transform:translate3d(0,0,0); } 100% { transform:translate3d(calc(-1 * var(--ticker-distance, 640px)),0,0); } }
+
+    .cardTitle { margin:22px 0 10px; font-size:23px; line-height:1.18; letter-spacing:-.06em; font-weight:900; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .cardMetaRow { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .price { font-size:29px; line-height:1; font-weight:900; letter-spacing:-.04em; }
+    .pickupChip { flex:0 0 auto; padding:8px 11px; background:#eee; color:#666; font-size:14px; font-weight:700; border-radius:2px; }
+    .viewText { margin-top:8px; color:#777; font-size:16px; font-weight:700; }
+
+    .detailPage { display:none; background:#fff; min-height:100vh; padding-bottom:176px; }
+    .detailHero { position:relative; width:100%; background:#f5f5f5; }
+    .detailHero img { width:100%; aspect-ratio:1/1; object-fit:cover; display:block; }
+    .detailBack { position:absolute; left:38px; top:40px; z-index:20; }
+    .detailTicker { position:relative; height:42px; background:#050505; color:#fff; overflow:hidden; display:flex; align-items:center; }
+    .detailInfo { padding:34px 34px 28px; }
+    .detailTitle { margin:0 0 24px; font-size:39px; line-height:1.23; letter-spacing:-.065em; font-weight:900; }
+    .detailPrice { font-size:50px; line-height:1; font-weight:900; letter-spacing:-.05em; margin-bottom:18px; }
+    .detailView { color:#777; font-size:24px; font-weight:700; margin-bottom:28px; }
+    .categoryLink { display:inline-block; color:#000; font-size:24px; font-weight:800; text-decoration:underline; text-underline-offset:3px; }
+    .infoRows { margin-top:22px; border-top:1px solid #eee; }
+    .infoRow { min-height:86px; display:flex; align-items:center; justify-content:space-between; gap:20px; border-bottom:1px solid #eee; padding:0 34px; font-size:25px; font-weight:900; }
+    .infoLabel { color:#111; }
+    .infoValue { text-align:right; }
+    .detailHtml { width:100%; overflow:hidden; background:#fff; }
+    .detailHtml img, .detailHtml video { max-width:100% !important; width:100% !important; height:auto !important; display:block; margin:0 auto; }
+    .detailHtml table { max-width:100% !important; width:100% !important; }
+    .detailHtml .edibot-product-detail { width:100% !important; max-width:100% !important; }
+    .detailHtml [style*="width:860px"] { width:100% !important; max-width:100% !important; }
+    .detailLoading { padding:60px 20px; text-align:center; color:#777; font-size:20px; }
+    .detailBottom { position:fixed; left:50%; right:auto; bottom:140px; transform:translateX(-50%); z-index:80; background:#fff; border-top:1px solid #ddd; padding:16px 22px 18px; display:none; gap:20px; width:min(820px,100vw); max-width:820px; margin:0 auto; }
+    .listBtn { width:100%; height:72px; border-radius:7px; font-size:24px; font-weight:900; background:#fff; border:1.5px solid #111; color:#111; }
+    .empty { padding:70px 24px; text-align:center; color:#777; font-size:18px; }
+
+    /* 사이좋게 */
+    .friendScreen { position:relative; overflow:hidden; min-height:calc(100vh - 140px); background:#f7eee5; }
+    .friendHero { position:relative; min-height:calc(100vh - 140px); padding-bottom:270px; overflow:hidden; background-image:linear-gradient(rgba(255,255,255,.24), rgba(255,255,255,.05)), var(--invite-bg); background-size:cover; background-position:center top; }
+    .friendCopy { position:relative; z-index:2; text-align:center; padding:70px 22px 0; letter-spacing:-.045em; }
+    .friendPre { font-family:'Cafe24Ssukssuk','TheJamsil4Medium',sans-serif; font-size:35px; font-weight:900; line-height:1.05; color:#050505; text-decoration:underline; text-underline-offset:6px; }
+    .friendTitle { margin-top:16px; font-family:'TheJamsil5Bold','Cafe24Ssukssuk',sans-serif; font-size:82px; line-height:.96; color:#050505; font-weight:900; }
+    .friendBenefit { margin-top:24px; font-family:'TheJamsil5Bold','Cafe24Ssukssuk',sans-serif; font-size:74px; line-height:1; font-weight:900; color:#050505; }
+    .friendBenefit .blue { color:#087bf1; }
+    .friendSub { display:inline-block; position:relative; margin-top:28px; font-family:'Cafe24Ssukssuk','TheJamsil4Medium',sans-serif; font-size:27px; line-height:1.25; font-weight:900; color:#050505; z-index:1; }
+    .friendSub:after { content:''; position:absolute; left:-8px; right:-8px; bottom:0; height:12px; background:rgba(0,108,218,.25); border-radius:999px; z-index:-1; }
+    .friendSub .blue { color:#087bf1; }
+    .friendDarkBox { position:relative; z-index:3; margin:420px auto 0; width:76%; max-width:620px; background:rgba(0,0,0,.66); color:#fff; border-radius:8px; text-align:center; padding:28px 14px 24px; box-shadow:0 10px 30px rgba(0,0,0,.16); }
+    .friendDarkTop { font-size:34px; font-weight:900; line-height:1.22; letter-spacing:-.045em; }
+    .friendDarkMain { margin-top:8px; font-family:'TheJamsil5Bold',sans-serif; font-size:47px; line-height:1.08; font-weight:900; letter-spacing:-.055em; }
+    .friendDarkMain .blue { color:#1188ff; }
+    .friendDarkDesc { margin-top:15px; font-size:18px; line-height:1.55; font-weight:700; color:rgba(255,255,255,.92); }
+    .brandTicker { position:absolute; left:0; right:0; bottom:252px; height:74px; overflow:hidden; z-index:4; }
+    .brandTrack { display:flex; width:max-content; animation:brandMove 34s linear infinite; }
+    .brandTrack img { width:720px; height:100px; object-fit:contain; flex:0 0 auto; margin-right:40px; }
+    @keyframes brandMove { from { transform:translate3d(0,0,0); } to { transform:translate3d(-760px,0,0); } }
+    .friendInviteFixed { position:fixed; left:50%; bottom:140px; transform:translateX(-50%); width:min(820px, 100vw); height:92px; z-index:70; padding:12px 22px; background:#ffd900; display:flex; justify-content:center; align-items:center; }
+    .friendInviteBtn { width:100%; height:68px; border:0; border-radius:8px; background:#ffd900; color:#3b1d1d; display:flex; align-items:center; justify-content:center; gap:14px; font-size:28px; font-weight:900; }
+    .friendInviteBtn img { width:35px; height:33px; object-fit:contain; }
+
+    /* 주문조회 */
+    .orderScreen { background:#f3f5f8; min-height:calc(100vh - 140px); padding:0; }
+    .orderFrame { width:100%; height:calc(100vh - 140px); border:0; display:block; background:#f3f3f3; }
+    .orderHero { text-align:center; padding:34px 8px 24px; }
+    .orderLogo { font-family:'TheJamsil5Bold'; color:#0051A0; font-size:50px; letter-spacing:-.06em; }
+    .orderDesc { margin-top:12px; font-size:18px; color:#555; line-height:1.45; font-weight:700; }
+    .orderSearchBox { position:relative; max-width:680px; margin:22px auto 0; }
+    .orderInput { width:100%; height:72px; border:0; border-radius:999px; background:#fff; padding:0 120px 0 24px; box-shadow:0 8px 24px rgba(0,0,0,.08); font-size:22px; font-weight:800; outline:none; }
+    .orderSearchBtn { position:absolute; right:8px; top:8px; width:100px; height:56px; border:0; border-radius:999px; background:#0051A0; color:#fff; font-size:19px; font-weight:900; }
+    .orderMessage { text-align:center; margin:18px 0; color:#777; font-size:16px; font-weight:700; }
+    .candidateGrid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:18px 0; }
+    .candidateBtn { border:0; background:#fff; border-radius:16px; padding:18px 12px; box-shadow:0 4px 14px rgba(0,0,0,.06); font-size:17px; font-weight:900; text-align:left; }
+    .orderCards { display:flex; flex-direction:column; gap:12px; max-width:720px; margin:0 auto; }
+    .orderCard { background:#fff; border-radius:18px; overflow:hidden; display:grid; grid-template-columns:94px 1fr; gap:14px; padding:12px; box-shadow:0 4px 16px rgba(0,0,0,.055); }
+    .orderThumb { width:94px; height:94px; object-fit:cover; background:#eee; border-radius:12px; }
+    .orderName { font-size:17px; font-weight:900; line-height:1.25; letter-spacing:-.04em; }
+    .orderMeta { margin-top:8px; display:flex; flex-wrap:wrap; gap:6px; }
+    .orderChip { background:#f0f3f7; border-radius:8px; padding:6px 8px; color:#333; font-size:13px; font-weight:800; }
+
+    /* 하단 앱 네비게이션 */
+    .bottomNav {
+      position:fixed;
+      left:0;
+      right:0;
+      bottom:0;
+      width:100vw;
+      max-width:none;
+      height:140px;
+      z-index:100;
+      background:rgba(255,255,255,.985);
+      border-top:1px solid rgba(0,0,0,.10);
+      display:grid;
+      grid-template-columns:repeat(3, minmax(0, 1fr));
+      padding:14px max(10px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-right));
+      box-shadow:0 -14px 34px rgba(0,0,0,.105);
+      backdrop-filter:blur(18px);
+      -webkit-backdrop-filter:blur(18px);
+    }
+    .navBtn {
+      position:relative;
+      min-width:0;
+      height:112px;
+      margin:0 6px;
+      border:0;
+      border-radius:28px;
+      background:transparent;
+      color:#8b8b8b;
+      font-size:18px;
+      line-height:1.08;
+      font-weight:900;
+      letter-spacing:-.04em;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      opacity:.74;
+      transition:transform .28s cubic-bezier(.2,.85,.25,1.25), background .24s ease, color .24s ease, box-shadow .24s ease, opacity .24s ease;
+    }
+    .navIcon {
+      width:48px;
+      height:48px;
+      border-radius:18px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:36px;
+      line-height:1;
+      background:rgba(0,0,0,.045);
+      transform:translateY(0) scale(1);
+      transition:transform .28s cubic-bezier(.2,.85,.25,1.25), background .24s ease;
+    }
+    .navBtn.active {
+      color:#0051A0;
+      opacity:1;
+      background:linear-gradient(180deg, rgba(0,81,160,.12) 0%, rgba(0,81,160,.055) 100%);
+      box-shadow:0 10px 24px rgba(0,81,160,.15);
+      transform:translateY(-8px);
+    }
+    .navBtn.active .navIcon {
+      background:#0051A0;
+      color:#fff;
+      transform:translateY(-2px) scale(1.1);
+      animation:navPop .38s cubic-bezier(.2,.85,.25,1.35);
+    }
+    .navBtn.active::after {
+      content:'';
+      position:absolute;
+      left:50%;
+      bottom:9px;
+      width:42px;
+      height:5px;
+      border-radius:999px;
+      background:#0051A0;
+      transform:translateX(-50%);
+      box-shadow:0 2px 8px rgba(0,81,160,.28);
+    }
+    .navBtn:active { transform:scale(.96); }
+    .navBtn.active:active { transform:translateY(-8px) scale(.98); }
+    @keyframes navPop {
+      0% { transform:translateY(4px) scale(.82); }
+      55% { transform:translateY(-4px) scale(1.18); }
+      100% { transform:translateY(-2px) scale(1.1); }
+    }
+
+    @media (max-width:520px) {
+      .topHeader { height:88px; padding:0 14px; gap:12px; }
+      .backBtn { width:48px; height:48px; }
+      .headerTitleMain { font-size:28px; }
+      .headerTime { font-size:12px; }
+      .logoMain { font-size:26px; }
+      .tabsWrap { top:88px; }
+      .tabs { gap:20px; padding:18px 14px 14px; }
+      .grid { padding:20px 14px 230px; gap:56px 14px; }
+      .cardTitle { font-size:20px; }
+      .price { font-size:26px; }
+      .tickerItem { font-size:14px; }
+      .detailTitle { font-size:34px; }
+      .detailPrice { font-size:44px; }
+      .infoRow { padding:0 24px; font-size:22px; }
+      .friendCopy { padding-top:56px; }
+      .friendPre { font-size:27px; }
+      .friendTitle { font-size:64px; }
+      .friendBenefit { font-size:58px; }
+      .friendSub { font-size:20px; }
+      .friendDarkBox { margin-top:360px; width:78%; padding:22px 12px 20px; }
+      .friendDarkTop { font-size:26px; }
+      .friendDarkMain { font-size:36px; }
+      .friendDarkDesc { font-size:15px; }
+      .brandTicker { bottom:250px; height:64px; }
+      .brandTrack img { width:620px; height:86px; margin-right:36px; }
+      @keyframes brandMove { from { transform:translate3d(0,0,0); } to { transform:translate3d(-656px,0,0); } }
+      .friendInviteBtn { font-size:25px; }
+      .bottomNav { height:140px; padding:14px 8px 12px; }
+      .navBtn { height:112px; margin:0 3px; font-size:16px; gap:8px; border-radius:24px; }
+      .navIcon { width:44px; height:44px; font-size:32px; border-radius:16px; }
+      .orderLogo { font-size:42px; }
+      .candidateGrid { grid-template-columns:1fr; }
+    }
+
+    /* max-width 1000px + 모바일 좌우 여백 제거 */
+.app,
+.screen,
+.screen.active {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+@media (max-width: 1000px) {
+  .app,
+  .screen,
+  .screen.active {
+    max-width: none !important;
+    margin: 0 !important;
+  }
+
+  .grid {
+    padding-left: 40px !important;
+    padding-right: 40px !important;
+    gap: 80px 40px !important;
+  }
+
+  .bottomNav {
+    width: 100vw !important;
+    max-width: none !important;
+    left: 0 !important;
+    right: 0 !important;
+  }
+}
+  
+/* App Shell 내부 화면 전용: 하단 Nav는 App.html에만 있으므로 여기서는 제거 */
+body {
+  padding-bottom: 0 !important;
+}
+
+.grid {
+  padding-bottom: 44px !important;
+}
+
+.detailBottom {
+  bottom: 0 !important;
+}
+
+.orderFrame {
+  height: 100vh !important;
+}
+
+/* App Shell 최종 보정 */
+
+/* App Shell 내부 화면 전용 */
+body { padding-bottom: 0 !important; }
+.grid { padding-bottom: 44px !important; }
+.detailBottom { bottom: 0 !important; }
+
+
+
+    .timeSaleBanner { margin:0; padding:22px 22px 18px; background:#111; color:#fff; border-top:1px solid rgba(255,255,255,.08); }
+    .timeSaleBannerInner { display:flex; align-items:center; justify-content:space-between; gap:18px; max-width:760px; margin:0 auto; }
+    .timeSaleCopy { min-width:0; }
+    .timeSaleLabel { display:inline-flex; align-items:center; height:26px; padding:0 10px; border-radius:999px; background:#e7443c; color:#fff; font-size:13px; font-weight:900; }
+    .timeSaleTitle { margin-top:9px; font-size:30px; line-height:1.05; font-weight:900; letter-spacing:-.03em; }
+    .timeSaleSub { margin-top:5px; color:rgba(255,255,255,.78); font-size:14px; font-weight:700; }
+    .stopwatch { flex:0 0 auto; display:flex; align-items:center; gap:10px; }
+    .stopwatchIcon { position:relative; width:42px; height:42px; border:4px solid #fff; border-radius:50%; box-shadow:inset 0 0 0 2px rgba(231,68,60,.7); }
+    .stopwatchIcon:before { content:''; position:absolute; left:50%; top:-12px; width:14px; height:8px; border-radius:4px 4px 1px 1px; background:#fff; transform:translateX(-50%); }
+    .stopwatchIcon:after { content:''; position:absolute; left:50%; top:50%; width:4px; height:15px; border-radius:999px; background:#e7443c; transform-origin:50% 100%; animation:stopwatchHand 1.8s linear infinite; }
+    @keyframes stopwatchHand { from { transform:translate(-50%,-100%) rotate(0deg); } to { transform:translate(-50%,-100%) rotate(360deg); } }
+    .countdownGroup { display:flex; align-items:center; gap:5px; font-weight:900; }
+    .countBox { min-width:38px; height:42px; display:grid; place-items:center; border-radius:6px; background:#fff; color:#111; font-size:23px; font-weight:900; font-variant-numeric:tabular-nums; }
+    .countBox.tick { animation:countTick .28s ease; }
+    @keyframes countTick { 0% { transform:translateY(8px); opacity:.3; } 100% { transform:translateY(0); opacity:1; } }
+    .countSep { color:#fff; font-size:22px; font-weight:900; }
+    .card { cursor:default; }
+    .dealOverlay { position:absolute; left:12px; right:12px; bottom:12px; z-index:4; display:flex; align-items:flex-end; justify-content:space-between; gap:8px; pointer-events:none; }
+    .discountPill { min-width:62px; padding:8px 10px; border:2px solid #fff; border-radius:6px; background:#e7443c; color:#fff; font-size:20px; line-height:1; font-weight:900; text-align:center; box-shadow:0 8px 18px rgba(0,0,0,.26); }
+    .stockBadge { max-width:calc(100% - 78px); padding:8px 10px; border-radius:6px; background:#111; color:#fff; font-size:15px; font-weight:900; box-shadow:0 8px 18px rgba(0,0,0,.26); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .cardBadgeRow { display:flex; align-items:center; gap:7px; margin-top:12px; min-width:0; }
+    .categoryBadge, .stockTextBadge { display:inline-flex; align-items:center; min-width:0; max-width:100%; height:28px; padding:0 9px; border-radius:999px; font-size:13px; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .categoryBadge { background:#111; color:#fff; }
+    .stockTextBadge { background:#fff1f1; color:#d61f2c; border:1px solid rgba(214,31,44,.22); }
+    .priceStack { min-width:0; }
+    .compareText { margin-bottom:5px; color:#888; font-size:13px; font-weight:900; text-decoration:line-through; white-space:nowrap; }
+    .bottomNav, .navBtn, .navIcon { display:none !important; }
+
+    @media (max-width:520px) {
+      .timeSaleBanner { padding:18px 14px 15px; }
+      .timeSaleBannerInner { align-items:flex-start; flex-direction:column; gap:14px; }
+      .timeSaleTitle { font-size:25px; }
+      .stopwatch { width:100%; justify-content:space-between; }
+      .countBox { min-width:34px; height:38px; font-size:21px; }
+      .discountPill { min-width:56px; font-size:18px; }
+      .stockBadge { font-size:13px; }
+    }
+
+</style>
+  <?!= include('Asset') ?>
+</head>
+<body>
+  <section id="dealScreen" class="screen active">
+    <div id="listPage" class="app">
+      <header class="topHeader">
+        <button class="backBtn" onclick="goNativeBack()"><span class="backIcon"></span></button>
+        <div class="headerTitle">
+          <div id="titleDate" class="headerTitleMain">공동구매</div>
+          <div id="updatedShort" class="headerTime"></div>
+        </div>
+        <div class="logoText">
+          <div class="logoMain">만만마켓</div>
+          <div class="logoSub">전농래미안크레시티점</div>
+        </div>
+      </header>
+
+      <section class="timeSaleBanner" aria-label="타임특가 마감 카운트다운">
+        <div class="timeSaleBannerInner">
+          <div class="timeSaleCopy">
+            <div class="timeSaleLabel">TIME SALE</div>
+            <div class="timeSaleTitle">오늘 자정 마감 타임특가</div>
+            <div class="timeSaleSub">한정수량 상품만 모았습니다.</div>
+          </div>
+          <div class="stopwatch" aria-live="polite">
+            <span class="stopwatchIcon" aria-hidden="true"></span>
+            <div class="countdownGroup">
+              <span id="saleHours" class="countBox">00</span><span class="countSep">:</span>
+              <span id="saleMinutes" class="countBox">00</span><span class="countSep">:</span>
+              <span id="saleSeconds" class="countBox">00</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="tabsWrap">
+        <div id="tabs" class="tabs"><div id="tabBar" class="tabBar"></div></div>
+      </div>
+
+      <main id="grid" class="grid"></main>
+    </div>
+  </section>
+
+  <section id="orderScreen" class="screen orderScreen">
+    <iframe id="orderFrame" class="orderFrame" title="주문조회" src="about:blank"></iframe>
+  </section>
+
+  <div id="detailPage" class="detailPage app"></div>
+  <div id="detailBottom" class="detailBottom">
+    <button class="listBtn" onclick="showList('모두보기')">공구 목록으로 돌아가기</button>
+  </div>
+<script>
+    var APP_URL = '<?= appUrl ?>';
+    var INITIAL_TAB = '<?= initialTab ?>';
+    var shopData = null;
+    var currentCategory = '모두보기';
+    var currentMainTab = 'deal';
+    var orderSelectedCustomerLabel = '';
+
+    var TIME_SALE_PRODUCTS = [
+      {
+            "id": "time-sale-row-200",
+            "rowNumber": 200,
+            "rank": 1,
+            "rankDirection": "same",
+            "title": "한입가득 치즈스틱 30개입 / 26년 11월",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260520/2b803797f59e0015660af5e4f9617911.png",
+            "price": "11,610원",
+            "salePrice": 11610,
+            "comparePrice": 21200,
+            "comparePriceText": "21,200원",
+            "discountRate": 45,
+            "category": "냉동식품",
+            "stockQuantity": 55,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "45% 할인 특가",
+                  "냉동식품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-201",
+            "rowNumber": 201,
+            "rank": 2,
+            "rankDirection": "same",
+            "title": "쪄옴 구워먹는 쑥떡 800g",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260531/c6139038e0db710ff6c6ed7fe2ecbe7b.jpg",
+            "price": "8,010원",
+            "salePrice": 8010,
+            "comparePrice": 13000,
+            "comparePriceText": "13,000원",
+            "discountRate": 38,
+            "category": "냉동식품",
+            "stockQuantity": 8,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "품절임박 · 8개 남음",
+            "ticker": [
+                  "품절임박 8개 남음",
+                  "오늘 자정 마감 타임특가",
+                  "38% 할인 특가",
+                  "냉동식품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-202",
+            "rowNumber": 202,
+            "rank": 3,
+            "rankDirection": "same",
+            "title": "윤형빈의 직화황금 단백질 주먹밥 110g 3종 (불닭갈비/갈릭닭불고기/차돌김치치즈)",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260531/70b09a57d8cb5aa035160d92ac99a919.jpg",
+            "price": "4,410원",
+            "salePrice": 4410,
+            "comparePrice": 9200,
+            "comparePriceText": "9,200원",
+            "discountRate": 52,
+            "category": "냉동식품",
+            "stockQuantity": 1,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "품절임박 · 1개 남음",
+            "ticker": [
+                  "품절임박 1개 남음",
+                  "오늘 자정 마감 타임특가",
+                  "52% 할인 특가",
+                  "냉동식품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-203",
+            "rowNumber": 203,
+            "rank": 4,
+            "rankDirection": "same",
+            "title": "애슐리 버터갈릭 회오리감자 270g (5개입 + 시즈닝 1개)",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260511/ab908e5ed407dc2b1db6dda360fc0fb1.jpg",
+            "price": "5,310원",
+            "salePrice": 5310,
+            "comparePrice": 10100,
+            "comparePriceText": "10,100원",
+            "discountRate": 47,
+            "category": "냉동식품",
+            "stockQuantity": 85,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "47% 할인 특가",
+                  "냉동식품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-204",
+            "rowNumber": 204,
+            "rank": 5,
+            "rankDirection": "same",
+            "title": "보양옥 올갱이해장국 600g",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260314/6a227b38c567e0e3cffad3c9e0bf06ab.jpg",
+            "price": "4,410원",
+            "salePrice": 4410,
+            "comparePrice": 7500,
+            "comparePriceText": "7,500원",
+            "discountRate": 41,
+            "category": "냉동식품",
+            "stockQuantity": 2,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "품절임박 · 2개 남음",
+            "ticker": [
+                  "품절임박 2개 남음",
+                  "오늘 자정 마감 타임특가",
+                  "41% 할인 특가",
+                  "냉동식품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-205",
+            "rowNumber": 205,
+            "rank": 6,
+            "rankDirection": "same",
+            "title": "호텔컬렉션 에센셜 우차돌짬뽕탕 450g",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260426/b3ac2b0bebd8e1494a13050a1c54f504.jpg",
+            "price": "4,680원",
+            "salePrice": 4680,
+            "comparePrice": 9200,
+            "comparePriceText": "9,200원",
+            "discountRate": 49,
+            "category": "냉동식품",
+            "stockQuantity": 10,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "49% 할인 특가",
+                  "냉동식품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-206",
+            "rowNumber": 206,
+            "rank": 7,
+            "rankDirection": "same",
+            "title": "호텔컬렉션 에센셜 우차돌마라탕 450g",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260426/2c8b1270d804a4d868154e6f01be41a7.jpg",
+            "price": "4,500원",
+            "salePrice": 4500,
+            "comparePrice": 10100,
+            "comparePriceText": "10,100원",
+            "discountRate": 55,
+            "category": "냉동식품",
+            "stockQuantity": 10,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "55% 할인 특가",
+                  "냉동식품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-207",
+            "rowNumber": 207,
+            "rank": 8,
+            "rankDirection": "same",
+            "title": "조선미락 직화 마늘 무뼈닭발 200g (100%국산닭발)",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260425/b2bbe582eccd19d86ba7a220879045b4.jpg",
+            "price": "8,910원",
+            "salePrice": 8910,
+            "comparePrice": 15700,
+            "comparePriceText": "15,700원",
+            "discountRate": 43,
+            "category": "냉동식품",
+            "stockQuantity": 4,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "품절임박 · 4개 남음",
+            "ticker": [
+                  "품절임박 4개 남음",
+                  "오늘 자정 마감 타임특가",
+                  "43% 할인 특가",
+                  "냉동식품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-208",
+            "rowNumber": 208,
+            "rank": 9,
+            "rankDirection": "same",
+            "title": "문형기명인 구워먹는 치즈떡 1kg",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/big/20260130/0d00168f352b3dc25d783d5b8e1cd22d.png",
+            "price": "6,750원",
+            "salePrice": 6750,
+            "comparePrice": 10800,
+            "comparePriceText": "10,800원",
+            "discountRate": 38,
+            "category": "냉동식품",
+            "stockQuantity": 80,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "38% 할인 특가",
+                  "냉동식품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-209",
+            "rowNumber": 209,
+            "rank": 10,
+            "rankDirection": "same",
+            "title": "[임박특가] [김호윤키친]고기듬뿍 가지라자냐 400g (소비기한: 26년 7월 17일)",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260509/49bcacb8e00abadbc5a72a0fc8f6ad06.jpg",
+            "price": "8,910원",
+            "salePrice": 8910,
+            "comparePrice": 21300,
+            "comparePriceText": "21,300원",
+            "discountRate": 58,
+            "category": "냉동식품",
+            "stockQuantity": 30,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "58% 할인 특가",
+                  "냉동식품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-210",
+            "rowNumber": 210,
+            "rank": 11,
+            "rankDirection": "same",
+            "title": "낭만시리즈 숯불양념치킨 순한맛 350g",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260511/8983534ebce6db128fca6f9cd5243601.jpg",
+            "price": "7,110원",
+            "salePrice": 7110,
+            "comparePrice": 13200,
+            "comparePriceText": "13,200원",
+            "discountRate": 46,
+            "category": "냉동식품",
+            "stockQuantity": 45,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "46% 할인 특가",
+                  "냉동식품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-211",
+            "rowNumber": 211,
+            "rank": 12,
+            "rankDirection": "same",
+            "title": "하루야채 뽀로로 유기농 포도비트 140ml x 6개입",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260602/0080cffd14afeea72bded500380db2a8.jpg",
+            "price": "5,310원",
+            "salePrice": 5310,
+            "comparePrice": 8200,
+            "comparePriceText": "8,200원",
+            "discountRate": 35,
+            "category": "음료/간식",
+            "stockQuantity": 28,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "35% 할인 특가",
+                  "음료/간식 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-212",
+            "rowNumber": 212,
+            "rank": 13,
+            "rankDirection": "same",
+            "title": "하루야채 뽀로로 유기농 사과당근 140ml x 6개입",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260602/a0324c70acbb3cd0bc67f38ff4cda9db.jpg",
+            "price": "5,310원",
+            "salePrice": 5310,
+            "comparePrice": 8300,
+            "comparePriceText": "8,300원",
+            "discountRate": 36,
+            "category": "음료/간식",
+            "stockQuantity": 28,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "36% 할인 특가",
+                  "음료/간식 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-213",
+            "rowNumber": 213,
+            "rank": 14,
+            "rankDirection": "same",
+            "title": "튼튼 니트릴 고무장갑 S",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260523/09e5dd54c31e458a7c8ccf57560fe381.jpg",
+            "price": "2,610원",
+            "salePrice": 2610,
+            "comparePrice": 4400,
+            "comparePriceText": "4,400원",
+            "discountRate": 41,
+            "category": "생활용품",
+            "stockQuantity": 20,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "41% 할인 특가",
+                  "생활용품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-214",
+            "rowNumber": 214,
+            "rank": 15,
+            "rankDirection": "same",
+            "title": "튼튼 니트릴 고무장갑 M",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260523/09e5dd54c31e458a7c8ccf57560fe381.jpg",
+            "price": "2,610원",
+            "salePrice": 2610,
+            "comparePrice": 4500,
+            "comparePriceText": "4,500원",
+            "discountRate": 42,
+            "category": "생활용품",
+            "stockQuantity": 35,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "42% 할인 특가",
+                  "생활용품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-215",
+            "rowNumber": 215,
+            "rank": 16,
+            "rankDirection": "same",
+            "title": "쿵딘소고기쌀국수 70g 4개입",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260213/1365791a3203b457040558f90de37bb5.jpg",
+            "price": "3,600원",
+            "salePrice": 3600,
+            "comparePrice": 7700,
+            "comparePriceText": "7,700원",
+            "discountRate": 53,
+            "category": "상온식품",
+            "stockQuantity": 110,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "53% 할인 특가",
+                  "상온식품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-216",
+            "rowNumber": 216,
+            "rank": 17,
+            "rankDirection": "same",
+            "title": "쿵딘돼지고기쌀국수 70g 4개입",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260213/1418d5705a60a85ac561ecf3839b1c60.jpg",
+            "price": "3,600원",
+            "salePrice": 3600,
+            "comparePrice": 7400,
+            "comparePriceText": "7,400원",
+            "discountRate": 51,
+            "category": "상온식품",
+            "stockQuantity": 110,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "51% 할인 특가",
+                  "상온식품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-217",
+            "rowNumber": 217,
+            "rank": 18,
+            "rankDirection": "same",
+            "title": "오아 큐브 멀티탭 PD35 고용량 4000W 콘센트 USB C타입 멀티 3구 어댑터",
+            "src": "https://oa-mall.co.kr/web/product/big/202507/c241ad4925da5ca10977dba1b08ea14e.jpg",
+            "price": "29,610원",
+            "salePrice": 29610,
+            "comparePrice": 57000,
+            "comparePriceText": "57,000원",
+            "discountRate": 48,
+            "category": "생활가전",
+            "stockQuantity": 13,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "48% 할인 특가",
+                  "생활가전 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-218",
+            "rowNumber": 218,
+            "rank": 19,
+            "rankDirection": "same",
+            "title": "실리콘 조리도구 7종세트 (거치대 포함)",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260509/2f2b6473ea6c16ab73fb4c82122a9650.jpg",
+            "price": "14,310원",
+            "salePrice": 14310,
+            "comparePrice": 25600,
+            "comparePriceText": "25,600원",
+            "discountRate": 44,
+            "category": "주방용품",
+            "stockQuantity": 8,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "품절임박 · 8개 남음",
+            "ticker": [
+                  "품절임박 8개 남음",
+                  "오늘 자정 마감 타임특가",
+                  "44% 할인 특가",
+                  "주방용품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-219",
+            "rowNumber": 219,
+            "rank": 20,
+            "rankDirection": "same",
+            "title": "슈퍼 초임계 알티지 오메가3 플러스 (30캡슐 1박스)",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20251229/3c569e3c273aa41f6a212fbbac24ea2c.jpg",
+            "price": "6,210원",
+            "salePrice": 6210,
+            "comparePrice": 10200,
+            "comparePriceText": "10,200원",
+            "discountRate": 39,
+            "category": "건강식품",
+            "stockQuantity": 42,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "39% 할인 특가",
+                  "건강식품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-220",
+            "rowNumber": 220,
+            "rank": 21,
+            "rankDirection": "same",
+            "title": "베베쿡 더 맛있는 빼빼롱펑 블루베리 40g",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260602/23293e18bebbe3acc004624fc12b59b5.jpg",
+            "price": "1,710원",
+            "salePrice": 1710,
+            "comparePrice": 2700,
+            "comparePriceText": "2,700원",
+            "discountRate": 37,
+            "category": "음료/간식",
+            "stockQuantity": 35,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "37% 할인 특가",
+                  "음료/간식 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-221",
+            "rowNumber": 221,
+            "rank": 22,
+            "rankDirection": "same",
+            "title": "베베쿡 더 맛있는 빼빼롱펑 구운옥수수 40g",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260602/23293e18bebbe3acc004624fc12b59b5.jpg",
+            "price": "1,710원",
+            "salePrice": 1710,
+            "comparePrice": 2700,
+            "comparePriceText": "2,700원",
+            "discountRate": 37,
+            "category": "음료/간식",
+            "stockQuantity": 23,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "37% 할인 특가",
+                  "음료/간식 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-222",
+            "rowNumber": 222,
+            "rank": 23,
+            "rankDirection": "same",
+            "title": "문라이트 UV쉴드 자외선 차단 골프패치 5회분",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260509/cd09e41bdfb3204f2e1b94325fc1feae.png",
+            "price": "4,050원",
+            "salePrice": 4050,
+            "comparePrice": 9500,
+            "comparePriceText": "9,500원",
+            "discountRate": 57,
+            "category": "뷰티케어",
+            "stockQuantity": 8,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "품절임박 · 8개 남음",
+            "ticker": [
+                  "품절임박 8개 남음",
+                  "오늘 자정 마감 타임특가",
+                  "57% 할인 특가",
+                  "뷰티케어 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-223",
+            "rowNumber": 223,
+            "rank": 24,
+            "rankDirection": "same",
+            "title": "락앤락 이지그립IH프라이팬 2종 (24cm+28cm)",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260525/988a5b628a419ad6119b524fd515e8f9.jpeg",
+            "price": "25,110원",
+            "salePrice": 25110,
+            "comparePrice": 50300,
+            "comparePriceText": "50,300원",
+            "discountRate": 50,
+            "category": "주방용품",
+            "stockQuantity": 4,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "품절임박 · 4개 남음",
+            "ticker": [
+                  "품절임박 4개 남음",
+                  "오늘 자정 마감 타임특가",
+                  "50% 할인 특가",
+                  "주방용품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-224",
+            "rowNumber": 224,
+            "rank": 25,
+            "rankDirection": "same",
+            "title": "락앤락 스마트킵프레쉬 직사각 3P (330ml 2개, 760ml 1개)",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260518/d0cdbeefadbf150cc771e7d8496f5261.jpg",
+            "price": "8,010원",
+            "salePrice": 8010,
+            "comparePrice": 14100,
+            "comparePriceText": "14,100원",
+            "discountRate": 43,
+            "category": "주방용품",
+            "stockQuantity": 5,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "품절임박 · 5개 남음",
+            "ticker": [
+                  "품절임박 5개 남음",
+                  "오늘 자정 마감 타임특가",
+                  "43% 할인 특가",
+                  "주방용품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-225",
+            "rowNumber": 225,
+            "rank": 26,
+            "rankDirection": "same",
+            "title": "락앤락 바로한끼 글라스 밥용기 4P (355ml x 2EA, 450ml x 2EA) 색상 랜덤",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260603/f902fef65271e7ecaf5c8ee0e8c38d2a.jpg",
+            "price": "17,990원",
+            "salePrice": 17990,
+            "comparePrice": 32800,
+            "comparePriceText": "32,800원",
+            "discountRate": 45,
+            "category": "주방용품",
+            "stockQuantity": 5,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "품절임박 · 5개 남음",
+            "ticker": [
+                  "품절임박 5개 남음",
+                  "오늘 자정 마감 타임특가",
+                  "45% 할인 특가",
+                  "주방용품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-226",
+            "rowNumber": 226,
+            "rank": 27,
+            "rankDirection": "same",
+            "title": "디어쿠페아 헤어컬러샴푸 딥브라운 15mlx3입",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260329/0a94e3375419a99c55b02f05a9bce1b3.png",
+            "price": "3,510원",
+            "salePrice": 3510,
+            "comparePrice": 8800,
+            "comparePriceText": "8,800원",
+            "discountRate": 60,
+            "category": "뷰티케어",
+            "stockQuantity": 3,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "품절임박 · 3개 남음",
+            "ticker": [
+                  "품절임박 3개 남음",
+                  "오늘 자정 마감 타임특가",
+                  "60% 할인 특가",
+                  "뷰티케어 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-227",
+            "rowNumber": 227,
+            "rank": 28,
+            "rankDirection": "same",
+            "title": "디어쿠페아 헤어컬러샴푸 다크브라운 15mlx3입",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260329/d300142fd2338192b052022072ec1e4f.png",
+            "price": "3,510원",
+            "salePrice": 3510,
+            "comparePrice": 8600,
+            "comparePriceText": "8,600원",
+            "discountRate": 59,
+            "category": "뷰티케어",
+            "stockQuantity": 19,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "59% 할인 특가",
+                  "뷰티케어 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-228",
+            "rowNumber": 228,
+            "rank": 29,
+            "rankDirection": "same",
+            "title": "디어쿠페아 헤어컬러샴푸 네츄럴브라운 15mlx3입",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260525/5627d439abfdf2ebc6fc9d13b0dae218.png",
+            "price": "3,510원",
+            "salePrice": 3510,
+            "comparePrice": 8400,
+            "comparePriceText": "8,400원",
+            "discountRate": 58,
+            "category": "뷰티케어",
+            "stockQuantity": 14,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "58% 할인 특가",
+                  "뷰티케어 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-229",
+            "rowNumber": 229,
+            "rank": 30,
+            "rankDirection": "same",
+            "title": "디어쿠페아 풋브러쉬",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260528/50d5cb7dfd63aaecc86536c6d4eb9741.jpg",
+            "price": "2,610원",
+            "salePrice": 2610,
+            "comparePrice": 4200,
+            "comparePriceText": "4,200원",
+            "discountRate": 38,
+            "category": "생활용품",
+            "stockQuantity": 16,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "38% 할인 특가",
+                  "생활용품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-230",
+            "rowNumber": 230,
+            "rank": 31,
+            "rankDirection": "same",
+            "title": "디어쿠페아 각질제거기 블랙 1개",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260528/168a15b1f14f8f642262a1962915f914.png",
+            "price": "1,710원",
+            "salePrice": 1710,
+            "comparePrice": 2900,
+            "comparePriceText": "2,900원",
+            "discountRate": 41,
+            "category": "생활용품",
+            "stockQuantity": 14,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "41% 할인 특가",
+                  "생활용품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-231",
+            "rowNumber": 231,
+            "rank": 32,
+            "rankDirection": "same",
+            "title": "국내생산 아워랩스 옷걸이형 제습제 150g x 5입",
+            "src": "https://res.cloudinary.com/diol40iez/image/upload/v1780291057/imageye___-_i2mgi_717_6aaa68393538e5e3699f15ed2ca4e97a0321f4b332b9a79bba93602ac84b_214850_1_vg1vkx.png",
+            "price": "3,510원",
+            "salePrice": 3510,
+            "comparePrice": 6500,
+            "comparePriceText": "6,500원",
+            "discountRate": 46,
+            "category": "생활용품",
+            "stockQuantity": 24,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "46% 할인 특가",
+                  "생활용품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-232",
+            "rowNumber": 232,
+            "rank": 33,
+            "rankDirection": "same",
+            "title": "국내산 정가네 찰보리 누룽지 500g",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260509/98812771beb62aac3e6801f9fbb208a9.jpg",
+            "price": "5,310원",
+            "salePrice": 5310,
+            "comparePrice": 8200,
+            "comparePriceText": "8,200원",
+            "discountRate": 35,
+            "category": "상온식품",
+            "stockQuantity": 30,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "35% 할인 특가",
+                  "상온식품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-233",
+            "rowNumber": 233,
+            "rank": 34,
+            "rankDirection": "same",
+            "title": "77년전통 사자표 거장 짜장소스 200g (2인분)",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260116/ced1477a7fc1d7c066eab0e6b09d12aa.jpg",
+            "price": "3,150원",
+            "salePrice": 3150,
+            "comparePrice": 5100,
+            "comparePriceText": "5,100원",
+            "discountRate": 38,
+            "category": "상온식품",
+            "stockQuantity": 20,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "38% 할인 특가",
+                  "상온식품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-234",
+            "rowNumber": 234,
+            "rank": 35,
+            "rankDirection": "same",
+            "title": "프라텔리 롱고바디 토마토홀 400g",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260501/d2bed27a11a3a3d05e8e98024efc2cb2.jpg",
+            "price": "1,710원",
+            "salePrice": 1710,
+            "comparePrice": 3600,
+            "comparePriceText": "3,600원",
+            "discountRate": 53,
+            "category": "상온식품",
+            "stockQuantity": 1,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "품절임박 · 1개 남음",
+            "ticker": [
+                  "품절임박 1개 남음",
+                  "오늘 자정 마감 타임특가",
+                  "53% 할인 특가",
+                  "상온식품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-235",
+            "rowNumber": 235,
+            "rank": 36,
+            "rankDirection": "same",
+            "title": "티나는 스물넷 14포",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260425/f83e6f9c4b24fce7ce83407f4618d45e.jpg",
+            "price": "4,050원",
+            "salePrice": 4050,
+            "comparePrice": 6800,
+            "comparePriceText": "6,800원",
+            "discountRate": 40,
+            "category": "건강식품",
+            "stockQuantity": 10,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "40% 할인 특가",
+                  "건강식품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-236",
+            "rowNumber": 236,
+            "rank": 37,
+            "rankDirection": "same",
+            "title": "켈로그 콘푸로스트 1.5kg",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260419/f088d5b2a0fd3d2e3ddb9f595ae97d74.jpg",
+            "price": "10,710원",
+            "salePrice": 10710,
+            "comparePrice": 18500,
+            "comparePriceText": "18,500원",
+            "discountRate": 42,
+            "category": "음료/간식",
+            "stockQuantity": 3,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "품절임박 · 3개 남음",
+            "ticker": [
+                  "품절임박 3개 남음",
+                  "오늘 자정 마감 타임특가",
+                  "42% 할인 특가",
+                  "음료/간식 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-237",
+            "rowNumber": 237,
+            "rank": 38,
+            "rankDirection": "same",
+            "title": "참 스지 도가니탕 500g",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260504/1ed0d417c72ecb64362559b370eaf19e.jpg",
+            "price": "3,510원",
+            "salePrice": 3510,
+            "comparePrice": 6900,
+            "comparePriceText": "6,900원",
+            "discountRate": 49,
+            "category": "상온식품",
+            "stockQuantity": 44,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "49% 할인 특가",
+                  "상온식품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-238",
+            "rowNumber": 238,
+            "rank": 39,
+            "rankDirection": "same",
+            "title": "오아 반디팬 초경량 무선핸디팬",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260425/7cda5fb36980f03104c6da98f1ca4727.jpg",
+            "price": "8,910원",
+            "salePrice": 8910,
+            "comparePrice": 16000,
+            "comparePriceText": "16,000원",
+            "discountRate": 44,
+            "category": "생활가전",
+            "stockQuantity": 30,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "44% 할인 특가",
+                  "생활가전 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-239",
+            "rowNumber": 239,
+            "rank": 40,
+            "rankDirection": "same",
+            "title": "아스터 곰팡이 제거 젤 200g x 3개 묶음",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260504/18b268e2abf1d22f8c206f7cd8baf406.png",
+            "price": "2,430원",
+            "salePrice": 2430,
+            "comparePrice": 6400,
+            "comparePriceText": "6,400원",
+            "discountRate": 62,
+            "category": "생활용품",
+            "stockQuantity": 160,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "62% 할인 특가",
+                  "생활용품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-240",
+            "rowNumber": 240,
+            "rank": 41,
+            "rankDirection": "same",
+            "title": "스와니브 24K 골드 스네일 5종세트",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260326/abf9743631b66f5607d25a1df4cf706d.jpg",
+            "price": "22,500원",
+            "salePrice": 22500,
+            "comparePrice": 51200,
+            "comparePriceText": "51,200원",
+            "discountRate": 56,
+            "category": "뷰티케어",
+            "stockQuantity": 4,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "품절임박 · 4개 남음",
+            "ticker": [
+                  "품절임박 4개 남음",
+                  "오늘 자정 마감 타임특가",
+                  "56% 할인 특가",
+                  "뷰티케어 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-241",
+            "rowNumber": 241,
+            "rank": 42,
+            "rankDirection": "same",
+            "title": "살림백서 뽀드득 프레쉬 풋샴푸 400ml",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260421/443b96eb3fa339b9cf763a672f22503c.jpg",
+            "price": "3,150원",
+            "salePrice": 3150,
+            "comparePrice": 5800,
+            "comparePriceText": "5,800원",
+            "discountRate": 46,
+            "category": "생활용품",
+            "stockQuantity": 18,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "46% 할인 특가",
+                  "생활용품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-242",
+            "rowNumber": 242,
+            "rank": 43,
+            "rankDirection": "same",
+            "title": "브리츠 블루투스 스피커",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260402/2efc951bbba8136347c0267d455b7495.png",
+            "price": "31,410원",
+            "salePrice": 31410,
+            "comparePrice": 59300,
+            "comparePriceText": "59,300원",
+            "discountRate": 47,
+            "category": "생활가전",
+            "stockQuantity": 16,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "47% 할인 특가",
+                  "생활가전 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-243",
+            "rowNumber": 243,
+            "rank": 44,
+            "rankDirection": "same",
+            "title": "메드비 알로에베라 미스트 150ml",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/big/20260326/37bf46e21a8ef0ebe7b1ab8340c940c8.jpg",
+            "price": "4,410원",
+            "salePrice": 4410,
+            "comparePrice": 7300,
+            "comparePriceText": "7,300원",
+            "discountRate": 40,
+            "category": "뷰티케어",
+            "stockQuantity": 30,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "40% 할인 특가",
+                  "뷰티케어 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-244",
+            "rowNumber": 244,
+            "rank": 45,
+            "rankDirection": "same",
+            "title": "도브 포밍 핸드워시 240ml 딥모이스처",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260430/5874aa67af2ca51b8a18a99810783ccc.jpg",
+            "price": "2,790원",
+            "salePrice": 2790,
+            "comparePrice": 4300,
+            "comparePriceText": "4,300원",
+            "discountRate": 35,
+            "category": "생활용품",
+            "stockQuantity": 144,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "35% 할인 특가",
+                  "생활용품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-245",
+            "rowNumber": 245,
+            "rank": 46,
+            "rankDirection": "same",
+            "title": "닥터비알 리포좀 비타민C",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260505/fbff99b17e49e68d330e3546bacb355c.jpg",
+            "price": "4,410원",
+            "salePrice": 4410,
+            "comparePrice": 9600,
+            "comparePriceText": "9,600원",
+            "discountRate": 54,
+            "category": "건강식품",
+            "stockQuantity": 4,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "품절임박 · 4개 남음",
+            "ticker": [
+                  "품절임박 4개 남음",
+                  "오늘 자정 마감 타임특가",
+                  "54% 할인 특가",
+                  "건강식품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-246",
+            "rowNumber": 246,
+            "rank": 47,
+            "rankDirection": "same",
+            "title": "국내제조 고보습 저자극 핸드워시 510ml",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260422/e44ccfcc15c93388d28b2d9c42323576.jpg",
+            "price": "3,510원",
+            "salePrice": 3510,
+            "comparePrice": 5600,
+            "comparePriceText": "5,600원",
+            "discountRate": 37,
+            "category": "생활용품",
+            "stockQuantity": 10,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "37% 할인 특가",
+                  "생활용품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-247",
+            "rowNumber": 247,
+            "rank": 48,
+            "rankDirection": "same",
+            "title": "고려은단 트리플비타민C 1000 드링크 (100ml x 10병)",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260509/c2d068d4e9e0af7ddba5b2c0584aee72.jpg",
+            "price": "4,320원",
+            "salePrice": 4320,
+            "comparePrice": 8000,
+            "comparePriceText": "8,000원",
+            "discountRate": 46,
+            "category": "건강식품",
+            "stockQuantity": 110,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "오늘 자정 마감",
+            "ticker": [
+                  "오늘 자정 마감 타임특가",
+                  "46% 할인 특가",
+                  "건강식품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-248",
+            "rowNumber": 248,
+            "rank": 49,
+            "rankDirection": "same",
+            "title": "HLB제약 파로효소 알파 (1g x 14포)",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260502/fd00b39ca7493e0ae60e706c3519aca3.jpg",
+            "price": "6,210원",
+            "salePrice": 6210,
+            "comparePrice": 16000,
+            "comparePriceText": "16,000원",
+            "discountRate": 61,
+            "category": "건강식품",
+            "stockQuantity": 3,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "품절임박 · 3개 남음",
+            "ticker": [
+                  "품절임박 3개 남음",
+                  "오늘 자정 마감 타임특가",
+                  "61% 할인 특가",
+                  "건강식품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-249",
+            "rowNumber": 249,
+            "rank": 50,
+            "rankDirection": "same",
+            "title": "HLB제약 지속성비타민C 1000 (1,000mg x 20캡슐)",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260502/b12b99ffcfdb92c12dbb5906a4b06a72.png",
+            "price": "5,850원",
+            "salePrice": 5850,
+            "comparePrice": 12200,
+            "comparePriceText": "12,200원",
+            "discountRate": 52,
+            "category": "건강식품",
+            "stockQuantity": 3,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "품절임박 · 3개 남음",
+            "ticker": [
+                  "품절임박 3개 남음",
+                  "오늘 자정 마감 타임특가",
+                  "52% 할인 특가",
+                  "건강식품 추천상품"
+            ]
+      },
+      {
+            "id": "time-sale-row-250",
+            "rowNumber": 250,
+            "rank": 51,
+            "rankDirection": "same",
+            "title": "HLB제약 심플 슬립 아쉬아간다 (132mg x 30정)",
+            "src": "https://ecimg.cafe24img.com/pg2272b91787911027/manman17/web/product/medium/20260502/3379da1b9020bf5d8c84ca15991bf5d0.png",
+            "price": "10,350원",
+            "salePrice": 10350,
+            "comparePrice": 24700,
+            "comparePriceText": "24,700원",
+            "discountRate": 58,
+            "category": "건강식품",
+            "stockQuantity": 3,
+            "pickupDateDisplay": "타임특가",
+            "pickupDateDisplayLong": "오늘 자정 마감",
+            "viewText": "품절임박 · 3개 남음",
+            "ticker": [
+                  "품절임박 3개 남음",
+                  "오늘 자정 마감 타임특가",
+                  "58% 할인 특가",
+                  "건강식품 추천상품"
+            ]
+      }
+];
+    var TIME_SALE_CATEGORIES = [
+      "모두보기",
+      "냉동식품",
+      "음료/간식",
+      "생활용품",
+      "상온식품",
+      "생활가전",
+      "주방용품",
+      "건강식품",
+      "뷰티케어"
+];
+    var timeSaleCountdownTimer = null;
+
+    function buildTimeSaleShopData(data) {
+      var serverProducts = (data && data.products) || [];
+      var serverByTitle = {};
+      serverProducts.forEach(function(item) {
+        var title = normalizeTitleKey(item.title || item.productName || '');
+        if (title && !serverByTitle[title]) serverByTitle[title] = item;
+      });
+
+      return {
+        titleDate: '타임특가',
+        updatedShort: '오늘 자정 마감',
+        categories: TIME_SALE_CATEGORIES,
+        products: TIME_SALE_PRODUCTS.map(function(base) {
+          var live = serverByTitle[normalizeTitleKey(base.title)] || {};
+          return Object.assign({}, live, base, {
+            src: live.src || live.imageUrl || base.src,
+            title: base.title,
+            price: base.price,
+            category: base.category,
+            stockQuantity: base.stockQuantity,
+            discountRate: base.discountRate,
+            comparePriceText: base.comparePriceText,
+            ticker: base.ticker
+          });
+        })
+      };
+    }
+
+    function normalizeTitleKey(value) {
+      return String(value || '').replace(/\s+/g, '').toLowerCase();
+    }
+
+    function startTimeSaleCountdown() {
+      updateTimeSaleCountdown();
+      if (timeSaleCountdownTimer) clearInterval(timeSaleCountdownTimer);
+      timeSaleCountdownTimer = setInterval(updateTimeSaleCountdown, 1000);
+    }
+
+    function updateTimeSaleCountdown() {
+      var now = new Date();
+      var end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0);
+      var remaining = Math.max(0, end.getTime() - now.getTime());
+      var totalSeconds = Math.floor(remaining / 1000);
+      var hours = Math.floor(totalSeconds / 3600);
+      var minutes = Math.floor((totalSeconds % 3600) / 60);
+      var seconds = totalSeconds % 60;
+      setCountdownText('saleHours', pad2(hours));
+      setCountdownText('saleMinutes', pad2(minutes));
+      setCountdownText('saleSeconds', pad2(seconds));
+    }
+
+    function setCountdownText(id, value) {
+      var el = document.getElementById(id);
+      if (!el || el.textContent === value) return;
+      el.textContent = value;
+      el.classList.remove('tick');
+      void el.offsetWidth;
+      el.classList.add('tick');
+    }
+
+    function pad2(value) { return String(value).padStart(2, '0'); }
+
+
+    function init() {
+      if (typeof applyManmanShopAssets === 'function') applyManmanShopAssets();
+      var tab = new URLSearchParams(location.search).get('tab') || INITIAL_TAB || 'deal';
+      google.script.run
+        .withSuccessHandler(function(data) {
+          shopData = buildTimeSaleShopData(data);
+          renderListPage();
+          startTimeSaleCountdown();
+          if (tab === 'friend') { goInvite(); return; }
+          if (tab === 'order') switchMainTab(tab);
+        })
+        .withFailureHandler(function(err) {
+          shopData = buildTimeSaleShopData(null);
+          renderListPage();
+          startTimeSaleCountdown();
+        })
+        .getShopData();
+    }
+
+    function switchMainTab(tab) {
+      if (tab === 'friend') {
+        goInvite();
+        return;
+      }
+      currentMainTab = tab;
+      hideDetailOnly();
+      document.getElementById('dealScreen').classList.toggle('active', tab === 'deal');
+      document.getElementById('orderScreen').classList.toggle('active', tab === 'order');
+      setBottomNavActive_(tab);
+      if (tab === 'order') loadOrderLookupFrame();
+      if (tab === 'deal') { document.getElementById('listPage').style.display = 'block'; setTimeout(updateTabBar, 80); }
+      window.scrollTo(0,0);
+    }
+
+    function goInvite() {
+      location.href = APP_URL + '?p=invite';
+    }
+
+    function loadOrderLookupFrame() {
+      var frame = document.getElementById('orderFrame');
+      if (!frame) return;
+      if (!frame.getAttribute('data-loaded')) {
+        frame.src = APP_URL + '?p=order';
+        frame.setAttribute('data-loaded', '1');
+      }
+    }
+
+    function setBottomNavActive_(tab) {
+      var map = { deal:'navDeal', friend:'navFriend', order:'navOrder' };
+      Object.keys(map).forEach(function(key) {
+        var el = document.getElementById(map[key]);
+        if (!el) return;
+        var active = key === tab;
+        el.classList.toggle('active', active);
+        el.setAttribute('aria-current', active ? 'page' : 'false');
+      });
+    }
+
+    function renderListPage() {
+      document.getElementById('titleDate').textContent = shopData.titleDate || '공동구매';
+      document.getElementById('updatedShort').textContent = shopData.updatedShort || '';
+      renderTabs();
+      renderGrid();
+    }
+
+    function renderTabs() {
+      var tabs = document.getElementById('tabs');
+      tabs.innerHTML = '<div id="tabBar" class="tabBar"></div>';
+      (shopData.categories || ['모두보기']).forEach(function(cat) {
+        var btn = document.createElement('button');
+        btn.className = 'tab' + (cat === currentCategory ? ' active' : '');
+        btn.textContent = cat;
+        btn.onclick = function() { selectCategory(cat, btn); };
+        tabs.appendChild(btn);
+      });
+      setTimeout(updateTabBar, 50);
+    }
+
+    function selectCategory(cat, btn) {
+      currentCategory = cat;
+      Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(el) { el.classList.remove('active'); });
+      btn.classList.add('active');
+      updateTabBar();
+      renderGrid();
+    }
+
+    function updateTabBar() {
+      var active = document.querySelector('.tab.active');
+      var tabs = document.getElementById('tabs');
+      var bar = document.getElementById('tabBar');
+      if (!active || !bar || !tabs) return;
+      bar.style.width = active.offsetWidth + 'px';
+      bar.style.transform = 'translateX(' + (active.offsetLeft - 22 + tabs.scrollLeft) + 'px)';
+    }
+
+    function renderGrid() {
+      var grid = document.getElementById('grid');
+      var products = (shopData.products || []).filter(function(p) {
+        return currentCategory === '모두보기' || p.category === currentCategory;
+      });
+
+      if (!products.length) {
+        grid.innerHTML = '<div class="empty">표시할 상품이 없습니다.</div>';
+        return;
+      }
+
+      grid.innerHTML = products.map(renderCard).join('');
+      attachCardHandlers();
+      refreshTickerSpeed();
+    }
+
+    function renderCard(p) {
+      var stock = Number(p.stockQuantity);
+      var isLowStock = Number.isFinite(stock) && stock < 10;
+      var discountRate = Number(p.discountRate || 0);
+      var compareText = p.comparePriceText || (p.comparePrice ? formatWon(p.comparePrice) : '');
+      return '' +
+        '<article class="card" data-product-id="' + escAttr(p.id) + '" aria-label="' + escAttr(p.title) + '">' +
+          '<div class="thumbBox">' +
+            '<img class="thumb" src="' + escAttr(p.src) + '" alt="">' +
+            '<div class="rankBadge"><span>' + p.rank + '</span> ' + rankArrow(p) + '</div>' +
+            '<div class="dealOverlay">' +
+              (discountRate ? '<div class="discountPill">' + discountRate + '%</div>' : '') +
+              (isLowStock ? '<div class="stockBadge">품절임박 · ' + stock + '개 남음</div>' : '') +
+            '</div>' +
+            '<div class="ticker"><div class="tickerInner">' + tickerHtml(p) + tickerHtml(p) + '</div></div>' +
+          '</div>' +
+          '<div class="cardTitle">' + esc(p.title) + '</div>' +
+          '<div class="cardBadgeRow">' +
+            '<span class="categoryBadge">' + esc(p.category || '타임특가') + '</span>' +
+            (isLowStock ? '<span class="stockTextBadge">' + stock + '개 남음</span>' : '') +
+          '</div>' +
+          '<div class="cardMetaRow">' +
+            '<div class="priceStack">' +
+              (compareText ? '<div class="compareText">온라인최저가 ' + esc(compareText) + '</div>' : '') +
+              '<div class="price">' + esc(p.price || '') + '</div>' +
+            '</div>' +
+            '<div class="pickupChip">' + esc(p.pickupDateDisplay || '타임특가') + '</div>' +
+          '</div>' +
+          '<div class="viewText">' + esc(p.viewText || '') + '</div>' +
+        '</article>';
+    }
+
+    function formatWon(value) { return new Intl.NumberFormat('ko-KR').format(Number(value || 0)) + '원'; }
+
+
+    function attachCardHandlers() {
+      Array.prototype.forEach.call(document.querySelectorAll('.card[data-product-id]'), function(card) {
+        card.onclick = null;
+        card.setAttribute('role', 'article');
+      });
+    }
+
+    function attachCandidateHandlers() {
+      Array.prototype.forEach.call(document.querySelectorAll('.candidateBtn[data-label]'), function(btn) {
+        btn.onclick = function() { submitOrderSearch(btn.getAttribute('data-label')); };
+      });
+    }
+
+    function rankArrow(p) {
+      if (p.rankDirection === 'up') return '<span class="rankArrow up">▲</span>';
+      if (p.rankDirection === 'down') return '<span class="rankArrow down">▼</span>';
+      return '<span class="rankArrow same">-</span>';
+    }
+
+    function tickerHtml(p) {
+      var items = getRandomTickerItems(p);
+      return items.map(function(t) { return '<span class="tickerItem">' + esc(t) + '</span>'; }).join('');
+    }
+
+    function getRandomTickerItems(p) {
+      var base = p && p.ticker && p.ticker.length ? p.ticker.slice() : ['첫 주문을 기다리는 중'];
+      if (base.length <= 1) return base;
+      if (!p._tickerRandomItems) { p._tickerRandomItems = shuffleArray(base); }
+      return p._tickerRandomItems;
+    }
+
+    function shuffleArray(arr) {
+      var a = arr.slice();
+      for (var i = a.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var t = a[i]; a[i] = a[j]; a[j] = t;
+      }
+      return a;
+    }
+
+    function openDetail(productId) {
+      return false;
+      google.script.run.trackProductView(productId);
+      document.getElementById('dealScreen').classList.remove('active');
+      document.getElementById('orderScreen').classList.remove('active');
+      document.getElementById('detailBottom').style.display = 'flex';
+      document.getElementById('detailPage').style.display = 'block';
+      document.getElementById('detailPage').innerHTML = '<div class="detailLoading">상품 상세를 불러오는 중입니다.</div>';
+      window.scrollTo(0, 0);
+
+      google.script.run
+        .withSuccessHandler(renderDetail)
+        .withFailureHandler(function(err) {
+          document.getElementById('detailPage').innerHTML = '<div class="detailLoading">상세를 불러오지 못했습니다.<br>' + esc(err.message) + '</div>';
+        })
+        .getProductDetail(productId);
+    }
+
+    function renderDetail(res) {
+      if (!res || !res.ok) {
+        document.getElementById('detailPage').innerHTML = '<div class="detailLoading">상품 정보를 찾지 못했습니다.</div>';
+        return;
+      }
+      var p = res.product;
+      var options = res.options && res.options.length ? res.options.join(' / ') : '-';
+      document.getElementById('detailPage').innerHTML = '' +
+        '<section class="detailHero">' +
+          '<button id="detailBackBtn" class="backBtn detailBack"><span class="backIcon"></span></button>' +
+          '<img src="' + escAttr(p.src) + '" alt="">' +
+        '</section>' +
+        '<div class="detailTicker"><div class="tickerInner">' + tickerHtml(p) + tickerHtml(p) + '</div></div>' +
+        '<section class="detailInfo">' +
+          '<h1 class="detailTitle">' + esc(p.title) + '</h1>' +
+          '<div class="detailPrice">' + esc(p.price || '') + '</div>' +
+          '<div class="detailView">' + esc(p.viewText || '') + '</div>' +
+          '<a href="javascript:void(0)" id="detailCategoryLink" data-category="' + escAttr(p.category) + '" class="categoryLink">' + esc(p.category) + '</a>' +
+        '</section>' +
+        '<section class="infoRows">' +
+          '<div class="infoRow"><div class="infoLabel">순위</div><div class="infoValue">' + p.rank + ' ' + rankArrow(p) + '</div></div>' +
+          '<div class="infoRow"><div class="infoLabel">픽업일</div><div class="infoValue">' + esc(p.pickupDateDisplayLong || p.pickupDateDisplay || formatPickupLong(p.pickupDate || p.pickupDateText || '')) + '</div></div>' +
+          '<div class="infoRow"><div class="infoLabel">옵션</div><div class="infoValue">' + esc(options) + '</div></div>' +
+        '</section>' +
+        '<section class="detailHtml">' + (res.detailHtml || '') + '</section>';
+      var backBtn = document.getElementById('detailBackBtn');
+      if (backBtn) backBtn.onclick = function() { showList('모두보기'); };
+      var catLink = document.getElementById('detailCategoryLink');
+      if (catLink) catLink.onclick = function() { showList(catLink.getAttribute('data-category') || '모두보기'); };
+      refreshTickerSpeed();
+    }
+
+    function hideDetailOnly() {
+      document.getElementById('detailPage').style.display = 'none';
+      document.getElementById('detailBottom').style.display = 'none';
+    }
+
+    function showList(category) {
+      hideDetailOnly();
+      document.getElementById('dealScreen').classList.add('active');
+      currentMainTab = 'deal';
+      currentCategory = category || '모두보기';
+      renderListPage();
+      window.scrollTo(0, 0);
+    }
+
+    function goNativeBack() { if (history.length > 1) history.back(); }
+
+    function refreshTickerSpeed() {
+      window.requestAnimationFrame(function() {
+        var tracks = document.querySelectorAll('.tickerInner');
+        Array.prototype.forEach.call(tracks, function(track) {
+          var distance = Math.max(360, Math.round(track.scrollWidth / 2));
+          var seconds = Math.max(42, Math.round(distance / 18));
+          track.style.setProperty('--ticker-distance', distance + 'px');
+          track.style.setProperty('--ticker-duration', seconds + 's');
+        });
+      });
+    }
+
+    function pickupShort(text) {
+      var s = String(text || '').trim();
+      var m = s.match(/(20\d{2})[\/.-](\d{1,2})[\/.-](\d{1,2})/);
+      if (m) return Number(m[2]) + '/' + Number(m[3]) + '(' + weekday(Number(m[1]), Number(m[2]), Number(m[3])) + ') 픽업';
+      m = s.match(/(^|[^0-9])(\d{1,2})\s*\/\s*(\d{1,2})(?:\s*\(([월화수목금토일])\))?/);
+      if (m) return Number(m[2]) + '/' + Number(m[3]) + (m[4] ? '(' + m[4] + ')' : '') + ' 픽업';
+      return s ? s.replace(/픽업/g, '').trim() + ' 픽업' : '';
+    }
+    function formatPickupLong(text) { return pickupShort(text); }
+    function weekday(y, m, d) { return ['일','월','화','수','목','금','토'][new Date(y, m - 1, d).getDay()]; }
+
+    function inviteFriend() {
+      var text = '만만마켓 친구 초대 링크를 복사했습니다.';
+      var url = location.origin + location.pathname + '?p=invite';
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(function() { alert(text); }, function() { alert(text + '\n' + url); });
+      } else { alert(text + '\n' + url); }
+    }
+
+    function submitOrderSearch(selectedLabel) {
+      var keyword = document.getElementById('orderKeyword').value.trim();
+      if (!keyword) {
+        document.getElementById('orderMessage').textContent = '닉네임 또는 휴대폰 끝 4자리를 입력해주세요.';
+        return;
+      }
+      if (typeof selectedLabel === 'string') orderSelectedCustomerLabel = selectedLabel;
+      document.getElementById('orderMessage').textContent = '주문을 조회하고 있습니다...';
+      document.getElementById('candidateArea').innerHTML = '';
+      document.getElementById('orderResults').innerHTML = '';
+      google.script.run
+        .withSuccessHandler(renderOrderSearchResult)
+        .withFailureHandler(function(err) { document.getElementById('orderMessage').textContent = '조회 실패: ' + err.message; })
+        .searchOrders(keyword, orderSelectedCustomerLabel);
+    }
+
+    function renderOrderSearchResult(res) {
+      var msg = document.getElementById('orderMessage');
+      var cand = document.getElementById('candidateArea');
+      var list = document.getElementById('orderResults');
+      cand.innerHTML = '';
+      list.innerHTML = '';
+      if (!res || !res.ok) { msg.textContent = (res && res.message) ? res.message : '조회 결과가 없습니다.'; return; }
+      if (res.requiresCustomerSelection && res.candidates && res.candidates.length) {
+        msg.textContent = '같은 끝번호가 있어요. 고객님을 선택해주세요.';
+        cand.innerHTML = res.candidates.map(function(c) {
+          return '<button class="candidateBtn" data-label="' + escAttr(c.customerLabel) + '">' + esc(c.customerLabel) + '<br><span style="color:#777;font-size:13px">최근 주문 ' + (c.orderCount || 0) + '건</span></button>';
+        }).join('');
+        attachCandidateHandlers();
+        return;
+      }
+      var items = res.items || [];
+      if (!items.length) { msg.textContent = '최근 픽업 가능한 주문이 없습니다.'; return; }
+      msg.textContent = '총 ' + items.length + '개 상품이 조회되었습니다.';
+      list.innerHTML = items.map(function(item) {
+        return '<article class="orderCard">' +
+          '<img class="orderThumb" src="' + escAttr(item.imageUrl || '') + '" alt="">' +
+          '<div>' +
+            '<div class="orderName">' + esc(item.productName || '') + '</div>' +
+            '<div class="orderMeta">' +
+              '<span class="orderChip">수량 ' + esc(item.quantity || '') + '개</span>' +
+              '<span class="orderChip">픽업 ' + esc(item.pickupDate || '') + '</span>' +
+              '<span class="orderChip">' + esc(item.customerLabel || '') + '</span>' +
+            '</div>' +
+          '</div>' +
+        '</article>';
+      }).join('');
+    }
+
+    function esc(s) { return String(s || '').replace(/[&<>"]/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+    function escAttr(s) { return esc(s).replace(/'/g, '&#39;'); }
+
+    init();
+    window.addEventListener('resize', updateTabBar);
+  </script>
+</body>
+</html>
