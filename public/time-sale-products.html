@@ -64,9 +64,12 @@
     .price { color: #e7443c; font-size: clamp(24px, 7vw, 34px); line-height: 1; font-weight: 900; letter-spacing: 0; }
     .activity { margin-top: 12px; display: flex; flex-direction: column; gap: 7px; }
     .watching { color: #555; font-size: 13px; font-weight: 900; }
-    .ticker { height: 28px; overflow: hidden; border-radius: 999px; background: #f7f7f7; color: #333; font-size: 13px; font-weight: 900; display: flex; align-items: center; }
+    .ticker { height: 36px; overflow: hidden; border-radius: 999px; background: #f7f7f7; color: #333; font-size: 13px; font-weight: 900; display: flex; align-items: center; }
     .tickerTrack { display: inline-flex; white-space: nowrap; animation: ticker 28s linear infinite; }
-    .tickerItem { padding: 0 16px 0 12px; }
+    .tickerItem { display: inline-flex; align-items: center; gap: 7px; padding: 0 16px 0 8px; }
+    .buyerAvatar { width: 26px; height: 26px; flex: 0 0 auto; border: 2px solid #fff; border-radius: 50%; background: linear-gradient(135deg, var(--avatar-a), var(--avatar-b)); box-shadow: 0 5px 12px rgba(0,0,0,.14); overflow: hidden; }
+    .buyerAvatar img { width: 100%; height: 100%; display: block; }
+    .tickerText strong { color: #111; font-weight: 900; }
     @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
     .orderControls { margin-top: 12px; display: grid; grid-template-columns: 112px 1fr; gap: 9px; align-items: center; }
     .stepper { height: 44px; display: grid; grid-template-columns: 34px 1fr 34px; align-items: center; border: 1px solid #ddd; border-radius: 8px; background: #fff; overflow: hidden; }
@@ -275,7 +278,7 @@
         <div class="price">${formatWon(item.salePrice)}</div>
         <div class="activity">
           <div class="watching">${escapeHtml(item.stats?.watchingText || '')} · 누적 ${Number(item.stats?.totalQuantity || 0)}개 주문</div>
-          <div class="ticker"><div class="tickerTrack">${tickerItems.concat(tickerItems).map(text => `<span class="tickerItem">${escapeHtml(text)}</span>`).join('')}</div></div>
+          <div class="ticker"><div class="tickerTrack">${tickerItems.concat(tickerItems).map(renderTickerItem).join('')}</div></div>
         </div>
         <div class="orderControls">
           <div class="stepper">
@@ -499,7 +502,7 @@
       item.stats = item.stats || {};
       item.stats.totalQuantity = Number(item.stats.totalQuantity || 0) + Number(result.quantity || 0);
       item.stats.buyerCount = Math.max(1, Number(item.stats.buyerCount || 0));
-      item.stats.recentBuyers = [maskCustomerLabel(result.customerLabel), ...(item.stats.recentBuyers || [])].slice(0, 8);
+      item.stats.recentBuyers = [result.customerLabel, ...(item.stats.recentBuyers || [])].slice(0, 8);
       renderGrid();
     }
 
@@ -576,14 +579,74 @@
     function getTickerItems(item) {
       const buyers = item.stats?.recentBuyers || [];
       if (buyers.length) {
-        return buyers.map(label => `${label} 구매했습니다`);
+        return buyers.map(label => ({
+          type: 'buyer',
+          label: String(label || '').trim()
+        })).filter(item => item.label);
       }
 
-      return [
-        '타임특가 한정수량 진행 중',
-        `${item.category || '추천'} 인기상품`,
-        `${Number(item.stockQuantity || 0)}개 남았습니다`
+      const stock = Number(item.stockQuantity || 0);
+      const items = [
+        { type: 'notice', label: '타임특가 한정수량 진행 중' },
+        { type: 'notice', label: `${item.category || '추천'} 인기상품` }
       ];
+
+      if (stock > 0 && stock < 10) {
+        items.push({ type: 'notice', label: `품절임박 · ${stock}개 남음` });
+      } else {
+        items.push({ type: 'notice', label: '오늘 자정 마감 특가' });
+      }
+
+      return items;
+    }
+
+    function renderTickerItem(item) {
+      if (typeof item === 'string') {
+        return `<span class="tickerItem"><span class="tickerText">${escapeHtml(item)}</span></span>`;
+      }
+
+      if (item?.type !== 'buyer') {
+        return `<span class="tickerItem"><span class="tickerText">${escapeHtml(item?.label || '')}</span></span>`;
+      }
+
+      const label = String(item.label || '').trim();
+      const avatarUrl = getAvatarUrl(label);
+      const palette = getAvatarPalette(label);
+
+      return `
+        <span class="tickerItem">
+          <span class="buyerAvatar" style="--avatar-a:${palette[0]};--avatar-b:${palette[1]};">
+            <img src="${escapeAttr(avatarUrl)}" alt="" loading="lazy" decoding="async">
+          </span>
+          <span class="tickerText"><strong>${escapeHtml(label)}</strong>님이 구입했습니다</span>
+        </span>
+      `;
+    }
+
+    function getAvatarUrl(label) {
+      const seed = encodeURIComponent(label || 'manman');
+      return `https://api.dicebear.com/9.x/thumbs/svg?seed=${seed}&radius=50&backgroundColor=ffd5dc,c0aede,b6e3f4,d1d4f9,ffdfbf`;
+    }
+
+    function getAvatarPalette(label) {
+      const palettes = [
+        ['#ff6f91', '#ffc75f'],
+        ['#845ec2', '#00c9a7'],
+        ['#2c73d2', '#b6e3f4'],
+        ['#f9a826', '#ff8066'],
+        ['#00b8a9', '#f8f3d4'],
+        ['#d65db1', '#ff9671']
+      ];
+      return palettes[hashText(label) % palettes.length];
+    }
+
+    function hashText(value) {
+      const text = String(value || '');
+      let hash = 0;
+      for (let i = 0; i < text.length; i += 1) {
+        hash = ((hash << 5) - hash + text.charCodeAt(i)) | 0;
+      }
+      return Math.abs(hash);
     }
 
     function showToast(message) {
@@ -626,13 +689,6 @@
 
     function splitChips(value) {
       return String(value || '').split(',').map(item => item.trim()).filter(Boolean);
-    }
-
-    function maskCustomerLabel(label) {
-      const raw = String(label || '').replace(/\d{4}$/, '').trim();
-      if (!raw) return '고객님';
-      if (raw.length <= 2) return `${raw[0]}*님`;
-      return `${raw.slice(0, 1)}${'*'.repeat(Math.min(2, raw.length - 1))}${raw.slice(-1)}님`;
     }
 
     function formatWon(value) {
