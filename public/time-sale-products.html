@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>만만마켓 타임특가</title>
+  <style>
+    @font-face {
+      font-family: Pretendard;
+      src: url("https://cdn.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Medium.woff") format("woff");
+      font-weight: 500;
+    }
+    @font-face {
+      font-family: Pretendard;
+      src: url("https://cdn.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Bold.woff") format("woff");
+      font-weight: 800;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: #fff; color: #111; font-family: Pretendard, -apple-system, BlinkMacSystemFont, sans-serif; }
+    body { min-height: 100vh; }
+    .page { width: min(100%, 980px); margin: 0 auto; }
+    .header { position: sticky; top: 0; z-index: 10; min-height: 88px; padding: 18px 18px 16px; background: #111; color: #fff; }
+    .brand { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; }
+    .title { margin: 0; font-size: clamp(25px, 6vw, 42px); line-height: 1; font-weight: 900; letter-spacing: 0; }
+    .store { flex: 0 0 auto; font-size: 13px; line-height: 1.25; font-weight: 800; text-align: right; color: rgba(255,255,255,.82); }
+    .saleHero { padding: 18px; background: #111; color: #fff; border-top: 1px solid rgba(255,255,255,.1); }
+    .saleHeroInner { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+    .label { display: inline-flex; height: 26px; align-items: center; padding: 0 10px; border-radius: 999px; background: #e7443c; font-size: 13px; font-weight: 900; }
+    .heroText { margin-top: 8px; font-size: clamp(22px, 5vw, 34px); line-height: 1.08; font-weight: 900; }
+    .heroSub { margin-top: 6px; color: rgba(255,255,255,.74); font-size: 14px; font-weight: 700; }
+    .timer { flex: 0 0 auto; display: flex; align-items: center; gap: 10px; }
+    .watch { position: relative; width: 42px; height: 42px; border: 4px solid #fff; border-radius: 50%; box-shadow: inset 0 0 0 2px rgba(231,68,60,.72); }
+    .watch:before { content: ""; position: absolute; left: 50%; top: -12px; width: 14px; height: 8px; border-radius: 4px 4px 1px 1px; background: #fff; transform: translateX(-50%); }
+    .watch:after { content: ""; position: absolute; left: 50%; top: 50%; width: 4px; height: 15px; border-radius: 999px; background: #e7443c; transform-origin: 50% 100%; animation: spin 1.8s linear infinite; }
+    @keyframes spin { from { transform: translate(-50%, -100%) rotate(0deg); } to { transform: translate(-50%, -100%) rotate(360deg); } }
+    .time { display: flex; align-items: center; gap: 5px; font-weight: 900; font-variant-numeric: tabular-nums; }
+    .time span[data-time] { min-width: 38px; height: 42px; display: grid; place-items: center; border-radius: 6px; background: #fff; color: #111; font-size: 23px; }
+    .time span.tick { animation: tick .28s ease; }
+    @keyframes tick { from { transform: translateY(8px); opacity: .35; } to { transform: translateY(0); opacity: 1; } }
+    .tabs { position: sticky; top: 88px; z-index: 9; display: flex; gap: 9px; overflow-x: auto; padding: 14px 18px; background: rgba(255,255,255,.96); border-bottom: 1px solid #eee; scrollbar-width: none; }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab { flex: 0 0 auto; height: 36px; padding: 0 14px; border: 1px solid #ddd; border-radius: 999px; background: #fff; color: #111; font: inherit; font-weight: 900; }
+    .tab.active { border-color: #111; background: #111; color: #fff; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 34px 14px; padding: 20px 18px 56px; }
+    .card { min-width: 0; }
+    .thumbWrap { position: relative; width: 100%; aspect-ratio: 1 / 1; overflow: hidden; border-radius: 6px; background: #f1f1f1; box-shadow: 0 8px 22px rgba(0,0,0,.11); }
+    .thumb { width: 100%; height: 100%; display: block; object-fit: cover; }
+    .rate { position: absolute; left: 10px; top: 10px; min-width: 62px; padding: 9px 10px; border: 2px solid #fff; border-radius: 6px; background: #e7443c; color: #fff; text-align: center; font-size: 20px; line-height: 1; font-weight: 900; box-shadow: 0 8px 18px rgba(0,0,0,.28); }
+    .lowStock { position: absolute; left: 10px; right: 10px; bottom: 10px; padding: 9px 10px; border-radius: 6px; background: #111; color: #fff; text-align: center; font-size: 15px; font-weight: 900; box-shadow: 0 8px 18px rgba(0,0,0,.26); }
+    .name { margin: 14px 0 9px; display: -webkit-box; overflow: hidden; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: clamp(18px, 4.8vw, 24px); line-height: 1.18; font-weight: 900; word-break: keep-all; }
+    .meta { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 10px; }
+    .chip { display: inline-flex; align-items: center; height: 28px; max-width: 100%; padding: 0 9px; border-radius: 999px; background: #111; color: #fff; font-size: 13px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chip.stock { background: #fff1f1; color: #d61f2c; border: 1px solid rgba(214,31,44,.22); }
+    .compare { margin-bottom: 4px; color: #888; font-size: 13px; font-weight: 900; text-decoration: line-through; }
+    .price { color: #e7443c; font-size: clamp(24px, 7vw, 34px); line-height: 1; font-weight: 900; letter-spacing: 0; }
+    .empty { grid-column: 1 / -1; padding: 64px 10px; color: #777; text-align: center; font-weight: 800; }
+
+    @media (max-width: 560px) {
+      .saleHeroInner { flex-direction: column; align-items: flex-start; }
+      .timer { width: 100%; justify-content: space-between; }
+      .grid { gap: 32px 12px; padding-left: 14px; padding-right: 14px; }
+      .header, .saleHero { padding-left: 14px; padding-right: 14px; }
+      .tabs { top: 88px; padding-left: 14px; padding-right: 14px; }
+      .rate { min-width: 54px; font-size: 18px; }
+      .lowStock { font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <div class="brand">
+        <h1 class="title">타임특가</h1>
+        <div class="store">만만마켓<br>전농래미안크레시티점</div>
+      </div>
+    </header>
+
+    <section class="saleHero" aria-label="타임특가 마감 카운트다운">
+      <div class="saleHeroInner">
+        <div>
+          <div class="label">TIME SALE</div>
+          <div class="heroText">오늘 자정 마감 한정수량</div>
+          <div class="heroSub">200행 이상 상품목록 전용 페이지입니다.</div>
+        </div>
+        <div class="timer" aria-live="polite">
+          <span class="watch" aria-hidden="true"></span>
+          <div class="time">
+            <span data-time id="hours">00</span><b>:</b>
+            <span data-time id="minutes">00</span><b>:</b>
+            <span data-time id="seconds">00</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <nav class="tabs" id="tabs" aria-label="상품 카테고리"></nav>
+    <main class="grid" id="grid"></main>
+  </div>
+
+  <script>
+    let products = [];
+    let currentCategory = '모두보기';
+
+    init();
+
+    async function init() {
+      startCountdown();
+      const response = await fetch('/time-sale-products-data.json', { headers: { Accept: 'application/json' } });
+      const payload = await response.json();
+      products = Array.isArray(payload.items) ? payload.items : [];
+      renderTabs();
+      renderGrid();
+    }
+
+    function renderTabs() {
+      const tabs = document.getElementById('tabs');
+      const categories = ['모두보기', ...new Set(products.map(item => item.category).filter(Boolean))];
+      tabs.replaceChildren(...categories.map(category => {
+        const button = document.createElement('button');
+        button.className = `tab${category === currentCategory ? ' active' : ''}`;
+        button.type = 'button';
+        button.textContent = category;
+        button.onclick = () => {
+          currentCategory = category;
+          renderTabs();
+          renderGrid();
+        };
+        return button;
+      }));
+    }
+
+    function renderGrid() {
+      const grid = document.getElementById('grid');
+      const visible = products.filter(item => currentCategory === '모두보기' || item.category === currentCategory);
+
+      if (!visible.length) {
+        grid.innerHTML = '<div class="empty">표시할 상품이 없습니다.</div>';
+        return;
+      }
+
+      grid.replaceChildren(...visible.map(createCard));
+    }
+
+    function createCard(item) {
+      const stock = Number(item.stockQuantity);
+      const isLowStock = Number.isFinite(stock) && stock < 10;
+      const card = document.createElement('article');
+      card.className = 'card';
+
+      card.innerHTML = `
+        <div class="thumbWrap">
+          <img class="thumb" src="${escapeAttr(item.imageUrl || '')}" alt="">
+          <div class="rate">${Number(item.discountRate || 0)}%</div>
+          ${isLowStock ? `<div class="lowStock">품절임박 · ${stock}개 남음</div>` : ''}
+        </div>
+        <h2 class="name">${escapeHtml(item.productName || '')}</h2>
+        <div class="meta">
+          <span class="chip">${escapeHtml(item.category || '타임특가')}</span>
+          ${isLowStock ? `<span class="chip stock">${stock}개 남음</span>` : ''}
+        </div>
+        <div class="compare">온라인최저가 ${formatWon(item.comparePrice)}</div>
+        <div class="price">${formatWon(item.salePrice)}</div>
+      `;
+
+      return card;
+    }
+
+    function startCountdown() {
+      updateCountdown();
+      setInterval(updateCountdown, 1000);
+    }
+
+    function updateCountdown() {
+      const now = new Date();
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0);
+      const totalSeconds = Math.max(0, Math.floor((end.getTime() - now.getTime()) / 1000));
+      setTime('hours', Math.floor(totalSeconds / 3600));
+      setTime('minutes', Math.floor((totalSeconds % 3600) / 60));
+      setTime('seconds', totalSeconds % 60);
+    }
+
+    function setTime(id, value) {
+      const element = document.getElementById(id);
+      const text = String(value).padStart(2, '0');
+      if (!element || element.textContent === text) return;
+      element.textContent = text;
+      element.classList.remove('tick');
+      void element.offsetWidth;
+      element.classList.add('tick');
+    }
+
+    function formatWon(value) {
+      return `${new Intl.NumberFormat('ko-KR').format(Number(value || 0))}원`;
+    }
+
+    function escapeHtml(value) {
+      return String(value || '').replace(/[&<>"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[char]));
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value).replace(/'/g, '&#39;');
+    }
+  </script>
+</body>
+</html>
