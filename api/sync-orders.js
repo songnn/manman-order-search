@@ -32,11 +32,21 @@ export default async function handler(req, res) {
 
     await upsertInChunks_(records, 500);
 
-    const { error: deleteError } = await supabaseAdmin
+    const syncedSourceSheetNames = [...new Set(records
+      .map(record => record.source_sheet_name)
+      .filter(Boolean))];
+
+    let deleteQuery = supabaseAdmin
       .from('order_cache')
       .delete()
       .eq('store_name', process.env.STORE_NAME || '전농래미안크레시티점')
       .neq('sync_run_id', syncRunId);
+
+    if (syncedSourceSheetNames.length) {
+      deleteQuery = deleteQuery.in('source_sheet_name', syncedSourceSheetNames);
+    }
+
+    const { error: deleteError } = await deleteQuery;
 
     if (deleteError) throw deleteError;
 
@@ -83,7 +93,7 @@ function toOrderCacheRecord_(row, syncRunId) {
 
   return {
     store_name: process.env.STORE_NAME || '전농래미안크레시티점',
-    source_sheet_name: process.env.RAW_SHEET_NAME || 'Raw_주문입력',
+    source_sheet_name: row.sourceSheetName || process.env.RAW_SHEET_NAME || 'Raw_주문입력',
     source_row_number: row.sourceRowNumber,
 
     customer_label: customerLabel,

@@ -17,10 +17,11 @@
     }
 
     * { box-sizing: border-box; }
-    html, body { margin: 0; background: #fff; color: #111; font-family: Pretendard, -apple-system, BlinkMacSystemFont, sans-serif; }
-    body { min-height: 100vh; }
+    html, body { margin: 0; min-height: 100%; background: #fff; color: #111; font-family: Pretendard, -apple-system, BlinkMacSystemFont, sans-serif; }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
     .page { width: min(100%, 980px); margin: 0 auto; }
-    .header { position: sticky; top: 0; z-index: 10; min-height: 88px; padding: 18px 18px 16px; background: #111; color: #fff; }
+    .header { position: sticky; top: 0; z-index: 30; min-height: 88px; padding: 18px 18px 16px; background: #111; color: #fff; }
     .brand { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; }
     .title { margin: 0; font-size: clamp(25px, 6vw, 42px); line-height: 1; font-weight: 900; letter-spacing: 0; }
     .store { flex: 0 0 auto; font-size: 13px; line-height: 1.25; font-weight: 800; text-align: right; color: rgba(255,255,255,.82); }
@@ -28,7 +29,7 @@
     .saleHeroInner { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
     .label { display: inline-flex; height: 26px; align-items: center; padding: 0 10px; border-radius: 999px; background: #e7443c; font-size: 13px; font-weight: 900; }
     .heroText { margin-top: 8px; font-size: clamp(22px, 5vw, 34px); line-height: 1.08; font-weight: 900; }
-    .heroSub { margin-top: 6px; color: rgba(255,255,255,.74); font-size: 14px; font-weight: 700; }
+    .heroSub { margin-top: 6px; color: rgba(255,255,255,.78); font-size: 14px; font-weight: 800; }
     .timer { flex: 0 0 auto; display: flex; align-items: center; gap: 10px; }
     .watch { position: relative; width: 42px; height: 42px; border: 4px solid #fff; border-radius: 50%; box-shadow: inset 0 0 0 2px rgba(231,68,60,.72); }
     .watch:before { content: ""; position: absolute; left: 50%; top: -12px; width: 14px; height: 8px; border-radius: 4px 4px 1px 1px; background: #fff; transform: translateX(-50%); }
@@ -38,32 +39,89 @@
     .time span[data-time] { min-width: 38px; height: 42px; display: grid; place-items: center; border-radius: 6px; background: #fff; color: #111; font-size: 23px; }
     .time span.tick { animation: tick .28s ease; }
     @keyframes tick { from { transform: translateY(8px); opacity: .35; } to { transform: translateY(0); opacity: 1; } }
-    .tabs { position: sticky; top: 88px; z-index: 9; display: flex; gap: 9px; overflow-x: auto; padding: 14px 18px; background: rgba(255,255,255,.96); border-bottom: 1px solid #eee; scrollbar-width: none; }
+    .customerBar { display: none; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 18px; border-bottom: 1px solid #eee; background: #fff8f8; color: #6d161c; font-size: 14px; font-weight: 900; }
+    .customerBar.visible { display: flex; }
+    .customerBar button { flex: 0 0 auto; border: 0; border-radius: 999px; background: #111; color: #fff; padding: 8px 10px; font-weight: 900; }
+    .tabs { position: sticky; top: 88px; z-index: 20; display: flex; gap: 9px; overflow-x: auto; padding: 14px 18px; background: rgba(255,255,255,.96); border-bottom: 1px solid #eee; scrollbar-width: none; }
     .tabs::-webkit-scrollbar { display: none; }
-    .tab { flex: 0 0 auto; height: 36px; padding: 0 14px; border: 1px solid #ddd; border-radius: 999px; background: #fff; color: #111; font: inherit; font-weight: 900; }
+    .tab { flex: 0 0 auto; height: 36px; padding: 0 14px; border: 1px solid #ddd; border-radius: 999px; background: #fff; color: #111; font-weight: 900; }
     .tab.active { border-color: #111; background: #111; color: #fff; }
-    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 34px 14px; padding: 20px 18px 56px; }
-    .card { min-width: 0; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 36px 14px; padding: 20px 18px 72px; }
+    .card { min-width: 0; transition: transform .22s ease; }
+    .card.bump { animation: cardBump .24s ease; }
+    @keyframes cardBump { 45% { transform: translateY(-6px) scale(1.015); } }
     .thumbWrap { position: relative; width: 100%; aspect-ratio: 1 / 1; overflow: hidden; border-radius: 6px; background: #f1f1f1; box-shadow: 0 8px 22px rgba(0,0,0,.11); }
     .thumb { width: 100%; height: 100%; display: block; object-fit: cover; }
     .rate { position: absolute; left: 10px; top: 10px; min-width: 62px; padding: 9px 10px; border: 2px solid #fff; border-radius: 6px; background: #e7443c; color: #fff; text-align: center; font-size: 20px; line-height: 1; font-weight: 900; box-shadow: 0 8px 18px rgba(0,0,0,.28); }
     .lowStock { position: absolute; left: 10px; right: 10px; bottom: 10px; padding: 9px 10px; border-radius: 6px; background: #111; color: #fff; text-align: center; font-size: 15px; font-weight: 900; box-shadow: 0 8px 18px rgba(0,0,0,.26); }
+    .soldOutLayer { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(0,0,0,.62); color: #fff; font-size: 30px; font-weight: 900; letter-spacing: 0; }
     .name { margin: 14px 0 9px; display: -webkit-box; overflow: hidden; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: clamp(18px, 4.8vw, 24px); line-height: 1.18; font-weight: 900; word-break: keep-all; }
     .meta { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 10px; }
     .chip { display: inline-flex; align-items: center; height: 28px; max-width: 100%; padding: 0 9px; border-radius: 999px; background: #111; color: #fff; font-size: 13px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chip.desc { background: #f1f2f5; color: #222; }
     .chip.stock { background: #fff1f1; color: #d61f2c; border: 1px solid rgba(214,31,44,.22); }
     .compare { margin-bottom: 4px; color: #888; font-size: 13px; font-weight: 900; text-decoration: line-through; }
     .price { color: #e7443c; font-size: clamp(24px, 7vw, 34px); line-height: 1; font-weight: 900; letter-spacing: 0; }
+    .activity { margin-top: 12px; display: flex; flex-direction: column; gap: 7px; }
+    .watching { color: #555; font-size: 13px; font-weight: 900; }
+    .ticker { height: 28px; overflow: hidden; border-radius: 999px; background: #f7f7f7; color: #333; font-size: 13px; font-weight: 900; display: flex; align-items: center; }
+    .tickerTrack { display: inline-flex; white-space: nowrap; animation: ticker 28s linear infinite; }
+    .tickerItem { padding: 0 16px 0 12px; }
+    @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+    .orderControls { margin-top: 12px; display: grid; grid-template-columns: 112px 1fr; gap: 9px; align-items: center; }
+    .stepper { height: 44px; display: grid; grid-template-columns: 34px 1fr 34px; align-items: center; border: 1px solid #ddd; border-radius: 8px; background: #fff; overflow: hidden; }
+    .stepper button { height: 100%; border: 0; background: #f5f5f5; color: #111; font-size: 22px; font-weight: 900; }
+    .stepper button:disabled { color: #c8c8c8; }
+    .qty { text-align: center; font-size: 18px; font-weight: 900; }
+    .orderBtn { height: 44px; border: 0; border-radius: 8px; background: #e7443c; color: #fff; font-size: 16px; font-weight: 900; box-shadow: 0 8px 18px rgba(231,68,60,.22); }
+    .orderBtn:disabled { background: #d4d4d4; box-shadow: none; cursor: default; }
     .empty { grid-column: 1 / -1; padding: 64px 10px; color: #777; text-align: center; font-weight: 800; }
+    .modal { position: fixed; inset: 0; z-index: 100; display: none; align-items: center; justify-content: center; padding: 18px; background: rgba(0,0,0,.54); }
+    .modal.visible { display: flex; animation: fadeIn .18s ease both; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .panel { width: min(100%, 460px); max-height: calc(100vh - 36px); overflow: auto; border-radius: 12px; background: #fff; padding: 22px; box-shadow: 0 24px 70px rgba(0,0,0,.28); animation: panelIn .28s cubic-bezier(.2,.85,.2,1.15) both; }
+    @keyframes panelIn { from { transform: translateY(18px) scale(.97); opacity: .3; } to { transform: translateY(0) scale(1); opacity: 1; } }
+    .panel h2 { margin: 0 0 10px; font-size: 25px; line-height: 1.12; font-weight: 900; }
+    .panel p { margin: 0 0 16px; color: #555; font-size: 15px; line-height: 1.45; font-weight: 800; }
+    .field { display: flex; flex-direction: column; gap: 7px; margin-top: 12px; }
+    .field label { font-size: 14px; font-weight: 900; }
+    .field input { width: 100%; height: 52px; border: 1px solid #d9d9d9; border-radius: 8px; padding: 0 13px; font-size: 20px; font-weight: 900; outline: none; }
+    .field input:focus { border-color: #111; box-shadow: 0 0 0 3px rgba(0,0,0,.08); }
+    .modalActions { display: flex; gap: 9px; margin-top: 18px; }
+    .modalActions button, .candidateBtn { min-height: 48px; border: 0; border-radius: 8px; padding: 0 14px; font-weight: 900; }
+    .primary { flex: 1; background: #111; color: #fff; }
+    .secondary { background: #eee; color: #111; }
+    .candidateList { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+    .candidateBtn { width: 100%; background: #f3f5f8; color: #111; text-align: left; }
+    .success { position: fixed; inset: 0; z-index: 120; display: none; place-items: center; padding: 24px; background: #111; color: #fff; overflow: hidden; }
+    .success.visible { display: grid; animation: successIn .25s ease both; }
+    @keyframes successIn { from { opacity: 0; } to { opacity: 1; } }
+    .successCard { position: relative; z-index: 2; width: min(100%, 520px); text-align: center; animation: popIn .55s cubic-bezier(.2,.85,.2,1.2) both; }
+    @keyframes popIn { from { transform: translateY(20px) scale(.92); opacity: .2; } to { transform: translateY(0) scale(1); opacity: 1; } }
+    .successIcon { width: 96px; height: 96px; display: grid; place-items: center; margin: 0 auto 22px; border-radius: 50%; background: #e7443c; font-size: 54px; font-weight: 900; box-shadow: 0 0 0 12px rgba(231,68,60,.22); animation: pulse 1.4s ease infinite; }
+    @keyframes pulse { 50% { transform: scale(1.06); } }
+    .success h2 { margin: 0 0 12px; font-size: clamp(34px, 10vw, 58px); line-height: 1; font-weight: 900; }
+    .success p { margin: 0 auto 22px; max-width: 360px; color: rgba(255,255,255,.82); font-size: 17px; line-height: 1.45; font-weight: 800; }
+    .successInfo { display: grid; gap: 8px; margin: 0 0 24px; padding: 16px; border-radius: 12px; background: rgba(255,255,255,.1); text-align: left; font-weight: 900; }
+    .successActions { display: grid; gap: 9px; }
+    .successActions button, .successActions a { min-height: 52px; display: grid; place-items: center; border: 0; border-radius: 8px; text-decoration: none; font-weight: 900; }
+    .successActions a { background: #fff; color: #111; }
+    .successActions button { background: rgba(255,255,255,.14); color: #fff; }
+    .spark { position: absolute; width: 8px; height: 120px; top: 50%; left: 50%; border-radius: 999px; background: #e7443c; transform-origin: 50% 0; opacity: .55; animation: spark 1.2s ease-out infinite; }
+    @keyframes spark { from { transform: rotate(var(--r)) translateY(0) scaleY(.2); opacity: .9; } to { transform: rotate(var(--r)) translateY(-360px) scaleY(1); opacity: 0; } }
+    .toast { position: fixed; left: 50%; bottom: 22px; z-index: 140; transform: translate(-50%, 18px); min-width: min(420px, calc(100vw - 36px)); max-width: calc(100vw - 36px); padding: 14px 16px; border-radius: 10px; background: #111; color: #fff; font-weight: 900; text-align: center; box-shadow: 0 18px 42px rgba(0,0,0,.28); opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease; }
+    .toast.visible { opacity: 1; transform: translate(-50%, 0); }
 
     @media (max-width: 560px) {
       .saleHeroInner { flex-direction: column; align-items: flex-start; }
       .timer { width: 100%; justify-content: space-between; }
-      .grid { gap: 32px 12px; padding-left: 14px; padding-right: 14px; }
+      .grid { gap: 34px 12px; padding-left: 14px; padding-right: 14px; }
       .header, .saleHero { padding-left: 14px; padding-right: 14px; }
       .tabs { top: 88px; padding-left: 14px; padding-right: 14px; }
+      .customerBar { padding-left: 14px; padding-right: 14px; }
       .rate { min-width: 54px; font-size: 18px; }
       .lowStock { font-size: 13px; }
+      .orderControls { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -81,7 +139,7 @@
         <div>
           <div class="label">TIME SALE</div>
           <div class="heroText">오늘 자정 마감 한정수량</div>
-          <div class="heroSub">200행 이상 상품목록 전용 페이지입니다.</div>
+          <div class="heroSub">주문 후 주문조회에서 확인하실 수 있습니다.</div>
         </div>
         <div class="timer" aria-live="polite">
           <span class="watch" aria-hidden="true"></span>
@@ -94,21 +152,68 @@
       </div>
     </section>
 
+    <div class="customerBar" id="customerBar">
+      <span id="customerBarText"></span>
+      <button type="button" id="changeCustomerBtn">다른 닉네임</button>
+    </div>
+
     <nav class="tabs" id="tabs" aria-label="상품 카테고리"></nav>
     <main class="grid" id="grid"></main>
   </div>
 
+  <div class="modal" id="orderModal" role="dialog" aria-modal="true"></div>
+  <div class="success" id="successOverlay" role="dialog" aria-modal="true"></div>
+  <div class="toast" id="toast"></div>
+
   <script>
+    const CUSTOMER_STORAGE_KEY = 'manmanTimeSaleCustomer';
     let products = [];
     let currentCategory = '모두보기';
+    let pendingOrder = null;
+    let isSubmitting = false;
+    let toastTimer = 0;
 
     init();
 
     async function init() {
       startCountdown();
-      const response = await fetch('/time-sale-products-data.json', { headers: { Accept: 'application/json' } });
-      const payload = await response.json();
-      products = Array.isArray(payload.items) ? payload.items : [];
+      bindGlobalHandlers();
+      await refreshProducts();
+      renderCustomerBar();
+    }
+
+    function bindGlobalHandlers() {
+      document.getElementById('changeCustomerBtn').onclick = function() {
+        localStorage.removeItem(CUSTOMER_STORAGE_KEY);
+        renderCustomerBar();
+        showToast('주문자 정보를 다시 입력할 수 있어요.');
+      };
+    }
+
+    async function refreshProducts() {
+      try {
+        const response = await fetch('/api/time-sale-products', { headers: { Accept: 'application/json' } });
+        const payload = await response.json();
+        products = (payload.items || []).map(item => ({
+          ...item,
+          selectedQuantity: Number(item.stockQuantity) > 0 ? 1 : 0
+        }));
+      } catch {
+        const fallback = await fetch('/time-sale-products-data.json', { headers: { Accept: 'application/json' } });
+        const payload = await fallback.json();
+        products = (payload.items || []).map(item => ({
+          ...item,
+          chips: splitChips(item.description || ''),
+          selectedQuantity: Number(item.stockQuantity) > 0 ? 1 : 0,
+          stats: {
+            totalQuantity: 0,
+            buyerCount: 0,
+            recentBuyers: [],
+            watchingText: '지금 보고 있습니다'
+          }
+        }));
+      }
+
       renderTabs();
       renderGrid();
     }
@@ -143,27 +248,356 @@
     }
 
     function createCard(item) {
-      const stock = Number(item.stockQuantity);
-      const isLowStock = Number.isFinite(stock) && stock < 10;
+      const stock = Number(item.stockQuantity || 0);
+      const soldOut = stock <= 0;
+      const isLowStock = stock > 0 && stock < 10;
+      const quantity = Math.max(0, Math.min(Number(item.selectedQuantity || 0), stock));
+      item.selectedQuantity = quantity;
       const card = document.createElement('article');
       card.className = 'card';
+      card.dataset.row = item.sheetRow;
+      const chips = [item.category, ...(item.chips || [])].filter(Boolean).slice(0, 5);
+      const tickerItems = getTickerItems(item);
 
       card.innerHTML = `
         <div class="thumbWrap">
           <img class="thumb" src="${escapeAttr(item.imageUrl || '')}" alt="">
           <div class="rate">${Number(item.discountRate || 0)}%</div>
           ${isLowStock ? `<div class="lowStock">품절임박 · ${stock}개 남음</div>` : ''}
+          ${soldOut ? '<div class="soldOutLayer">품절</div>' : ''}
         </div>
         <h2 class="name">${escapeHtml(item.productName || '')}</h2>
         <div class="meta">
-          <span class="chip">${escapeHtml(item.category || '타임특가')}</span>
+          ${chips.map((chip, index) => `<span class="chip${index ? ' desc' : ''}">${escapeHtml(chip)}</span>`).join('')}
           ${isLowStock ? `<span class="chip stock">${stock}개 남음</span>` : ''}
         </div>
         <div class="compare">온라인최저가 ${formatWon(item.comparePrice)}</div>
         <div class="price">${formatWon(item.salePrice)}</div>
+        <div class="activity">
+          <div class="watching">${escapeHtml(item.stats?.watchingText || '')} · 누적 ${Number(item.stats?.totalQuantity || 0)}개 주문</div>
+          <div class="ticker"><div class="tickerTrack">${tickerItems.concat(tickerItems).map(text => `<span class="tickerItem">${escapeHtml(text)}</span>`).join('')}</div></div>
+        </div>
+        <div class="orderControls">
+          <div class="stepper">
+            <button type="button" data-action="dec" ${quantity <= 1 || soldOut ? 'disabled' : ''}>-</button>
+            <div class="qty">${quantity}</div>
+            <button type="button" data-action="inc" ${quantity >= stock || soldOut ? 'disabled' : ''}>+</button>
+          </div>
+          <button type="button" class="orderBtn" data-action="order" ${soldOut ? 'disabled' : ''}>${soldOut ? '품절' : '주문하기'}</button>
+        </div>
       `;
 
+      card.addEventListener('click', handleCardClick);
       return card;
+    }
+
+    function handleCardClick(event) {
+      const action = event.target.closest('[data-action]')?.dataset.action;
+      if (!action) return;
+
+      const card = event.currentTarget;
+      const item = products.find(product => String(product.sheetRow) === String(card.dataset.row));
+      if (!item) return;
+
+      const stock = Number(item.stockQuantity || 0);
+      if (action === 'inc') {
+        if (item.selectedQuantity >= stock) {
+          showToast(`현재 남은 재고는 ${stock}개입니다.`);
+          return;
+        }
+        item.selectedQuantity += 1;
+        animateCard(card);
+        renderGrid();
+        return;
+      }
+
+      if (action === 'dec') {
+        item.selectedQuantity = Math.max(1, Number(item.selectedQuantity || 1) - 1);
+        animateCard(card);
+        renderGrid();
+        return;
+      }
+
+      if (action === 'order') {
+        beginOrder(item);
+      }
+    }
+
+    function beginOrder(item) {
+      const stock = Number(item.stockQuantity || 0);
+      const quantity = Number(item.selectedQuantity || 0);
+
+      if (stock <= 0) {
+        showToast('이미 품절된 상품입니다.');
+        return;
+      }
+
+      if (quantity > stock) {
+        showToast(`현재 남은 재고는 ${stock}개입니다.`);
+        return;
+      }
+
+      pendingOrder = {
+        sheetRow: item.sheetRow,
+        quantity,
+        productName: item.productName
+      };
+      const saved = getSavedCustomer();
+
+      if (saved?.phoneLast4 && saved?.customerLabel) {
+        submitOrder({
+          phoneLast4: saved.phoneLast4,
+          customerLabel: saved.customerLabel
+        });
+        return;
+      }
+
+      renderPhoneModal();
+    }
+
+    function renderPhoneModal() {
+      const modal = document.getElementById('orderModal');
+      modal.innerHTML = `
+        <div class="panel">
+          <h2>주문자 확인</h2>
+          <p>${escapeHtml(pendingOrder.productName)} ${pendingOrder.quantity}개 주문을 진행합니다.</p>
+          <form id="phoneForm">
+            <div class="field">
+              <label for="phoneLast4">휴대폰 끝 4자리</label>
+              <input id="phoneLast4" inputmode="numeric" maxlength="4" autocomplete="tel" placeholder="예: 1234">
+            </div>
+            <div class="modalActions">
+              <button class="secondary" type="button" data-close>취소</button>
+              <button class="primary" type="submit">주문하기</button>
+            </div>
+          </form>
+        </div>
+      `;
+      showModal(modal);
+      modal.querySelector('[data-close]').onclick = closeOrderModal;
+      modal.querySelector('#phoneLast4').focus();
+      modal.querySelector('#phoneForm').onsubmit = event => {
+        event.preventDefault();
+        const phoneLast4 = modal.querySelector('#phoneLast4').value.trim();
+        submitOrder({ phoneLast4 });
+      };
+    }
+
+    function renderCandidateModal(candidates, phoneLast4) {
+      const modal = document.getElementById('orderModal');
+      modal.innerHTML = `
+        <div class="panel">
+          <h2>닉네임 선택</h2>
+          <p>같은 끝번호가 있어요. 주문하실 닉네임을 선택해주세요.</p>
+          <div class="candidateList">
+            ${candidates.map(candidate => `<button type="button" class="candidateBtn" data-label="${escapeAttr(candidate.customerLabel)}">${escapeHtml(candidate.customerLabel)} · 최근 ${Number(candidate.orderCount || 0)}건</button>`).join('')}
+          </div>
+          <div class="modalActions">
+            <button class="secondary" type="button" data-close>취소</button>
+          </div>
+        </div>
+      `;
+      showModal(modal);
+      modal.querySelector('[data-close]').onclick = closeOrderModal;
+      modal.querySelectorAll('.candidateBtn').forEach(button => {
+        button.onclick = () => submitOrder({
+          phoneLast4,
+          customerLabel: button.dataset.label
+        });
+      });
+    }
+
+    function renderNameModal(phoneLast4) {
+      const modal = document.getElementById('orderModal');
+      modal.innerHTML = `
+        <div class="panel">
+          <h2>닉네임 입력</h2>
+          <p>주문조회에서 확인하실 닉네임을 입력해주세요.</p>
+          <form id="nameForm">
+            <div class="field">
+              <label for="customerName">닉네임</label>
+              <input id="customerName" autocomplete="nickname" placeholder="예: 만만맘">
+            </div>
+            <div class="modalActions">
+              <button class="secondary" type="button" data-close>취소</button>
+              <button class="primary" type="submit">주문하기</button>
+            </div>
+          </form>
+        </div>
+      `;
+      showModal(modal);
+      modal.querySelector('[data-close]').onclick = closeOrderModal;
+      modal.querySelector('#customerName').focus();
+      modal.querySelector('#nameForm').onsubmit = event => {
+        event.preventDefault();
+        submitOrder({
+          phoneLast4,
+          customerName: modal.querySelector('#customerName').value.trim()
+        });
+      };
+    }
+
+    async function submitOrder(customer) {
+      if (!pendingOrder) return;
+      if (isSubmitting) return;
+
+      isSubmitting = true;
+      try {
+        const response = await fetch('/api/time-sale-orders', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json'
+          },
+          body: JSON.stringify({
+            sheetRow: pendingOrder.sheetRow,
+            quantity: pendingOrder.quantity,
+            ...customer
+          })
+        });
+        const result = await response.json();
+
+        if (result.requiresCustomerSelection) {
+          renderCandidateModal(result.candidates || [], customer.phoneLast4);
+          return;
+        }
+
+        if (result.requiresCustomerName) {
+          renderNameModal(customer.phoneLast4);
+          return;
+        }
+
+        if (!result.ok) {
+          showToast(result.message || '주문을 처리하지 못했습니다.');
+          if (Number.isFinite(Number(result.remainingStock))) {
+            updateProductStock(result.sheetRow || pendingOrder.sheetRow, Number(result.remainingStock));
+          }
+          return;
+        }
+
+        saveCustomer({
+          phoneLast4: result.phoneLast4,
+          customerLabel: result.customerLabel
+        });
+        applySuccessfulOrder(result);
+        closeOrderModal();
+        renderCustomerBar();
+        renderSuccess(result);
+      } catch {
+        showToast('잠시 후 다시 시도해주세요.');
+      } finally {
+        isSubmitting = false;
+      }
+    }
+
+    function applySuccessfulOrder(result) {
+      const item = products.find(product => Number(product.sheetRow) === Number(result.sheetRow));
+      if (!item) return;
+
+      item.stockQuantity = Number(result.remainingStock);
+      item.selectedQuantity = item.stockQuantity > 0 ? 1 : 0;
+      item.stats = item.stats || {};
+      item.stats.totalQuantity = Number(item.stats.totalQuantity || 0) + Number(result.quantity || 0);
+      item.stats.buyerCount = Math.max(1, Number(item.stats.buyerCount || 0));
+      item.stats.recentBuyers = [maskCustomerLabel(result.customerLabel), ...(item.stats.recentBuyers || [])].slice(0, 8);
+      renderGrid();
+    }
+
+    function updateProductStock(sheetRow, remainingStock) {
+      const item = products.find(product => Number(product.sheetRow) === Number(sheetRow));
+      if (!item) return;
+
+      item.stockQuantity = remainingStock;
+      item.selectedQuantity = remainingStock > 0 ? Math.min(item.selectedQuantity || 1, remainingStock) : 0;
+      renderGrid();
+    }
+
+    function renderSuccess(result) {
+      const overlay = document.getElementById('successOverlay');
+      const successMessage = result.cacheSynced === false
+        ? '결제 없이 주문이 접수되었습니다. 주문조회 반영은 잠시 후 확인해주세요.'
+        : '결제 없이 주문이 접수되었습니다. 주문조회에서 휴대폰 끝 4자리로 바로 확인하실 수 있습니다.';
+      overlay.innerHTML = `
+        ${Array.from({ length: 16 }, (_, i) => `<span class="spark" style="--r:${i * 22.5}deg"></span>`).join('')}
+        <div class="successCard">
+          <div class="successIcon">✓</div>
+          <h2>주문 완료</h2>
+          <p>${escapeHtml(successMessage)}</p>
+          <div class="successInfo">
+            <div>상품: ${escapeHtml(result.productName)}</div>
+            <div>수량: ${Number(result.quantity)}개</div>
+            <div>픽업일: ${escapeHtml(result.pickupDate)}</div>
+          </div>
+          <div class="successActions">
+            <a href="/">주문조회로 확인하기</a>
+            <button type="button" id="continueBtn">계속 보기</button>
+          </div>
+        </div>
+      `;
+      overlay.classList.add('visible');
+      overlay.querySelector('#continueBtn').onclick = () => {
+        overlay.classList.remove('visible');
+      };
+    }
+
+    function closeOrderModal() {
+      document.getElementById('orderModal').classList.remove('visible');
+    }
+
+    function showModal(modal) {
+      modal.classList.add('visible');
+    }
+
+    function renderCustomerBar() {
+      const saved = getSavedCustomer();
+      const bar = document.getElementById('customerBar');
+      if (!saved?.customerLabel) {
+        bar.classList.remove('visible');
+        return;
+      }
+
+      document.getElementById('customerBarText').textContent = `${saved.customerLabel}님으로 주문합니다`;
+      bar.classList.add('visible');
+    }
+
+    function getSavedCustomer() {
+      try {
+        return JSON.parse(localStorage.getItem(CUSTOMER_STORAGE_KEY) || 'null');
+      } catch {
+        return null;
+      }
+    }
+
+    function saveCustomer(customer) {
+      if (!customer?.phoneLast4 || !customer?.customerLabel) return;
+      localStorage.setItem(CUSTOMER_STORAGE_KEY, JSON.stringify(customer));
+    }
+
+    function getTickerItems(item) {
+      const buyers = item.stats?.recentBuyers || [];
+      if (buyers.length) {
+        return buyers.map(label => `${label} 구매했습니다`);
+      }
+
+      return [
+        '타임특가 한정수량 진행 중',
+        `${item.category || '추천'} 인기상품`,
+        `${Number(item.stockQuantity || 0)}개 남았습니다`
+      ];
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('visible');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('visible'), 2200);
+    }
+
+    function animateCard(card) {
+      card.classList.remove('bump');
+      void card.offsetWidth;
+      card.classList.add('bump');
     }
 
     function startCountdown() {
@@ -188,6 +622,17 @@
       element.classList.remove('tick');
       void element.offsetWidth;
       element.classList.add('tick');
+    }
+
+    function splitChips(value) {
+      return String(value || '').split(',').map(item => item.trim()).filter(Boolean);
+    }
+
+    function maskCustomerLabel(label) {
+      const raw = String(label || '').replace(/\d{4}$/, '').trim();
+      if (!raw) return '고객님';
+      if (raw.length <= 2) return `${raw[0]}*님`;
+      return `${raw.slice(0, 1)}${'*'.repeat(Math.min(2, raw.length - 1))}${raw.slice(-1)}님`;
     }
 
     function formatWon(value) {
