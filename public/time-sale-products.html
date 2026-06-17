@@ -277,7 +277,7 @@
         <div class="compare">온라인최저가 ${formatWon(item.comparePrice)}</div>
         <div class="price">${formatWon(item.salePrice)}</div>
         <div class="activity">
-          <div class="watching">${escapeHtml(item.stats?.watchingText || '')} · 누적 ${Number(item.stats?.totalQuantity || 0)}개 주문</div>
+          <div class="watching">${escapeHtml(item.stats?.watchingText || '')}</div>
           <div class="ticker"><div class="tickerTrack">${tickerItems.concat(tickerItems).map(renderTickerItem).join('')}</div></div>
         </div>
         <div class="orderControls">
