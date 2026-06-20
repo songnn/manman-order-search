@@ -458,7 +458,7 @@
       text-align: right;
     }
     .sales-card .buffer-form {
-      grid-template-columns: 62px 44px minmax(0, 1fr) 36px;
+      grid-template-columns: 110px 44px minmax(0, 1fr) 36px;
       gap: 6px;
       padding-top: 0;
       border-top: 0;
@@ -480,6 +480,42 @@
       background: #eef4ff;
       border-color: #cfdcff;
       color: #2563eb;
+    }
+    .qty-stepper.is-picking {
+      background: #111827;
+      border-color: #111827;
+      color: #fff;
+    }
+    .qty-picker-popover {
+      position: fixed;
+      z-index: 80;
+      display: grid;
+      grid-template-columns: repeat(5, 38px);
+      gap: 6px;
+      padding: 8px;
+      border: 1px solid rgba(17, 24, 39, .1);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, .96);
+      box-shadow: 0 18px 44px rgba(17, 24, 39, .18);
+      backdrop-filter: blur(14px);
+      pointer-events: none;
+      transform: translate3d(-50%, -100%, 0);
+    }
+    .qty-picker-option {
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: #f4f6f8;
+      color: #17191c;
+      font-size: 15px;
+      font-weight: 500;
+    }
+    .qty-picker-option.is-active {
+      background: #111827;
+      color: #fff;
+      transform: scale(1.08);
     }
     .plus-btn {
       width: 36px;
@@ -773,8 +809,8 @@
           </div>
           ${renderQuantityKpis(item)}
           <div class="buffer-form">
-            <input class="buffer-customer" data-buffer-customer="${esc(item.id)}" placeholder="끝4" inputmode="numeric" autocomplete="off">
-            <button class="buffer-qty qty-stepper" data-buffer-qty="${esc(item.id)}" data-qty-step="1" type="button" aria-label="버퍼수량">${number(getBufferQtyValue(item.id))}</button>
+            <input class="buffer-customer" data-buffer-customer="${esc(item.id)}" placeholder="핸드폰 뒷 4자리" aria-label="핸드폰 뒷 4자리" inputmode="numeric" autocomplete="off">
+            <button class="buffer-qty qty-stepper" data-buffer-qty="${esc(item.id)}" data-qty-picker="1" type="button" aria-label="버퍼수량 선택">${number(getBufferQtyValue(item.id))}</button>
             <button class="buffer-use-btn" data-action="buffer-use" ${bufferQuantity <= 0 ? 'disabled' : ''}>차감</button>
             <button class="plus-btn" data-action="buffer-plus" aria-label="버퍼 추가">+</button>
             <div class="history">${history}</div>
@@ -792,7 +828,6 @@
       const bufferQuantity = Number(item.bufferRemainingQuantity || 0);
       const totalBuffer = Number(item.initialBufferQuantity || 0);
       const orderQuantity = Number(item.customerOrderQuantity || 0);
-      const orderRemaining = Number(item.customerOrderRemainingQuantity || 0);
 
       return `
         <div class="sales-quick">
@@ -810,11 +845,10 @@
               <em>/ ${number(totalBuffer)}</em>
             </div>
           </div>
-          <div class="sales-quick-item pickup">
-            <span>픽업잔여</span>
+          <div class="sales-quick-item order">
+            <span>공구주문</span>
             <div class="ratio-value">
-              <strong>${number(orderRemaining)}</strong>
-              <em>/ ${number(orderQuantity)}</em>
+              <strong>${number(orderQuantity)}</strong>
             </div>
           </div>
         </div>
@@ -824,22 +858,7 @@
     function renderListButtons(item) {
       return `
         <button class="list-btn" data-action="show-buffer-list" type="button"><span>버퍼구매</span><strong>${number(getBufferUseEvents(item).length)}</strong></button>
-        <button class="list-btn" data-action="show-pickup-list" type="button"><span>픽업완료</span><strong>${number((item.pickupCompletedCustomers || []).length)}</strong></button>
       `;
-    }
-
-    function renderCustomerChips(customers) {
-      if (!customers.length) {
-        return '<span class="pickup-chip is-empty">아직 없음</span>';
-      }
-
-      const visible = customers.slice(0, 10)
-        .map(customer => `<span class="pickup-chip">${esc(customer.customerLabel)} ${number(customer.quantity)}</span>`)
-        .join('');
-      const hiddenCount = Math.max(0, customers.length - 10);
-      return hiddenCount
-        ? `${visible}<span class="pickup-chip is-empty">외 ${number(hiddenCount)}명</span>`
-        : visible;
     }
 
     function getBufferUseEvents(item) {
@@ -859,24 +878,17 @@
       }).format(date);
     }
 
-    function openListModal(id, type) {
+    function openListModal(id) {
       const item = findItem(id);
       if (!item) return;
 
-      const isBuffer = type === 'buffer';
-      const rows = isBuffer
-        ? getBufferUseEvents(item).map(event => ({
-            name: event.actorMemo || '메모없음',
-            quantity: Math.abs(Number(event.deltaQuantity || 0)),
-            time: event.createdAt
-          }))
-        : (item.pickupCompletedCustomers || []).map(customer => ({
-            name: customer.customerLabel || '고객',
-            quantity: Number(customer.quantity || 0),
-            time: customer.lastCompletedAt
-          }));
+      const rows = getBufferUseEvents(item).map(event => ({
+        name: event.actorMemo || '메모없음',
+        quantity: Math.abs(Number(event.deltaQuantity || 0)),
+        time: event.createdAt
+      }));
 
-      els.listModalTitle.textContent = isBuffer ? '버퍼구매 고객' : '픽업완료 고객';
+      els.listModalTitle.textContent = '버퍼구매 고객';
       els.listModalSub.textContent = item.productName || '';
       els.listModalBody.innerHTML = rows.length
         ? rows.map(row => `
@@ -888,7 +900,7 @@
               <div class="sheet-row-qty">${number(row.quantity)}</div>
             </div>
           `).join('')
-        : `<div class="empty">${isBuffer ? '버퍼 차감 기록이 없습니다.' : '픽업완료 고객이 없습니다.'}</div>`;
+        : '<div class="empty">버퍼 차감 기록이 없습니다.</div>';
       els.listModal.hidden = false;
     }
 
@@ -1064,12 +1076,11 @@
       const inboundQuantity = Number(target.inboundQuantity || 0);
       const initialBufferQuantity = Number(target.initialBufferQuantity || 0);
       const bufferRemainingQuantity = Math.max(0, Number(target.bufferRemainingQuantity || 0));
-      const pickupCompletedQuantity = Number(target.pickupCompletedQuantity || 0);
       const bufferUsedQuantity = Math.max(0, initialBufferQuantity - bufferRemainingQuantity);
 
       target.bufferRemainingQuantity = bufferRemainingQuantity;
       target.bufferUsedQuantity = bufferUsedQuantity;
-      target.remainingQuantity = Math.max(0, inboundQuantity - bufferUsedQuantity - pickupCompletedQuantity);
+      target.remainingQuantity = Math.max(0, inboundQuantity - bufferUsedQuantity);
       target.physicalRemainingQuantity = target.remainingQuantity;
     }
 
@@ -1089,23 +1100,56 @@
       });
     }
 
-    function stepBufferQty(id, button) {
-      const current = getBufferQtyValue(id);
-      const next = current >= 20 ? 1 : current + 1;
-      setBufferQtyValue(id, next);
-      button?.classList.add('is-spinning');
-      window.navigator?.vibrate?.(8);
+    function buildQtyPicker(button, activeValue) {
+      const picker = document.createElement('div');
+      picker.className = 'qty-picker-popover';
+      picker.setAttribute('role', 'listbox');
+      picker.setAttribute('aria-label', '버퍼수량 선택');
+      picker.innerHTML = Array.from({ length: 20 }, (_, index) => {
+        const value = index + 1;
+        return `<div class="qty-picker-option ${value === activeValue ? 'is-active' : ''}" data-picker-value="${value}" role="option" aria-selected="${value === activeValue ? 'true' : 'false'}">${value}</div>`;
+      }).join('');
+      document.body.appendChild(picker);
 
-      clearTimeout(button?._qtyPulseTimer);
-      if (button) {
-        button._qtyPulseTimer = setTimeout(() => {
-          button.classList.remove('is-spinning');
-        }, 120);
-      }
+      const rect = button.getBoundingClientRect();
+      const left = Math.min(window.innerWidth - 110, Math.max(110, rect.left + rect.width / 2));
+      const top = Math.max(94, rect.top - 10);
+      picker.style.left = `${left}px`;
+      picker.style.top = `${top}px`;
+
+      return picker;
     }
 
-    function bindQuantitySteppers() {
-      document.querySelectorAll('[data-qty-step]').forEach(button => {
+    function updateQtyPickerSelection(picker, id, clientX, clientY) {
+      const options = Array.from(picker.querySelectorAll('[data-picker-value]'));
+      const target = options.find(option => {
+        const rect = option.getBoundingClientRect();
+        return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
+      }) || options
+        .map(option => {
+          const rect = option.getBoundingClientRect();
+          const centerX = rect.left + rect.width / 2;
+          const centerY = rect.top + rect.height / 2;
+          return {
+            option,
+            distance: Math.hypot(centerX - clientX, centerY - clientY)
+          };
+        })
+        .sort((a, b) => a.distance - b.distance)[0]?.option;
+
+      if (!target) return getBufferQtyValue(id);
+
+      const value = Number(target.dataset.pickerValue || 1);
+      options.forEach(option => {
+        const isActive = option === target;
+        option.classList.toggle('is-active', isActive);
+        option.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
+      return value;
+    }
+
+    function bindQuantityPickers() {
+      document.querySelectorAll('[data-qty-picker]').forEach(button => {
         button.oncontextmenu = event => event.preventDefault();
         button.onpointerdown = event => {
           if (event.button != null && event.button !== 0) return;
@@ -1115,33 +1159,52 @@
           const id = card?.dataset.id || '';
           if (!id) return;
 
-          let held = false;
-          let intervalId = null;
+          let picker = null;
+          let selectedValue = getBufferQtyValue(id);
+          let didOpenPicker = false;
           try {
             button.setPointerCapture?.(event.pointerId);
           } catch {
           }
 
-          const startHold = () => {
-            held = true;
-            stepBufferQty(id, button);
-            intervalId = setInterval(() => stepBufferQty(id, button), 95);
+          const openPicker = pointerEvent => {
+            didOpenPicker = true;
+            button.classList.add('is-picking');
+            picker = buildQtyPicker(button, selectedValue);
+            selectedValue = updateQtyPickerSelection(picker, id, pointerEvent.clientX, pointerEvent.clientY);
+            window.navigator?.vibrate?.(12);
           };
 
-          const holdTimer = setTimeout(startHold, 320);
-          const finish = () => {
+          const holdTimer = setTimeout(() => openPicker(event), 280);
+          const move = pointerEvent => {
+            if (!picker) return;
+            selectedValue = updateQtyPickerSelection(picker, id, pointerEvent.clientX, pointerEvent.clientY);
+          };
+          const finish = pointerEvent => {
             clearTimeout(holdTimer);
-            if (intervalId) clearInterval(intervalId);
             try {
               button.releasePointerCapture?.(event.pointerId);
             } catch {
             }
-            button.classList.remove('is-spinning');
-            if (!held) stepBufferQty(id, button);
+            if (picker) {
+              selectedValue = updateQtyPickerSelection(picker, id, pointerEvent.clientX, pointerEvent.clientY);
+              picker.remove();
+              picker = null;
+            }
+            button.classList.remove('is-picking');
+            if (didOpenPicker) {
+              setBufferQtyValue(id, selectedValue);
+              window.navigator?.vibrate?.(8);
+            } else {
+              const next = getBufferQtyValue(id) >= 20 ? 1 : getBufferQtyValue(id) + 1;
+              setBufferQtyValue(id, next);
+            }
+            window.removeEventListener('pointermove', move);
             window.removeEventListener('pointerup', finish);
             window.removeEventListener('pointercancel', finish);
           };
 
+          window.addEventListener('pointermove', move);
           window.addEventListener('pointerup', finish, { once: true });
           window.addEventListener('pointercancel', finish, { once: true });
         };
@@ -1195,7 +1258,7 @@
       const raw = (input?.value || '').trim();
 
       if (!raw) {
-        alert('버퍼를 가져간 고객의 끝4자리나 닉네임을 입력해주세요.');
+        alert('버퍼를 구매한 고객의 핸드폰 뒷 4자리나 닉네임을 입력해주세요.');
         input?.focus();
         return '';
       }
@@ -1353,8 +1416,8 @@
           const action = button.dataset.action;
           if (!item) return;
 
-          if (action === 'show-buffer-list' || action === 'show-pickup-list') {
-            openListModal(id, action === 'show-buffer-list' ? 'buffer' : 'pickup');
+          if (action === 'show-buffer-list') {
+            openListModal(id);
             return;
           }
 
@@ -1400,7 +1463,7 @@
         };
       });
 
-      bindQuantitySteppers();
+      bindQuantityPickers();
     }
 
     document.addEventListener('click', event => {

@@ -156,27 +156,3 @@ create table if not exists public.operations_receiving_checks (
   completed_by text,
   updated_at timestamptz not null default now()
 );
-
-create table if not exists public.pickup_completions (
-  stable_id text primary key,
-  store_name text not null,
-  source_sheet_name text not null,
-  source_row_number integer not null,
-  customer_label text,
-  customer_digits4 text,
-  product_name text,
-  pickup_date_text text,
-  completed boolean not null default false,
-  completed_at timestamptz,
-  completed_by text,
-  last_action_at timestamptz not null default now(),
-  needs_sheet_sync boolean not null default true,
-  sheet_synced_at timestamptz,
-  sheet_synced_value text
-);
-
-create unique index if not exists pickup_completions_source_idx
-  on public.pickup_completions(store_name, source_sheet_name, source_row_number);
-
-create index if not exists pickup_completions_sync_idx
-  on public.pickup_completions(store_name, needs_sheet_sync, source_sheet_name);

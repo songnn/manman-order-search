@@ -30,10 +30,6 @@
       "schedule": "*/5 * * * *"
     },
     {
-      "path": "/api/sync-pickup-completions",
-      "schedule": "*/2 * * * *"
-    },
-    {
       "path": "/api/sync-ops-data",
       "schedule": "*/15 * * * *"
     }
