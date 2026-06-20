@@ -396,8 +396,8 @@
       background: linear-gradient(135deg, #edf5ff, #e9f0ff);
       color: #2563eb;
     }
+    .sales-quick-item.remaining { background: #f6f4ff; }
     .sales-quick-item.pickup { background: #f5f8fa; }
-    .sales-quick-item.waiting { background: #f6f4ff; }
     .ratio-value {
       display: inline-flex;
       align-items: baseline;
@@ -427,16 +427,21 @@
       gap: 6px;
       padding-top: 0;
     }
+    .secondary-actions {
+      padding-top: 0;
+      margin-top: -1px;
+    }
     .list-btn {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 6px;
-      height: 31px;
-      padding: 0 10px;
+      height: 27px;
+      padding: 0 9px;
+      border: 1px solid #e5ebf2;
       border-radius: 999px;
-      background: #eef2f7;
-      color: #5f6674;
+      background: rgba(247,249,252,.72);
+      color: #7a828e;
     }
     .list-btn span {
       min-width: 0;
@@ -448,20 +453,37 @@
     }
     .list-btn strong {
       min-width: 20px;
-      color: #1f2937;
-      font-size: 14px;
+      color: #6b7280;
+      font-size: 12px;
       text-align: right;
     }
     .sales-card .buffer-form {
-      grid-template-columns: 56px 34px minmax(0, 1fr) 28px;
-      gap: 5px;
+      grid-template-columns: 62px 44px minmax(0, 1fr) 36px;
+      gap: 6px;
       padding-top: 0;
       border-top: 0;
     }
     .buffer-customer,
     .buffer-qty,
     .buffer-use-btn {
-      height: 30px;
+      height: 36px;
+    }
+    .qty-stepper {
+      position: relative;
+      border: 1px solid #dfe5ee;
+      border-radius: 13px;
+      background: #fff;
+      color: #151517;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.65);
+    }
+    .qty-stepper.is-spinning {
+      background: #eef4ff;
+      border-color: #cfdcff;
+      color: #2563eb;
+    }
+    .plus-btn {
+      width: 36px;
+      height: 36px;
     }
     .storage.frozen { background: linear-gradient(135deg, #38bdf8, #2563eb); }
     .storage-dot.frozen { background: #2563eb; }
@@ -523,6 +545,7 @@
       salesDateKey: '',
       token: new URLSearchParams(location.search).get('token') || localStorage.getItem('opsToken') || '03064',
       doubleTap: { id: '', at: 0 },
+      bufferQuantities: {},
       busy: false
     };
 
@@ -749,29 +772,37 @@
             </div>
           </div>
           ${renderQuantityKpis(item)}
-          <div class="customer-actions">
-            ${renderListButtons(item)}
-          </div>
           <div class="buffer-form">
             <input class="buffer-customer" data-buffer-customer="${esc(item.id)}" placeholder="끝4" inputmode="numeric" autocomplete="off">
-            <input class="buffer-qty" data-buffer-qty="${esc(item.id)}" type="number" min="1" step="1" value="1" aria-label="버퍼수량">
+            <button class="buffer-qty qty-stepper" data-buffer-qty="${esc(item.id)}" data-qty-step="1" type="button" aria-label="버퍼수량">${number(getBufferQtyValue(item.id))}</button>
             <button class="buffer-use-btn" data-action="buffer-use" ${bufferQuantity <= 0 ? 'disabled' : ''}>차감</button>
             <button class="plus-btn" data-action="buffer-plus" aria-label="버퍼 추가">+</button>
             <div class="history">${history}</div>
+          </div>
+          <div class="customer-actions secondary-actions">
+            ${renderListButtons(item)}
           </div>
         </article>
       `;
     }
 
     function renderQuantityKpis(item) {
+      const physicalRemaining = Number(item.physicalRemainingQuantity ?? item.remainingQuantity ?? 0);
+      const inboundQuantity = Number(item.inboundQuantity || 0);
       const bufferQuantity = Number(item.bufferRemainingQuantity || 0);
       const totalBuffer = Number(item.initialBufferQuantity || 0);
-      const pickupCompletedQuantity = Number(item.pickupCompletedQuantity || 0);
       const orderQuantity = Number(item.customerOrderQuantity || 0);
       const orderRemaining = Number(item.customerOrderRemainingQuantity || 0);
 
       return `
         <div class="sales-quick">
+          <div class="sales-quick-item remaining">
+            <span>잔여수량</span>
+            <div class="ratio-value">
+              <strong>${number(physicalRemaining)}</strong>
+              <em>/ ${number(inboundQuantity)}</em>
+            </div>
+          </div>
           <div class="sales-quick-item primary">
             <span>잔여버퍼</span>
             <div class="ratio-value">
@@ -780,16 +811,10 @@
             </div>
           </div>
           <div class="sales-quick-item pickup">
-            <span>픽업수량</span>
+            <span>픽업잔여</span>
             <div class="ratio-value">
-              <strong>${number(pickupCompletedQuantity)}</strong>
-              <em>/ ${number(orderQuantity)}</em>
-            </div>
-          </div>
-          <div class="sales-quick-item waiting">
-            <span>대기수량</span>
-            <div class="ratio-value single">
               <strong>${number(orderRemaining)}</strong>
+              <em>/ ${number(orderQuantity)}</em>
             </div>
           </div>
         </div>
@@ -798,8 +823,8 @@
 
     function renderListButtons(item) {
       return `
-        <button class="list-btn" data-action="show-buffer-list" type="button"><span>버퍼구매 고객</span><strong>${number(getBufferUseEvents(item).length)}</strong></button>
-        <button class="list-btn" data-action="show-pickup-list" type="button"><span>픽업완료 고객</span><strong>${number((item.pickupCompletedCustomers || []).length)}</strong></button>
+        <button class="list-btn" data-action="show-buffer-list" type="button"><span>버퍼구매</span><strong>${number(getBufferUseEvents(item).length)}</strong></button>
+        <button class="list-btn" data-action="show-pickup-list" type="button"><span>픽업완료</span><strong>${number((item.pickupCompletedCustomers || []).length)}</strong></button>
       `;
     }
 
@@ -1000,7 +1025,7 @@
             </div>
           </div>
           ${renderQuantityKpis(item)}
-          <div class="customer-actions">
+          <div class="customer-actions secondary-actions">
             ${renderListButtons(item)}
           </div>
         </article>
@@ -1048,9 +1073,84 @@
       target.physicalRemainingQuantity = target.remainingQuantity;
     }
 
+    function getBufferQtyValue(id) {
+      const quantity = Math.floor(Number(state.bufferQuantities[id] || 1));
+      return Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
+    }
+
+    function setBufferQtyValue(id, quantity) {
+      const normalized = Math.max(1, Math.min(20, Math.floor(Number(quantity || 1))));
+      state.bufferQuantities[id] = normalized;
+
+      document.querySelectorAll(`[data-buffer-qty="${CSS.escape(id)}"]`).forEach(button => {
+        button.dataset.value = String(normalized);
+        button.textContent = number(normalized);
+        button.setAttribute('aria-label', `버퍼수량 ${normalized}개`);
+      });
+    }
+
+    function stepBufferQty(id, button) {
+      const current = getBufferQtyValue(id);
+      const next = current >= 20 ? 1 : current + 1;
+      setBufferQtyValue(id, next);
+      button?.classList.add('is-spinning');
+      window.navigator?.vibrate?.(8);
+
+      clearTimeout(button?._qtyPulseTimer);
+      if (button) {
+        button._qtyPulseTimer = setTimeout(() => {
+          button.classList.remove('is-spinning');
+        }, 120);
+      }
+    }
+
+    function bindQuantitySteppers() {
+      document.querySelectorAll('[data-qty-step]').forEach(button => {
+        button.oncontextmenu = event => event.preventDefault();
+        button.onpointerdown = event => {
+          if (event.button != null && event.button !== 0) return;
+          event.preventDefault();
+
+          const card = button.closest('[data-id]');
+          const id = card?.dataset.id || '';
+          if (!id) return;
+
+          let held = false;
+          let intervalId = null;
+          try {
+            button.setPointerCapture?.(event.pointerId);
+          } catch {
+          }
+
+          const startHold = () => {
+            held = true;
+            stepBufferQty(id, button);
+            intervalId = setInterval(() => stepBufferQty(id, button), 95);
+          };
+
+          const holdTimer = setTimeout(startHold, 320);
+          const finish = () => {
+            clearTimeout(holdTimer);
+            if (intervalId) clearInterval(intervalId);
+            try {
+              button.releasePointerCapture?.(event.pointerId);
+            } catch {
+            }
+            button.classList.remove('is-spinning');
+            if (!held) stepBufferQty(id, button);
+            window.removeEventListener('pointerup', finish);
+            window.removeEventListener('pointercancel', finish);
+          };
+
+          window.addEventListener('pointerup', finish, { once: true });
+          window.addEventListener('pointercancel', finish, { once: true });
+        };
+      });
+    }
+
     function readBufferQuantity(card, id) {
       const input = card?.querySelector(`[data-buffer-qty="${CSS.escape(id)}"]`);
-      const value = Math.floor(Number(input?.value || 1));
+      const value = Math.floor(Number(input?.dataset.value || input?.value || input?.textContent || 1));
       return Number.isFinite(value) && value > 0 ? value : 1;
     }
 
@@ -1263,7 +1363,10 @@
             button.disabled = true;
             try {
               const actorMemo = await resolveBufferActor(card, id, quantity);
-              if (actorMemo) await runBufferDelta(button, id, -quantity, actorMemo);
+              if (actorMemo) {
+                await runBufferDelta(button, id, -quantity, actorMemo);
+                setBufferQtyValue(id, 1);
+              }
             } catch (error) {
               alert(error.message || String(error));
             } finally {
@@ -1276,6 +1379,7 @@
             const rawCustomer = readBufferCustomer(card, id);
             const actorMemo = rawCustomer ? `${rawCustomer} 복구 ${number(quantity)}개` : `버퍼복구 ${number(quantity)}개`;
             await runBufferDelta(button, id, quantity, actorMemo);
+            setBufferQtyValue(id, 1);
           }
 
           if (action === 'count-10' || action === 'count-5' || action === 'count-1' || action === 'count-minus') {
@@ -1295,6 +1399,8 @@
           render();
         };
       });
+
+      bindQuantitySteppers();
     }
 
     document.addEventListener('click', event => {
