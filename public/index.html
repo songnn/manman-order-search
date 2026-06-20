@@ -492,6 +492,22 @@
 
   .order-card {
     display: block;
+    position: relative;
+    border-radius: 20px;
+    transition: transform 160ms ease, filter 180ms ease;
+  }
+
+  .order-card.pickup-toggle-card {
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .order-card.is-pickup-completed {
+    filter: saturate(0.78) brightness(0.92);
+  }
+
+  .order-card.is-pickup-completed .order-thumb {
+    opacity: 0.64;
   }
 
   .order-thumb-wrap {
@@ -523,6 +539,43 @@
     font-weight: 600;
     letter-spacing: -0.03em;
     text-align: center;
+  }
+
+  .pickup-complete-badge {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 4;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 104px;
+    height: 42px;
+    padding: 0 14px;
+    border-radius: 999px;
+    background: #08a05c;
+    color: #fff;
+    font-size: 16px;
+    line-height: 1;
+    font-weight: 900;
+    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.24);
+  }
+
+  .pickup-complete-badge.is-partial {
+    background: #f08622;
+  }
+
+  .pickup-toggle-hint {
+    margin-top: 10px;
+    display: inline-flex;
+    align-items: center;
+    height: 30px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: rgba(0, 81, 160, 0.08);
+    color: #0051a0;
+    font-size: 13px;
+    font-weight: 800;
   }
 
   .order-info {
@@ -657,6 +710,58 @@
     font-weight: 500;
     color: #000;
     letter-spacing: -0.04em;
+  }
+
+  .pickup-action-burst {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+    opacity: 0;
+    background:
+      radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.96) 0 18%, rgba(8, 160, 92, 0.94) 19% 44%, rgba(0, 81, 160, 0.98) 45% 100%);
+    transform: scale(1.08);
+  }
+
+  .pickup-action-burst.show {
+    animation: pickupBurst 620ms cubic-bezier(0.2, 0.85, 0.18, 1) both;
+  }
+
+  .pickup-action-burst.is-undo {
+    background:
+      radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.96) 0 18%, rgba(240, 134, 34, 0.95) 19% 44%, rgba(20, 20, 20, 0.96) 45% 100%);
+  }
+
+  .pickup-action-burst-text {
+    color: #fff;
+    font-family: 'Jalnan Gothic', 'Pretendard', sans-serif;
+    font-size: clamp(42px, 12vw, 132px);
+    line-height: 1;
+    font-weight: 900;
+    letter-spacing: 0;
+    text-align: center;
+    text-shadow: 0 10px 24px rgba(0, 0, 0, 0.26);
+    transform: rotate(-2deg) scale(0.84);
+  }
+
+  .pickup-action-burst.show .pickup-action-burst-text {
+    animation: pickupBurstText 620ms cubic-bezier(0.2, 0.85, 0.18, 1) both;
+  }
+
+  @keyframes pickupBurst {
+    0% { opacity: 0; transform: scale(1.15); clip-path: circle(0% at 50% 50%); }
+    18% { opacity: 1; transform: scale(1); clip-path: circle(72% at 50% 50%); }
+    72% { opacity: 1; transform: scale(1); clip-path: circle(120% at 50% 50%); }
+    100% { opacity: 0; transform: scale(0.98); clip-path: circle(120% at 50% 50%); }
+  }
+
+  @keyframes pickupBurstText {
+    0% { transform: rotate(-5deg) scale(0.55); opacity: 0; }
+    22% { transform: rotate(-2deg) scale(1.08); opacity: 1; }
+    76% { transform: rotate(-2deg) scale(1); opacity: 1; }
+    100% { transform: rotate(0deg) scale(0.9); opacity: 0; }
   }
 
   .orders-swiper.swiper {
@@ -3259,7 +3364,19 @@ body.schedule-modal-open .page > :not(.schedule-modal) {
 }
 
 .schedule-product-card {
+  position: relative;
   min-width: 0;
+  border-radius: 10px;
+  transition: filter 180ms ease;
+}
+
+.schedule-product-card.pickup-toggle-card {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.schedule-product-card.is-pickup-completed {
+  filter: saturate(0.72) brightness(0.9);
 }
 
 .schedule-product-thumb-wrap {
@@ -3276,6 +3393,16 @@ body.schedule-modal-open .page > :not(.schedule-modal) {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.schedule-product-card .pickup-complete-badge {
+  top: 5px;
+  right: 5px;
+  min-width: 54px;
+  height: 22px;
+  padding: 0 7px;
+  font-size: 9px;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.22);
 }
 
 .schedule-product-info {
@@ -4900,6 +5027,10 @@ body.has-results .discount-products {
   </div>
 </div>
 
+<div class="pickup-action-burst" id="pickupActionBurst" aria-hidden="true">
+  <div class="pickup-action-burst-text" id="pickupActionBurstText">픽업완료</div>
+</div>
+
     <div class="page">
       <div class="top-stage">
         <section class="hero">
@@ -5114,6 +5245,8 @@ const calendarGuideDescEl = document.getElementById('calendarGuideDesc');
 const calendarGuideOpenEl = document.getElementById('calendarGuideOpen');
 const calendarGuideCopyEl = document.getElementById('calendarGuideCopy');
 const calendarGuideCloseEl = document.getElementById('calendarGuideClose');
+const pickupActionBurstEl = document.getElementById('pickupActionBurst');
+const pickupActionBurstTextEl = document.getElementById('pickupActionBurstText');
 const homeLogoBtn = document.getElementById('homeLogoBtn');
 const searchGuideEl = document.getElementById('searchGuide');
 const scheduleWeekHostEl = document.getElementById('scheduleWeekHost');
@@ -5128,6 +5261,11 @@ const scheduleModalCloseEl = document.getElementById('scheduleModalClose');
 let calendarGuideExternalUrl = '';
 let pendingCalendarOpenDateKey = '';
 let calendarLandingMode = false;
+let pickupCompletionTapState = {
+  key: '',
+  at: 0
+};
+let pickupCompletionRequestInFlight = false;
 
   const DUMMY_IMAGES = [
     'https://picsum.photos/seed/manman-order-1/1200/1200',
@@ -7690,6 +7828,79 @@ function buildSectionsData(items) {
     ].map(value => String(value).replace(/\|/g, '/')).join('|');
   }
 
+  function isPickupCompletionEnabled() {
+    return sanitizeFourDigitInput(currentSearchKeyword || keywordInput.value) === '4739';
+  }
+
+  function getPickupCompletionState(item) {
+    const sourceRows = Array.isArray(item.sourceRows) ? item.sourceRows : [];
+    const completedQuantity = Number(item.pickupCompletedQuantity || 0);
+    const totalQuantity = Number(item.quantity || 0);
+    const isCompleted = Boolean(item.pickupCompleted);
+    const isPartial = !isCompleted && completedQuantity > 0;
+
+    return {
+      sourceRows,
+      isCompleted,
+      isPartial,
+      completedQuantity,
+      totalQuantity
+    };
+  }
+
+  function encodePickupSourceRows(item) {
+    const sourceRows = getPickupCompletionState(item).sourceRows.map(row => ({
+      sourceSheetName: row.sourceSheetName,
+      sourceRowNumber: row.sourceRowNumber
+    }));
+
+    return encodeURIComponent(JSON.stringify(sourceRows));
+  }
+
+  function renderPickupCompletionBadge(item) {
+    const state = getPickupCompletionState(item);
+    if (!state.isCompleted && !state.isPartial) return '';
+
+    const label = state.isCompleted
+      ? '픽업완료'
+      : `일부완료 ${state.completedQuantity}/${state.totalQuantity}`;
+
+    return `<div class="pickup-complete-badge${state.isPartial ? ' is-partial' : ''}">${escapeHtml(label)}</div>`;
+  }
+
+  function getPickupToggleCardAttributes(item) {
+    const state = getPickupCompletionState(item);
+    if (!isPickupCompletionEnabled() || !state.sourceRows.length) {
+      return '';
+    }
+
+    const classes = [
+      'pickup-toggle-card',
+      state.isCompleted ? 'is-pickup-completed' : '',
+      state.isPartial ? 'is-pickup-partial' : ''
+    ].filter(Boolean).join(' ');
+
+    return [
+      `data-pickup-toggle="1"`,
+      `data-pickup-completed="${state.isCompleted ? '1' : '0'}"`,
+      `data-pickup-source-rows="${encodePickupSourceRows(item)}"`,
+      `data-pickup-card-key="${escapeHtml(hashString(getOrderItemKey(item, 0)))}"`,
+      `data-pickup-product="${escapeHtml(item.productName || '')}"`,
+      `data-pickup-classes="${classes}"`
+    ].join(' ');
+  }
+
+  function getPickupToggleClasses(item) {
+    const state = getPickupCompletionState(item);
+    if (!isPickupCompletionEnabled() || !state.sourceRows.length) return '';
+
+    return [
+      'pickup-toggle-card',
+      state.isCompleted ? 'is-pickup-completed' : '',
+      state.isPartial ? 'is-pickup-partial' : ''
+    ].filter(Boolean).join(' ');
+  }
+
   function getOrderSectionEl(sectionKey) {
     return document.getElementById(`section-${sectionKey}`);
   }
@@ -8009,6 +8220,123 @@ function buildSectionsData(items) {
       if (resultPanelsSwiper) resultPanelsSwiper.update();
     });
   }
+
+function handlePickupCompletionCardClick(event) {
+  const card = event.target.closest?.('[data-pickup-toggle="1"]');
+  if (!card) return;
+  if (event.target.closest?.('button, a, input, textarea, select')) return;
+
+  const key = card.dataset.pickupCardKey || card.dataset.pickupSourceRows || '';
+  const now = Date.now();
+  const isDoubleTap = pickupCompletionTapState.key === key && now - pickupCompletionTapState.at <= 520;
+
+  pickupCompletionTapState = { key, at: now };
+
+  if (!isDoubleTap) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+  togglePickupCompletionForCard(card);
+}
+
+async function togglePickupCompletionForCard(card) {
+  if (pickupCompletionRequestInFlight) return;
+
+  const sourceRows = decodePickupSourceRows(card.dataset.pickupSourceRows || '');
+  if (!sourceRows.length) return;
+
+  const nextCompleted = card.dataset.pickupCompleted !== '1';
+  pickupCompletionRequestInFlight = true;
+  card.style.transform = 'scale(0.985)';
+
+  try {
+    const response = await fetch('/api/toggle-pickup-completion', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        sourceRows,
+        completed: nextCompleted,
+        phoneLast4: currentSearchKeyword || keywordInput.value,
+        actor: currentSelectedCustomerLabel || currentSearchKeyword || '4739'
+      })
+    });
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+      throw new Error(result.message || '픽업완료 처리에 실패했습니다.');
+    }
+
+    applyPickupCompletionToCurrentItems(sourceRows, nextCompleted);
+    showPickupCompletionBurst(nextCompleted);
+    renderOrdersSection();
+    if (isScheduleModalOpen()) {
+      renderScheduleTab();
+    }
+  } catch (error) {
+    showPrettyAlert(error.message || '픽업완료 처리에 실패했습니다.');
+  } finally {
+    pickupCompletionRequestInFlight = false;
+    card.style.transform = '';
+  }
+}
+
+function decodePickupSourceRows(encoded) {
+  try {
+    const rows = JSON.parse(decodeURIComponent(encoded || '[]'));
+    return Array.isArray(rows) ? rows : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function applyPickupCompletionToCurrentItems(sourceRows, completed) {
+  const rowKeys = new Set(sourceRows.map(row => pickupSourceRowKey(row)));
+  const completedAt = completed ? new Date().toISOString() : '';
+
+  currentOrderItems = currentOrderItems.map(item => {
+    const sourceRowsForItem = Array.isArray(item.sourceRows) ? item.sourceRows : [];
+    if (!sourceRowsForItem.some(row => rowKeys.has(pickupSourceRowKey(row)))) return item;
+
+    const nextSourceRows = sourceRowsForItem.map(row => {
+      if (!rowKeys.has(pickupSourceRowKey(row))) return row;
+      return {
+        ...row,
+        completed,
+        completedAt
+      };
+    });
+    const pickupCompletedQuantity = nextSourceRows
+      .filter(row => row.completed)
+      .reduce((sum, row) => sum + (Number(row.quantity) || 0), 0);
+
+    return {
+      ...item,
+      sourceRows: nextSourceRows,
+      pickupCompleted: nextSourceRows.length > 0 && nextSourceRows.every(row => row.completed),
+      pickupCompletedQuantity
+    };
+  });
+}
+
+function pickupSourceRowKey(row) {
+  return `${row.sourceSheetName || row.source_sheet_name || ''}::${row.sourceRowNumber || row.source_row_number || ''}`;
+}
+
+function showPickupCompletionBurst(completed) {
+  if (!pickupActionBurstEl || !pickupActionBurstTextEl) return;
+
+  pickupActionBurstTextEl.textContent = completed ? '픽업완료' : '완료취소';
+  pickupActionBurstEl.classList.toggle('is-undo', !completed);
+  pickupActionBurstEl.classList.remove('show');
+  void pickupActionBurstEl.offsetWidth;
+  pickupActionBurstEl.classList.add('show');
+
+  window.setTimeout(() => {
+    pickupActionBurstEl.classList.remove('show');
+  }, 680);
+}
 
 function renderScheduleTab() {
   if (!scheduleContentEl || !scheduleWeekHostEl) return;
@@ -8471,7 +8799,7 @@ function renderScheduleProductGrid(items) {
 function renderScheduleProductCard(item, index) {
   const qty = Number(item.quantity ?? 0);
   return `
-    <article class="schedule-product-card">
+    <article class="schedule-product-card ${getPickupToggleClasses(item)}" ${getPickupToggleCardAttributes(item)}>
       <div class="schedule-product-thumb-wrap">
         <img
           class="schedule-product-thumb"
@@ -8481,6 +8809,7 @@ function renderScheduleProductCard(item, index) {
           decoding="async"
           onerror="${getImageErrorHandler(index)}"
         >
+        ${renderPickupCompletionBadge(item)}
       </div>
       <div class="schedule-product-info">
         <div class="schedule-product-name">${escapeHtml(item.productName || '')}</div>
@@ -9030,7 +9359,7 @@ function syncScheduleFromScroll() {
 
           <div class="orders-grid">
             ${items.map((item, index) => `
-              <article class="order-card" data-order-key="${escapeHtml(getOrderItemKey(item, index))}">
+              <article class="order-card ${getPickupToggleClasses(item)}" data-order-key="${escapeHtml(getOrderItemKey(item, index))}" ${getPickupToggleCardAttributes(item)}>
                 <div class="order-thumb-wrap">
                   <img
                     class="order-thumb"
@@ -9042,6 +9371,7 @@ function syncScheduleFromScroll() {
                     fetchpriority="low"
                     onerror="${getImageErrorHandler(index)}"
                   >
+                  ${renderPickupCompletionBadge(item)}
                   <div class="order-overlay">${escapeHtml(formatPickupLabel(item))}</div>
                 </div>
 
@@ -9079,7 +9409,7 @@ function syncScheduleFromScroll() {
           <div class="swiper-wrapper">
             ${items.map((item, index) => `
               <div class="swiper-slide">
-                <article class="order-card" data-order-key="${escapeHtml(getOrderItemKey(item, index))}">
+                <article class="order-card ${getPickupToggleClasses(item)}" data-order-key="${escapeHtml(getOrderItemKey(item, index))}" ${getPickupToggleCardAttributes(item)}>
                   <div class="order-thumb-wrap">
                     <img
                       class="order-thumb"
@@ -9087,6 +9417,7 @@ function syncScheduleFromScroll() {
                       data-zoom-src="${escapeHtml(getImageUrl(item, index))}"
                       alt="${escapeHtml(item.productName || '상품 이미지')}"
                     >
+                    ${renderPickupCompletionBadge(item)}
                     <div class="order-overlay">${escapeHtml(formatPickupLabel(item))}</div>
                   </div>
 
@@ -9625,6 +9956,7 @@ function handleOrderImageClick(event) {
     calendarGuideOpenEl?.addEventListener('click', openExternalBrowserForCalendar);
     calendarGuideCopyEl?.addEventListener('click', copyCalendarExternalUrl);
     calendarGuideCloseEl?.addEventListener('click', hideCalendarGuide);
+    document.addEventListener('click', handlePickupCompletionCardClick);
     calendarGuideEl?.addEventListener('click', e => {
       if (e.target === calendarGuideEl) {
         hideCalendarGuide();

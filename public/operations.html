@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>만만마켓 운영</title>
+  <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; min-height: 100%; background: #f4f6f8; color: #111; font-family: Pretendard, -apple-system, BlinkMacSystemFont, sans-serif; }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .app { min-height: 100vh; padding: 18px 14px 120px; }
+    .shell { width: min(1080px, 100%); margin: 0 auto; }
+    .top { position: sticky; top: 0; z-index: 20; margin: -18px -14px 16px; padding: 16px 14px 14px; background: rgba(244, 246, 248, 0.94); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(15, 23, 42, 0.08); }
+    .top-inner { width: min(1080px, 100%); margin: 0 auto; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; }
+    .brand { min-width: 0; }
+    .brand-title { font-size: 26px; line-height: 1; font-weight: 900; letter-spacing: 0; }
+    .brand-sub { margin-top: 6px; color: #667085; font-size: 13px; font-weight: 700; }
+    .refresh-btn { width: 44px; height: 44px; border: 0; border-radius: 8px; background: #111; color: #fff; font-size: 22px; font-weight: 900; }
+    .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; padding: 5px; border-radius: 8px; background: #e7ebf0; }
+    .tab { height: 48px; border: 0; border-radius: 6px; background: transparent; color: #5b6472; font-size: 18px; font-weight: 900; }
+    .tab.active { background: #fff; color: #111; box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08); }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+    .metric { min-height: 72px; padding: 12px; border-radius: 8px; background: #fff; border: 1px solid rgba(15, 23, 42, 0.06); }
+    .metric-label { color: #667085; font-size: 12px; font-weight: 800; }
+    .metric-value { margin-top: 7px; font-size: 27px; line-height: 1; font-weight: 900; letter-spacing: 0; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .product-card { position: relative; min-width: 0; overflow: hidden; border-radius: 8px; background: #fff; border: 1px solid rgba(15, 23, 42, 0.07); box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06); }
+    .product-card.done { filter: saturate(0.72); }
+    .product-card.done::after { content: '입고완료'; position: absolute; inset: 0; display: grid; place-items: center; background: rgba(8, 160, 92, 0.86); color: #fff; font-size: clamp(32px, 8vw, 84px); font-weight: 900; letter-spacing: 0; }
+    .thumb-wrap { position: relative; width: 100%; aspect-ratio: 1 / 0.74; background: #edf0f3; overflow: hidden; }
+    .thumb { width: 100%; height: 100%; display: block; object-fit: cover; }
+    .storage { position: absolute; left: 10px; top: 10px; display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border-radius: 999px; color: #fff; font-size: 13px; font-weight: 900; box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18); }
+    .storage.cold { background: #1680db; }
+    .storage.frozen { background: #5452d8; }
+    .storage.room { background: #c77800; }
+    .body { padding: 13px; }
+    .name { min-height: 44px; font-size: 17px; line-height: 1.28; font-weight: 900; word-break: keep-all; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .mini { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+    .chip { display: inline-flex; align-items: center; height: 27px; padding: 0 8px; border-radius: 999px; background: #f1f3f6; color: #344054; font-size: 12px; font-weight: 800; }
+    .buffer-hero { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #eef0f3; }
+    .buffer-label { color: #667085; font-size: 13px; font-weight: 800; }
+    .buffer-num { margin-top: 3px; font-size: 58px; line-height: 0.9; font-weight: 900; letter-spacing: 0; }
+    .remain-num { color: #0051a0; }
+    .action-row { display: grid; grid-template-columns: 1fr 54px; gap: 8px; margin-top: 13px; }
+    .minus-btn { height: 68px; border: 0; border-radius: 8px; background: #111; color: #fff; font-size: 36px; font-weight: 900; }
+    .minus-btn:disabled { opacity: 0.34; cursor: default; }
+    .plus-btn { height: 68px; border: 0; border-radius: 8px; background: #e8edf3; color: #111; font-size: 25px; font-weight: 900; }
+    .memo { width: 100%; height: 42px; margin-top: 8px; border: 1px solid #d9dee7; border-radius: 8px; background: #fff; padding: 0 12px; font-size: 15px; font-weight: 800; outline: none; }
+    .history { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; min-height: 27px; }
+    .history span { display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 999px; background: #fff7ed; color: #9a4a00; font-size: 12px; font-weight: 800; }
+    .inbound-top { display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #eef0f3; }
+    .inbound-qty { font-size: 58px; line-height: 0.9; font-weight: 900; letter-spacing: 0; }
+    .counted { text-align: right; }
+    .counted-num { color: #08a05c; font-size: 42px; line-height: 1; font-weight: 900; }
+    .count-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-top: 13px; }
+    .count-btn { height: 46px; border: 0; border-radius: 8px; background: #e8edf3; color: #111; font-size: 17px; font-weight: 900; }
+    .complete-btn { grid-column: span 4; height: 56px; border: 0; border-radius: 8px; background: #08a05c; color: #fff; font-size: 18px; font-weight: 900; }
+    .complete-btn.done { background: #344054; }
+    .section-title { margin: 24px 2px 10px; font-size: 20px; line-height: 1.2; font-weight: 900; }
+    .stale-list { display: grid; gap: 8px; }
+    .stale-item { display: grid; grid-template-columns: 54px 1fr auto; gap: 10px; align-items: center; min-height: 70px; padding: 8px; border-radius: 8px; background: #fff; border: 1px solid rgba(15, 23, 42, 0.07); }
+    .stale-item img { width: 54px; height: 54px; object-fit: cover; border-radius: 6px; background: #edf0f3; }
+    .stale-name { font-size: 14px; line-height: 1.25; font-weight: 900; }
+    .stale-meta { margin-top: 4px; color: #667085; font-size: 12px; font-weight: 800; }
+    .stale-qty { min-width: 45px; text-align: right; font-size: 22px; font-weight: 900; }
+    .empty { padding: 34px 16px; border-radius: 8px; background: #fff; color: #667085; text-align: center; font-size: 15px; font-weight: 800; }
+    .burst { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; pointer-events: none; opacity: 0; background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.98) 0 18%, rgba(8,160,92,.95) 19% 42%, rgba(0,81,160,.98) 43% 100%); }
+    .burst.show { animation: burst 620ms cubic-bezier(.2,.85,.18,1) both; }
+    .burst.minus { background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.98) 0 18%, rgba(231,64,57,.95) 19% 42%, rgba(17,17,17,.98) 43% 100%); }
+    .burst.plus { background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.98) 0 18%, rgba(22,128,219,.95) 19% 42%, rgba(17,17,17,.98) 43% 100%); }
+    .burst-text { color: #fff; font-size: clamp(46px, 13vw, 132px); font-weight: 900; letter-spacing: 0; text-shadow: 0 10px 24px rgba(0,0,0,.25); }
+    @keyframes burst { 0% { opacity: 0; clip-path: circle(0% at 50% 50%); transform: scale(1.1); } 18% { opacity: 1; clip-path: circle(70% at 50% 50%); transform: scale(1); } 72% { opacity: 1; clip-path: circle(120% at 50% 50%); } 100% { opacity: 0; clip-path: circle(120% at 50% 50%); transform: scale(.98); } }
+    @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } .summary { grid-template-columns: repeat(3, minmax(0, 1fr)); } .metric { padding: 10px; } .metric-value { font-size: 23px; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="top">
+      <div class="top-inner">
+        <div class="brand">
+          <div class="brand-title">판매·입고</div>
+          <div class="brand-sub" id="subtitle">만만마켓 운영</div>
+        </div>
+        <button class="refresh-btn" id="refreshBtn" type="button" aria-label="새로고침">↻</button>
+      </div>
+      <div class="shell">
+        <div class="tabs">
+          <button class="tab active" id="salesTab" type="button">판매</button>
+          <button class="tab" id="inboundTab" type="button">입고</button>
+        </div>
+      </div>
+    </div>
+
+    <main class="shell">
+      <section class="panel active" id="salesPanel">
+        <div class="summary" id="salesSummary"></div>
+        <div class="grid" id="salesGrid"></div>
+      </section>
+
+      <section class="panel" id="inboundPanel">
+        <div class="summary" id="inboundSummary"></div>
+        <div class="grid" id="inboundGrid"></div>
+        <h2 class="section-title">상시전환 D-2</h2>
+        <div class="stale-list" id="staleList"></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="burst" id="burst" aria-hidden="true">
+    <div class="burst-text" id="burstText">완료</div>
+  </div>
+
+  <script>
+    const state = {
+      tab: 'sales',
+      dashboard: null,
+      token: new URLSearchParams(location.search).get('token') || localStorage.getItem('opsToken') || '03064',
+      doubleTap: { id: '', at: 0 },
+      busy: false
+    };
+
+    if (state.token) localStorage.setItem('opsToken', state.token);
+
+    const els = {
+      subtitle: document.getElementById('subtitle'),
+      refreshBtn: document.getElementById('refreshBtn'),
+      salesTab: document.getElementById('salesTab'),
+      inboundTab: document.getElementById('inboundTab'),
+      salesPanel: document.getElementById('salesPanel'),
+      inboundPanel: document.getElementById('inboundPanel'),
+      salesSummary: document.getElementById('salesSummary'),
+      inboundSummary: document.getElementById('inboundSummary'),
+      salesGrid: document.getElementById('salesGrid'),
+      inboundGrid: document.getElementById('inboundGrid'),
+      staleList: document.getElementById('staleList'),
+      burst: document.getElementById('burst'),
+      burstText: document.getElementById('burstText')
+    };
+
+    function money(value) {
+      const n = Number(value || 0);
+      return n > 0 ? `${n.toLocaleString('ko-KR')}원` : '-';
+    }
+
+    function number(value) {
+      return Number(value || 0).toLocaleString('ko-KR');
+    }
+
+    function esc(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function storageClass(value) {
+      if (value === '냉장') return 'cold';
+      if (value === '냉동') return 'frozen';
+      return 'room';
+    }
+
+    function storageIcon(value) {
+      if (value === '냉장') return 'C';
+      if (value === '냉동') return 'F';
+      return 'R';
+    }
+
+    function imageUrl(item) {
+      return item.imageUrl || 'https://picsum.photos/seed/manman-ops/800/800';
+    }
+
+    async function loadDashboard(options = {}) {
+      const url = new URL('/api/buffer-dashboard', location.origin);
+      url.searchParams.set('token', state.token);
+      if (options.refresh) url.searchParams.set('refresh', '1');
+
+      const response = await fetch(url);
+      const data = await response.json();
+      if (!response.ok || !data.ok) throw new Error(data.message || '데이터를 불러오지 못했습니다.');
+
+      state.dashboard = data;
+      render();
+    }
+
+    async function runAction(body, burstText, burstKind) {
+      if (state.busy) return;
+      state.busy = true;
+
+      try {
+        const url = new URL('/api/buffer-action', location.origin);
+        url.searchParams.set('token', state.token);
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.message || '저장하지 못했습니다.');
+
+        state.dashboard = data.dashboard;
+        showBurst(burstText, burstKind);
+        render();
+      } catch (error) {
+        alert(error.message || String(error));
+      } finally {
+        state.busy = false;
+      }
+    }
+
+    function showBurst(text, kind = '') {
+      els.burstText.textContent = text;
+      els.burst.className = `burst ${kind}`;
+      void els.burst.offsetWidth;
+      els.burst.classList.add('show');
+      setTimeout(() => els.burst.classList.remove('show'), 680);
+    }
+
+    function setTab(tab) {
+      state.tab = tab;
+      els.salesTab.classList.toggle('active', tab === 'sales');
+      els.inboundTab.classList.toggle('active', tab === 'inbound');
+      els.salesPanel.classList.toggle('active', tab === 'sales');
+      els.inboundPanel.classList.toggle('active', tab === 'inbound');
+    }
+
+    function render() {
+      const data = state.dashboard;
+      if (!data) return;
+
+      els.subtitle.textContent = `${data.storeName || '만만마켓'} · ${data.todayKey || ''}`;
+      renderSales(data.salesItems || []);
+      renderInbound(data);
+      bindControls();
+    }
+
+    function renderMetric(label, value) {
+      return `<div class="metric"><div class="metric-label">${esc(label)}</div><div class="metric-value">${esc(value)}</div></div>`;
+    }
+
+    function renderSales(items) {
+      const totalBuffer = items.reduce((sum, item) => sum + Number(item.bufferRemainingQuantity || 0), 0);
+      const used = items.reduce((sum, item) => sum + Number(item.bufferUsedQuantity || 0), 0);
+      els.salesSummary.innerHTML = [
+        renderMetric('버퍼잔여', `${number(totalBuffer)}개`),
+        renderMetric('버퍼사용', `${number(used)}개`),
+        renderMetric('상품', `${number(items.length)}종`)
+      ].join('');
+
+      els.salesGrid.innerHTML = items.length
+        ? items.map(renderSalesCard).join('')
+        : '<div class="empty">판매 버퍼 상품이 없습니다.</div>';
+    }
+
+    function renderSalesCard(item) {
+      const history = (item.bufferHistory || [])
+        .filter(event => Number(event.deltaQuantity || 0) < 0)
+        .map(event => `<span>${esc(event.actorMemo || '메모없음')}</span>`)
+        .join('');
+
+      return `
+        <article class="product-card" data-id="${esc(item.id)}">
+          <div class="thumb-wrap">
+            <img class="thumb" src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy">
+            <span class="storage ${storageClass(item.storageMethod)}">${storageIcon(item.storageMethod)} · ${esc(item.storageMethod)}</span>
+          </div>
+          <div class="body">
+            <div class="name">${esc(item.productName)}</div>
+            <div class="mini">
+              <span class="chip">총잔여 ${number(item.remainingQuantity)}</span>
+              <span class="chip">본사 ${number(item.hqBufferQuantity)}</span>
+              <span class="chip">우리 ${number(item.ourBufferQuantity)}</span>
+            </div>
+            <div class="buffer-hero">
+              <div>
+                <div class="buffer-label">현재 버퍼잔여</div>
+                <div class="buffer-num remain-num">${number(item.bufferRemainingQuantity)}</div>
+              </div>
+              <div class="buffer-label">시작 ${number(item.initialBufferQuantity)}</div>
+            </div>
+            <div class="action-row">
+              <button class="minus-btn" data-action="buffer-minus" ${Number(item.bufferRemainingQuantity || 0) <= 0 ? 'disabled' : ''}>−</button>
+              <button class="plus-btn" data-action="buffer-plus">+</button>
+            </div>
+            <input class="memo" data-memo="${esc(item.id)}" placeholder="끝4자리 / 닉네임" autocomplete="off">
+            <div class="history">${history}</div>
+          </div>
+        </article>
+      `;
+    }
+
+    function renderInbound(data) {
+      const todayItems = data.inboundItems || [];
+      const fallbackItems = !todayItems.length ? (data.latestInboundItems || []) : [];
+      const items = todayItems.length ? todayItems : fallbackItems;
+      const targetDate = todayItems.length ? data.todayKey : data.latestInboundDate;
+      const totalInbound = items.reduce((sum, item) => sum + Number(item.inboundQuantity || 0), 0);
+      const totalCounted = items.reduce((sum, item) => sum + Number(item.countedQuantity || 0), 0);
+      const completeCount = items.filter(item => item.isReceivingComplete).length;
+
+      els.inboundSummary.innerHTML = [
+        renderMetric('입고일', targetDate || '-'),
+        renderMetric('입고수량', `${number(totalInbound)}개`),
+        renderMetric('완료', `${number(completeCount)}/${number(items.length)}`)
+      ].join('');
+
+      els.inboundGrid.innerHTML = items.length
+        ? items.map(renderInboundCard).join('')
+        : '<div class="empty">입고 상품이 없습니다.</div>';
+
+      els.staleList.innerHTML = (data.staleItems || []).length
+        ? data.staleItems.map(renderStaleItem).join('')
+        : '<div class="empty">상시전환 대상이 없습니다.</div>';
+    }
+
+    function renderInboundCard(item) {
+      return `
+        <article class="product-card ${item.isReceivingComplete ? 'done' : ''}" data-id="${esc(item.id)}" data-receive-card="1">
+          <div class="thumb-wrap">
+            <img class="thumb" src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy">
+            <span class="storage ${storageClass(item.storageMethod)}">${storageIcon(item.storageMethod)} · ${esc(item.storageMethod)}</span>
+          </div>
+          <div class="body">
+            <div class="name">${esc(item.productName)}</div>
+            <div class="mini">
+              <span class="chip">공급 ${money(item.supplyPrice)}</span>
+              <span class="chip">판매 ${money(item.salePrice)}</span>
+              <span class="chip">우리 ${number(item.ourBufferQuantity)}</span>
+              <span class="chip">본사 ${number(item.hqBufferQuantity)}</span>
+            </div>
+            <div class="inbound-top">
+              <div>
+                <div class="buffer-label">입고수량</div>
+                <div class="inbound-qty">${number(item.inboundQuantity)}</div>
+              </div>
+              <div class="counted">
+                <div class="buffer-label">카운팅</div>
+                <div class="counted-num">${number(item.countedQuantity)}</div>
+              </div>
+            </div>
+            <div class="count-actions">
+              <button class="count-btn" data-action="count-10">+10</button>
+              <button class="count-btn" data-action="count-1">+1</button>
+              <button class="count-btn" data-action="count-minus">−1</button>
+              <button class="count-btn" data-action="count-direct">직접</button>
+              <button class="complete-btn ${item.isReceivingComplete ? 'done' : ''}" data-action="receive-complete">${item.isReceivingComplete ? '입고완료' : '수량체크완료'}</button>
+            </div>
+          </div>
+        </article>
+      `;
+    }
+
+    function renderStaleItem(item) {
+      return `
+        <div class="stale-item">
+          <img src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy">
+          <div>
+            <div class="stale-name">${esc(item.productName)}</div>
+            <div class="stale-meta">${esc(item.storageMethod)} · ${esc(item.inboundDateText)} · ${esc(item.salesType)}</div>
+          </div>
+          <div class="stale-qty">${number(item.inboundQuantity)}</div>
+        </div>
+      `;
+    }
+
+    function findItem(id) {
+      const data = state.dashboard || {};
+      return [
+        ...(data.salesItems || []),
+        ...(data.inboundItems || []),
+        ...(data.latestInboundItems || []),
+        ...(data.staleItems || [])
+      ].find(item => item.id === id);
+    }
+
+    function bindControls() {
+      document.querySelectorAll('[data-action]').forEach(button => {
+        button.onclick = event => {
+          event.stopPropagation();
+          const card = button.closest('[data-id]');
+          const id = card?.dataset.id || '';
+          const item = findItem(id);
+          const action = button.dataset.action;
+          if (!item) return;
+
+          if (action === 'buffer-minus' || action === 'buffer-plus') {
+            const memo = document.querySelector(`[data-memo="${CSS.escape(id)}"]`)?.value || '';
+            const delta = action === 'buffer-minus' ? -1 : 1;
+            runAction({
+              action: 'buffer_delta',
+              inventoryStableId: id,
+              deltaQuantity: delta,
+              actorMemo: memo
+            }, delta < 0 ? '버퍼 -1' : '버퍼 +1', delta < 0 ? 'minus' : 'plus');
+          }
+
+          if (action === 'count-10' || action === 'count-1' || action === 'count-minus' || action === 'count-direct') {
+            let qty = action === 'count-10' ? 10 : action === 'count-1' ? 1 : -1;
+            if (action === 'count-direct') {
+              qty = Number(prompt('카운팅 수량', '10') || 0);
+            }
+            if (!qty) return;
+            runAction({
+              action: 'receive_count',
+              inventoryStableId: id,
+              countedQuantity: qty
+            }, qty > 0 ? `+${qty}` : `${qty}`, qty > 0 ? 'plus' : 'minus');
+          }
+
+          if (action === 'receive-complete') {
+            runAction({
+              action: 'receive_complete',
+              inventoryStableId: id,
+              isComplete: !item.isReceivingComplete
+            }, item.isReceivingComplete ? '완료취소' : '입고완료', item.isReceivingComplete ? 'minus' : '');
+          }
+        };
+      });
+    }
+
+    document.addEventListener('click', event => {
+      const card = event.target.closest?.('[data-receive-card="1"]');
+      if (!card || event.target.closest('button, input')) return;
+
+      const now = Date.now();
+      const id = card.dataset.id || '';
+      const isDoubleTap = state.doubleTap.id === id && now - state.doubleTap.at <= 520;
+      state.doubleTap = { id, at: now };
+      if (!isDoubleTap) return;
+
+      const item = findItem(id);
+      if (!item) return;
+      runAction({
+        action: 'receive_complete',
+        inventoryStableId: id,
+        isComplete: !item.isReceivingComplete
+      }, item.isReceivingComplete ? '완료취소' : '입고완료', item.isReceivingComplete ? 'minus' : '');
+    });
+
+    els.salesTab.addEventListener('click', () => setTab('sales'));
+    els.inboundTab.addEventListener('click', () => setTab('inbound'));
+    els.refreshBtn.addEventListener('click', () => loadDashboard({ refresh: true }).catch(error => alert(error.message)));
+
+    loadDashboard().catch(error => {
+      els.salesGrid.innerHTML = `<div class="empty">${esc(error.message)}</div>`;
+    });
+  </script>
+</body>
+</html>
