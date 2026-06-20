@@ -113,15 +113,9 @@
     .stale-meta { margin-top: 6px; color: #969aa4; font-size: 12px; font-weight: 800; }
     .stale-qty { display: inline-flex; align-items: center; justify-content: center; min-width: 56px; height: 36px; padding: 0 10px; border-radius: 999px; background: #f3f5f8; text-align: center; font-size: 18px; font-weight: 900; }
     .empty { padding: 36px 16px; border-radius: 28px; background: #fff; color: #8d929c; text-align: center; font-size: 15px; font-weight: 800; box-shadow: 0 14px 34px rgba(36,42,54,.07); }
-    .burst { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; pointer-events: none; opacity: 0; background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.98) 0 18%, rgba(8,160,92,.95) 19% 42%, rgba(0,81,160,.98) 43% 100%); }
-    .burst.show { animation: burst 620ms cubic-bezier(.2,.85,.18,1) both; }
-    .burst.minus { background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.98) 0 18%, rgba(231,64,57,.95) 19% 42%, rgba(17,17,17,.98) 43% 100%); }
-    .burst.plus { background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.98) 0 18%, rgba(22,128,219,.95) 19% 42%, rgba(17,17,17,.98) 43% 100%); }
-    .burst-text { color: #fff; font-size: clamp(46px, 13vw, 132px); font-weight: 900; letter-spacing: 0; text-shadow: 0 10px 24px rgba(0,0,0,.25); }
     .tap-hit { animation: localTap 220ms cubic-bezier(.18,.86,.28,1) both; }
     .tap-hit::after { content: attr(data-flash); position: absolute; left: 50%; top: -26px; z-index: 5; transform: translateX(-50%); display: grid; place-items: center; min-width: 38px; height: 24px; padding: 0 8px; border-radius: 999px; background: #08a05c; color: #fff; font-size: 12px; font-weight: 900; pointer-events: none; animation: localPop 520ms cubic-bezier(.18,.86,.28,1) both; box-shadow: 0 10px 20px rgba(8,160,92,.22); }
     .tap-hit.minus::after { background: #e74039; box-shadow: 0 10px 20px rgba(231,64,57,.22); }
-    @keyframes burst { 0% { opacity: 0; clip-path: circle(0% at 50% 50%); transform: scale(1.1); } 18% { opacity: 1; clip-path: circle(70% at 50% 50%); transform: scale(1); } 72% { opacity: 1; clip-path: circle(120% at 50% 50%); } 100% { opacity: 0; clip-path: circle(120% at 50% 50%); transform: scale(.98); } }
     @keyframes localPop { 0% { opacity: 0; transform: translate(-50%, 8px) scale(.88); } 24% { opacity: 1; transform: translate(-50%, 0) scale(1); } 100% { opacity: 0; transform: translate(-50%, -12px) scale(.94); } }
     @keyframes localTap { 0% { transform: scale(1); } 50% { transform: scale(.94); box-shadow: 0 0 0 9px rgba(8,160,92,.22); } 100% { transform: scale(1); } }
     @media (max-width: 560px) {
@@ -162,6 +156,92 @@
       .stale-item { grid-template-columns: 60px minmax(0, 1fr) auto; min-height: 86px; padding: 12px; border-radius: 22px; }
       .stale-item img { width: 60px; height: 60px; border-radius: 15px; }
     }
+
+    /* Compact 2026 ops surface: dense scan, soft depth, immediate controls. */
+    html, body { background: #f3f4f7; }
+    .app { padding: 8px 8px 80px; }
+    .top { margin: -8px -8px 6px; padding: 4px 8px; background: rgba(243,244,247,.9); border-bottom: 1px solid rgba(255,255,255,.78); }
+    .top-inner { position: absolute; top: 4px; right: 8px; width: auto; gap: 0; }
+    .brand { display: none; }
+    .brand-title { font-size: 19px; }
+    .brand-sub { display: none; }
+    .refresh-btn { width: 28px; height: 28px; border-radius: 10px; font-size: 15px; box-shadow: 0 8px 18px rgba(21,21,23,.13); }
+    .tabs { width: min(190px, calc(100% - 54px)); margin: 0 auto; padding: 3px; gap: 3px; border-radius: 14px; background: #e4e7ed; }
+    .tab { height: 26px; border-radius: 10px; font-size: 12px; }
+    .tab.active { box-shadow: 0 6px 14px rgba(36,42,54,.08); }
+    .summary { gap: 6px; margin-bottom: 7px; }
+    .metric { min-height: 34px; padding: 5px 8px; border-radius: 13px; box-shadow: 0 8px 20px rgba(36,42,54,.06); }
+    .metric-label { font-size: 10px; line-height: 1; }
+    .metric-value { margin-top: 3px; font-size: 16px; }
+    .metric .sub-price { display: block; margin-top: 2px; font-size: 9px; line-height: 1.05; }
+    .date-strip { gap: 6px; padding-bottom: 6px; }
+    .date-btn { min-width: 76px; height: 29px; border-radius: 11px; font-size: 11.5px; box-shadow: 0 6px 14px rgba(36,42,54,.05); }
+    .grid { gap: 8px; }
+    .product-card { min-height: 0; padding: 8px; border-radius: 17px; gap: 6px; box-shadow: 0 8px 22px rgba(36,42,54,.07); border: 1px solid rgba(255,255,255,.9); }
+    .product-card.done { border-color: rgba(8,160,92,.24); background: linear-gradient(0deg, rgba(236,248,239,.72), rgba(255,255,255,.98)); box-shadow: 0 8px 22px rgba(8,160,92,.08); }
+    .product-card.done::after { content: none; display: none; }
+    .thumb-wrap { width: 52px; height: 52px; border-radius: 13px; }
+    .sales-card,
+    .inbound-card { grid-template-columns: 52px minmax(0, 1fr); align-items: start; }
+    .sales-card .thumb-wrap { width: 52px; height: 52px; border-radius: 13px; }
+    .card-main,
+    .inbound-main { gap: 5px; }
+    .card-head { gap: 7px; }
+    .card-name,
+    .sales-card .card-name { font-size: 13px; line-height: 1.15; -webkit-line-clamp: 1; }
+    .stock-pill { min-width: 50px; height: 22px; padding: 0 7px; font-size: 10.5px; }
+    .stock-pill.done-pill { background: #e7f8ec; color: #08a05c; }
+    .storage,
+    .pack-badge,
+    .soft-tag { height: 19px; padding: 0 7px; gap: 4px; font-size: 9.5px; }
+    .storage svg { width: 11px; height: 11px; }
+    .tag-row { gap: 4px; }
+    .price,
+    .card-desc { color: #7e838e; font-size: 10.5px; line-height: 1.2; font-weight: 400; }
+    .inbound-card .card-desc { position: absolute; top: 31px; right: 10px; max-width: 138px; color: #8c919b; font-size: 8.5px; line-height: 1.1; font-weight: 400; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+    .sales-card .price-row { display: none; }
+    .sales-metrics { gap: 5px; }
+    .sales-metric { padding: 4px 5px; border-radius: 10px; }
+    .sales-metric-label { font-size: 8px; }
+    .sales-metric-value { margin-top: 1px; font-size: 16px; }
+    .sales-metric-sub { display: none; }
+    .pickup-list { gap: 4px; padding-top: 6px; }
+    .pickup-title { font-size: 10px; }
+    .pickup-chip { height: 21px; padding: 0 7px; font-size: 10px; }
+    .buffer-form { grid-template-columns: minmax(0, 1fr) 38px 52px 26px; gap: 4px; padding-top: 5px; }
+    .buffer-customer,
+    .buffer-qty,
+    .buffer-use-btn { height: 28px; border-radius: 10px; font-size: 10.5px; }
+    .buffer-customer { padding: 0 10px; }
+    .buffer-qty { padding: 0 4px; }
+    .plus-btn { width: 26px; height: 26px; font-size: 16px; }
+    .history { display: none; }
+    .inbound-card { padding-bottom: 10px; }
+    .inbound-status { gap: 5px; }
+    .status-box { padding: 2px 4px; border-radius: 9px; background: transparent; }
+    .status-label { font-size: 8.5px; }
+    .status-value { margin-top: 2px; font-size: 15px; }
+    .status-box.important .status-value { font-size: 18px; }
+    .status-box.compact .status-value { font-size: 13px; }
+    .count-actions { grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(68px, 1.45fr); gap: 4px; padding-top: 5px; }
+    .count-btn { height: 25px; border-radius: 9px; font-size: 10px; }
+    .complete-btn { grid-column: auto; height: 25px; border-radius: 9px; font-size: 9px; box-shadow: none; }
+    .complete-btn.done { background: #08a05c; }
+    .inbound-sections { gap: 14px; }
+    .storage-heading { display: none; }
+    .storage-heading strong { gap: 6px; font-size: 15px; }
+    .storage-heading span { font-size: 11px; }
+    .storage-dot { display: none; }
+    .section-title { margin: 6px 2px 4px; font-size: 12.5px; }
+    .stale-title { margin-top: 2px; }
+    .stale-list { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 5px; padding-bottom: 1px; scrollbar-width: none; }
+    .stale-list::-webkit-scrollbar { display: none; }
+    .stale-item { flex: 0 0 158px; grid-template-columns: minmax(0, 1fr) auto; gap: 5px; min-height: 31px; padding: 5px 6px; border-radius: 12px; box-shadow: 0 7px 18px rgba(36,42,54,.06); }
+    .stale-item img { display: none; }
+    .stale-name { font-size: 10.5px; line-height: 1.08; -webkit-line-clamp: 1; }
+    .stale-meta { margin-top: 1px; font-size: 8.5px; font-weight: 700; }
+    .stale-qty { min-width: 28px; height: 22px; padding: 0 6px; font-size: 12px; }
+    .empty { padding: 18px 12px; border-radius: 18px; font-size: 13px; }
   </style>
 </head>
 <body>
@@ -191,15 +271,11 @@
 
       <section class="panel" id="inboundPanel">
         <div class="summary" id="inboundSummary"></div>
-        <div class="inbound-sections" id="inboundGrid"></div>
-        <h2 class="section-title">상시전환 D-2</h2>
+        <h2 class="section-title stale-title">상시전환 D-2</h2>
         <div class="stale-list" id="staleList"></div>
+        <div class="inbound-sections" id="inboundGrid"></div>
       </section>
     </main>
-  </div>
-
-  <div class="burst" id="burst" aria-hidden="true">
-    <div class="burst-text" id="burstText">완료</div>
   </div>
 
   <script>
@@ -226,9 +302,7 @@
       inboundSummary: document.getElementById('inboundSummary'),
       salesGrid: document.getElementById('salesGrid'),
       inboundGrid: document.getElementById('inboundGrid'),
-      staleList: document.getElementById('staleList'),
-      burst: document.getElementById('burst'),
-      burstText: document.getElementById('burstText')
+      staleList: document.getElementById('staleList')
     };
 
     function money(value) {
@@ -301,39 +375,6 @@
 
       state.dashboard = data;
       render();
-    }
-
-    async function runAction(body, burstText, burstKind) {
-      if (state.busy) return;
-      state.busy = true;
-
-      try {
-        const url = new URL('/api/buffer-action', location.origin);
-        url.searchParams.set('token', state.token);
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        });
-        const data = await response.json();
-        if (!response.ok || !data.ok) throw new Error(data.message || '저장하지 못했습니다.');
-
-        state.dashboard = data.dashboard;
-        showBurst(burstText, burstKind);
-        render();
-      } catch (error) {
-        alert(error.message || String(error));
-      } finally {
-        state.busy = false;
-      }
-    }
-
-    function showBurst(text, kind = '') {
-      els.burstText.textContent = text;
-      els.burst.className = `burst ${kind}`;
-      void els.burst.offsetWidth;
-      els.burst.classList.add('show');
-      setTimeout(() => els.burst.classList.remove('show'), 680);
     }
 
     function flashButton(button, text, kind = '') {
@@ -445,6 +486,14 @@
       const orderRemaining = Number(item.customerOrderRemainingQuantity || 0);
       const physicalRemaining = Number(item.physicalRemainingQuantity ?? item.remainingQuantity ?? 0);
       const completedCustomers = item.pickupCompletedCustomers || [];
+      const completedHtml = completedCustomers.length ? `
+          <div class="pickup-list">
+            <div class="pickup-title">픽업완료 고객</div>
+            <div class="pickup-chips">
+              ${renderCustomerChips(completedCustomers)}
+            </div>
+          </div>
+        ` : '';
 
       return `
         <article class="product-card sales-card" data-id="${esc(item.id)}">
@@ -482,12 +531,7 @@
               <div class="sales-metric-sub">주문 ${number(orderQuantity)} · 픽업 ${number(pickupCompletedQuantity)}</div>
             </div>
           </div>
-          <div class="pickup-list">
-            <div class="pickup-title">픽업완료 고객</div>
-            <div class="pickup-chips">
-              ${renderCustomerChips(completedCustomers)}
-            </div>
-          </div>
+          ${completedHtml}
           <div class="buffer-form">
             <input class="buffer-customer" data-buffer-customer="${esc(item.id)}" placeholder="끝4자리" inputmode="numeric" autocomplete="off">
             <input class="buffer-qty" data-buffer-qty="${esc(item.id)}" type="number" min="1" step="1" value="1" aria-label="버퍼수량">
@@ -541,7 +585,7 @@
       return groupByStorage(items).map(group => `
         <section class="inbound-section">
           <div class="storage-heading">
-            <strong><i class="storage-dot ${storageClass(group.storage)}"></i>${esc(group.storage)}</strong>
+            <strong>${storageBadge(group.storage)}</strong>
             <span>${number(group.items.length)}종 · ${number(group.totalQuantity)}개</span>
           </div>
           <div class="grid">
@@ -578,6 +622,7 @@
       const counted = Number(item.countedQuantity || 0);
       const inbound = Number(item.inboundQuantity || 0);
       const remainingToCount = Math.max(0, inbound - counted);
+      const statusLabel = item.isReceivingComplete ? '입고완료' : '입고';
 
       return `
         <article class="product-card inbound-card ${item.isReceivingComplete ? 'done' : ''}" data-id="${esc(item.id)}" data-receive-card="1">
@@ -587,7 +632,7 @@
           <div class="inbound-main">
             <div class="card-head">
               <h3 class="card-name">${esc(item.productName)}</h3>
-              <span class="stock-pill ${stockClass(remainingToCount)}">입고 ${number(inbound)}</span>
+              <span class="stock-pill ${item.isReceivingComplete ? 'done-pill' : stockClass(remainingToCount)}">${statusLabel} ${number(inbound)}</span>
             </div>
             <div class="card-desc">공급가 ${money(item.supplyPrice)} · 판매가 ${money(item.salePrice)}</div>
             <div class="tag-row">
@@ -597,15 +642,15 @@
               <span class="soft-tag">우리버퍼 ${number(item.ourBufferQuantity)}</span>
             </div>
             <div class="inbound-status">
-              <div class="status-box">
+              <div class="status-box important">
                 <div class="status-label">입고</div>
                 <div class="status-value">${number(inbound)}</div>
               </div>
-              <div class="status-box">
+              <div class="status-box important">
                 <div class="status-label">카운팅</div>
                 <div class="status-value green">${number(counted)}</div>
               </div>
-              <div class="status-box">
+              <div class="status-box compact">
                 <div class="status-label">남음</div>
                 <div class="status-value">${number(remainingToCount)}</div>
               </div>
@@ -616,7 +661,7 @@
             <button class="count-btn" data-action="count-5">+5</button>
             <button class="count-btn" data-action="count-1">+1</button>
             <button class="count-btn" data-action="count-minus">−1</button>
-            <button class="complete-btn ${item.isReceivingComplete ? 'done' : ''}" data-action="receive-complete">${item.isReceivingComplete ? '입고완료' : '수량체크완료'}</button>
+            <button class="complete-btn ${item.isReceivingComplete ? 'done' : ''}" data-action="receive-complete">${item.isReceivingComplete ? '완료해제' : '체크완료'}</button>
           </div>
         </article>
       `;
@@ -628,7 +673,7 @@
           <img src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy">
           <div>
             <div class="stale-name">${esc(item.productName)}</div>
-            <div class="stale-meta">${esc(item.storageMethod)} · ${esc(item.inboundDateText)} · ${esc(item.salesType)}</div>
+            <div class="stale-meta">${esc(item.sourceSheetName)} · ${esc(item.inboundDateText)} · ${esc(item.storageMethod)}</div>
           </div>
           <div class="stale-qty">${number(item.inboundQuantity)}</div>
         </div>
@@ -832,6 +877,45 @@
         });
     }
 
+    async function runReceivingComplete(id, nextComplete) {
+      if (state.busy) return;
+
+      const previous = Boolean(findItem(id)?.isReceivingComplete);
+      state.busy = true;
+      updateItem(id, target => {
+        target.isReceivingComplete = Boolean(nextComplete);
+      });
+      render();
+      flashActionButton(id, 'receive-complete', nextComplete ? '완료' : '해제', nextComplete ? '' : 'minus');
+
+      try {
+        const url = new URL('/api/buffer-action', location.origin);
+        url.searchParams.set('token', state.token);
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'receive_complete',
+            inventoryStableId: id,
+            isComplete: Boolean(nextComplete)
+          })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.message || '저장하지 못했습니다.');
+
+        state.dashboard = data.dashboard;
+        render();
+      } catch (error) {
+        updateItem(id, target => {
+          target.isReceivingComplete = previous;
+        });
+        render();
+        alert(error.message || String(error));
+      } finally {
+        state.busy = false;
+      }
+    }
+
     function bindControls() {
       document.querySelectorAll('[data-action]').forEach(button => {
         button.onclick = async event => {
@@ -868,11 +952,7 @@
           }
 
           if (action === 'receive-complete') {
-            runAction({
-              action: 'receive_complete',
-              inventoryStableId: id,
-              isComplete: !item.isReceivingComplete
-            }, item.isReceivingComplete ? '완료취소' : '입고완료', item.isReceivingComplete ? 'minus' : '');
+            runReceivingComplete(id, !item.isReceivingComplete);
           }
         };
       });
@@ -897,11 +977,7 @@
 
       const item = findItem(id);
       if (!item) return;
-      runAction({
-        action: 'receive_complete',
-        inventoryStableId: id,
-        isComplete: !item.isReceivingComplete
-      }, item.isReceivingComplete ? '완료취소' : '입고완료', item.isReceivingComplete ? 'minus' : '');
+      runReceivingComplete(id, !item.isReceivingComplete);
     });
 
     els.salesTab.addEventListener('click', () => setTab('sales'));
