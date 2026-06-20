@@ -746,6 +746,461 @@
     }
     .storage.frozen { background: linear-gradient(135deg, #38bdf8, #2563eb); }
     .storage-dot.frozen { background: #2563eb; }
+
+    .sales-mode-tabs {
+      width: min(252px, 100%);
+      margin: 0 auto 8px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      padding: 3px;
+      border-radius: 14px;
+      background: #e4e7ed;
+    }
+    .sales-mode-tab {
+      height: 29px;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: #858c98;
+      font-size: 12px;
+      font-weight: 500 !important;
+    }
+    .sales-mode-tab.active {
+      background: #fff;
+      color: #151517;
+      box-shadow: 0 7px 16px rgba(36,42,54,.08);
+      font-weight: 600 !important;
+    }
+    .sales-view { display: none; }
+    .sales-view.active { display: block; }
+    .storage-request-panel {
+      display: grid;
+      gap: 9px;
+      padding: 10px;
+      border-radius: 22px;
+      background: #fff;
+      border: 1px solid rgba(255,255,255,.9);
+      box-shadow: 0 8px 22px rgba(36,42,54,.07);
+    }
+    .storage-request-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+    }
+    .storage-request-head h2 {
+      margin: 0;
+      color: #151517;
+      font-size: 16px;
+      line-height: 1.05;
+      font-weight: 600 !important;
+    }
+    .storage-request-head p {
+      margin: 5px 0 0;
+      color: #858c98;
+      font-size: 10.5px;
+      line-height: 1.25;
+      font-weight: 400 !important;
+      word-break: keep-all;
+    }
+    .storage-request-total {
+      min-width: 54px;
+      height: 48px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      border-radius: 15px;
+      background: linear-gradient(135deg, #edf5ff, #e9f0ff);
+      color: #2563eb;
+    }
+    .storage-request-total span {
+      color: #6f84bd;
+      font-size: 9px;
+      line-height: 1;
+    }
+    .storage-request-total strong {
+      font-family: 'TheJamsilOps', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 24px;
+      line-height: .9;
+      font-weight: 500 !important;
+    }
+    .storage-search-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 68px;
+      gap: 7px;
+    }
+    .storage-input {
+      width: 100%;
+      height: 38px;
+      border: 1px solid #e2e7ef;
+      border-radius: 13px;
+      background: #fafbfc;
+      padding: 0 12px;
+      color: #151517;
+      font-size: 12px;
+      line-height: 1;
+      outline: none;
+      font-weight: 500 !important;
+    }
+    .storage-input.digits {
+      text-align: center;
+      font-family: 'TheJamsilOps', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 18px;
+      font-weight: 500 !important;
+      letter-spacing: 0;
+    }
+    .storage-primary-btn,
+    .storage-complete-btn {
+      border: 0;
+      border-radius: 13px;
+      background: #151517;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600 !important;
+    }
+    .storage-primary-btn:disabled,
+    .storage-complete-btn:disabled {
+      background: #dfe3ea;
+      color: #9aa1ad;
+    }
+    .storage-message {
+      min-height: 28px;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      border-radius: 11px;
+      background: #fff6dc;
+      color: #9d6b00;
+      font-size: 10.5px;
+      line-height: 1.2;
+    }
+    .storage-candidates {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 1px;
+      scrollbar-width: none;
+    }
+    .storage-candidates::-webkit-scrollbar { display: none; }
+    .storage-candidate {
+      flex: 0 0 auto;
+      height: 30px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 9px;
+      border: 1px solid #e2e7ef;
+      border-radius: 999px;
+      background: #f8fafc;
+      color: #6f7784;
+      font-size: 11px;
+    }
+    .storage-candidate.active {
+      background: #111827;
+      border-color: #111827;
+      color: #fff;
+    }
+    .storage-candidate strong {
+      min-width: 18px;
+      font-family: 'TheJamsilOps', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 12px;
+      text-align: right;
+      font-weight: 500 !important;
+    }
+    .storage-list {
+      display: grid;
+      gap: 7px;
+    }
+    .storage-item {
+      display: grid;
+      grid-template-columns: 58px minmax(0, 1fr) 44px;
+      gap: 9px;
+      align-items: center;
+      min-height: 76px;
+      padding: 8px;
+      border: 1px solid #edf0f4;
+      border-radius: 18px;
+      background: #fbfcfd;
+    }
+    .storage-item.selected {
+      border-color: #cfdcff;
+      background: linear-gradient(135deg, #f5f8ff, #ffffff);
+      box-shadow: 0 8px 18px rgba(47,93,202,.08);
+    }
+    .storage-item.disabled {
+      opacity: .58;
+    }
+    .storage-item-pick {
+      position: relative;
+      width: 58px;
+      height: 58px;
+      border: 0;
+      border-radius: 15px;
+      overflow: hidden;
+      background: #f2f4f7;
+      padding: 0;
+    }
+    .storage-item-pick img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+    .storage-check {
+      position: absolute;
+      right: 5px;
+      bottom: 5px;
+      width: 20px;
+      height: 20px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: rgba(17,24,39,.88);
+      color: #fff;
+      font-size: 12px;
+      line-height: 1;
+    }
+    .storage-item-main {
+      min-width: 0;
+      display: grid;
+      gap: 5px;
+    }
+    .storage-item-title {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 7px;
+      align-items: center;
+    }
+    .storage-item-title h3 {
+      min-width: 0;
+      margin: 0;
+      color: #151517;
+      font-size: 13px;
+      line-height: 1.14;
+      font-weight: 600 !important;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .storage-item-meta {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: #858c98;
+      font-size: 10px;
+      line-height: 1;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .storage-warning {
+      color: #c88910;
+      font-size: 10px;
+      line-height: 1.1;
+    }
+    .storage-qty {
+      width: 44px;
+      height: 38px;
+      border-radius: 13px;
+      font-family: 'TheJamsilOps', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 18px;
+      font-weight: 500 !important;
+    }
+    .storage-memo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+    }
+    .storage-memo-grid .full {
+      grid-column: 1 / -1;
+    }
+    .storage-complete-btn {
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 12px 22px rgba(21,21,23,.13);
+    }
+    .storage-complete-btn span {
+      font-family: 'TheJamsilOps', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      font-weight: 500 !important;
+    }
+    .storage-success {
+      display: grid;
+      gap: 3px;
+      padding: 10px 12px;
+      border-radius: 15px;
+      background: #eaf8ef;
+      color: #087e4c;
+    }
+    .storage-success strong {
+      font-size: 13px;
+      line-height: 1;
+      font-weight: 600 !important;
+    }
+    .storage-success span {
+      font-size: 11px;
+      line-height: 1.2;
+      font-weight: 400 !important;
+    }
+
+    html.modal-open,
+    body.modal-open {
+      overflow: hidden;
+      overscroll-behavior: none;
+    }
+    body.modal-open {
+      position: fixed;
+      left: 0;
+      right: 0;
+      width: 100%;
+    }
+    .sheet-panel {
+      transition: transform 180ms cubic-bezier(.2,.8,.2,1);
+      will-change: transform;
+    }
+    .sheet-panel.swiping {
+      transition: none;
+    }
+    .sheet-grabber {
+      min-height: 18px;
+      padding: 9px 0 0;
+      color: transparent;
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    .sheet-grabber::before {
+      width: 46px;
+      height: 5px;
+      background: #d5dae3;
+    }
+    .sheet-head {
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    .sheet-close {
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .sheet-row-note.important {
+      color: #e23b3b;
+      font-weight: 500 !important;
+    }
+
+    .sales-type-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 22px;
+      padding: 0 8px;
+      border-radius: 999px;
+      font-size: 10.5px;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .sales-type-badge.group {
+      background: #111827;
+      color: #fff;
+    }
+    .sales-type-badge.always {
+      background: #f4f1ff;
+      color: #7154d9;
+    }
+    .sales-type-badge.etc {
+      background: #f2f4f8;
+      color: #737b88;
+    }
+    .inbound-card .tag-row {
+      gap: 5px;
+      align-items: center;
+    }
+    .inbound-card .pack-badge {
+      height: 22px;
+      padding: 0 9px;
+      border: 1px solid rgba(200, 137, 16, .18);
+      background: linear-gradient(135deg, #fff7df, #fff1bd);
+      color: #9c6800;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.72);
+    }
+    .inbound-card .soft-tag {
+      height: 22px;
+      background: #f5f7fb;
+      color: #687180;
+    }
+    .inbound-card .storage {
+      height: 22px;
+    }
+    .inbound-card .count-actions {
+      grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(86px, 1.35fr);
+      gap: 7px;
+      padding-top: 9px;
+      border-top-color: #eef1f5;
+    }
+    .inbound-card .count-btn,
+    .inbound-card .complete-btn {
+      height: 42px;
+      border-radius: 15px;
+      transform: translateZ(0);
+    }
+    .inbound-card .count-btn {
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255,255,255,.78);
+      color: #2563eb;
+      background: linear-gradient(135deg, #f3f8ff, #eaf2ff);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 8px 18px rgba(37,99,235,.08);
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      touch-action: manipulation;
+      transition: transform 80ms ease, filter 80ms ease, box-shadow 80ms ease;
+    }
+    .inbound-card .count-btn span {
+      font-family: 'TheJamsilOps', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 17px;
+      line-height: .9;
+      font-weight: 500 !important;
+      letter-spacing: 0;
+    }
+    .inbound-card .count-btn.count-major {
+      color: #fff;
+      background: linear-gradient(135deg, #1f2937, #111827);
+      box-shadow: 0 10px 22px rgba(17,24,39,.16);
+    }
+    .inbound-card .count-btn.count-minus {
+      color: #df3f3f;
+      background: linear-gradient(135deg, #fff5f5, #ffecec);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 8px 18px rgba(223,63,63,.08);
+    }
+    .inbound-card .count-btn:active {
+      transform: scale(.955);
+      filter: saturate(1.08);
+      box-shadow: 0 0 0 7px rgba(37,99,235,.11);
+    }
+    .inbound-card .count-btn.count-minus:active {
+      box-shadow: 0 0 0 7px rgba(223,63,63,.11);
+    }
+    .inbound-card .complete-btn {
+      background: #111827;
+      box-shadow: 0 10px 20px rgba(17,24,39,.13);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .inbound-card .complete-btn.done {
+      background: #08a05c;
+      box-shadow: 0 10px 20px rgba(8,160,92,.14);
+    }
   </style>
 </head>
 <body>
@@ -769,8 +1224,17 @@
     <main class="shell">
       <section class="panel active" id="salesPanel">
         <div class="summary" id="salesSummary"></div>
-        <div class="date-strip" id="salesDateStrip" aria-label="판매 날짜 선택"></div>
-        <div class="grid" id="salesGrid"></div>
+        <div class="sales-mode-tabs" role="tablist" aria-label="판매 메뉴">
+          <button class="sales-mode-tab active" id="bufferModeTab" type="button">버퍼차감</button>
+          <button class="sales-mode-tab" id="storageModeTab" type="button">보관요청</button>
+        </div>
+        <section class="sales-view active" id="bufferView">
+          <div class="date-strip" id="salesDateStrip" aria-label="판매 날짜 선택"></div>
+          <div class="grid" id="salesGrid"></div>
+        </section>
+        <section class="sales-view" id="storageView">
+          <div id="storageRequestRoot"></div>
+        </section>
       </section>
 
       <section class="panel" id="inboundPanel">
@@ -792,8 +1256,8 @@
 
   <div class="sheet-modal" id="listModal" hidden>
     <section class="sheet-panel" id="listModalPanel" role="dialog" aria-modal="true" aria-labelledby="listModalTitle">
-      <div class="sheet-grabber">Swipe down to Close</div>
-      <div class="sheet-head">
+      <div class="sheet-grabber" id="listModalGrabber" aria-hidden="true"></div>
+      <div class="sheet-head" id="listModalHead">
         <div>
           <div class="sheet-title" id="listModalTitle">목록</div>
           <div class="sheet-sub" id="listModalSub"></div>
@@ -809,12 +1273,28 @@
 
     const state = {
       tab: 'sales',
+      salesMode: 'buffer',
       managementTab: 'receiving',
       dashboard: null,
       salesDateKey: '',
       token: new URLSearchParams(location.search).get('token') || localStorage.getItem('opsToken') || '03064',
       doubleTap: { id: '', at: 0 },
       bufferQuantities: {},
+      storageQuantities: {},
+      storage: {
+        digits: '',
+        selectedCustomerLabel: '',
+        candidates: [],
+        items: [],
+        selected: {},
+        locationMemo: '',
+        visitDateText: '',
+        requestMemo: '',
+        loading: false,
+        complete: null,
+        message: ''
+      },
+      modalScrollY: 0,
       busy: false
     };
 
@@ -825,20 +1305,27 @@
       refreshBtn: document.getElementById('refreshBtn'),
       salesTab: document.getElementById('salesTab'),
       inboundTab: document.getElementById('inboundTab'),
+      bufferModeTab: document.getElementById('bufferModeTab'),
+      storageModeTab: document.getElementById('storageModeTab'),
       receivingSubTab: document.getElementById('receivingSubTab'),
       staleSubTab: document.getElementById('staleSubTab'),
       salesPanel: document.getElementById('salesPanel'),
       inboundPanel: document.getElementById('inboundPanel'),
+      bufferView: document.getElementById('bufferView'),
+      storageView: document.getElementById('storageView'),
       receivingView: document.getElementById('receivingView'),
       staleView: document.getElementById('staleView'),
       salesSummary: document.getElementById('salesSummary'),
       salesDateStrip: document.getElementById('salesDateStrip'),
       inboundSummary: document.getElementById('inboundSummary'),
       salesGrid: document.getElementById('salesGrid'),
+      storageRequestRoot: document.getElementById('storageRequestRoot'),
       inboundGrid: document.getElementById('inboundGrid'),
       staleList: document.getElementById('staleList'),
       listModal: document.getElementById('listModal'),
       listModalPanel: document.getElementById('listModalPanel'),
+      listModalGrabber: document.getElementById('listModalGrabber'),
+      listModalHead: document.getElementById('listModalHead'),
       listModalTitle: document.getElementById('listModalTitle'),
       listModalSub: document.getElementById('listModalSub'),
       listModalBody: document.getElementById('listModalBody'),
@@ -897,10 +1384,19 @@
     function packageUnitLabel(item) {
       const unit = String(item.packageUnit || '').trim();
       if (!unit) return '';
-
-      const normalized = unit.replace(/\s+/g, '').toLowerCase();
-      if (/^1(?:\.0+)?(?:개|ea)?$/.test(normalized)) return '';
       return unit;
+    }
+
+    function salesTypeBadge(value) {
+      const label = String(value || '').trim() || '구분없음';
+      const normalized = label.replace(/\s+/g, '');
+      const typeClass = normalized.includes('공구')
+        ? 'group'
+        : normalized.includes('상시')
+          ? 'always'
+          : 'etc';
+
+      return `<span class="sales-type-badge ${typeClass}">${esc(label)}</span>`;
     }
 
     function stockClass(value) {
@@ -972,6 +1468,14 @@
       els.inboundPanel.classList.toggle('active', tab === 'inbound');
     }
 
+    function setSalesMode(mode) {
+      state.salesMode = mode;
+      els.bufferModeTab.classList.toggle('active', mode === 'buffer');
+      els.storageModeTab.classList.toggle('active', mode === 'storage');
+      els.bufferView.classList.toggle('active', mode === 'buffer');
+      els.storageView.classList.toggle('active', mode === 'storage');
+    }
+
     function setManagementTab(tab) {
       state.managementTab = tab;
       els.receivingSubTab.classList.toggle('active', tab === 'receiving');
@@ -987,7 +1491,9 @@
       els.subtitle.textContent = `${data.storeName || '만만마켓'} · ${data.todayKey || ''}`;
       syncSalesDateSelection(data);
       renderSales(data);
+      renderStorageRequest(data);
       renderInbound(data);
+      setSalesMode(state.salesMode);
       setManagementTab(state.managementTab);
       bindControls();
     }
@@ -1069,12 +1575,143 @@
           ${renderBufferSummary(item)}
           <div class="buffer-form">
             <input class="buffer-customer" data-buffer-customer="${esc(item.id)}" placeholder="핸드폰 뒷 4자리" aria-label="핸드폰 뒷 4자리" inputmode="numeric" autocomplete="off">
-            <button class="buffer-qty qty-stepper" data-buffer-qty="${esc(item.id)}" data-qty-picker="1" type="button" aria-label="버퍼수량 선택">${number(getBufferQtyValue(item.id))}</button>
+            <button class="buffer-qty qty-stepper" data-buffer-qty="${esc(item.id)}" data-qty-key="buffer:${esc(item.id)}" data-qty-picker="1" type="button" aria-label="버퍼수량 선택">${number(getBufferQtyValue(item.id))}</button>
             <button class="buffer-use-btn" data-action="buffer-use" ${bufferQuantity <= 0 ? 'disabled' : ''}>차감</button>
             <button class="plus-btn" data-action="buffer-plus" aria-label="버퍼 추가">+</button>
           </div>
         </article>
       `;
+    }
+
+    function renderStorageRequest() {
+      const storage = state.storage;
+      const selectedCount = Object.values(storage.selected || {}).filter(Boolean).length;
+      const selectedQuantity = getSelectedStorageItems()
+        .reduce((sum, item) => sum + getStorageQtyValue(storageItemKey(item), item.quantity), 0);
+
+      els.storageRequestRoot.innerHTML = `
+        <section class="storage-request-panel">
+          <div class="storage-request-head">
+            <div>
+              <h2>보관요청</h2>
+              <p>핸드폰 뒷4자리로 최근 픽업 상품을 찾고, 따로 빼둔 뒤 완료 기록을 남깁니다.</p>
+            </div>
+            <div class="storage-request-total">
+              <span>선택</span>
+              <strong>${number(selectedCount)}</strong>
+            </div>
+          </div>
+
+          <div class="storage-search-row">
+            <input
+              class="storage-input digits"
+              data-storage-field="digits"
+              value="${esc(storage.digits)}"
+              placeholder="핸드폰 뒷4자리"
+              aria-label="핸드폰 뒷4자리"
+              inputmode="numeric"
+              maxlength="4"
+              autocomplete="off"
+            >
+            <button class="storage-primary-btn" data-action="storage-lookup" type="button" ${storage.loading ? 'disabled' : ''}>${storage.loading ? '조회중' : '조회'}</button>
+          </div>
+
+          ${storage.message ? `<div class="storage-message">${esc(storage.message)}</div>` : ''}
+          ${renderStorageCandidates(storage)}
+          ${renderStorageItems(storage)}
+
+          <div class="storage-memo-grid">
+            <input class="storage-input" data-storage-field="locationMemo" value="${esc(storage.locationMemo)}" placeholder="보관장소 메모 선택" aria-label="보관장소 메모">
+            <input class="storage-input" data-storage-field="visitDateText" value="${esc(storage.visitDateText)}" placeholder="방문예정일 메모" aria-label="방문예정일 메모">
+            <input class="storage-input full" data-storage-field="requestMemo" value="${esc(storage.requestMemo)}" placeholder="추가 메모" aria-label="추가 메모">
+          </div>
+
+          <button class="storage-complete-btn" data-action="storage-complete" type="button" ${!selectedCount || storage.loading ? 'disabled' : ''}>
+            보관처리 완료
+            <span>${number(selectedQuantity)}개</span>
+          </button>
+
+          ${storage.complete ? `
+            <div class="storage-success">
+              <strong>보관완료</strong>
+              <span>${esc(storage.complete.customerLabel || storage.digits)} · ${number(storage.complete.quantity)}개 · ${esc(storage.complete.time)}</span>
+            </div>
+          ` : ''}
+        </section>
+      `;
+    }
+
+    function renderStorageCandidates(storage) {
+      if (!storage.candidates?.length) return '';
+
+      return `
+        <div class="storage-candidates" aria-label="고객 선택">
+          ${storage.candidates.map(candidate => `
+            <button
+              class="storage-candidate ${candidate.customerLabel === storage.selectedCustomerLabel ? 'active' : ''}"
+              data-action="storage-select-customer"
+              data-customer-label="${esc(candidate.customerLabel)}"
+              type="button"
+            >
+              <span>${esc(candidate.customerLabel)}</span>
+              <strong>${number(candidate.orderCount || 0)}</strong>
+            </button>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function renderStorageItems(storage) {
+      if (storage.loading) {
+        return '<div class="empty">최근 픽업 상품을 찾는 중입니다.</div>';
+      }
+
+      if (!storage.items?.length) {
+        return '<div class="empty">핸드폰 뒷4자리를 조회하면 보관할 상품이 여기에 뜹니다.</div>';
+      }
+
+      return `
+        <div class="storage-list">
+          ${storage.items.map(renderStorageItem).join('')}
+        </div>
+      `;
+    }
+
+    function renderStorageItem(item) {
+      const key = storageItemKey(item);
+      const selected = Boolean(state.storage.selected[key]);
+      const quantity = getStorageQtyValue(key, item.quantity);
+      const canStore = item.canStore !== false && item.inventoryStableId;
+
+      return `
+        <article class="storage-item ${selected ? 'selected' : ''} ${!canStore ? 'disabled' : ''}" data-storage-key="${esc(key)}">
+          <button class="storage-item-pick" data-action="storage-toggle-item" data-storage-key="${esc(key)}" type="button" ${!canStore ? 'disabled' : ''} aria-label="보관 상품 선택">
+            <img src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy">
+            <span class="storage-check">${selected ? '✓' : ''}</span>
+          </button>
+          <div class="storage-item-main">
+            <div class="storage-item-title">
+              <h3>${esc(item.productName)}</h3>
+              ${storageBadge(item.storageMethod)}
+            </div>
+            <div class="storage-item-meta">
+              <span>픽업 ${esc(item.pickupDateText || item.pickupDateKey)}</span>
+              <span>주문 ${number(item.quantity)}개</span>
+              ${item.salePrice ? `<span>판매가 ${money(item.salePrice)}</span>` : ''}
+            </div>
+            ${canStore ? '' : '<div class="storage-warning">입고상품 매칭이 필요합니다.</div>'}
+          </div>
+          <button class="storage-qty qty-stepper" data-storage-qty="${esc(key)}" data-qty-key="storage:${esc(key)}" data-qty-picker="1" type="button" aria-label="보관수량 선택">${number(quantity)}</button>
+        </article>
+      `;
+    }
+
+    function storageItemKey(item) {
+      return item.inventoryStableId || item.id || item.key || `${item.productKey || item.productName}::${item.pickupDateKey || ''}`;
+    }
+
+    function getSelectedStorageItems() {
+      return (state.storage.items || []).filter(item => state.storage.selected[storageItemKey(item)]);
     }
 
     function renderBufferSummary(item) {
@@ -1130,6 +1767,9 @@
       els.listModalTitle.textContent = title || '목록';
       els.listModalSub.textContent = subtitle || '';
       els.listModalBody.innerHTML = bodyHtml || '';
+      lockPageScroll();
+      els.listModalPanel.style.transform = '';
+      els.listModalPanel.classList.remove('swiping');
       els.listModal.hidden = false;
     }
 
@@ -1180,7 +1820,7 @@
                 <div>
                   <div class="sheet-row-name">${esc(row.customerLabel || '닉네임 비어있음')}</div>
                   <div class="sheet-row-time">${esc(row.orderDateText || '')}${row.pickupDateText ? ` · 픽업 ${esc(row.pickupDateText)}` : ''}</div>
-                  ${row.noteText ? `<div class="sheet-row-note">비고 ${esc(row.noteText)}</div>` : ''}
+                  ${row.noteText ? `<div class="sheet-row-note important">메모 : ${esc(row.noteText)}</div>` : ''}
                 </div>
                 <div class="sheet-row-qty">${number(row.quantity)}</div>
               </div>
@@ -1193,6 +1833,28 @@
 
     function closeListModal() {
       els.listModal.hidden = true;
+      els.listModalPanel.style.transform = '';
+      els.listModalPanel.classList.remove('swiping');
+      unlockPageScroll();
+    }
+
+    function lockPageScroll() {
+      if (document.body.classList.contains('modal-open')) return;
+
+      state.modalScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+      document.documentElement.classList.add('modal-open');
+      document.body.classList.add('modal-open');
+      document.body.style.top = `-${state.modalScrollY}px`;
+    }
+
+    function unlockPageScroll() {
+      if (!document.body.classList.contains('modal-open')) return;
+
+      const restoreY = state.modalScrollY || 0;
+      document.documentElement.classList.remove('modal-open');
+      document.body.classList.remove('modal-open');
+      document.body.style.top = '';
+      window.scrollTo(0, restoreY);
     }
 
     function renderInbound(data) {
@@ -1275,6 +1937,7 @@
             <div class="card-desc">공급가 ${money(item.supplyPrice)} · 판매가 ${money(item.salePrice)}</div>
             <div class="tag-row">
               ${storageBadge(item.storageMethod)}
+              ${salesTypeBadge(item.salesType)}
               ${packageUnit ? `<span class="pack-badge">포장 ${esc(packageUnit)}</span>` : ''}
               <span class="soft-tag">본사버퍼 ${number(item.hqBufferQuantity)}</span>
               <span class="soft-tag">우리버퍼 ${number(item.ourBufferQuantity)}</span>
@@ -1295,10 +1958,10 @@
             </div>
           </div>
           <div class="count-actions">
-            <button class="count-btn" data-action="count-10">+10</button>
-            <button class="count-btn" data-action="count-5">+5</button>
-            <button class="count-btn" data-action="count-1">+1</button>
-            <button class="count-btn" data-action="count-minus">−1</button>
+            <button class="count-btn count-add count-major" data-action="count-10"><span>+10</span></button>
+            <button class="count-btn count-add" data-action="count-5"><span>+5</span></button>
+            <button class="count-btn count-add" data-action="count-1"><span>+1</span></button>
+            <button class="count-btn count-minus" data-action="count-minus"><span>−1</span></button>
             <button class="complete-btn ${item.isReceivingComplete ? 'done' : ''}" data-action="receive-complete">${item.isReceivingComplete ? '완료해제' : '체크완료'}</button>
           </div>
         </article>
@@ -1375,7 +2038,20 @@
       return Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
     }
 
-    const QTY_PICKER_MAX = 20;
+    function getStorageQtyValue(key, fallback = 1) {
+      const quantity = Math.floor(Number(state.storageQuantities[key] || fallback || 1));
+      return Number.isFinite(quantity) && quantity > 0
+        ? Math.min(QTY_PICKER_MAX, quantity)
+        : 1;
+    }
+
+    function getQtyValue(key, fallback = 1) {
+      if (key.startsWith('storage:')) return getStorageQtyValue(key.slice(8), fallback);
+      if (key.startsWith('buffer:')) return getBufferQtyValue(key.slice(7));
+      return getBufferQtyValue(key);
+    }
+
+    const QTY_PICKER_MAX = 50;
     const QTY_WHEEL_ITEM_HEIGHT = 36;
     const QTY_WHEEL_CENTER_OFFSET = 54;
 
@@ -1397,6 +2073,49 @@
         button.dataset.value = String(normalized);
         button.textContent = number(normalized);
         button.setAttribute('aria-label', `버퍼수량 ${normalized}개`);
+      });
+    }
+
+    function setStorageQtyValue(key, quantity) {
+      const normalized = clampBufferQty(quantity);
+      state.storageQuantities[key] = normalized;
+
+      document.querySelectorAll(`[data-storage-qty="${CSS.escape(key)}"]`).forEach(button => {
+        button.dataset.value = String(normalized);
+        button.textContent = number(normalized);
+        button.setAttribute('aria-label', `보관수량 ${normalized}개`);
+      });
+      refreshStorageSelectedQuantity();
+    }
+
+    function setQtyValue(key, quantity) {
+      if (key.startsWith('storage:')) {
+        setStorageQtyValue(key.slice(8), quantity);
+        return;
+      }
+
+      if (key.startsWith('buffer:')) {
+        setBufferQtyValue(key.slice(7), quantity);
+        return;
+      }
+
+      setBufferQtyValue(key, quantity);
+    }
+
+    function resolveQtyKey(button) {
+      if (button.dataset.qtyKey) return button.dataset.qtyKey;
+      if (button.dataset.storageQty) return `storage:${button.dataset.storageQty}`;
+      if (button.dataset.bufferQty) return `buffer:${button.dataset.bufferQty}`;
+
+      const card = button.closest('[data-id]');
+      return card?.dataset.id ? `buffer:${card.dataset.id}` : '';
+    }
+
+    function refreshStorageSelectedQuantity() {
+      const total = getSelectedStorageItems()
+        .reduce((sum, item) => sum + getStorageQtyValue(storageItemKey(item), item.quantity), 0);
+      document.querySelectorAll('.storage-complete-btn span').forEach(element => {
+        element.textContent = `${number(total)}개`;
       });
     }
 
@@ -1454,12 +2173,11 @@
           event.preventDefault();
           clearTextSelection();
 
-          const card = button.closest('[data-id]');
-          const id = card?.dataset.id || '';
-          if (!id) return;
+          const qtyKey = resolveQtyKey(button);
+          if (!qtyKey) return;
 
           let picker = null;
-          const startValue = getBufferQtyValue(id);
+          const startValue = getQtyValue(qtyKey, Number(button.dataset.value || button.textContent || 1));
           const startY = event.clientY;
           let selectedValue = startValue;
           let didOpenPicker = false;
@@ -1477,6 +2195,9 @@
             selectedValue = nextValue;
             button.dataset.value = String(selectedValue);
             button.textContent = number(selectedValue);
+            button.classList.remove('is-spinning');
+            void button.offsetWidth;
+            button.classList.add('is-spinning');
             if (picker) updateQtyPickerWheel(picker, selectedValue);
             window.navigator?.vibrate?.(6);
           };
@@ -1508,12 +2229,14 @@
             button.classList.remove('is-picking');
             clearTextSelection();
             if (didOpenPicker) {
-              setBufferQtyValue(id, selectedValue);
+              setQtyValue(qtyKey, selectedValue);
               window.navigator?.vibrate?.(8);
             } else {
-              const next = getBufferQtyValue(id) >= 20 ? 1 : getBufferQtyValue(id) + 1;
-              setBufferQtyValue(id, next);
+              const current = getQtyValue(qtyKey, Number(button.dataset.value || button.textContent || 1));
+              const next = current >= QTY_PICKER_MAX ? 1 : current + 1;
+              setQtyValue(qtyKey, next);
             }
+            setTimeout(() => button.classList.remove('is-spinning'), 180);
             window.removeEventListener('pointermove', move);
             window.removeEventListener('pointerup', finish);
             window.removeEventListener('pointercancel', finish);
@@ -1646,6 +2369,7 @@
       if (current + quantity < 0) quantity = -current;
       if (!quantity) return;
 
+      window.navigator?.vibrate?.(quantity > 0 ? 10 : [8, 22, 8]);
       updateItem(id, target => {
         target.countedQuantity = Math.max(0, Number(target.countedQuantity || 0) + quantity);
       });
@@ -1715,14 +2439,152 @@
       }
     }
 
+    async function runStorageLookup(customerLabel = '') {
+      const digits = String(state.storage.digits || '').replace(/\D/g, '').slice(-4);
+      if (!/^\d{4}$/.test(digits)) {
+        state.storage.message = '핸드폰 뒷4자리를 입력해주세요.';
+        render();
+        return;
+      }
+
+      state.storage.loading = true;
+      state.storage.message = '';
+      state.storage.complete = null;
+      render();
+
+      try {
+        const url = new URL('/api/ops-storage-candidates', location.origin);
+        url.searchParams.set('token', state.token);
+        url.searchParams.set('digits', digits);
+        if (customerLabel) url.searchParams.set('customerLabel', customerLabel);
+
+        const response = await fetch(url);
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.message || '보관요청 상품을 찾지 못했습니다.');
+
+        state.storage.digits = digits;
+        state.storage.candidates = data.candidates || [];
+        state.storage.selectedCustomerLabel = data.selectedCustomerLabel || customerLabel || '';
+        state.storage.items = data.items || [];
+        state.storage.selected = {};
+        state.storage.message = data.requiresCustomerSelection ? '중복 고객이 있어 고객을 먼저 선택해주세요.' : '';
+        state.storage.items.forEach(item => {
+          const key = storageItemKey(item);
+          if (!state.storageQuantities[key]) {
+            state.storageQuantities[key] = Math.max(1, Math.min(QTY_PICKER_MAX, Number(item.quantity || 1)));
+          }
+        });
+      } catch (error) {
+        state.storage.message = error.message || String(error);
+        state.storage.items = [];
+      } finally {
+        state.storage.loading = false;
+        render();
+      }
+    }
+
+    async function runStorageComplete() {
+      if (state.busy || state.storage.loading) return;
+
+      const selectedItems = getSelectedStorageItems()
+        .filter(item => item.inventoryStableId)
+        .map(item => ({
+          inventoryStableId: item.inventoryStableId,
+          quantity: getStorageQtyValue(storageItemKey(item), item.quantity)
+        }));
+
+      if (!selectedItems.length) {
+        state.storage.message = '보관처리할 상품을 선택해주세요.';
+        render();
+        return;
+      }
+
+      state.busy = true;
+      state.storage.loading = true;
+      state.storage.message = '';
+      render();
+
+      try {
+        const url = new URL('/api/buffer-action', location.origin);
+        url.searchParams.set('token', state.token);
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'storage_request_complete',
+            customerLabel: state.storage.selectedCustomerLabel,
+            customerDigits4: state.storage.digits,
+            locationMemo: state.storage.locationMemo,
+            visitDateText: state.storage.visitDateText,
+            requestMemo: state.storage.requestMemo,
+            items: selectedItems
+          })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.message || '보관완료를 저장하지 못했습니다.');
+
+        const totalQuantity = selectedItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+        state.dashboard = data.dashboard;
+        state.storage.complete = {
+          customerLabel: state.storage.selectedCustomerLabel,
+          quantity: totalQuantity,
+          time: formatDateTime(new Date().toISOString()) || '방금'
+        };
+        state.storage.selected = {};
+        state.storage.locationMemo = '';
+        state.storage.visitDateText = '';
+        state.storage.requestMemo = '';
+      } catch (error) {
+        state.storage.message = error.message || String(error);
+      } finally {
+        state.busy = false;
+        state.storage.loading = false;
+        render();
+      }
+    }
+
+    function handleStorageAction(button, action) {
+      if (action === 'storage-lookup') {
+        runStorageLookup();
+        return true;
+      }
+
+      if (action === 'storage-select-customer') {
+        const customerLabel = button.dataset.customerLabel || '';
+        state.storage.selectedCustomerLabel = customerLabel;
+        runStorageLookup(customerLabel);
+        return true;
+      }
+
+      if (action === 'storage-toggle-item') {
+        const key = button.dataset.storageKey || '';
+        if (!key) return true;
+
+        state.storage.selected[key] = !state.storage.selected[key];
+        window.navigator?.vibrate?.(8);
+        render();
+        return true;
+      }
+
+      if (action === 'storage-complete') {
+        runStorageComplete();
+        return true;
+      }
+
+      return false;
+    }
+
     function bindControls() {
       document.querySelectorAll('[data-action]').forEach(button => {
         button.onclick = async event => {
           event.stopPropagation();
+          const action = button.dataset.action;
+          if (handleStorageAction(button, action)) return;
+
           const card = button.closest('[data-id]');
           const id = card?.dataset.id || '';
           const item = findItem(id);
-          const action = button.dataset.action;
           if (!item) return;
 
           if (action === 'show-buffer-list') {
@@ -1777,6 +2639,26 @@
         };
       });
 
+      document.querySelectorAll('[data-storage-field]').forEach(input => {
+        input.oninput = () => {
+          const field = input.dataset.storageField || '';
+          if (!field || !(field in state.storage)) return;
+
+          state.storage[field] = field === 'digits'
+            ? input.value.replace(/\D/g, '').slice(-4)
+            : input.value;
+          if (field === 'digits') {
+            input.value = state.storage[field];
+          }
+        };
+        input.onkeydown = event => {
+          if (input.dataset.storageField === 'digits' && event.key === 'Enter') {
+            event.preventDefault();
+            runStorageLookup();
+          }
+        };
+      });
+
       bindQuantityPickers();
     }
 
@@ -1797,6 +2679,8 @@
 
     els.salesTab.addEventListener('click', () => setTab('sales'));
     els.inboundTab.addEventListener('click', () => setTab('inbound'));
+    els.bufferModeTab.addEventListener('click', () => setSalesMode('buffer'));
+    els.storageModeTab.addEventListener('click', () => setSalesMode('storage'));
     els.receivingSubTab.addEventListener('click', () => setManagementTab('receiving'));
     els.staleSubTab.addEventListener('click', () => setManagementTab('stale'));
     els.refreshBtn.addEventListener('click', () => loadDashboard({ refresh: true }).catch(error => alert(error.message)));
@@ -1805,19 +2689,59 @@
       if (event.target === els.listModal) closeListModal();
     });
     let modalSwipeStart = null;
-    els.listModalPanel.addEventListener('pointerdown', event => {
+
+    function startModalSwipe(event) {
       if (event.button != null && event.button !== 0) return;
-      modalSwipeStart = { x: event.clientX, y: event.clientY };
-    });
-    els.listModalPanel.addEventListener('pointerup', event => {
+      if (event.target.closest('button')) return;
+
+      event.preventDefault();
+      modalSwipeStart = {
+        x: event.clientX,
+        y: event.clientY,
+        pointerId: event.pointerId
+      };
+      els.listModalPanel.classList.add('swiping');
+      try {
+        event.currentTarget.setPointerCapture?.(event.pointerId);
+      } catch {
+      }
+    }
+
+    function moveModalSwipe(event) {
       if (!modalSwipeStart) return;
+      const deltaY = Math.max(0, event.clientY - modalSwipeStart.y);
+      const easedY = Math.min(180, deltaY);
+      els.listModalPanel.style.transform = `translate3d(0, ${easedY}px, 0)`;
+    }
+
+    function finishModalSwipe(event) {
+      if (!modalSwipeStart) return;
+
       const deltaX = event.clientX - modalSwipeStart.x;
       const deltaY = event.clientY - modalSwipeStart.y;
+      const shouldClose = deltaY > 64 && Math.abs(deltaX) < 120;
       modalSwipeStart = null;
-      if (deltaY > 86 && Math.abs(deltaX) < 90) closeListModal();
-    });
-    els.listModalPanel.addEventListener('pointercancel', () => {
+
+      els.listModalPanel.classList.remove('swiping');
+      if (shouldClose) {
+        closeListModal();
+        return;
+      }
+
+      els.listModalPanel.style.transform = '';
+    }
+
+    function cancelModalSwipe() {
       modalSwipeStart = null;
+      els.listModalPanel.classList.remove('swiping');
+      els.listModalPanel.style.transform = '';
+    }
+
+    [els.listModalGrabber, els.listModalHead].forEach(handle => {
+      handle.addEventListener('pointerdown', startModalSwipe);
+      handle.addEventListener('pointermove', moveModalSwipe);
+      handle.addEventListener('pointerup', finishModalSwipe);
+      handle.addEventListener('pointercancel', cancelModalSwipe);
     });
     document.addEventListener('keydown', event => {
       if (event.key === 'Escape' && !els.listModal.hidden) closeListModal();

@@ -4,7 +4,8 @@ const ORDER_COUNT_EXCLUDED_CUSTOMERS = new Set([
   '로지4298',
   '로지4739',
   '죠르디9319',
-  '하품하는죠르디0108'
+  '하품하는죠르디0108',
+  '프리지아6450'
 ]);
 
 export default async function handler(req, res) {
