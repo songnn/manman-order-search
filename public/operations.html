@@ -281,7 +281,8 @@
     .inbound-card { padding-bottom: 12px; }
     .inbound-card .card-desc { position: static; max-width: 100%; color: #8c919b; font-size: 10px; line-height: 1.12; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: auto; }
     .status-box { padding: 4px 6px; border-radius: 10px; background: #f6f7fa; }
-    .status-label { font-size: 10px; }
+    .status-label { font-size: 11px; }
+    .status-box.compact .status-label { font-size: 11.5px; }
     .status-box.important .status-value { font-size: 25px; }
     .status-box.compact .status-value { font-size: 17px; }
     .count-actions { gap: 6px; padding-top: 8px; }
@@ -332,16 +333,18 @@
       font-weight: 400 !important;
     }
     .metric-value,
-    .sales-quick-item strong,
-    .ratio-value strong,
-    .ratio-value em,
+    .buffer-value,
+    .buffer-ratio strong,
+    .buffer-ratio span,
+    .sales-sub-line strong,
     .status-value,
     .stock-pill,
     .stale-qty,
     .sheet-row-qty,
     .count-btn,
     .buffer-qty,
-    .list-btn strong {
+    .list-btn strong,
+    .buffer-inline-link strong {
       font-family: 'TheJamsilOps', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
       font-weight: 500 !important;
       letter-spacing: 0;
@@ -349,7 +352,7 @@
     .sales-card { min-height: 205px; padding-bottom: 9px; }
     .stale-card { min-height: 166px; }
     .sales-card .card-main,
-    .stale-card .card-main { justify-content: center; gap: 5px; }
+    .stale-card .card-main { justify-content: center; gap: 6px; }
     .sales-card .card-head,
     .stale-card .card-head { align-items: center; gap: 8px; }
     .sales-card .card-name,
@@ -369,6 +372,107 @@
     }
     .stock-soft.empty { background: #f1f3f6; color: #8b92a0; }
     .stock-soft.low { background: #fff6dc; color: #c88910; }
+    .sales-line {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .buffer-inline-link {
+      min-width: 0;
+      border: 0;
+      background: transparent;
+      padding: 0;
+      color: #8b92a0;
+      font-size: 10px;
+      line-height: 1;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .buffer-inline-link strong {
+      margin-left: 3px;
+      color: #6f7682;
+      font-size: 10.5px;
+      font-weight: 500 !important;
+    }
+    .sales-price {
+      min-width: 0;
+      color: #747b87;
+      font-size: 10.5px;
+      line-height: 1.05;
+      font-weight: 400 !important;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sales-sub-line {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: #8a909c;
+      font-size: 10px;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .sales-sub-line strong {
+      margin-left: 2px;
+      color: #353941;
+      font-size: 13px;
+      line-height: 1;
+    }
+    .buffer-summary {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: .78fr .78fr 1.45fr;
+      gap: 7px;
+      align-items: stretch;
+    }
+    .buffer-box {
+      min-width: 0;
+      min-height: 52px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      border-radius: 15px;
+      background: #f6f8fb;
+      text-align: center;
+    }
+    .buffer-box.hq { background: #f3f7ff; }
+    .buffer-box.our { background: #f1fbf5; }
+    .buffer-box.remaining { background: linear-gradient(135deg, #edf5ff, #e9f0ff); }
+    .buffer-label {
+      color: #79818d;
+      font-size: 9.5px;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .buffer-value {
+      color: #17191d;
+      font-size: 22px;
+      line-height: .9;
+    }
+    .buffer-ratio {
+      display: inline-flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 2px;
+      color: #2563eb;
+      line-height: .9;
+    }
+    .buffer-ratio strong {
+      color: #2563eb;
+      font-size: 31px;
+      line-height: .85;
+    }
+    .buffer-ratio span {
+      color: #7890c8;
+      font-size: 15px;
+      line-height: 1;
+      font-weight: 500 !important;
+    }
     .sales-quick {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -474,6 +578,10 @@
       background: #fff;
       color: #151517;
       box-shadow: inset 0 0 0 1px rgba(255,255,255,.65);
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      touch-action: none;
     }
     .qty-stepper.is-spinning {
       background: #eef4ff;
@@ -499,6 +607,9 @@
       pointer-events: none;
       transform: translate3d(-50%, -100%, 0) scale(.98);
       overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
     }
     .qty-wheel-window {
       position: relative;
@@ -837,10 +948,6 @@
     }
 
     function renderSalesCard(item) {
-      const history = (item.bufferHistory || [])
-        .filter(event => Number(event.deltaQuantity || 0) < 0)
-        .map(event => `<span>${esc(event.actorMemo || '메모없음')}</span>`)
-        .join('');
       const bufferQuantity = Number(item.bufferRemainingQuantity || 0);
 
       return `
@@ -853,64 +960,46 @@
               <h3 class="card-name">${esc(item.productName)}</h3>
               ${storageBadge(item.storageMethod)}
             </div>
-            <div class="sales-meta">입고수량 ${number(item.inboundQuantity)} · 판매가 ${money(item.salePrice)}</div>
-            <div class="tag-row">
-              <span class="soft-tag">본사버퍼 ${number(item.hqBufferQuantity)}</span>
-              <span class="soft-tag">우리버퍼 ${number(item.ourBufferQuantity)}</span>
+            <div class="sales-line">
+              ${renderListButtons(item)}
+              <span class="sales-price">판매가 ${money(item.salePrice)}</span>
+            </div>
+            <div class="sales-sub-line">
+              <span>입고수량 <strong>${number(item.inboundQuantity)}</strong></span>
+              <span>공구주문건수 <strong>${number(item.customerOrderQuantity)}</strong></span>
             </div>
           </div>
-          ${renderQuantityKpis(item)}
+          ${renderBufferSummary(item)}
           <div class="buffer-form">
             <input class="buffer-customer" data-buffer-customer="${esc(item.id)}" placeholder="핸드폰 뒷 4자리" aria-label="핸드폰 뒷 4자리" inputmode="numeric" autocomplete="off">
             <button class="buffer-qty qty-stepper" data-buffer-qty="${esc(item.id)}" data-qty-picker="1" type="button" aria-label="버퍼수량 선택">${number(getBufferQtyValue(item.id))}</button>
             <button class="buffer-use-btn" data-action="buffer-use" ${bufferQuantity <= 0 ? 'disabled' : ''}>차감</button>
             <button class="plus-btn" data-action="buffer-plus" aria-label="버퍼 추가">+</button>
-            <div class="history">${history}</div>
-          </div>
-          <div class="customer-actions secondary-actions">
-            ${renderListButtons(item)}
           </div>
         </article>
       `;
     }
 
-    function renderQuantityKpis(item) {
-      const inboundQuantity = Number(item.inboundQuantity || 0);
+    function renderBufferSummary(item) {
       const bufferQuantity = Number(item.bufferRemainingQuantity || 0);
       const hqBuffer = Number(item.hqBufferQuantity || 0);
       const ourBuffer = Number(item.ourBufferQuantity || 0);
-      const orderQuantity = Number(item.customerOrderQuantity || 0);
+      const totalBuffer = Number(item.initialBufferQuantity || hqBuffer + ourBuffer || 0);
 
       return `
-        <div class="sales-quick">
-          <div class="sales-quick-item primary">
-            <span>잔여버퍼</span>
-            <div class="ratio-value">
-              <strong>${number(bufferQuantity)}</strong>
-            </div>
+        <div class="buffer-summary">
+          <div class="buffer-box hq">
+            <span class="buffer-label">본사버퍼</span>
+            <strong class="buffer-value">${number(hqBuffer)}</strong>
           </div>
-          <div class="sales-quick-item hq">
-            <span>본사버퍼</span>
-            <div class="ratio-value">
-              <strong>${number(hqBuffer)}</strong>
-            </div>
+          <div class="buffer-box our">
+            <span class="buffer-label">우리버퍼</span>
+            <strong class="buffer-value">${number(ourBuffer)}</strong>
           </div>
-          <div class="sales-quick-item our">
-            <span>우리버퍼</span>
-            <div class="ratio-value">
-              <strong>${number(ourBuffer)}</strong>
-            </div>
-          </div>
-          <div class="sales-quick-item inbound">
-            <span>입고수량</span>
-            <div class="ratio-value">
-              <strong>${number(inboundQuantity)}</strong>
-            </div>
-          </div>
-          <div class="sales-quick-item order">
-            <span>공구주문</span>
-            <div class="ratio-value">
-              <strong>${number(orderQuantity)}</strong>
+          <div class="buffer-box remaining">
+            <span class="buffer-label">잔여버퍼</span>
+            <div class="buffer-ratio">
+              <strong>${number(bufferQuantity)}</strong><span>/${number(totalBuffer)}</span>
             </div>
           </div>
         </div>
@@ -919,7 +1008,7 @@
 
     function renderListButtons(item) {
       return `
-        <button class="list-btn" data-action="show-buffer-list" type="button"><span>버퍼구매 고객</span><strong>${number(getBufferUseEvents(item).length)}</strong></button>
+        <button class="buffer-inline-link" data-action="show-buffer-list" type="button">버퍼구매 고객<strong>${number(getBufferUseEvents(item).length)}</strong></button>
       `;
     }
 
@@ -1091,17 +1180,16 @@
               <h3 class="card-name">${esc(item.productName)}</h3>
               ${storageBadge(item.storageMethod)}
             </div>
-            <div class="sales-meta">입고일 ${esc(item.inboundDateText || item.inboundDateKey)} · 판매가 ${money(item.salePrice)}</div>
-            <div class="tag-row">
-              <span class="soft-tag">입고수량 ${number(item.inboundQuantity)}</span>
-              <span class="soft-tag">본사버퍼 ${number(item.hqBufferQuantity)}</span>
-              <span class="soft-tag">우리버퍼 ${number(item.ourBufferQuantity)}</span>
+            <div class="sales-line">
+              ${renderListButtons(item)}
+              <span class="sales-price">판매가 ${money(item.salePrice)}</span>
+            </div>
+            <div class="sales-sub-line">
+              <span>입고일 <strong>${esc(item.inboundDateText || item.inboundDateKey)}</strong></span>
+              <span>입고수량 <strong>${number(item.inboundQuantity)}</strong></span>
             </div>
           </div>
-          ${renderQuantityKpis(item)}
-          <div class="customer-actions secondary-actions">
-            ${renderListButtons(item)}
-          </div>
+          ${renderBufferSummary(item)}
         </article>
       `;
     }
@@ -1158,6 +1246,11 @@
     function clampBufferQty(quantity) {
       const normalized = Math.floor(Number(quantity || 1));
       return Math.max(1, Math.min(QTY_PICKER_MAX, Number.isFinite(normalized) ? normalized : 1));
+    }
+
+    function clearTextSelection() {
+      const selection = window.getSelection?.();
+      selection?.removeAllRanges?.();
     }
 
     function setBufferQtyValue(id, quantity) {
@@ -1219,9 +1312,11 @@
     function bindQuantityPickers() {
       document.querySelectorAll('[data-qty-picker]').forEach(button => {
         button.oncontextmenu = event => event.preventDefault();
+        button.onselectstart = event => event.preventDefault();
         button.onpointerdown = event => {
           if (event.button != null && event.button !== 0) return;
           event.preventDefault();
+          clearTextSelection();
 
           const card = button.closest('[data-id]');
           const id = card?.dataset.id || '';
@@ -1251,6 +1346,7 @@
           };
 
           const openPicker = () => {
+            clearTextSelection();
             didOpenPicker = true;
             button.classList.add('is-picking');
             picker = buildQtyPicker(button, selectedValue);
@@ -1274,6 +1370,7 @@
               picker = null;
             }
             button.classList.remove('is-picking');
+            clearTextSelection();
             if (didOpenPicker) {
               setBufferQtyValue(id, selectedValue);
               window.navigator?.vibrate?.(8);
