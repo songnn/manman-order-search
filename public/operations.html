@@ -73,12 +73,6 @@
     .sales-metric-value { margin-top: 7px; color: #151517; font-size: 27px; line-height: .9; font-weight: 600; letter-spacing: 0; }
     .sales-metric.primary .sales-metric-value { color: #2f5dca; }
     .sales-metric-sub { margin-top: 4px; color: #969ba5; font-size: 10px; line-height: 1.15; font-weight: 500; }
-    .pickup-list { grid-column: 1 / -1; display: grid; gap: 7px; padding-top: 10px; border-top: 1px solid #eef0f3; }
-    .pickup-title { color: #8e949f; font-size: 11px; font-weight: 600; }
-    .pickup-chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
-    .pickup-chips::-webkit-scrollbar { display: none; }
-    .pickup-chip { display: inline-flex; align-items: center; flex: 0 0 auto; height: 27px; padding: 0 9px; border-radius: 999px; background: #ecf8ef; color: #31964b; font-size: 11px; font-weight: 600; }
-    .pickup-chip.is-empty { background: #f3f5f8; color: #9a9ea7; }
     .buffer-form { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) 64px 92px 34px; gap: 7px; align-items: center; padding-top: 10px; border-top: 1px solid #eef0f3; }
     .buffer-help { grid-column: 1 / -1; margin-top: -2px; color: #9a9ea7; font-size: 11px; line-height: 1.2; font-weight: 500; }
     .buffer-customer,
@@ -114,6 +108,11 @@
     .storage-dot.cold { background: #0ea5b7; }
     .storage-dot.frozen { background: #2563eb; }
     .storage-dot.room { background: #f97345; }
+    .management-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0 0 8px; padding: 4px; border-radius: 15px; background: #e6e9ef; }
+    .management-tab { height: 34px; border: 0; border-radius: 11px; background: transparent; color: #8a909b; font-size: 13px; font-weight: 600; }
+    .management-tab.active { background: #fff; color: #151517; box-shadow: 0 8px 18px rgba(36,42,54,.08); }
+    .management-view { display: none; }
+    .management-view.active { display: block; }
     .stale-list { display: grid; gap: 12px; }
     .stale-item { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; gap: 14px; align-items: center; min-height: 100px; padding: 14px; border-radius: 26px; background: #fff; box-shadow: 0 14px 34px rgba(36, 42, 54, 0.07); }
     .stale-item img { width: 72px; height: 72px; object-fit: cover; border-radius: 18px; background: #f4f5f7; }
@@ -213,9 +212,6 @@
     .sales-metric-label { font-size: 8px; }
     .sales-metric-value { margin-top: 1px; font-size: 16px; }
     .sales-metric-sub { display: none; }
-    .pickup-list { gap: 4px; padding-top: 6px; }
-    .pickup-title { font-size: 10px; }
-    .pickup-chip { height: 21px; padding: 0 7px; font-size: 10px; }
     .buffer-form { grid-template-columns: minmax(0, 1fr) 38px 52px 26px; gap: 4px; padding-top: 5px; }
     .buffer-customer,
     .buffer-qty,
@@ -374,21 +370,26 @@
     .stock-soft.empty { background: #f1f3f6; color: #8b92a0; }
     .stock-soft.low { background: #fff6dc; color: #c88910; }
     .sales-quick {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 6px;
       align-items: stretch;
     }
     .sales-quick-item {
-      min-height: 48px;
-      padding: 6px 9px;
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
+      min-height: 52px;
+      padding: 6px 4px;
+      display: flex;
+      flex-direction: column;
       align-items: center;
+      justify-content: center;
+      gap: 4px;
       border-radius: 15px;
+      text-align: center;
     }
     .sales-quick-item span {
       min-width: 0;
       color: #78808d;
-      font-size: 10px;
+      font-size: 9.5px;
       line-height: 1.05;
       white-space: nowrap;
     }
@@ -397,33 +398,30 @@
       color: #2563eb;
     }
     .sales-quick-item.remaining { background: #f6f4ff; }
-    .sales-quick-item.pickup { background: #f5f8fa; }
+    .sales-quick-item.hq { background: #f3f7ff; }
+    .sales-quick-item.our { background: #f1fbf5; }
+    .sales-quick-item.inbound { background: #fbf6ed; }
+    .sales-quick-item.order { background: #f5f8fa; }
     .ratio-value {
       display: inline-flex;
       align-items: baseline;
-      justify-content: flex-end;
+      justify-content: center;
       gap: 2px;
       min-width: 0;
       color: #151517;
     }
     .ratio-value strong {
-      font-size: 28px;
+      font-size: 24px;
       line-height: .9;
       color: #151517;
     }
     .sales-quick-item.primary .ratio-value strong { color: #2563eb; }
-    .sales-quick-item.pickup .ratio-value strong { color: #0f9f68; }
-    .ratio-value em {
-      color: #8b92a0;
-      font-size: 12px;
-      font-style: normal;
-      line-height: 1;
-    }
+    .sales-quick-item.order .ratio-value strong { color: #0f9f68; }
     .ratio-value.single strong { font-size: 28px; }
     .customer-actions {
       grid-column: 1 / -1;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
+      display: flex;
+      justify-content: flex-end;
       gap: 6px;
       padding-top: 0;
     }
@@ -436,6 +434,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 6px;
+      width: max-content;
       height: 27px;
       padding: 0 9px;
       border: 1px solid #e5ebf2;
@@ -486,40 +485,73 @@
       border-color: #111827;
       color: #fff;
     }
-    .qty-picker-popover {
+    .qty-wheel-popover {
       position: fixed;
       z-index: 80;
-      display: grid;
-      grid-template-columns: repeat(5, 38px);
-      gap: 6px;
-      padding: 8px;
+      width: 82px;
+      height: 164px;
+      padding: 10px;
       border: 1px solid rgba(17, 24, 39, .1);
-      border-radius: 16px;
-      background: rgba(255, 255, 255, .96);
+      border-radius: 24px;
+      background: rgba(255, 255, 255, .9);
       box-shadow: 0 18px 44px rgba(17, 24, 39, .18);
       backdrop-filter: blur(14px);
       pointer-events: none;
-      transform: translate3d(-50%, -100%, 0);
+      transform: translate3d(-50%, -100%, 0) scale(.98);
+      overflow: hidden;
     }
-    .qty-picker-option {
+    .qty-wheel-window {
+      position: relative;
+      height: 144px;
+      overflow: hidden;
+      border-radius: 18px;
+    }
+    .qty-wheel-highlight {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: 36px;
+      transform: translateY(-50%);
+      border-radius: 14px;
+      background: #111827;
+      box-shadow: 0 10px 24px rgba(17,24,39,.18);
+    }
+    .qty-wheel-list {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      transition: transform 90ms cubic-bezier(.2,.8,.2,1);
+      will-change: transform;
+    }
+    .qty-wheel-option {
       display: grid;
       place-items: center;
-      width: 38px;
-      height: 38px;
-      border-radius: 12px;
-      background: #f4f6f8;
-      color: #17191c;
-      font-size: 15px;
+      height: 36px;
+      color: #9198a3;
+      font-size: 16px;
       font-weight: 500;
+      transform: scale(.92);
+      transition: color 90ms, transform 90ms;
     }
-    .qty-picker-option.is-active {
-      background: #111827;
+    .qty-wheel-option.is-active {
       color: #fff;
       transform: scale(1.08);
     }
     .plus-btn {
       width: 36px;
       height: 36px;
+    }
+    .management-tabs {
+      width: min(230px, 100%);
+      margin: 0 auto 8px;
+      padding: 3px;
+      border-radius: 14px;
+    }
+    .management-tab {
+      height: 28px;
+      border-radius: 10px;
+      font-size: 12px;
     }
     .storage.frozen { background: linear-gradient(135deg, #38bdf8, #2563eb); }
     .storage-dot.frozen { background: #2563eb; }
@@ -530,7 +562,7 @@
     <div class="top">
       <div class="top-inner">
         <div class="brand">
-          <div class="brand-title">판매·입고</div>
+          <div class="brand-title">판매·관리</div>
           <div class="brand-sub" id="subtitle">만만마켓 운영</div>
         </div>
         <button class="refresh-btn" id="refreshBtn" type="button" aria-label="새로고침">↻</button>
@@ -538,7 +570,7 @@
       <div class="shell">
         <div class="tabs">
           <button class="tab active" id="salesTab" type="button">판매</button>
-          <button class="tab" id="inboundTab" type="button">입고</button>
+          <button class="tab" id="inboundTab" type="button">관리</button>
         </div>
       </div>
     </div>
@@ -551,10 +583,18 @@
       </section>
 
       <section class="panel" id="inboundPanel">
-        <div class="summary" id="inboundSummary"></div>
-        <div class="inbound-sections" id="inboundGrid"></div>
-        <h2 class="section-title stale-title">상시전환 대상</h2>
-        <div class="stale-list" id="staleList"></div>
+        <div class="management-tabs" role="tablist" aria-label="관리 메뉴">
+          <button class="management-tab active" id="receivingSubTab" type="button">입고체크</button>
+          <button class="management-tab" id="staleSubTab" type="button">상시전환</button>
+        </div>
+        <section class="management-view active" id="receivingView">
+          <div class="summary" id="inboundSummary"></div>
+          <div class="inbound-sections" id="inboundGrid"></div>
+        </section>
+        <section class="management-view" id="staleView">
+          <h2 class="section-title stale-title">상시전환 대상</h2>
+          <div class="stale-list" id="staleList"></div>
+        </section>
       </section>
     </main>
   </div>
@@ -577,6 +617,7 @@
 
     const state = {
       tab: 'sales',
+      managementTab: 'receiving',
       dashboard: null,
       salesDateKey: '',
       token: new URLSearchParams(location.search).get('token') || localStorage.getItem('opsToken') || '03064',
@@ -592,8 +633,12 @@
       refreshBtn: document.getElementById('refreshBtn'),
       salesTab: document.getElementById('salesTab'),
       inboundTab: document.getElementById('inboundTab'),
+      receivingSubTab: document.getElementById('receivingSubTab'),
+      staleSubTab: document.getElementById('staleSubTab'),
       salesPanel: document.getElementById('salesPanel'),
       inboundPanel: document.getElementById('inboundPanel'),
+      receivingView: document.getElementById('receivingView'),
+      staleView: document.getElementById('staleView'),
       salesSummary: document.getElementById('salesSummary'),
       salesDateStrip: document.getElementById('salesDateStrip'),
       inboundSummary: document.getElementById('inboundSummary'),
@@ -728,6 +773,14 @@
       els.inboundPanel.classList.toggle('active', tab === 'inbound');
     }
 
+    function setManagementTab(tab) {
+      state.managementTab = tab;
+      els.receivingSubTab.classList.toggle('active', tab === 'receiving');
+      els.staleSubTab.classList.toggle('active', tab === 'stale');
+      els.receivingView.classList.toggle('active', tab === 'receiving');
+      els.staleView.classList.toggle('active', tab === 'stale');
+    }
+
     function render() {
       const data = state.dashboard;
       if (!data) return;
@@ -736,6 +789,7 @@
       syncSalesDateSelection(data);
       renderSales(data);
       renderInbound(data);
+      setManagementTab(state.managementTab);
       bindControls();
     }
 
@@ -779,7 +833,7 @@
 
       els.salesGrid.innerHTML = items.length
         ? items.map(renderSalesCard).join('')
-        : '<div class="empty">해당 날짜의 입고 상품이 없습니다.</div>';
+        : '<div class="empty">해당 날짜의 공구 상품이 없습니다.</div>';
     }
 
     function renderSalesCard(item) {
@@ -788,7 +842,6 @@
         .map(event => `<span>${esc(event.actorMemo || '메모없음')}</span>`)
         .join('');
       const bufferQuantity = Number(item.bufferRemainingQuantity || 0);
-      const physicalRemaining = Number(item.physicalRemainingQuantity ?? item.remainingQuantity ?? 0);
 
       return `
         <article class="product-card sales-card" data-id="${esc(item.id)}">
@@ -804,7 +857,6 @@
             <div class="tag-row">
               <span class="soft-tag">본사버퍼 ${number(item.hqBufferQuantity)}</span>
               <span class="soft-tag">우리버퍼 ${number(item.ourBufferQuantity)}</span>
-              <span class="soft-tag stock-soft ${stockClass(physicalRemaining)}">총잔여 ${number(physicalRemaining)}</span>
             </div>
           </div>
           ${renderQuantityKpis(item)}
@@ -823,26 +875,36 @@
     }
 
     function renderQuantityKpis(item) {
-      const physicalRemaining = Number(item.physicalRemainingQuantity ?? item.remainingQuantity ?? 0);
       const inboundQuantity = Number(item.inboundQuantity || 0);
       const bufferQuantity = Number(item.bufferRemainingQuantity || 0);
-      const totalBuffer = Number(item.initialBufferQuantity || 0);
+      const hqBuffer = Number(item.hqBufferQuantity || 0);
+      const ourBuffer = Number(item.ourBufferQuantity || 0);
       const orderQuantity = Number(item.customerOrderQuantity || 0);
 
       return `
         <div class="sales-quick">
-          <div class="sales-quick-item remaining">
-            <span>잔여수량</span>
-            <div class="ratio-value">
-              <strong>${number(physicalRemaining)}</strong>
-              <em>/ ${number(inboundQuantity)}</em>
-            </div>
-          </div>
           <div class="sales-quick-item primary">
             <span>잔여버퍼</span>
             <div class="ratio-value">
               <strong>${number(bufferQuantity)}</strong>
-              <em>/ ${number(totalBuffer)}</em>
+            </div>
+          </div>
+          <div class="sales-quick-item hq">
+            <span>본사버퍼</span>
+            <div class="ratio-value">
+              <strong>${number(hqBuffer)}</strong>
+            </div>
+          </div>
+          <div class="sales-quick-item our">
+            <span>우리버퍼</span>
+            <div class="ratio-value">
+              <strong>${number(ourBuffer)}</strong>
+            </div>
+          </div>
+          <div class="sales-quick-item inbound">
+            <span>입고수량</span>
+            <div class="ratio-value">
+              <strong>${number(inboundQuantity)}</strong>
             </div>
           </div>
           <div class="sales-quick-item order">
@@ -857,7 +919,7 @@
 
     function renderListButtons(item) {
       return `
-        <button class="list-btn" data-action="show-buffer-list" type="button"><span>버퍼구매</span><strong>${number(getBufferUseEvents(item).length)}</strong></button>
+        <button class="list-btn" data-action="show-buffer-list" type="button"><span>버퍼구매 고객</span><strong>${number(getBufferUseEvents(item).length)}</strong></button>
       `;
     }
 
@@ -1019,7 +1081,6 @@
     }
 
     function renderStaleItem(item) {
-      const physicalRemaining = Number(item.physicalRemainingQuantity ?? item.remainingQuantity ?? 0);
       return `
         <article class="product-card sales-card stale-card" data-id="${esc(item.id)}">
           <div class="thumb-wrap">
@@ -1033,7 +1094,8 @@
             <div class="sales-meta">입고일 ${esc(item.inboundDateText || item.inboundDateKey)} · 판매가 ${money(item.salePrice)}</div>
             <div class="tag-row">
               <span class="soft-tag">입고수량 ${number(item.inboundQuantity)}</span>
-              <span class="soft-tag stock-soft ${stockClass(physicalRemaining)}">총잔여 ${number(physicalRemaining)}</span>
+              <span class="soft-tag">본사버퍼 ${number(item.hqBufferQuantity)}</span>
+              <span class="soft-tag">우리버퍼 ${number(item.ourBufferQuantity)}</span>
             </div>
           </div>
           ${renderQuantityKpis(item)}
@@ -1089,8 +1151,17 @@
       return Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
     }
 
+    const QTY_PICKER_MAX = 20;
+    const QTY_WHEEL_ITEM_HEIGHT = 36;
+    const QTY_WHEEL_CENTER_OFFSET = 54;
+
+    function clampBufferQty(quantity) {
+      const normalized = Math.floor(Number(quantity || 1));
+      return Math.max(1, Math.min(QTY_PICKER_MAX, Number.isFinite(normalized) ? normalized : 1));
+    }
+
     function setBufferQtyValue(id, quantity) {
-      const normalized = Math.max(1, Math.min(20, Math.floor(Number(quantity || 1))));
+      const normalized = clampBufferQty(quantity);
       state.bufferQuantities[id] = normalized;
 
       document.querySelectorAll(`[data-buffer-qty="${CSS.escape(id)}"]`).forEach(button => {
@@ -1102,50 +1173,47 @@
 
     function buildQtyPicker(button, activeValue) {
       const picker = document.createElement('div');
-      picker.className = 'qty-picker-popover';
+      picker.className = 'qty-wheel-popover';
       picker.setAttribute('role', 'listbox');
       picker.setAttribute('aria-label', '버퍼수량 선택');
-      picker.innerHTML = Array.from({ length: 20 }, (_, index) => {
-        const value = index + 1;
-        return `<div class="qty-picker-option ${value === activeValue ? 'is-active' : ''}" data-picker-value="${value}" role="option" aria-selected="${value === activeValue ? 'true' : 'false'}">${value}</div>`;
-      }).join('');
+      picker.innerHTML = `
+        <div class="qty-wheel-window">
+          <div class="qty-wheel-highlight"></div>
+          <div class="qty-wheel-list">
+            ${Array.from({ length: QTY_PICKER_MAX }, (_, index) => {
+              const value = index + 1;
+              return `<div class="qty-wheel-option" data-picker-value="${value}" role="option">${value}</div>`;
+            }).join('')}
+          </div>
+        </div>
+      `;
       document.body.appendChild(picker);
 
       const rect = button.getBoundingClientRect();
-      const left = Math.min(window.innerWidth - 110, Math.max(110, rect.left + rect.width / 2));
-      const top = Math.max(94, rect.top - 10);
+      const left = Math.min(window.innerWidth - 48, Math.max(48, rect.left + rect.width / 2));
+      const top = Math.max(180, rect.top - 10);
       picker.style.left = `${left}px`;
       picker.style.top = `${top}px`;
+      updateQtyPickerWheel(picker, activeValue);
 
       return picker;
     }
 
-    function updateQtyPickerSelection(picker, id, clientX, clientY) {
-      const options = Array.from(picker.querySelectorAll('[data-picker-value]'));
-      const target = options.find(option => {
-        const rect = option.getBoundingClientRect();
-        return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
-      }) || options
-        .map(option => {
-          const rect = option.getBoundingClientRect();
-          const centerX = rect.left + rect.width / 2;
-          const centerY = rect.top + rect.height / 2;
-          return {
-            option,
-            distance: Math.hypot(centerX - clientX, centerY - clientY)
-          };
-        })
-        .sort((a, b) => a.distance - b.distance)[0]?.option;
+    function updateQtyPickerWheel(picker, value) {
+      const normalized = clampBufferQty(value);
+      const list = picker.querySelector('.qty-wheel-list');
+      if (list) {
+        const offset = QTY_WHEEL_CENTER_OFFSET - ((normalized - 1) * QTY_WHEEL_ITEM_HEIGHT);
+        list.style.transform = `translate3d(0, ${offset}px, 0)`;
+      }
 
-      if (!target) return getBufferQtyValue(id);
-
-      const value = Number(target.dataset.pickerValue || 1);
-      options.forEach(option => {
-        const isActive = option === target;
+      picker.querySelectorAll('[data-picker-value]').forEach(option => {
+        const isActive = Number(option.dataset.pickerValue || 0) === normalized;
         option.classList.toggle('is-active', isActive);
         option.setAttribute('aria-selected', isActive ? 'true' : 'false');
       });
-      return value;
+
+      return normalized;
     }
 
     function bindQuantityPickers() {
@@ -1160,25 +1228,39 @@
           if (!id) return;
 
           let picker = null;
-          let selectedValue = getBufferQtyValue(id);
+          const startValue = getBufferQtyValue(id);
+          const startY = event.clientY;
+          let selectedValue = startValue;
           let didOpenPicker = false;
           try {
             button.setPointerCapture?.(event.pointerId);
           } catch {
           }
 
-          const openPicker = pointerEvent => {
+          const chooseFromPointer = pointerEvent => {
+            const clientY = Number(pointerEvent?.clientY ?? startY);
+            const deltaSteps = Math.round((startY - clientY) / 22);
+            const nextValue = clampBufferQty(startValue + deltaSteps);
+            if (nextValue === selectedValue) return;
+
+            selectedValue = nextValue;
+            button.dataset.value = String(selectedValue);
+            button.textContent = number(selectedValue);
+            if (picker) updateQtyPickerWheel(picker, selectedValue);
+            window.navigator?.vibrate?.(6);
+          };
+
+          const openPicker = () => {
             didOpenPicker = true;
             button.classList.add('is-picking');
             picker = buildQtyPicker(button, selectedValue);
-            selectedValue = updateQtyPickerSelection(picker, id, pointerEvent.clientX, pointerEvent.clientY);
             window.navigator?.vibrate?.(12);
           };
 
-          const holdTimer = setTimeout(() => openPicker(event), 280);
+          const holdTimer = setTimeout(openPicker, 220);
           const move = pointerEvent => {
             if (!picker) return;
-            selectedValue = updateQtyPickerSelection(picker, id, pointerEvent.clientX, pointerEvent.clientY);
+            chooseFromPointer(pointerEvent);
           };
           const finish = pointerEvent => {
             clearTimeout(holdTimer);
@@ -1187,7 +1269,7 @@
             } catch {
             }
             if (picker) {
-              selectedValue = updateQtyPickerSelection(picker, id, pointerEvent.clientX, pointerEvent.clientY);
+              chooseFromPointer(pointerEvent);
               picker.remove();
               picker = null;
             }
@@ -1483,6 +1565,8 @@
 
     els.salesTab.addEventListener('click', () => setTab('sales'));
     els.inboundTab.addEventListener('click', () => setTab('inbound'));
+    els.receivingSubTab.addEventListener('click', () => setManagementTab('receiving'));
+    els.staleSubTab.addEventListener('click', () => setManagementTab('stale'));
     els.refreshBtn.addEventListener('click', () => loadDashboard({ refresh: true }).catch(error => alert(error.message)));
     els.listModalClose.addEventListener('click', closeListModal);
     els.listModal.addEventListener('click', event => {
