@@ -280,11 +280,32 @@
     .list-btn { height: 30px; border: 0; border-radius: 11px; background: #eef1f6; color: #586071; font-size: 10.5px; font-weight: 600; }
     .inbound-card { padding-bottom: 12px; }
     .inbound-card .card-desc { position: static; max-width: 100%; color: #8c919b; font-size: 10px; line-height: 1.12; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: auto; }
-    .status-box { padding: 4px 6px; border-radius: 10px; background: #f6f7fa; }
-    .status-label { font-size: 11px; }
-    .status-box.compact .status-label { font-size: 11.5px; }
-    .status-box.important .status-value { font-size: 25px; }
-    .status-box.compact .status-value { font-size: 17px; }
+    .status-box {
+      min-width: 0;
+      min-height: 52px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 6px 5px;
+      border-radius: 15px;
+      background: #f6f8fb;
+      text-align: center;
+    }
+    .status-box.important { background: #f3f7ff; }
+    .status-box.compact { background: linear-gradient(135deg, #edf5ff, #e9f0ff); }
+    .status-label { color: #79818d; font-size: 9.5px; line-height: 1; }
+    .status-box.compact .status-label { font-size: 9.5px; }
+    .status-value,
+    .status-box.important .status-value,
+    .status-box.compact .status-value {
+      margin-top: 0;
+      color: #17191d;
+      font-size: 25px;
+      line-height: .9;
+    }
+    .status-box.compact .status-value { color: #2563eb; }
     .count-actions { gap: 6px; padding-top: 8px; }
     .count-btn,
     .complete-btn { height: 34px; border-radius: 12px; font-size: 12px; }
@@ -298,9 +319,11 @@
     .stale-metrics { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
     .stale-actions { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
     .sheet-modal[hidden] { display: none; }
-    .sheet-modal { position: fixed; inset: 0; z-index: 80; display: grid; place-items: end center; padding: 10px; background: rgba(20,23,30,.38); backdrop-filter: blur(10px); }
-    .sheet-panel { width: min(760px, 100%); height: min(95vh, 820px); display: flex; flex-direction: column; border-radius: 26px; background: #fff; box-shadow: 0 24px 70px rgba(20,23,30,.25); overflow: hidden; }
-    .sheet-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 16px 16px 12px; border-bottom: 1px solid #edf0f4; }
+    .sheet-modal { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 14px 10px; background: rgba(20,23,30,.38); backdrop-filter: blur(10px); }
+    .sheet-panel { width: min(760px, 100%); height: min(90vh, 760px); display: flex; flex-direction: column; border-radius: 28px; background: #fff; box-shadow: 0 24px 70px rgba(20,23,30,.25); overflow: hidden; touch-action: pan-y; }
+    .sheet-grabber { display: grid; place-items: center; gap: 5px; padding: 10px 0 2px; color: #a0a6b2; font-size: 10px; line-height: 1; }
+    .sheet-grabber::before { content: ''; width: 42px; height: 5px; border-radius: 999px; background: #d9dde5; }
+    .sheet-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 16px 12px; border-bottom: 1px solid #edf0f4; }
     .sheet-title { min-width: 0; font-size: 18px; line-height: 1.2; font-weight: 600; }
     .sheet-sub { margin-top: 4px; color: #8b92a0; font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .sheet-close { width: 36px; height: 36px; border: 0; border-radius: 13px; background: #f2f4f8; color: #151517; font-size: 20px; font-weight: 600; }
@@ -308,6 +331,7 @@
     .sheet-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; min-height: 58px; padding: 10px 0; border-bottom: 1px solid #f0f2f5; }
     .sheet-row-name { min-width: 0; color: #16181d; font-size: 15px; line-height: 1.25; font-weight: 600; }
     .sheet-row-time { margin-top: 4px; color: #8b92a0; font-size: 11px; font-weight: 500; }
+    .sheet-row-note { margin-top: 5px; color: #687180; font-size: 12px; line-height: 1.25; word-break: keep-all; }
     .sheet-row-qty { min-width: 44px; height: 32px; display: grid; place-items: center; border-radius: 999px; background: #eef4ff; color: #2f5dca; font-size: 14px; font-weight: 600; }
 
     /* Final ops typography and KPI layout pass. */
@@ -344,7 +368,9 @@
     .count-btn,
     .buffer-qty,
     .list-btn strong,
-    .buffer-inline-link strong {
+    .buffer-inline-link strong,
+    .order-count-link strong,
+    .receiving-metric strong {
       font-family: 'TheJamsilOps', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
       font-weight: 500 !important;
       letter-spacing: 0;
@@ -390,6 +416,23 @@
       font-weight: 500;
       white-space: nowrap;
     }
+    .order-count-link {
+      border: 0;
+      background: transparent;
+      padding: 0;
+      color: #8a909c;
+      font-size: 10px;
+      line-height: 1;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .order-count-link strong {
+      margin-left: 2px;
+      color: #353941;
+      font-size: 13px;
+      line-height: 1;
+      font-weight: 500 !important;
+    }
     .buffer-inline-link strong {
       margin-left: 3px;
       color: #6f7682;
@@ -421,6 +464,43 @@
       font-size: 13px;
       line-height: 1;
     }
+    #inboundSummary {
+      display: grid;
+      grid-template-columns: .9fr 1fr .9fr;
+      gap: 7px;
+      margin-bottom: 8px;
+    }
+    .receiving-metric {
+      min-width: 0;
+      min-height: 54px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+      padding: 8px 10px;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 8px 22px rgba(36,42,54,.06);
+    }
+    .receiving-metric span {
+      color: #858c98;
+      font-size: 9.5px;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .receiving-metric strong {
+      min-width: 0;
+      color: #151517;
+      font-family: 'TheJamsilOps', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 22px;
+      line-height: .9;
+      font-weight: 500 !important;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .receiving-metric.done { background: linear-gradient(135deg, #edf5ff, #e9f0ff); }
+    .receiving-metric.done strong { color: #2563eb; }
     .buffer-summary {
       grid-column: 1 / -1;
       display: grid;
@@ -711,7 +791,8 @@
   </div>
 
   <div class="sheet-modal" id="listModal" hidden>
-    <section class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="listModalTitle">
+    <section class="sheet-panel" id="listModalPanel" role="dialog" aria-modal="true" aria-labelledby="listModalTitle">
+      <div class="sheet-grabber">Swipe down to Close</div>
       <div class="sheet-head">
         <div>
           <div class="sheet-title" id="listModalTitle">목록</div>
@@ -757,6 +838,7 @@
       inboundGrid: document.getElementById('inboundGrid'),
       staleList: document.getElementById('staleList'),
       listModal: document.getElementById('listModal'),
+      listModalPanel: document.getElementById('listModalPanel'),
       listModalTitle: document.getElementById('listModalTitle'),
       listModalSub: document.getElementById('listModalSub'),
       listModalBody: document.getElementById('listModalBody'),
@@ -770,6 +852,12 @@
 
     function number(value) {
       return Number(value || 0).toLocaleString('ko-KR');
+    }
+
+    function compactDateLabel(value) {
+      const text = String(value || '').trim();
+      const match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      return match ? `${Number(match[2])}/${Number(match[3])}` : text;
     }
 
     function esc(value) {
@@ -908,6 +996,15 @@
       return `<div class="metric"><div class="metric-label">${esc(label)}</div><div class="metric-value">${esc(value)}</div>${sub ? `<div class="sub-price">${esc(sub)}</div>` : ''}</div>`;
     }
 
+    function renderReceivingMetric(label, value, kind = '') {
+      return `
+        <div class="receiving-metric ${esc(kind)}">
+          <span>${esc(label)}</span>
+          <strong>${esc(value)}</strong>
+        </div>
+      `;
+    }
+
     function syncSalesDateSelection(data) {
       const options = data.salesDateOptions || [];
       const keys = new Set(options.map(option => option.dateKey));
@@ -961,12 +1058,12 @@
               ${storageBadge(item.storageMethod)}
             </div>
             <div class="sales-line">
-              ${renderListButtons(item)}
               <span class="sales-price">판매가 ${money(item.salePrice)}</span>
+              ${renderListButtons(item)}
             </div>
             <div class="sales-sub-line">
               <span>입고수량 <strong>${number(item.inboundQuantity)}</strong></span>
-              <span>공구주문건수 <strong>${number(item.customerOrderQuantity)}</strong></span>
+              <button class="order-count-link" data-action="show-order-list" type="button">공구주문건수 <strong>${number(item.customerOrderQuantity)}</strong></button>
             </div>
           </div>
           ${renderBufferSummary(item)}
@@ -1029,7 +1126,14 @@
       }).format(date);
     }
 
-    function openListModal(id) {
+    function openModal(title, subtitle, bodyHtml) {
+      els.listModalTitle.textContent = title || '목록';
+      els.listModalSub.textContent = subtitle || '';
+      els.listModalBody.innerHTML = bodyHtml || '';
+      els.listModal.hidden = false;
+    }
+
+    function openBufferListModal(id) {
       const item = findItem(id);
       if (!item) return;
 
@@ -1039,9 +1143,7 @@
         time: event.createdAt
       }));
 
-      els.listModalTitle.textContent = '버퍼구매 고객';
-      els.listModalSub.textContent = item.productName || '';
-      els.listModalBody.innerHTML = rows.length
+      openModal('버퍼구매 고객', item.productName || '', rows.length
         ? rows.map(row => `
             <div class="sheet-row">
               <div>
@@ -1051,8 +1153,42 @@
               <div class="sheet-row-qty">${number(row.quantity)}</div>
             </div>
           `).join('')
-        : '<div class="empty">버퍼 차감 기록이 없습니다.</div>';
-      els.listModal.hidden = false;
+        : '<div class="empty">버퍼 차감 기록이 없습니다.</div>');
+    }
+
+    async function openOrderCustomersModal(id) {
+      const item = findItem(id);
+      if (!item) return;
+
+      openModal('공구주문 고객', item.productName || '', '<div class="empty">공구주문 목록을 불러오는 중입니다.</div>');
+
+      try {
+        const url = new URL('/api/ops-order-customers', location.origin);
+        url.searchParams.set('token', state.token);
+        url.searchParams.set('productKey', item.productKey || '');
+        url.searchParams.set('productName', item.productName || '');
+        url.searchParams.set('dateKey', item.inboundDateKey || '');
+
+        const response = await fetch(url);
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.message || '공구주문 목록을 불러오지 못했습니다.');
+
+        const rows = data.customers || [];
+        openModal('공구주문 고객', item.productName || '', rows.length
+          ? rows.map(row => `
+              <div class="sheet-row">
+                <div>
+                  <div class="sheet-row-name">${esc(row.customerLabel || '닉네임 비어있음')}</div>
+                  <div class="sheet-row-time">${esc(row.orderDateText || '')}${row.pickupDateText ? ` · 픽업 ${esc(row.pickupDateText)}` : ''}</div>
+                  ${row.noteText ? `<div class="sheet-row-note">비고 ${esc(row.noteText)}</div>` : ''}
+                </div>
+                <div class="sheet-row-qty">${number(row.quantity)}</div>
+              </div>
+            `).join('')
+          : '<div class="empty">공구주문 고객이 없습니다.</div>');
+      } catch (error) {
+        openModal('공구주문 고객', item.productName || '', `<div class="empty">${esc(error.message || String(error))}</div>`);
+      }
     }
 
     function closeListModal() {
@@ -1069,9 +1205,9 @@
       const completeCount = items.filter(item => item.isReceivingComplete).length;
 
       els.inboundSummary.innerHTML = [
-        renderMetric('입고일', targetDate || '-'),
-        renderMetric('입고수량', `${number(totalInbound)}개`),
-        renderMetric('완료', `${number(completeCount)}/${number(items.length)}`)
+        renderReceivingMetric('입고일', compactDateLabel(targetDate || '-')),
+        renderReceivingMetric('입고수량', number(totalInbound)),
+        renderReceivingMetric('완료', `${number(completeCount)}/${number(items.length)}`, 'done')
       ].join('');
 
       els.inboundGrid.innerHTML = items.length
@@ -1181,8 +1317,8 @@
               ${storageBadge(item.storageMethod)}
             </div>
             <div class="sales-line">
-              ${renderListButtons(item)}
               <span class="sales-price">판매가 ${money(item.salePrice)}</span>
+              ${renderListButtons(item)}
             </div>
             <div class="sales-sub-line">
               <span>입고일 <strong>${esc(item.inboundDateText || item.inboundDateKey)}</strong></span>
@@ -1413,7 +1549,6 @@
 
     function selectCustomerCandidate(candidates, digits) {
       if (!candidates.length) {
-        alert(`${digits} 고객을 최근 3주 주문에서 찾지 못했습니다. 닉네임으로 직접 입력해주세요.`);
         return '';
       }
 
@@ -1437,18 +1572,13 @@
       const raw = (input?.value || '').trim();
 
       if (!raw) {
-        alert('버퍼를 구매한 고객의 핸드폰 뒷 4자리나 닉네임을 입력해주세요.');
-        input?.focus();
-        return '';
+        return `현장차감 ${number(quantity)}개`;
       }
 
       if (/^\d{4}$/.test(raw)) {
         const candidates = await lookupCustomerCandidates(raw);
         const customerLabel = selectCustomerCandidate(candidates, raw);
-        if (!customerLabel) {
-          input?.focus();
-          return '';
-        }
+        if (!customerLabel) return `뒷4자리 ${raw} ${number(quantity)}개`;
 
         if (input) input.value = customerLabel;
         return `${customerLabel} ${number(quantity)}개`;
@@ -1596,7 +1726,12 @@
           if (!item) return;
 
           if (action === 'show-buffer-list') {
-            openListModal(id);
+            openBufferListModal(id);
+            return;
+          }
+
+          if (action === 'show-order-list') {
+            openOrderCustomersModal(id);
             return;
           }
 
@@ -1668,6 +1803,21 @@
     els.listModalClose.addEventListener('click', closeListModal);
     els.listModal.addEventListener('click', event => {
       if (event.target === els.listModal) closeListModal();
+    });
+    let modalSwipeStart = null;
+    els.listModalPanel.addEventListener('pointerdown', event => {
+      if (event.button != null && event.button !== 0) return;
+      modalSwipeStart = { x: event.clientX, y: event.clientY };
+    });
+    els.listModalPanel.addEventListener('pointerup', event => {
+      if (!modalSwipeStart) return;
+      const deltaX = event.clientX - modalSwipeStart.x;
+      const deltaY = event.clientY - modalSwipeStart.y;
+      modalSwipeStart = null;
+      if (deltaY > 86 && Math.abs(deltaX) < 90) closeListModal();
+    });
+    els.listModalPanel.addEventListener('pointercancel', () => {
+      modalSwipeStart = null;
     });
     document.addEventListener('keydown', event => {
       if (event.key === 'Escape' && !els.listModal.hidden) closeListModal();
