@@ -24,6 +24,10 @@
     .panel { display: none; }
     .panel.active { display: block; }
     .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+    .date-strip { display: flex; gap: 8px; overflow-x: auto; padding: 0 0 12px; margin-top: -4px; scrollbar-width: none; }
+    .date-strip::-webkit-scrollbar { display: none; }
+    .date-btn { flex: 0 0 auto; min-width: 92px; height: 44px; border: 1px solid rgba(15, 23, 42, 0.08); border-radius: 8px; background: #fff; color: #344054; font-size: 14px; font-weight: 900; }
+    .date-btn.active { background: #111; color: #fff; border-color: #111; }
     .metric { min-height: 72px; padding: 12px; border-radius: 8px; background: #fff; border: 1px solid rgba(15, 23, 42, 0.06); }
     .metric-label { color: #667085; font-size: 12px; font-weight: 800; }
     .metric-value { margin-top: 7px; font-size: 27px; line-height: 1; font-weight: 900; letter-spacing: 0; }
@@ -98,6 +102,7 @@
     <main class="shell">
       <section class="panel active" id="salesPanel">
         <div class="summary" id="salesSummary"></div>
+        <div class="date-strip" id="salesDateStrip" aria-label="판매 날짜 선택"></div>
         <div class="grid" id="salesGrid"></div>
       </section>
 
@@ -118,6 +123,7 @@
     const state = {
       tab: 'sales',
       dashboard: null,
+      salesDateKey: '',
       token: new URLSearchParams(location.search).get('token') || localStorage.getItem('opsToken') || '03064',
       doubleTap: { id: '', at: 0 },
       busy: false
@@ -133,6 +139,7 @@
       salesPanel: document.getElementById('salesPanel'),
       inboundPanel: document.getElementById('inboundPanel'),
       salesSummary: document.getElementById('salesSummary'),
+      salesDateStrip: document.getElementById('salesDateStrip'),
       inboundSummary: document.getElementById('inboundSummary'),
       salesGrid: document.getElementById('salesGrid'),
       inboundGrid: document.getElementById('inboundGrid'),
@@ -234,7 +241,8 @@
       if (!data) return;
 
       els.subtitle.textContent = `${data.storeName || '만만마켓'} · ${data.todayKey || ''}`;
-      renderSales(data.salesItems || []);
+      syncSalesDateSelection(data);
+      renderSales(data);
       renderInbound(data);
       bindControls();
     }
@@ -243,18 +251,51 @@
       return `<div class="metric"><div class="metric-label">${esc(label)}</div><div class="metric-value">${esc(value)}</div></div>`;
     }
 
-    function renderSales(items) {
+    function syncSalesDateSelection(data) {
+      const options = data.salesDateOptions || [];
+      const keys = new Set(options.map(option => option.dateKey));
+
+      if (!state.salesDateKey || !keys.has(state.salesDateKey)) {
+        state.salesDateKey = data.defaultSalesDateKey || options[0]?.dateKey || '';
+      }
+    }
+
+    function getSelectedSalesItems(data) {
+      const allItems = data.salesAllItems || data.salesItems || [];
+      if (!state.salesDateKey) return data.salesItems || [];
+      return allItems.filter(item => item.inboundDateKey === state.salesDateKey);
+    }
+
+    function renderSalesDateStrip(data) {
+      const options = data.salesDateOptions || [];
+
+      els.salesDateStrip.innerHTML = options.length
+        ? options.map(option => `
+          <button
+            class="date-btn ${option.dateKey === state.salesDateKey ? 'active' : ''}"
+            type="button"
+            data-sales-date="${esc(option.dateKey)}"
+          >${esc(option.label)} · ${number(option.count)}</button>
+        `).join('')
+        : '';
+    }
+
+    function renderSales(data) {
+      const items = getSelectedSalesItems(data);
       const totalBuffer = items.reduce((sum, item) => sum + Number(item.bufferRemainingQuantity || 0), 0);
       const used = items.reduce((sum, item) => sum + Number(item.bufferUsedQuantity || 0), 0);
+      const selectedOption = (data.salesDateOptions || []).find(option => option.dateKey === state.salesDateKey);
+
       els.salesSummary.innerHTML = [
+        renderMetric('판매일', selectedOption?.label || state.salesDateKey || '-'),
         renderMetric('버퍼잔여', `${number(totalBuffer)}개`),
-        renderMetric('버퍼사용', `${number(used)}개`),
         renderMetric('상품', `${number(items.length)}종`)
       ].join('');
+      renderSalesDateStrip(data);
 
       els.salesGrid.innerHTML = items.length
         ? items.map(renderSalesCard).join('')
-        : '<div class="empty">판매 버퍼 상품이 없습니다.</div>';
+        : '<div class="empty">해당 날짜의 입고 상품이 없습니다.</div>';
     }
 
     function renderSalesCard(item) {
@@ -372,6 +413,7 @@
       const data = state.dashboard || {};
       return [
         ...(data.salesItems || []),
+        ...(data.salesAllItems || []),
         ...(data.inboundItems || []),
         ...(data.latestInboundItems || []),
         ...(data.staleItems || [])
@@ -419,6 +461,13 @@
               isComplete: !item.isReceivingComplete
             }, item.isReceivingComplete ? '완료취소' : '입고완료', item.isReceivingComplete ? 'minus' : '');
           }
+        };
+      });
+
+      document.querySelectorAll('[data-sales-date]').forEach(button => {
+        button.onclick = () => {
+          state.salesDateKey = button.dataset.salesDate || '';
+          render();
         };
       });
     }
