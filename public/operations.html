@@ -40,9 +40,9 @@
     .sales-card .thumb-wrap { width: 86px; height: 86px; border-radius: 20px; }
     .thumb { width: 100%; height: 100%; display: block; object-fit: cover; }
     .storage { display: inline-flex; align-items: center; justify-content: center; gap: 5px; height: 24px; padding: 0 9px; border-radius: 999px; color: #fff; font-size: 11px; font-weight: 900; }
-    .storage.cold { background: #2f80d8; }
-    .storage.frozen { background: #5551d6; }
-    .storage.room { background: #d38a18; }
+    .storage.cold { background: linear-gradient(135deg, #20c6d7, #0ea5b7); }
+    .storage.frozen { background: linear-gradient(135deg, #8b7cf6, #5b5ff0); }
+    .storage.room { background: linear-gradient(135deg, #ffb44d, #f97345); }
     .storage svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.4; fill: none; stroke-linecap: round; stroke-linejoin: round; }
     .pack-badge { display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 999px; background: #fff3b5; color: #b77900; font-size: 11px; font-weight: 900; }
     .card-main { min-width: 0; align-self: stretch; display: flex; flex-direction: column; justify-content: center; gap: 9px; }
@@ -103,9 +103,9 @@
     .storage-heading strong { display: inline-flex; align-items: center; gap: 9px; font-size: 20px; font-weight: 900; }
     .storage-heading span { color: #8f939e; font-size: 13px; font-weight: 900; }
     .storage-dot { width: 14px; height: 14px; border-radius: 999px; background: #d38a18; }
-    .storage-dot.cold { background: #2f80d8; }
-    .storage-dot.frozen { background: #5551d6; }
-    .storage-dot.room { background: #d38a18; }
+    .storage-dot.cold { background: #0ea5b7; }
+    .storage-dot.frozen { background: #6d5df5; }
+    .storage-dot.room { background: #f97345; }
     .stale-list { display: grid; gap: 12px; }
     .stale-item { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; gap: 14px; align-items: center; min-height: 100px; padding: 14px; border-radius: 26px; background: #fff; box-shadow: 0 14px 34px rgba(36, 42, 54, 0.07); }
     .stale-item img { width: 72px; height: 72px; object-fit: cover; border-radius: 18px; background: #f4f5f7; }
@@ -242,6 +242,68 @@
     .stale-meta { margin-top: 1px; font-size: 8.5px; font-weight: 700; }
     .stale-qty { min-width: 28px; height: 22px; padding: 0 6px; font-size: 12px; }
     .empty { padding: 18px 12px; border-radius: 18px; font-size: 13px; }
+    #salesSummary { display: none; }
+    .product-card { padding: 12px; border-radius: 22px; gap: 10px; }
+    .thumb-wrap,
+    .sales-card .thumb-wrap { width: 68px; height: 68px; border-radius: 16px; }
+    .sales-card,
+    .inbound-card { grid-template-columns: 68px minmax(0, 1fr); }
+    .sales-card,
+    .inbound-card { min-height: 205px; }
+    .card-main,
+    .inbound-main { gap: 8px; }
+    .card-name,
+    .sales-card .card-name { font-size: 15px; line-height: 1.18; -webkit-line-clamp: 2; }
+    .stock-pill { min-width: 62px; height: 27px; padding: 0 10px; font-size: 12px; }
+    .storage,
+    .pack-badge,
+    .soft-tag { height: 22px; padding: 0 8px; font-size: 10.5px; }
+    .storage svg { width: 12px; height: 12px; }
+    .sales-metrics { gap: 7px; }
+    .sales-metric { padding: 7px 8px; border-radius: 13px; }
+    .sales-metric-label { font-size: 10px; }
+    .sales-metric-value { margin-top: 3px; font-size: 22px; }
+    .sales-quick { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+    .sales-quick-item { min-width: 0; display: flex; align-items: baseline; justify-content: space-between; gap: 6px; min-height: 36px; padding: 6px 8px; border-radius: 13px; background: #f6f7fa; color: #7a808c; font-size: 10px; font-weight: 900; }
+    .sales-quick-item strong { color: #16181d; font-size: 19px; line-height: .95; font-weight: 900; }
+    .sales-quick-item.primary { background: #eef4ff; color: #5570ad; }
+    .sales-quick-item.primary strong { color: #2f5dca; }
+    .buffer-form { grid-template-columns: 56px 34px 48px 26px repeat(2, minmax(40px, 1fr)); gap: 5px; }
+    .buffer-customer,
+    .buffer-qty,
+    .buffer-use-btn { height: 30px; border-radius: 11px; font-size: 10.5px; }
+    .buffer-customer { padding: 0 6px; text-align: center; }
+    .list-btn { height: 30px; border: 0; border-radius: 11px; background: #eef1f6; color: #586071; font-size: 10.5px; font-weight: 900; }
+    .inbound-card { padding-bottom: 12px; }
+    .inbound-card .card-desc { position: static; max-width: 100%; color: #8c919b; font-size: 10px; line-height: 1.12; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: auto; }
+    .status-box { padding: 4px 6px; border-radius: 10px; background: #f6f7fa; }
+    .status-label { font-size: 10px; }
+    .status-box.important .status-value { font-size: 25px; }
+    .status-box.compact .status-value { font-size: 17px; }
+    .count-actions { gap: 6px; padding-top: 8px; }
+    .count-btn,
+    .complete-btn { height: 34px; border-radius: 12px; font-size: 12px; }
+    .stale-title { margin: 22px 2px 8px; font-size: 16px; }
+    .stale-list { display: grid; grid-template-columns: 1fr; gap: 9px; margin-bottom: 0; overflow: visible; }
+    .stale-item { display: grid; flex: initial; grid-template-columns: 58px minmax(0, 1fr) auto; gap: 9px; min-height: 0; padding: 10px; border-radius: 18px; align-items: center; }
+    .stale-item img { display: block; width: 58px; height: 58px; border-radius: 14px; object-fit: cover; background: #f4f5f7; }
+    .stale-name { font-size: 13px; line-height: 1.18; -webkit-line-clamp: 2; }
+    .stale-meta { margin-top: 4px; font-size: 10px; }
+    .stale-qty { min-width: 44px; height: 28px; font-size: 14px; }
+    .stale-metrics { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+    .stale-actions { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .sheet-modal[hidden] { display: none; }
+    .sheet-modal { position: fixed; inset: 0; z-index: 80; display: grid; place-items: end center; padding: 10px; background: rgba(20,23,30,.38); backdrop-filter: blur(10px); }
+    .sheet-panel { width: min(760px, 100%); height: min(95vh, 820px); display: flex; flex-direction: column; border-radius: 26px; background: #fff; box-shadow: 0 24px 70px rgba(20,23,30,.25); overflow: hidden; }
+    .sheet-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 16px 16px 12px; border-bottom: 1px solid #edf0f4; }
+    .sheet-title { min-width: 0; font-size: 18px; line-height: 1.2; font-weight: 900; }
+    .sheet-sub { margin-top: 4px; color: #8b92a0; font-size: 12px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sheet-close { width: 36px; height: 36px; border: 0; border-radius: 13px; background: #f2f4f8; color: #151517; font-size: 20px; font-weight: 900; }
+    .sheet-body { flex: 1; overflow: auto; padding: 10px 14px 18px; }
+    .sheet-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; min-height: 58px; padding: 10px 0; border-bottom: 1px solid #f0f2f5; }
+    .sheet-row-name { min-width: 0; color: #16181d; font-size: 15px; line-height: 1.25; font-weight: 900; }
+    .sheet-row-time { margin-top: 4px; color: #8b92a0; font-size: 11px; font-weight: 700; }
+    .sheet-row-qty { min-width: 44px; height: 32px; display: grid; place-items: center; border-radius: 999px; background: #eef4ff; color: #2f5dca; font-size: 14px; font-weight: 900; }
   </style>
 </head>
 <body>
@@ -271,14 +333,29 @@
 
       <section class="panel" id="inboundPanel">
         <div class="summary" id="inboundSummary"></div>
+        <div class="inbound-sections" id="inboundGrid"></div>
         <h2 class="section-title stale-title">상시전환 D-2</h2>
         <div class="stale-list" id="staleList"></div>
-        <div class="inbound-sections" id="inboundGrid"></div>
       </section>
     </main>
   </div>
 
+  <div class="sheet-modal" id="listModal" hidden>
+    <section class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="listModalTitle">
+      <div class="sheet-head">
+        <div>
+          <div class="sheet-title" id="listModalTitle">목록</div>
+          <div class="sheet-sub" id="listModalSub"></div>
+        </div>
+        <button class="sheet-close" id="listModalClose" type="button" aria-label="닫기">×</button>
+      </div>
+      <div class="sheet-body" id="listModalBody"></div>
+    </section>
+  </div>
+
   <script>
+    const DASHBOARD_CACHE_KEY = 'opsDashboardCache:v3';
+
     const state = {
       tab: 'sales',
       dashboard: null,
@@ -302,7 +379,12 @@
       inboundSummary: document.getElementById('inboundSummary'),
       salesGrid: document.getElementById('salesGrid'),
       inboundGrid: document.getElementById('inboundGrid'),
-      staleList: document.getElementById('staleList')
+      staleList: document.getElementById('staleList'),
+      listModal: document.getElementById('listModal'),
+      listModalTitle: document.getElementById('listModalTitle'),
+      listModalSub: document.getElementById('listModalSub'),
+      listModalBody: document.getElementById('listModalBody'),
+      listModalClose: document.getElementById('listModalClose')
     };
 
     function money(value) {
@@ -374,7 +456,26 @@
       if (!response.ok || !data.ok) throw new Error(data.message || '데이터를 불러오지 못했습니다.');
 
       state.dashboard = data;
+      saveDashboardCache(data);
       render();
+    }
+
+    function saveDashboardCache(data) {
+      try {
+        localStorage.setItem(DASHBOARD_CACHE_KEY, JSON.stringify(data));
+      } catch {
+      }
+    }
+
+    function restoreDashboardCache() {
+      try {
+        const cached = JSON.parse(localStorage.getItem(DASHBOARD_CACHE_KEY) || 'null');
+        if (!cached?.ok) return;
+
+        state.dashboard = cached;
+        render();
+      } catch {
+      }
     }
 
     function flashButton(button, text, kind = '') {
@@ -453,20 +554,7 @@
 
     function renderSales(data) {
       const items = getSelectedSalesItems(data);
-      const totalInbound = items.reduce((sum, item) => sum + Number(item.inboundQuantity || 0), 0);
-      const totalRemaining = items.reduce((sum, item) => sum + Number(item.physicalRemainingQuantity ?? item.remainingQuantity ?? 0), 0);
-      const totalInitialBuffer = items.reduce((sum, item) => sum + Number(item.initialBufferQuantity || 0), 0);
-      const totalBufferRemaining = items.reduce((sum, item) => sum + Number(item.bufferRemainingQuantity || 0), 0);
-      const totalOrders = items.reduce((sum, item) => sum + Number(item.customerOrderQuantity || 0), 0);
-      const totalPickupCompleted = items.reduce((sum, item) => sum + Number(item.pickupCompletedQuantity || 0), 0);
-      const totalOrderRemaining = items.reduce((sum, item) => sum + Number(item.customerOrderRemainingQuantity || 0), 0);
-      const selectedOption = (data.salesDateOptions || []).find(option => option.dateKey === state.salesDateKey);
-
-      els.salesSummary.innerHTML = [
-        renderMetric('총잔여', `${number(totalRemaining)}개`, `입고 ${number(totalInbound)}개`),
-        renderMetric('버퍼잔여', `${number(totalBufferRemaining)}개`, `총버퍼 ${number(totalInitialBuffer)}개`),
-        renderMetric('공구잔여', `${number(totalOrderRemaining)}개`, `주문 ${number(totalOrders)} · 픽업 ${number(totalPickupCompleted)}`)
-      ].join('');
+      els.salesSummary.innerHTML = '';
       renderSalesDateStrip(data);
 
       els.salesGrid.innerHTML = items.length
@@ -480,20 +568,8 @@
         .map(event => `<span>${esc(event.actorMemo || '메모없음')}</span>`)
         .join('');
       const bufferQuantity = Number(item.bufferRemainingQuantity || 0);
-      const totalBuffer = Number(item.initialBufferQuantity || 0);
-      const orderQuantity = Number(item.customerOrderQuantity || 0);
-      const pickupCompletedQuantity = Number(item.pickupCompletedQuantity || 0);
       const orderRemaining = Number(item.customerOrderRemainingQuantity || 0);
       const physicalRemaining = Number(item.physicalRemainingQuantity ?? item.remainingQuantity ?? 0);
-      const completedCustomers = item.pickupCompletedCustomers || [];
-      const completedHtml = completedCustomers.length ? `
-          <div class="pickup-list">
-            <div class="pickup-title">픽업완료 고객</div>
-            <div class="pickup-chips">
-              ${renderCustomerChips(completedCustomers)}
-            </div>
-          </div>
-        ` : '';
 
       return `
         <article class="product-card sales-card" data-id="${esc(item.id)}">
@@ -514,32 +590,36 @@
               <div class="price">공급가 ${money(item.supplyPrice)} · 판매가 ${money(item.salePrice)}</div>
             </div>
           </div>
-          <div class="sales-metrics">
-            <div class="sales-metric primary">
-              <div class="sales-metric-label">총잔여</div>
-              <div class="sales-metric-value">${number(physicalRemaining)}</div>
-              <div class="sales-metric-sub">입고 ${number(item.inboundQuantity)}</div>
+          <div class="sales-quick">
+            <div class="sales-quick-item">
+              <span>입고</span>
+              <strong>${number(item.inboundQuantity)}</strong>
             </div>
-            <div class="sales-metric">
-              <div class="sales-metric-label">버퍼잔여</div>
-              <div class="sales-metric-value">${number(bufferQuantity)}</div>
-              <div class="sales-metric-sub">총버퍼 ${number(totalBuffer)}</div>
+            <div class="sales-quick-item primary">
+              <span>버퍼</span>
+              <strong>${number(bufferQuantity)}</strong>
             </div>
-            <div class="sales-metric">
-              <div class="sales-metric-label">공구잔여</div>
-              <div class="sales-metric-value">${number(orderRemaining)}</div>
-              <div class="sales-metric-sub">주문 ${number(orderQuantity)} · 픽업 ${number(pickupCompletedQuantity)}</div>
+            <div class="sales-quick-item">
+              <span>대기</span>
+              <strong>${number(orderRemaining)}</strong>
             </div>
           </div>
-          ${completedHtml}
           <div class="buffer-form">
-            <input class="buffer-customer" data-buffer-customer="${esc(item.id)}" placeholder="끝4자리" inputmode="numeric" autocomplete="off">
+            <input class="buffer-customer" data-buffer-customer="${esc(item.id)}" placeholder="끝4" inputmode="numeric" autocomplete="off">
             <input class="buffer-qty" data-buffer-qty="${esc(item.id)}" type="number" min="1" step="1" value="1" aria-label="버퍼수량">
             <button class="buffer-use-btn" data-action="buffer-use" ${bufferQuantity <= 0 ? 'disabled' : ''}>차감</button>
             <button class="plus-btn" data-action="buffer-plus" aria-label="버퍼 추가">+</button>
+            ${renderListButtons(item)}
             <div class="history">${history}</div>
           </div>
         </article>
+      `;
+    }
+
+    function renderListButtons(item) {
+      return `
+        <button class="list-btn" data-action="show-buffer-list" type="button">버퍼 ${number(getBufferUseEvents(item).length)}</button>
+        <button class="list-btn" data-action="show-pickup-list" type="button">픽업 ${number((item.pickupCompletedCustomers || []).length)}</button>
       `;
     }
 
@@ -555,6 +635,60 @@
       return hiddenCount
         ? `${visible}<span class="pickup-chip is-empty">외 ${number(hiddenCount)}명</span>`
         : visible;
+    }
+
+    function getBufferUseEvents(item) {
+      return (item.bufferHistory || [])
+        .filter(event => Number(event.deltaQuantity || 0) < 0);
+    }
+
+    function formatDateTime(value) {
+      if (!value) return '';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '';
+      return new Intl.DateTimeFormat('ko-KR', {
+        month: 'numeric',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).format(date);
+    }
+
+    function openListModal(id, type) {
+      const item = findItem(id);
+      if (!item) return;
+
+      const isBuffer = type === 'buffer';
+      const rows = isBuffer
+        ? getBufferUseEvents(item).map(event => ({
+            name: event.actorMemo || '메모없음',
+            quantity: Math.abs(Number(event.deltaQuantity || 0)),
+            time: event.createdAt
+          }))
+        : (item.pickupCompletedCustomers || []).map(customer => ({
+            name: customer.customerLabel || '고객',
+            quantity: Number(customer.quantity || 0),
+            time: customer.lastCompletedAt
+          }));
+
+      els.listModalTitle.textContent = isBuffer ? '버퍼 가져간 사람' : '픽업완료 고객';
+      els.listModalSub.textContent = item.productName || '';
+      els.listModalBody.innerHTML = rows.length
+        ? rows.map(row => `
+            <div class="sheet-row">
+              <div>
+                <div class="sheet-row-name">${esc(row.name)}</div>
+                <div class="sheet-row-time">${esc(formatDateTime(row.time) || '시간 없음')}</div>
+              </div>
+              <div class="sheet-row-qty">${number(row.quantity)}</div>
+            </div>
+          `).join('')
+        : `<div class="empty">${isBuffer ? '버퍼 차감 기록이 없습니다.' : '픽업완료 고객이 없습니다.'}</div>`;
+      els.listModal.hidden = false;
+    }
+
+    function closeListModal() {
+      els.listModal.hidden = true;
     }
 
     function renderInbound(data) {
@@ -668,15 +802,35 @@
     }
 
     function renderStaleItem(item) {
+      const bufferQuantity = Number(item.bufferRemainingQuantity || 0);
+      const orderRemaining = Number(item.customerOrderRemainingQuantity || 0);
+      const physicalRemaining = Number(item.physicalRemainingQuantity ?? item.remainingQuantity ?? 0);
       return `
-        <div class="stale-item">
+        <article class="stale-item" data-id="${esc(item.id)}">
           <img src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy">
           <div>
             <div class="stale-name">${esc(item.productName)}</div>
             <div class="stale-meta">${esc(item.sourceSheetName)} · ${esc(item.inboundDateText)} · ${esc(item.storageMethod)}</div>
           </div>
-          <div class="stale-qty">${number(item.inboundQuantity)}</div>
-        </div>
+          <div class="stale-qty">잔여 ${number(physicalRemaining)}</div>
+          <div class="stale-metrics">
+            <div class="sales-metric primary">
+              <div class="sales-metric-label">총잔여</div>
+              <div class="sales-metric-value">${number(physicalRemaining)}</div>
+            </div>
+            <div class="sales-metric">
+              <div class="sales-metric-label">버퍼잔여</div>
+              <div class="sales-metric-value">${number(bufferQuantity)}</div>
+            </div>
+            <div class="sales-metric">
+              <div class="sales-metric-label">공구잔여</div>
+              <div class="sales-metric-value">${number(orderRemaining)}</div>
+            </div>
+          </div>
+          <div class="stale-actions">
+            ${renderListButtons(item)}
+          </div>
+        </article>
       `;
     }
 
@@ -744,14 +898,14 @@
 
     function selectCustomerCandidate(candidates, digits) {
       if (!candidates.length) {
-        alert(`${digits} 고객을 찾지 못했습니다. 닉네임으로 직접 입력해주세요.`);
+        alert(`${digits} 고객을 최근 3주 주문에서 찾지 못했습니다. 닉네임으로 직접 입력해주세요.`);
         return '';
       }
 
       if (candidates.length === 1) return candidates[0].customerLabel;
 
       const message = [
-        `${digits} 고객이 여러 명입니다. 번호를 입력해주세요.`,
+        `${digits} 고객이 최근 3주 주문에서 여러 명입니다. 번호를 입력해주세요.`,
         ...candidates.slice(0, 8).map((candidate, index) =>
           `${index + 1}. ${candidate.customerLabel} (${number(candidate.orderCount)}건)`
         )
@@ -926,6 +1080,11 @@
           const action = button.dataset.action;
           if (!item) return;
 
+          if (action === 'show-buffer-list' || action === 'show-pickup-list') {
+            openListModal(id, action === 'show-buffer-list' ? 'buffer' : 'pickup');
+            return;
+          }
+
           if (action === 'buffer-use') {
             const quantity = readBufferQuantity(card, id);
             button.disabled = true;
@@ -983,9 +1142,21 @@
     els.salesTab.addEventListener('click', () => setTab('sales'));
     els.inboundTab.addEventListener('click', () => setTab('inbound'));
     els.refreshBtn.addEventListener('click', () => loadDashboard({ refresh: true }).catch(error => alert(error.message)));
+    els.listModalClose.addEventListener('click', closeListModal);
+    els.listModal.addEventListener('click', event => {
+      if (event.target === els.listModal) closeListModal();
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && !els.listModal.hidden) closeListModal();
+    });
 
+    restoreDashboardCache();
     loadDashboard().catch(error => {
-      els.salesGrid.innerHTML = `<div class="empty">${esc(error.message)}</div>`;
+      if (!state.dashboard) {
+        els.salesGrid.innerHTML = `<div class="empty">${esc(error.message)}</div>`;
+      } else {
+        console.warn(error);
+      }
     });
   </script>
 </body>

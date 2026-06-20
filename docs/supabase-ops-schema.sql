@@ -1,5 +1,16 @@
 create extension if not exists pgcrypto;
 
+do $$
+begin
+  if to_regclass('public.order_cache') is not null then
+    create index if not exists order_cache_store_pickup_date_idx
+      on public.order_cache(store_name, pickup_date_value);
+
+    create index if not exists order_cache_store_digits_order_date_idx
+      on public.order_cache(store_name, customer_digits4, order_date_value desc);
+  end if;
+end $$;
+
 create table if not exists public.operations_settlement_files (
   drive_file_id text primary key,
   store_name text not null,
