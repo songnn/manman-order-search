@@ -10,6 +10,11 @@
       "destination": "/index.html"
     }
   ],
+  "functions": {
+    "api/search-orders.js": {
+      "regions": ["icn1"]
+    }
+  },
   "crons": [
     {
       "path": "/api/sync-orders",
