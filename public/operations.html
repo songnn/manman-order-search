@@ -42,6 +42,7 @@
     .storage.cold { background: #1680db; }
     .storage.frozen { background: #5452d8; }
     .storage.room { background: #c77800; }
+    .pack-badge { position: absolute; right: 8px; top: 8px; z-index: 2; display: inline-flex; align-items: center; height: 25px; padding: 0 8px; border-radius: 999px; background: #fff200; color: #111; font-size: 11px; font-weight: 900; box-shadow: 0 8px 18px rgba(0,0,0,.18); }
     .card-overlay { position: absolute; left: 0; right: 0; top: 38px; z-index: 2; padding: 0 9px; color: #fff; }
     .card-name { font-size: 13px; line-height: 1.18; font-weight: 900; word-break: keep-all; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-shadow: 0 2px 9px rgba(0,0,0,.52); }
     .overlay-row { display: flex; align-items: end; justify-content: space-between; gap: 6px; margin-top: 6px; }
@@ -50,6 +51,7 @@
     .overlay-num { font-size: 31px; line-height: .88; font-weight: 900; letter-spacing: 0; color: #fff; text-shadow: 0 4px 12px rgba(0,0,0,.38); }
     .overlay-mini { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 3px; max-width: 64%; }
     .overlay-chip { display: inline-flex; align-items: center; height: 19px; padding: 0 6px; border-radius: 999px; background: rgba(255,255,255,.9); color: #111; font-size: 9px; font-weight: 900; }
+    .counted-badge { display: inline-flex; align-items: center; align-self: flex-start; height: 22px; margin-top: 5px; padding: 0 7px; border-radius: 999px; background: rgba(8,160,92,.95); color: #fff; font-size: 10px; font-weight: 900; box-shadow: 0 8px 18px rgba(0,0,0,.18); }
     .body { position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 3; padding: 0; }
     .name { display: none; }
     .mini { display: none; flex-wrap: wrap; gap: 5px; margin-top: 0; }
@@ -74,6 +76,14 @@
     .complete-btn { grid-column: span 4; height: 34px; border: 0; border-radius: 8px; background: #08a05c; color: #fff; font-size: 13px; font-weight: 900; }
     .complete-btn.done { background: #344054; }
     .section-title { margin: 24px 2px 10px; font-size: 20px; line-height: 1.2; font-weight: 900; }
+    .inbound-sections { display: grid; gap: 18px; }
+    .storage-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 2px 0 9px; }
+    .storage-heading strong { display: inline-flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 900; }
+    .storage-heading span { color: #667085; font-size: 13px; font-weight: 900; }
+    .storage-dot { width: 13px; height: 13px; border-radius: 999px; background: #c77800; }
+    .storage-dot.cold { background: #1680db; }
+    .storage-dot.frozen { background: #5452d8; }
+    .storage-dot.room { background: #c77800; }
     .stale-list { display: grid; gap: 8px; }
     .stale-item { display: grid; grid-template-columns: 54px 1fr auto; gap: 10px; align-items: center; min-height: 70px; padding: 8px; border-radius: 8px; background: #fff; border: 1px solid rgba(15, 23, 42, 0.07); }
     .stale-item img { width: 54px; height: 54px; object-fit: cover; border-radius: 6px; background: #edf0f3; }
@@ -86,10 +96,15 @@
     .burst.minus { background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.98) 0 18%, rgba(231,64,57,.95) 19% 42%, rgba(17,17,17,.98) 43% 100%); }
     .burst.plus { background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.98) 0 18%, rgba(22,128,219,.95) 19% 42%, rgba(17,17,17,.98) 43% 100%); }
     .burst-text { color: #fff; font-size: clamp(46px, 13vw, 132px); font-weight: 900; letter-spacing: 0; text-shadow: 0 10px 24px rgba(0,0,0,.25); }
+    .tap-pop { position: fixed; z-index: 120; display: grid; place-items: center; width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 999px; background: rgba(8,160,92,.95); color: #fff; font-size: 18px; font-weight: 900; pointer-events: none; box-shadow: 0 14px 34px rgba(0,0,0,.22); animation: tapPop 520ms cubic-bezier(.18,.86,.28,1) both; }
+    .tap-pop.minus { background: rgba(231,64,57,.95); }
+    .count-btn.tap-hit { animation: localTap 220ms cubic-bezier(.18,.86,.28,1) both; }
     @keyframes burst { 0% { opacity: 0; clip-path: circle(0% at 50% 50%); transform: scale(1.1); } 18% { opacity: 1; clip-path: circle(70% at 50% 50%); transform: scale(1); } 72% { opacity: 1; clip-path: circle(120% at 50% 50%); } 100% { opacity: 0; clip-path: circle(120% at 50% 50%); transform: scale(.98); } }
+    @keyframes tapPop { 0% { opacity: 0; transform: scale(.55); } 22% { opacity: 1; transform: scale(1.06); } 100% { opacity: 0; transform: translateY(-28px) scale(.86); } }
+    @keyframes localTap { 0% { transform: scale(1); } 50% { transform: scale(.92); box-shadow: 0 0 0 8px rgba(8,160,92,.22); } 100% { transform: scale(1); } }
     @media (max-width: 900px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
     @media (max-width: 640px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    @media (max-width: 520px) { .app { padding-left: 10px; padding-right: 10px; } .grid { gap: 8px; } .summary { grid-template-columns: repeat(3, minmax(0, 1fr)); } .metric { min-height: 62px; padding: 9px; } .metric-value { font-size: 21px; } .storage { left: 7px; top: 7px; height: 22px; padding: 0 7px; font-size: 10px; } .card-overlay { top: 34px; padding: 0 8px; } .card-name { font-size: 12px; } .overlay-row { margin-top: 4px; } .overlay-num { font-size: 27px; } .overlay-mini { display: none; } .body { left: 7px; right: 7px; bottom: 7px; } .minus-btn, .plus-btn { height: 34px; } .memo { height: 28px; font-size: 11px; } .history { display: none; } .count-btn { height: 28px; font-size: 11px; } .complete-btn { height: 31px; font-size: 12px; } }
+    @media (max-width: 520px) { .app { padding-left: 10px; padding-right: 10px; } .grid { gap: 8px; } .summary { grid-template-columns: repeat(3, minmax(0, 1fr)); } .metric { min-height: 62px; padding: 9px; } .metric-value { font-size: 21px; } .storage, .pack-badge { top: 7px; height: 22px; padding: 0 7px; font-size: 10px; } .storage { left: 7px; } .pack-badge { right: 7px; } .card-overlay { top: 34px; padding: 0 8px; } .card-name { font-size: 12px; } .overlay-row { margin-top: 4px; } .overlay-num { font-size: 27px; } .overlay-mini { display: none; } .inbound-card .overlay-mini { display: flex; max-width: 70%; } .inbound-card .overlay-chip { height: 17px; padding: 0 5px; font-size: 8px; } .counted-badge { height: 20px; font-size: 9px; } .body { left: 7px; right: 7px; bottom: 7px; } .minus-btn, .plus-btn { height: 34px; } .memo { height: 28px; font-size: 11px; } .history { display: none; } .count-btn { height: 28px; font-size: 11px; } .complete-btn { height: 31px; font-size: 12px; } }
   </style>
 </head>
 <body>
@@ -119,7 +134,7 @@
 
       <section class="panel" id="inboundPanel">
         <div class="summary" id="inboundSummary"></div>
-        <div class="grid" id="inboundGrid"></div>
+        <div class="inbound-sections" id="inboundGrid"></div>
         <h2 class="section-title">상시전환 D-2</h2>
         <div class="stale-list" id="staleList"></div>
       </section>
@@ -164,6 +179,11 @@
       return n > 0 ? `${n.toLocaleString('ko-KR')}원` : '-';
     }
 
+    function compactMoney(value) {
+      const n = Number(value || 0);
+      return n > 0 ? n.toLocaleString('ko-KR') : '-';
+    }
+
     function number(value) {
       return Number(value || 0).toLocaleString('ko-KR');
     }
@@ -191,6 +211,15 @@
 
     function imageUrl(item) {
       return item.imageUrl || 'https://picsum.photos/seed/manman-ops/800/800';
+    }
+
+    function packageUnitLabel(item) {
+      const unit = String(item.packageUnit || '').trim();
+      if (!unit) return '';
+
+      const normalized = unit.replace(/\s+/g, '').toLowerCase();
+      if (/^1(?:\.0+)?(?:개|ea)?$/.test(normalized)) return '';
+      return unit;
     }
 
     async function loadDashboard(options = {}) {
@@ -237,6 +266,25 @@
       void els.burst.offsetWidth;
       els.burst.classList.add('show');
       setTimeout(() => els.burst.classList.remove('show'), 680);
+    }
+
+    function flashButton(button, text, kind = '') {
+      if (!button) return;
+
+      const rect = button.getBoundingClientRect();
+      const pop = document.createElement('span');
+      pop.className = `tap-pop ${kind}`;
+      pop.textContent = text;
+      pop.style.left = `${rect.left + rect.width / 2}px`;
+      pop.style.top = `${rect.top + rect.height / 2}px`;
+      document.body.appendChild(pop);
+
+      button.classList.remove('tap-hit');
+      void button.offsetWidth;
+      button.classList.add('tap-hit');
+
+      setTimeout(() => pop.remove(), 560);
+      setTimeout(() => button.classList.remove('tap-hit'), 240);
     }
 
     function setTab(tab) {
@@ -375,7 +423,7 @@
       ].join('');
 
       els.inboundGrid.innerHTML = items.length
-        ? items.map(renderInboundCard).join('')
+        ? renderInboundStorageSections(items)
         : '<div class="empty">입고 상품이 없습니다.</div>';
 
       els.staleList.innerHTML = (data.staleItems || []).length
@@ -383,23 +431,63 @@
         : '<div class="empty">상시전환 대상이 없습니다.</div>';
     }
 
+    function renderInboundStorageSections(items) {
+      return groupByStorage(items).map(group => `
+        <section class="inbound-section">
+          <div class="storage-heading">
+            <strong><i class="storage-dot ${storageClass(group.storage)}"></i>${esc(group.storage)}</strong>
+            <span>${number(group.items.length)}종 · ${number(group.totalQuantity)}개</span>
+          </div>
+          <div class="grid">
+            ${group.items.map(renderInboundCard).join('')}
+          </div>
+        </section>
+      `).join('');
+    }
+
+    function groupByStorage(items) {
+      const order = ['냉장', '상온', '냉동'];
+      const grouped = new Map();
+
+      items.forEach(item => {
+        const storage = item.storageMethod || '상온';
+        if (!grouped.has(storage)) grouped.set(storage, []);
+        grouped.get(storage).push(item);
+      });
+
+      return [...order, ...Array.from(grouped.keys()).filter(key => !order.includes(key))]
+        .filter(storage => grouped.has(storage))
+        .map(storage => {
+          const groupItems = grouped.get(storage) || [];
+          return {
+            storage,
+            items: groupItems,
+            totalQuantity: groupItems.reduce((sum, item) => sum + Number(item.inboundQuantity || 0), 0)
+          };
+        });
+    }
+
     function renderInboundCard(item) {
+      const packageUnit = packageUnitLabel(item);
+
       return `
-        <article class="product-card ${item.isReceivingComplete ? 'done' : ''}" data-id="${esc(item.id)}" data-receive-card="1">
+        <article class="product-card inbound-card ${item.isReceivingComplete ? 'done' : ''}" data-id="${esc(item.id)}" data-receive-card="1">
           <div class="thumb-wrap">
             <img class="thumb" src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy">
             <span class="storage ${storageClass(item.storageMethod)}">${storageIcon(item.storageMethod)} · ${esc(item.storageMethod)}</span>
+            ${packageUnit ? `<span class="pack-badge">포장 ${esc(packageUnit)}</span>` : ''}
             <div class="card-overlay">
               <div class="card-name">${esc(item.productName)}</div>
               <div class="overlay-row">
                 <div class="overlay-stat">
                   <span class="overlay-label">입고수량</span>
                   <span class="overlay-num">${number(item.inboundQuantity)}</span>
+                  <span class="counted-badge" data-counted-id="${esc(item.id)}">카운팅 ${number(item.countedQuantity)}</span>
                 </div>
                 <div class="overlay-mini">
-                  <span class="overlay-chip">카운팅 ${number(item.countedQuantity)}</span>
-                  <span class="overlay-chip">우리 ${number(item.ourBufferQuantity)}</span>
+                  <span class="overlay-chip">공급 ${compactMoney(item.supplyPrice)}</span>
                   <span class="overlay-chip">본사 ${number(item.hqBufferQuantity)}</span>
+                  <span class="overlay-chip">우리 ${number(item.ourBufferQuantity)}</span>
                 </div>
               </div>
             </div>
@@ -423,9 +511,9 @@
             </div>
             <div class="count-actions">
               <button class="count-btn" data-action="count-10">+10</button>
+              <button class="count-btn" data-action="count-5">+5</button>
               <button class="count-btn" data-action="count-1">+1</button>
               <button class="count-btn" data-action="count-minus">−1</button>
-              <button class="count-btn" data-action="count-direct">직접</button>
               <button class="complete-btn ${item.isReceivingComplete ? 'done' : ''}" data-action="receive-complete">${item.isReceivingComplete ? '입고완료' : '수량체크완료'}</button>
             </div>
           </div>
@@ -457,6 +545,62 @@
       ].find(item => item.id === id);
     }
 
+    function updateItem(id, update) {
+      const data = state.dashboard || {};
+      const groups = [
+        data.salesItems,
+        data.salesAllItems,
+        data.inboundItems,
+        data.latestInboundItems,
+        data.staleItems
+      ];
+
+      groups.forEach(items => {
+        (items || []).forEach(item => {
+          if (item.id === id) update(item);
+        });
+      });
+    }
+
+    function runReceivingCount(button, id, requestedQuantity) {
+      const item = findItem(id);
+      if (!item) return;
+
+      const current = Number(item.countedQuantity || 0);
+      let quantity = Number(requestedQuantity || 0);
+      if (current + quantity < 0) quantity = -current;
+      if (!quantity) return;
+
+      flashButton(button, quantity > 0 ? `+${quantity}` : `${quantity}`, quantity > 0 ? '' : 'minus');
+      updateItem(id, target => {
+        target.countedQuantity = Math.max(0, Number(target.countedQuantity || 0) + quantity);
+      });
+      render();
+
+      const url = new URL('/api/buffer-action', location.origin);
+      url.searchParams.set('token', state.token);
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'receive_count',
+          inventoryStableId: id,
+          countedQuantity: quantity
+        })
+      })
+        .then(async response => {
+          const data = await response.json();
+          if (!response.ok || !data.ok) throw new Error(data.message || '저장하지 못했습니다.');
+        })
+        .catch(error => {
+          updateItem(id, target => {
+            target.countedQuantity = Math.max(0, Number(target.countedQuantity || 0) - quantity);
+          });
+          render();
+          alert(error.message || String(error));
+        });
+    }
+
     function bindControls() {
       document.querySelectorAll('[data-action]').forEach(button => {
         button.onclick = event => {
@@ -478,17 +622,9 @@
             }, delta < 0 ? '버퍼 -1' : '버퍼 +1', delta < 0 ? 'minus' : 'plus');
           }
 
-          if (action === 'count-10' || action === 'count-1' || action === 'count-minus' || action === 'count-direct') {
-            let qty = action === 'count-10' ? 10 : action === 'count-1' ? 1 : -1;
-            if (action === 'count-direct') {
-              qty = Number(prompt('카운팅 수량', '10') || 0);
-            }
-            if (!qty) return;
-            runAction({
-              action: 'receive_count',
-              inventoryStableId: id,
-              countedQuantity: qty
-            }, qty > 0 ? `+${qty}` : `${qty}`, qty > 0 ? 'plus' : 'minus');
+          if (action === 'count-10' || action === 'count-5' || action === 'count-1' || action === 'count-minus') {
+            const qty = action === 'count-10' ? 10 : action === 'count-5' ? 5 : action === 'count-1' ? 1 : -1;
+            runReceivingCount(button, id, qty);
           }
 
           if (action === 'receive-complete') {
