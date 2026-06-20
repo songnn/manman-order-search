@@ -1669,3 +1669,596 @@ button {
     padding: 18px;
   }
 }
+
+/* Modern admin refresh: dense, neutral, shadcn-style operational dashboard. */
+:root {
+  --brand: #2563eb;
+  --brand-pressed: #1d4ed8;
+  --brand-soft: #eff6ff;
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --line-strong: #cbd5e1;
+  --success: #059669;
+  --danger: #e11d48;
+  --warning: #d97706;
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --soft-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+body {
+  background:
+    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  font-size: 14px;
+}
+
+.admin-shell * {
+  letter-spacing: 0;
+}
+
+.admin-shell :is(h1, h2, h3, strong, b, .sidebar-brand, .brand-mark, button, .kpi-card strong, .ranking-value) {
+  font-weight: 600;
+}
+
+.admin-shell :is(p, span, small, em, td, input, select, .ranking-meta span, .panel-note) {
+  font-weight: 400;
+}
+
+.admin-shell {
+  grid-template-columns: 224px minmax(0, 1fr);
+  background: transparent;
+}
+
+.sidebar {
+  padding: 14px 12px;
+  border-right-color: rgba(148, 163, 184, 0.26);
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(18px);
+}
+
+.sidebar-brand {
+  gap: 9px;
+  padding: 8px 8px 16px;
+  font-size: 15px;
+}
+
+.brand-mark {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: #0f172a;
+  font-size: 13px;
+}
+
+.sidebar-nav {
+  gap: 3px;
+}
+
+.sidebar-nav a {
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: #64748b;
+  font-size: 12.5px;
+}
+
+.sidebar-nav a:hover,
+.sidebar-nav a.is-active {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.sidebar-nav a.is-active {
+  box-shadow: inset 3px 0 0 #2563eb;
+}
+
+.dashboard {
+  max-width: 1540px;
+  padding: 20px 24px 48px;
+}
+
+.topbar {
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.eyebrow {
+  margin-bottom: 3px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 500 !important;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.topbar h1 {
+  font-size: clamp(22px, 2vw, 30px);
+  line-height: 1.12;
+}
+
+.topbar-actions {
+  gap: 6px;
+}
+
+.ghost-button,
+.mode-tabs button,
+.chip-button,
+.segmented button,
+.advanced-range-form button,
+.customer-search-form button,
+.ally-form button[type="submit"] {
+  min-height: 34px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  box-shadow: none;
+}
+
+.ghost-button {
+  padding: 0 11px;
+  background: rgba(255, 255, 255, 0.84);
+}
+
+.ghost-button:hover {
+  background: #fff;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.07);
+}
+
+.filter-card {
+  position: sticky;
+  top: 10px;
+  z-index: 5;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 10px;
+  padding: 10px;
+  border-color: rgba(148, 163, 184, 0.28);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.07);
+  backdrop-filter: blur(16px);
+}
+
+.field {
+  gap: 5px;
+}
+
+.field span,
+.kpi-head,
+.analysis-period-card span,
+.growth-period-grid span,
+.growth-kpi span,
+.driver-card span,
+.frequency-metric span,
+.movement-metric span,
+.lifecycle-card span,
+.kakao-metric span {
+  color: #64748b;
+  font-size: 11.5px;
+  font-weight: 500 !important;
+}
+
+.field input,
+.field select,
+.field.compact input,
+.field.compact select {
+  min-height: 34px;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13px;
+}
+
+.mode-tabs,
+.chip-row,
+.segmented {
+  gap: 6px;
+}
+
+.mode-tabs button,
+.chip-button,
+.segmented button {
+  padding: 0 11px;
+  border-color: #e2e8f0;
+  background: #fff;
+  color: #475569;
+}
+
+.mode-tabs button.is-active,
+.chip-button.is-active,
+.segmented button.is-active {
+  border-color: #0f172a;
+  background: #0f172a;
+  color: #fff;
+  box-shadow: none;
+}
+
+.quick-panel,
+.advanced-range,
+.analysis-period-card,
+.kpi-card,
+.panel,
+.kakao-insight-card,
+.kakao-order-hour-card,
+.kakao-user-search-card,
+.kakao-funnel-item,
+.growth-period-grid div,
+.growth-kpi,
+.driver-card,
+.frequency-metric,
+.movement-metric,
+.lifecycle-card,
+.kakao-metric,
+.kakao-upload,
+.customer-table-wrap {
+  border-color: rgba(148, 163, 184, 0.28);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: var(--soft-shadow);
+}
+
+.quick-panel,
+.advanced-range {
+  margin-top: 10px;
+  padding: 12px;
+}
+
+.quick-panel-head {
+  margin-bottom: 10px;
+}
+
+.quick-panel h2,
+.panel h2 {
+  font-size: 17px;
+}
+
+.advanced-range summary {
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.advanced-range-form,
+.customer-search-form {
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.analysis-period-card {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: #fff;
+}
+
+.analysis-period-card strong {
+  font-size: 14px;
+}
+
+.status-line {
+  min-height: 20px;
+  margin: 10px 0 8px;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.loading-panel {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.loading-track {
+  height: 6px;
+}
+
+.loading-track span {
+  background: linear-gradient(90deg, #0f172a, #2563eb, #10b981);
+}
+
+.kpi-grid {
+  grid-template-columns: repeat(5, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.kpi-card {
+  min-height: 132px;
+  padding: 14px;
+}
+
+.kpi-card strong {
+  margin-top: 9px;
+  color: #0f172a;
+  font-family:
+    Pretendard,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  font-size: clamp(24px, 2.4vw, 32px);
+}
+
+.kpi-card p {
+  margin: 6px 0 9px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.sparkline,
+.sparkline svg {
+  height: 28px;
+}
+
+.growth-section {
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.growth-summary-panel {
+  background: #fff;
+}
+
+.panel {
+  padding: 16px;
+}
+
+.panel-head {
+  margin-bottom: 12px;
+}
+
+.basis-pill {
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 11.5px;
+}
+
+.growth-period-grid,
+.growth-kpi-grid,
+.growth-driver-grid,
+.growth-chart-grid,
+.frequency-metrics,
+.movement-metrics,
+.lifecycle-grid,
+.kakao-summary,
+.kakao-insight-grid,
+.kakao-funnel-list,
+.leave-bucket-list,
+.kakao-hour-list,
+.chart-grid,
+.ranking-grid {
+  gap: 10px;
+}
+
+.growth-period-grid {
+  margin-bottom: 10px;
+}
+
+.growth-period-grid div,
+.growth-kpi,
+.driver-card,
+.frequency-metric,
+.movement-metric,
+.kakao-metric {
+  padding: 11px;
+}
+
+.growth-kpi {
+  min-height: 116px;
+}
+
+.growth-period-grid strong,
+.frequency-metric strong,
+.movement-metric strong,
+.lifecycle-card strong,
+.kakao-metric strong {
+  margin-top: 5px;
+  font-size: 16px;
+}
+
+.growth-kpi strong {
+  margin-top: 7px;
+  font-family:
+    Pretendard,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  font-size: clamp(20px, 1.7vw, 25px);
+}
+
+.growth-kpi small,
+.growth-kpi em,
+.driver-card small,
+.panel-note {
+  font-size: 11.5px;
+  font-weight: 400 !important;
+}
+
+.driver-card strong {
+  margin: 7px 0 3px;
+  font-size: 22px;
+}
+
+.driver-card.is-dominant {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+
+.growth-diagnosis {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #0f172a;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.chart-grid,
+.ranking-grid {
+  margin-top: 12px;
+}
+
+.chart-wrap {
+  height: 310px;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.ranking-list {
+  gap: 7px;
+}
+
+.ranking-item {
+  min-height: 64px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.ranking-item:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+}
+
+.rank-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 12px;
+}
+
+.ranking-title {
+  font-size: 13.5px;
+  font-weight: 600 !important;
+}
+
+.ranking-meta {
+  gap: 5px;
+}
+
+.ranking-meta span {
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 11.5px;
+}
+
+.ranking-value {
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.product-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+}
+
+.warning-item,
+.detail-summary > *,
+.detail-grid section,
+.mini-row,
+.ally-chip,
+.leave-bucket,
+.hour-bucket,
+.kakao-upload-file,
+.kakao-upload-field input {
+  border-radius: 8px;
+}
+
+.ally-chip {
+  min-height: 30px;
+  padding: 4px 5px 4px 10px;
+  border-color: #dbeafe;
+  background: #eff6ff;
+  font-size: 12px;
+}
+
+.customer-drawer-panel {
+  width: min(980px, 96vw);
+  padding: 18px;
+  border-left-color: #e2e8f0;
+  background: #fff;
+}
+
+.customer-drawer-head {
+  margin-bottom: 12px;
+}
+
+.customer-drawer-head h2 {
+  font-size: 20px;
+}
+
+.drawer-controls {
+  gap: 8px;
+}
+
+.drawer-count,
+.customer-table th,
+.customer-table td {
+  font-weight: 400;
+}
+
+.customer-table {
+  font-size: 12.5px;
+}
+
+.customer-table th,
+.customer-table td {
+  padding: 9px 8px;
+}
+
+.customer-table th {
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+}
+
+@media (max-width: 1180px) {
+  .sidebar {
+    padding: 10px 12px;
+  }
+
+  .dashboard {
+    padding: 16px 14px 44px;
+  }
+
+  .filter-card {
+    top: 0;
+  }
+}
+
+@media (max-width: 840px) {
+  .dashboard {
+    padding: 14px 10px 40px;
+  }
+
+  .topbar {
+    gap: 10px;
+  }
+
+  .filter-card {
+    grid-template-columns: 1fr;
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kpi-card {
+    min-height: 120px;
+  }
+
+  .mode-tabs button,
+  .chip-button,
+  .segmented button {
+    flex: 1;
+  }
+}

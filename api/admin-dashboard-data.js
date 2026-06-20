@@ -1,7 +1,7 @@
 import { aggregateDashboardRows } from '../lib/dashboard/aggregateOrders.js';
-import { buildKakaoCsvAnalytics, readKakaoCsvTelemetry } from '../lib/dashboard/kakaoCsvAnalytics.js';
+import { buildKakaoCsvAnalytics } from '../lib/dashboard/kakaoCsvAnalytics.js';
+import { readCachedDashboardSheetRows, readCachedKakaoCsvTelemetry } from '../lib/dashboard/dataSource.js';
 import { parseDashboardDate, parseDashboardRows, toDateKey } from '../lib/dashboard/parseOrders.js';
-import { getSheetsClient } from '../lib/googleSheetsClient.js';
 
 const CONFIG = {
   SPREADSHEET_ID: process.env.SPREADSHEET_ID,
@@ -11,6 +11,8 @@ const CONFIG = {
 
 const BASIS_VALUES = new Set(['groupDate', 'orderDate', 'pickupDate']);
 const MODE_VALUES = new Set(['recent', 'week', 'month', 'total', 'custom']);
+const responseCache = globalThis.__mmAdminDashboardResponseCache ||= new Map();
+const RESPONSE_CACHE_MS = Number(process.env.ADMIN_DASHBOARD_RESPONSE_CACHE_MS || 60 * 1000);
 const DEFAULT_EXCLUDED_CUSTOMER_NAMES = [
   '로지4298',
   '로지4739',
@@ -48,10 +50,36 @@ export default async function handler(req, res) {
     }
 
     const query = getQuery(req);
+    const forceRefresh = query.force === '1' || query.refresh === '1';
+    const includeKakao = query.includeKakao !== '0';
     const basis = BASIS_VALUES.has(query.basis) ? query.basis : 'groupDate';
     const mode = MODE_VALUES.has(query.mode) ? query.mode : 'recent';
     const excludedCustomerNames = getExcludedCustomerNames(query);
-    const rows = await readDashboardSheetRows();
+    const cacheKey = buildResponseCacheKey({
+      ...query,
+      force: undefined,
+      refresh: undefined,
+      basis,
+      mode,
+      includeKakao,
+      excludedCustomerNames
+    });
+    const cachedResponse = getCachedResponse(cacheKey, forceRefresh);
+
+    if (cachedResponse) {
+      res.setHeader('x-mm-admin-cache', 'hit');
+      return res.status(200).json(cachedResponse);
+    }
+
+    const telemetryPromise = includeKakao
+      ? readCachedKakaoCsvTelemetry({ force: forceRefresh })
+      : null;
+    const { rows, meta: sheetCache } = await readCachedDashboardSheetRows({
+      spreadsheetId: CONFIG.SPREADSHEET_ID,
+      sheetName: CONFIG.RAW_SHEET_NAME,
+      startRow: CONFIG.READ_START_ROW,
+      force: forceRefresh
+    });
     const parsed = parseDashboardRows(rows, {
       basis,
       startRowNumber: CONFIG.READ_START_ROW,
@@ -67,15 +95,17 @@ export default async function handler(req, res) {
       to: query.to,
       customerQuery: query.customerQuery
     });
-    const kakaoCsvTelemetry = await readKakaoCsvTelemetry();
-    const kakaoCsvAnalytics = buildKakaoCsvAnalytics(parsed.validRows, kakaoCsvTelemetry, {
-      reportPeriod: aggregated.period,
+    const { kakaoCsvAnalytics, telemetryCache } = await buildOptionalKakaoAnalytics({
+      includeKakao,
+      telemetryPromise,
+      validRows: parsed.validRows,
+      period: aggregated.period,
       reportEndDate: aggregated.meta.reportEndDate,
       recentDays: query.kakaoRecentDays || 30
     });
     const warnings = getWarningsForResponse(parsed.warnings, aggregated.period, query);
 
-    return res.status(200).json({
+    const payload = {
       ok: true,
       mode: aggregated.mode,
       basis,
@@ -102,9 +132,19 @@ export default async function handler(req, res) {
         totalWarningCount: parsed.warnings.length,
         readStartRow: CONFIG.READ_START_ROW,
         excludedAllyRowCount: parsed.excludedAllyRowCount,
-        excludedCustomerNames
+        excludedCustomerNames,
+        cache: {
+          response: 'miss',
+          sheet: sheetCache,
+          kakaoTelemetry: telemetryCache
+        }
       }
-    });
+    };
+
+    setCachedResponse(cacheKey, payload);
+    res.setHeader('x-mm-admin-cache', forceRefresh ? 'refresh' : 'miss');
+
+    return res.status(200).json(payload);
   } catch (error) {
     console.error('admin-dashboard-data error:', error);
 
@@ -114,6 +154,33 @@ export default async function handler(req, res) {
       detail: error.message
     });
   }
+}
+
+async function buildOptionalKakaoAnalytics({
+  includeKakao,
+  telemetryPromise,
+  validRows,
+  period,
+  reportEndDate,
+  recentDays
+}) {
+  if (!includeKakao) {
+    return {
+      kakaoCsvAnalytics: { skipped: true },
+      telemetryCache: { status: 'skipped' }
+    };
+  }
+
+  const { telemetry: kakaoCsvTelemetry, meta: telemetryCache } = await telemetryPromise;
+
+  return {
+    kakaoCsvAnalytics: buildKakaoCsvAnalytics(validRows, kakaoCsvTelemetry, {
+      reportPeriod: period,
+      reportEndDate,
+      recentDays
+    }),
+    telemetryCache
+  };
 }
 
 function getWarningsForResponse(warnings, period, query) {
@@ -165,23 +232,64 @@ function sanitizeCustomerNames(names) {
   );
 }
 
-async function readDashboardSheetRows() {
-  const sheets = await getSheetsClient();
-  const start = Math.max(1, Number(CONFIG.READ_START_ROW || 1));
-
-  const response = await sheets.spreadsheets.values.get({
-    spreadsheetId: CONFIG.SPREADSHEET_ID,
-    range: `${CONFIG.RAW_SHEET_NAME}!A${start}:J`,
-    valueRenderOption: 'UNFORMATTED_VALUE',
-    dateTimeRenderOption: 'SERIAL_NUMBER'
-  });
-
-  return response.data.values || [];
-}
-
 function getQuery(req) {
   if (req.query) return req.query;
 
   const url = new URL(req.url, 'http://localhost');
   return Object.fromEntries(url.searchParams.entries());
+}
+
+function getCachedResponse(cacheKey, forceRefresh) {
+  if (forceRefresh) return null;
+
+  const cached = responseCache.get(cacheKey);
+
+  if (!cached || cached.expiresAt <= Date.now()) {
+    responseCache.delete(cacheKey);
+    return null;
+  }
+
+  return {
+    ...cached.payload,
+    meta: {
+      ...(cached.payload.meta || {}),
+      cache: {
+        ...(cached.payload.meta?.cache || {}),
+        response: 'hit',
+        responseAgeMs: Math.max(0, Date.now() - cached.cachedAt)
+      }
+    }
+  };
+}
+
+function setCachedResponse(cacheKey, payload) {
+  responseCache.set(cacheKey, {
+    payload,
+    cachedAt: Date.now(),
+    expiresAt: Date.now() + RESPONSE_CACHE_MS
+  });
+
+  if (responseCache.size > 60) {
+    const oldestKey = responseCache.keys().next().value;
+    responseCache.delete(oldestKey);
+  }
+}
+
+function buildResponseCacheKey(value) {
+  return stableStringify(value);
+}
+
+function stableStringify(value) {
+  if (Array.isArray(value)) {
+    return `[${value.map(stableStringify).join(',')}]`;
+  }
+
+  if (value && typeof value === 'object') {
+    return `{${Object.keys(value)
+      .sort()
+      .map(key => `${JSON.stringify(key)}:${stableStringify(value[key])}`)
+      .join(',')}}`;
+  }
+
+  return JSON.stringify(value);
 }

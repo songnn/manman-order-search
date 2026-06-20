@@ -1,8 +1,8 @@
 import { aggregateDashboardRows } from '../lib/dashboard/aggregateOrders.js';
-import { buildKakaoCsvAnalytics, readKakaoCsvTelemetry } from '../lib/dashboard/kakaoCsvAnalytics.js';
+import { readCachedDashboardSheetRows, readCachedKakaoCsvTelemetry } from '../lib/dashboard/dataSource.js';
+import { buildKakaoCsvAnalytics } from '../lib/dashboard/kakaoCsvAnalytics.js';
 import { parseDashboardDate, parseDashboardRows, toDateKey } from '../lib/dashboard/parseOrders.js';
 import { getProductCategoryLookup } from '../lib/dashboard/productCategories.js';
-import { getSheetsClient } from '../lib/googleSheetsClient.js';
 
 const CONFIG = {
   SPREADSHEET_ID: process.env.SPREADSHEET_ID,
@@ -43,6 +43,7 @@ export default async function handler(req, res) {
     }
 
     const query = getQuery(req);
+    const forceRefresh = query.force === '1' || query.refresh === '1';
     const customerQuery = clean(query.customerQuery);
     if (!customerQuery) {
       return res.status(400).json({ ok: false, error: '검색할 카톡 닉네임 또는 뒤 4자리가 필요합니다.' });
@@ -50,7 +51,13 @@ export default async function handler(req, res) {
 
     const basis = BASIS_VALUES.has(query.basis) ? query.basis : 'groupDate';
     const mode = MODE_VALUES.has(query.mode) ? query.mode : 'recent';
-    const rows = await readDashboardSheetRows();
+    const telemetryPromise = readCachedKakaoCsvTelemetry({ force: forceRefresh });
+    const { rows } = await readCachedDashboardSheetRows({
+      spreadsheetId: CONFIG.SPREADSHEET_ID,
+      sheetName: CONFIG.RAW_SHEET_NAME,
+      startRow: CONFIG.READ_START_ROW,
+      force: forceRefresh
+    });
     const parsed = parseDashboardRows(rows, {
       basis,
       startRowNumber: CONFIG.READ_START_ROW,
@@ -98,7 +105,7 @@ export default async function handler(req, res) {
     const periodStats = buildCustomerStats(periodRows);
     const customerStats = cumulativeStats.get(targetKey) || emptyCustomerStat(target);
     const periodCustomerStats = periodStats.get(targetKey) || emptyCustomerStat(target);
-    const telemetry = await readKakaoCsvTelemetry();
+    const { telemetry } = await telemetryPromise;
     const kakaoAnalytics = buildKakaoCsvAnalytics(analysisRows, telemetry, {
       reportPeriod: aggregated.period,
       reportEndDate: aggregated.meta.reportEndDate,
@@ -164,20 +171,6 @@ export default async function handler(req, res) {
       detail: error.message
     });
   }
-}
-
-async function readDashboardSheetRows() {
-  const sheets = await getSheetsClient();
-  const start = Math.max(1, Number(CONFIG.READ_START_ROW || 1));
-
-  const response = await sheets.spreadsheets.values.get({
-    spreadsheetId: CONFIG.SPREADSHEET_ID,
-    range: `${CONFIG.RAW_SHEET_NAME}!A${start}:J`,
-    valueRenderOption: 'UNFORMATTED_VALUE',
-    dateTimeRenderOption: 'SERIAL_NUMBER'
-  });
-
-  return response.data.values || [];
 }
 
 function buildCustomerStats(rows) {

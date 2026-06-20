@@ -13,6 +13,15 @@
   "functions": {
     "api/search-orders.js": {
       "regions": ["icn1"]
+    },
+    "api/admin-dashboard-data.js": {
+      "regions": ["icn1"]
+    },
+    "api/admin-dashboard-customers.js": {
+      "regions": ["icn1"]
+    },
+    "api/admin-dashboard-kakao-user.js": {
+      "regions": ["icn1"]
     }
   },
   "crons": [

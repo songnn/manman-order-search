@@ -1,8 +1,8 @@
 import { aggregateDashboardRows } from '../lib/dashboard/aggregateOrders.js';
+import { readCachedDashboardSheetRows, readCachedKakaoCsvTelemetry } from '../lib/dashboard/dataSource.js';
 import { buildGrowthCustomerList, getGrowthRows } from '../lib/dashboard/growthAnalysis.js';
-import { enrichCustomersWithKakaoProfiles, readKakaoCsvTelemetry } from '../lib/dashboard/kakaoCsvAnalytics.js';
+import { enrichCustomersWithKakaoProfiles } from '../lib/dashboard/kakaoCsvAnalytics.js';
 import { parseDashboardDate, parseDashboardRows } from '../lib/dashboard/parseOrders.js';
-import { getSheetsClient } from '../lib/googleSheetsClient.js';
 
 const CONFIG = {
   SPREADSHEET_ID: process.env.SPREADSHEET_ID,
@@ -49,9 +49,19 @@ export default async function handler(req, res) {
     }
 
     const query = getQuery(req);
+    const forceRefresh = query.force === '1' || query.refresh === '1';
+    const includeKakao = query.includeKakao !== '0';
     const basis = BASIS_VALUES.has(query.basis) ? query.basis : 'groupDate';
     const mode = MODE_VALUES.has(query.mode) ? query.mode : 'recent';
-    const rows = await readDashboardSheetRows();
+    const telemetryPromise = includeKakao
+      ? readCachedKakaoCsvTelemetry({ force: forceRefresh })
+      : null;
+    const { rows, meta: sheetCache } = await readCachedDashboardSheetRows({
+      spreadsheetId: CONFIG.SPREADSHEET_ID,
+      sheetName: CONFIG.RAW_SHEET_NAME,
+      startRow: CONFIG.READ_START_ROW,
+      force: forceRefresh
+    });
     const parsed = parseDashboardRows(rows, {
       basis,
       startRowNumber: CONFIG.READ_START_ROW,
@@ -87,12 +97,12 @@ export default async function handler(req, res) {
       },
       limit: query.limit
     });
-    const kakaoCsvTelemetry = await readKakaoCsvTelemetry();
-    const enrichedCustomers = enrichCustomersWithKakaoProfiles(
-      customerList.customers,
-      parsed.validRows,
-      kakaoCsvTelemetry
-    );
+    const { customers: enrichedCustomers, telemetryCache } = await enrichCustomersIfNeeded({
+      includeKakao,
+      telemetryPromise,
+      customerList,
+      validRows: parsed.validRows
+    });
 
     return res.status(200).json({
       ok: true,
@@ -101,7 +111,11 @@ export default async function handler(req, res) {
       meta: {
         totalValidRowCount: parsed.validRows.length,
         growthAnalyzedRowCount: growthRows.length,
-        returnedCustomerCount: enrichedCustomers.length
+        returnedCustomerCount: enrichedCustomers.length,
+        cache: {
+          sheet: sheetCache,
+          kakaoTelemetry: telemetryCache
+        }
       }
     });
   } catch (error) {
@@ -115,18 +129,29 @@ export default async function handler(req, res) {
   }
 }
 
-async function readDashboardSheetRows() {
-  const sheets = await getSheetsClient();
-  const start = Math.max(1, Number(CONFIG.READ_START_ROW || 1));
+async function enrichCustomersIfNeeded({
+  includeKakao,
+  telemetryPromise,
+  customerList,
+  validRows
+}) {
+  if (!includeKakao) {
+    return {
+      customers: customerList.customers,
+      telemetryCache: { status: 'skipped' }
+    };
+  }
 
-  const response = await sheets.spreadsheets.values.get({
-    spreadsheetId: CONFIG.SPREADSHEET_ID,
-    range: `${CONFIG.RAW_SHEET_NAME}!A${start}:J`,
-    valueRenderOption: 'UNFORMATTED_VALUE',
-    dateTimeRenderOption: 'SERIAL_NUMBER'
-  });
+  const { telemetry: kakaoCsvTelemetry, meta: telemetryCache } = await telemetryPromise;
 
-  return response.data.values || [];
+  return {
+    customers: enrichCustomersWithKakaoProfiles(
+      customerList.customers,
+      validRows,
+      kakaoCsvTelemetry
+    ),
+    telemetryCache
+  };
 }
 
 function getExcludedCustomerNames(query) {

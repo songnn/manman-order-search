@@ -60,6 +60,9 @@ const state = {
   kakaoHourChart: null,
   kakaoUserCategoryChart: null,
   kakaoUserPeriodChart: null,
+  dashboardCache: new Map(),
+  renderJob: 0,
+  activeDashboardBaseKey: '',
   loadingProgress: 0,
   loadingTimer: null,
   drawerCustomers: [],
@@ -202,7 +205,7 @@ function bindEvents() {
     fetchDashboardData();
   });
 
-  els.refresh.addEventListener('click', () => fetchDashboardData());
+  els.refresh.addEventListener('click', () => fetchDashboardData({ force: true }));
   els.logout.addEventListener('click', () => {
     localStorage.removeItem(TOKEN_KEY);
     state.token = '';
@@ -301,14 +304,32 @@ function bindEvents() {
   });
 }
 
-async function fetchDashboardData() {
+async function fetchDashboardData(options = {}) {
   if (state.loading) return;
+
+  const force = Boolean(options.force);
+  const baseParams = buildRequestParams();
+  const params = new URLSearchParams(baseParams);
+  params.set('includeKakao', '0');
+  state.activeDashboardBaseKey = baseParams.toString();
+  const cacheKey = params.toString();
+  const cached = !force ? getClientCachedDashboard(cacheKey) : null;
+
+  if (cached) {
+    state.data = cached;
+    hydrateSelectionFromOptions();
+    renderDashboard();
+    fetchDashboardKakaoSupplement(baseParams, { force: false });
+    setStatus(`캐시된 화면입니다. ${formatCacheAge(cached._clientCachedAt)} 전 불러온 데이터`);
+    return;
+  }
 
   state.loading = true;
   startLoadingProgress('데이터를 로딩하고 있습니다.', 8);
 
   try {
-    const params = buildRequestParams();
+    if (force) params.set('force', '1');
+
     updateLoadingProgress(22, '주문 데이터를 가져오는 중입니다.');
     const response = await fetch(`/api/admin-dashboard-data?${params.toString()}`, {
       headers: {
@@ -330,9 +351,11 @@ async function fetchDashboardData() {
     }
 
     state.data = data;
+    setClientCachedDashboard(cacheKey, data);
     updateLoadingProgress(86, '화면을 그리는 중입니다.');
     hydrateSelectionFromOptions();
     renderDashboard();
+    fetchDashboardKakaoSupplement(baseParams, { force });
     updateLoadingProgress(100, '로딩 완료');
   } catch (error) {
     console.error(error);
@@ -342,6 +365,88 @@ async function fetchDashboardData() {
     state.loading = false;
     finishLoadingProgress();
   }
+}
+
+async function fetchDashboardKakaoSupplement(baseParams, options = {}) {
+  const baseKey = baseParams.toString();
+  const params = new URLSearchParams(baseParams);
+  params.set('includeKakao', '1');
+  if (options.force) params.set('force', '1');
+
+  const cacheKey = params.toString();
+  const cached = !options.force ? getClientCachedDashboard(cacheKey) : null;
+
+  if (cached) {
+    if (state.activeDashboardBaseKey !== baseKey) return;
+    state.data = cached;
+    renderGrowthAnalysis();
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/admin-dashboard-data?${params.toString()}`, {
+      headers: {
+        'x-admin-token': state.token
+      }
+    });
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) return;
+    if (state.activeDashboardBaseKey !== baseKey) return;
+
+    state.data = data;
+    setClientCachedDashboard(cacheKey, data);
+    renderGrowthAnalysis();
+  } catch (error) {
+    console.warn('kakao dashboard supplement skipped:', error.message);
+  }
+}
+
+function getClientCachedDashboard(cacheKey) {
+  const cached = state.dashboardCache.get(cacheKey);
+  const ttlMs = 2 * 60 * 1000;
+
+  if (!cached || Date.now() - cached.cachedAt > ttlMs) {
+    state.dashboardCache.delete(cacheKey);
+    return null;
+  }
+
+  return {
+    ...cached.data,
+    _clientCachedAt: cached.cachedAt
+  };
+}
+
+function setClientCachedDashboard(cacheKey, data) {
+  state.dashboardCache.set(cacheKey, {
+    data,
+    cachedAt: Date.now()
+  });
+
+  if (state.dashboardCache.size > 24) {
+    const oldestKey = state.dashboardCache.keys().next().value;
+    state.dashboardCache.delete(oldestKey);
+  }
+}
+
+function scheduleDeferredRender(renderJob, callback) {
+  const run = () => {
+    if (renderJob !== state.renderJob) return;
+    callback();
+  };
+
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(run, { timeout: 700 });
+    return;
+  }
+
+  setTimeout(run, 32);
+}
+
+function formatCacheAge(cachedAt) {
+  const seconds = Math.max(1, Math.round((Date.now() - Number(cachedAt || Date.now())) / 1000));
+  if (seconds < 60) return `${seconds}초`;
+  return `${Math.round(seconds / 60)}분`;
 }
 
 async function handleKakaoCsvUpload() {
@@ -686,14 +791,19 @@ function hydrateSelectionFromOptions() {
 function renderDashboard() {
   if (!state.data) return;
 
+  const renderJob = ++state.renderJob;
+
   renderStaticControls();
   renderKpis();
-  renderGrowthAnalysis();
   renderCharts();
   renderRankings();
   renderTotalDetail();
   renderWarnings();
   updateStatusLine();
+  scheduleDeferredRender(renderJob, () => {
+    renderGrowthAnalysis();
+    updateStatusLine();
+  });
 }
 
 function renderStaticControls() {
@@ -895,7 +1005,9 @@ function renderGrowthAnalysis() {
   renderFrequencyCharts();
   renderCustomerMovement();
   renderLifecycleCards();
-  renderKakaoCsvAnalytics();
+  if (!state.data?.kakaoCsvAnalytics?.skipped) {
+    renderKakaoCsvAnalytics();
+  }
 }
 
 function renderGrowthKpis(growth) {
@@ -1701,6 +1813,7 @@ async function openCustomerDrawerFromSegment(segmentParams) {
       if (value != null && value !== '') params.set(key, value);
     });
     params.set('limit', '500');
+    params.set('includeKakao', '0');
 
     const response = await fetch(`/api/admin-dashboard-customers?${params.toString()}`, {
       headers: {
