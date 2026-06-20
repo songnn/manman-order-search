@@ -31,38 +31,47 @@
     .metric { min-height: 72px; padding: 12px; border-radius: 8px; background: #fff; border: 1px solid rgba(15, 23, 42, 0.06); }
     .metric-label { color: #667085; font-size: 12px; font-weight: 800; }
     .metric-value { margin-top: 7px; font-size: 27px; line-height: 1; font-weight: 900; letter-spacing: 0; }
-    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-    .product-card { position: relative; min-width: 0; overflow: hidden; border-radius: 8px; background: #fff; border: 1px solid rgba(15, 23, 42, 0.07); box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06); }
+    .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+    .product-card { position: relative; min-width: 0; aspect-ratio: 1 / 1; overflow: hidden; border-radius: 8px; background: #111; border: 1px solid rgba(15, 23, 42, 0.07); box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06); }
     .product-card.done { filter: saturate(0.72); }
-    .product-card.done::after { content: '입고완료'; position: absolute; inset: 0; display: grid; place-items: center; background: rgba(8, 160, 92, 0.86); color: #fff; font-size: clamp(32px, 8vw, 84px); font-weight: 900; letter-spacing: 0; }
-    .thumb-wrap { position: relative; width: 100%; aspect-ratio: 1 / 0.74; background: #edf0f3; overflow: hidden; }
+    .product-card.done::after { content: '입고완료'; position: absolute; inset: 0; display: grid; place-items: center; background: rgba(8, 160, 92, 0.86); color: #fff; font-size: clamp(26px, 6vw, 70px); font-weight: 900; letter-spacing: 0; }
+    .thumb-wrap { position: absolute; inset: 0; width: 100%; height: 100%; background: #edf0f3; overflow: hidden; }
     .thumb { width: 100%; height: 100%; display: block; object-fit: cover; }
-    .storage { position: absolute; left: 10px; top: 10px; display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border-radius: 999px; color: #fff; font-size: 13px; font-weight: 900; box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18); }
+    .thumb-wrap::after { content: ''; position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, rgba(0,0,0,.46) 0%, rgba(0,0,0,.12) 42%, rgba(0,0,0,.86) 100%); pointer-events: none; }
+    .storage { position: absolute; left: 8px; top: 8px; z-index: 2; display: inline-flex; align-items: center; gap: 4px; height: 25px; padding: 0 8px; border-radius: 999px; color: #fff; font-size: 11px; font-weight: 900; box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18); }
     .storage.cold { background: #1680db; }
     .storage.frozen { background: #5452d8; }
     .storage.room { background: #c77800; }
-    .body { padding: 13px; }
-    .name { min-height: 44px; font-size: 17px; line-height: 1.28; font-weight: 900; word-break: keep-all; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .mini { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+    .card-overlay { position: absolute; left: 0; right: 0; top: 38px; z-index: 2; padding: 0 9px; color: #fff; }
+    .card-name { font-size: 13px; line-height: 1.18; font-weight: 900; word-break: keep-all; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-shadow: 0 2px 9px rgba(0,0,0,.52); }
+    .overlay-row { display: flex; align-items: end; justify-content: space-between; gap: 6px; margin-top: 6px; }
+    .overlay-stat { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .overlay-label { font-size: 9px; line-height: 1; font-weight: 800; color: rgba(255,255,255,.78); }
+    .overlay-num { font-size: 31px; line-height: .88; font-weight: 900; letter-spacing: 0; color: #fff; text-shadow: 0 4px 12px rgba(0,0,0,.38); }
+    .overlay-mini { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 3px; max-width: 64%; }
+    .overlay-chip { display: inline-flex; align-items: center; height: 19px; padding: 0 6px; border-radius: 999px; background: rgba(255,255,255,.9); color: #111; font-size: 9px; font-weight: 900; }
+    .body { position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 3; padding: 0; }
+    .name { display: none; }
+    .mini { display: none; flex-wrap: wrap; gap: 5px; margin-top: 0; }
     .chip { display: inline-flex; align-items: center; height: 27px; padding: 0 8px; border-radius: 999px; background: #f1f3f6; color: #344054; font-size: 12px; font-weight: 800; }
-    .buffer-hero { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #eef0f3; }
+    .buffer-hero { display: none; }
     .buffer-label { color: #667085; font-size: 13px; font-weight: 800; }
     .buffer-num { margin-top: 3px; font-size: 58px; line-height: 0.9; font-weight: 900; letter-spacing: 0; }
     .remain-num { color: #0051a0; }
-    .action-row { display: grid; grid-template-columns: 1fr 54px; gap: 8px; margin-top: 13px; }
-    .minus-btn { height: 68px; border: 0; border-radius: 8px; background: #111; color: #fff; font-size: 36px; font-weight: 900; }
+    .action-row { display: grid; grid-template-columns: 1fr 34px; gap: 5px; margin-top: 0; }
+    .minus-btn { height: 36px; border: 0; border-radius: 8px; background: #111; color: #fff; font-size: 24px; font-weight: 900; box-shadow: 0 8px 18px rgba(0,0,0,.22); }
     .minus-btn:disabled { opacity: 0.34; cursor: default; }
-    .plus-btn { height: 68px; border: 0; border-radius: 8px; background: #e8edf3; color: #111; font-size: 25px; font-weight: 900; }
-    .memo { width: 100%; height: 42px; margin-top: 8px; border: 1px solid #d9dee7; border-radius: 8px; background: #fff; padding: 0 12px; font-size: 15px; font-weight: 800; outline: none; }
-    .history { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; min-height: 27px; }
-    .history span { display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 999px; background: #fff7ed; color: #9a4a00; font-size: 12px; font-weight: 800; }
-    .inbound-top { display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #eef0f3; }
+    .plus-btn { height: 36px; border: 0; border-radius: 8px; background: rgba(232,237,243,.92); color: #111; font-size: 17px; font-weight: 900; }
+    .memo { width: 100%; height: 30px; margin-top: 5px; border: 1px solid rgba(255,255,255,.58); border-radius: 8px; background: rgba(255,255,255,.93); padding: 0 9px; font-size: 12px; font-weight: 800; outline: none; }
+    .history { display: flex; flex-wrap: nowrap; gap: 4px; margin-top: 5px; min-height: 0; overflow: hidden; }
+    .history span { display: inline-flex; align-items: center; flex: 0 0 auto; height: 21px; padding: 0 7px; border-radius: 999px; background: rgba(255,247,237,.92); color: #9a4a00; font-size: 10px; font-weight: 800; }
+    .inbound-top { display: none; }
     .inbound-qty { font-size: 58px; line-height: 0.9; font-weight: 900; letter-spacing: 0; }
     .counted { text-align: right; }
     .counted-num { color: #08a05c; font-size: 42px; line-height: 1; font-weight: 900; }
-    .count-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-top: 13px; }
-    .count-btn { height: 46px; border: 0; border-radius: 8px; background: #e8edf3; color: #111; font-size: 17px; font-weight: 900; }
-    .complete-btn { grid-column: span 4; height: 56px; border: 0; border-radius: 8px; background: #08a05c; color: #fff; font-size: 18px; font-weight: 900; }
+    .count-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 0; }
+    .count-btn { height: 30px; border: 0; border-radius: 8px; background: rgba(232,237,243,.93); color: #111; font-size: 12px; font-weight: 900; }
+    .complete-btn { grid-column: span 4; height: 34px; border: 0; border-radius: 8px; background: #08a05c; color: #fff; font-size: 13px; font-weight: 900; }
     .complete-btn.done { background: #344054; }
     .section-title { margin: 24px 2px 10px; font-size: 20px; line-height: 1.2; font-weight: 900; }
     .stale-list { display: grid; gap: 8px; }
@@ -78,7 +87,9 @@
     .burst.plus { background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.98) 0 18%, rgba(22,128,219,.95) 19% 42%, rgba(17,17,17,.98) 43% 100%); }
     .burst-text { color: #fff; font-size: clamp(46px, 13vw, 132px); font-weight: 900; letter-spacing: 0; text-shadow: 0 10px 24px rgba(0,0,0,.25); }
     @keyframes burst { 0% { opacity: 0; clip-path: circle(0% at 50% 50%); transform: scale(1.1); } 18% { opacity: 1; clip-path: circle(70% at 50% 50%); transform: scale(1); } 72% { opacity: 1; clip-path: circle(120% at 50% 50%); } 100% { opacity: 0; clip-path: circle(120% at 50% 50%); transform: scale(.98); } }
-    @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } .summary { grid-template-columns: repeat(3, minmax(0, 1fr)); } .metric { padding: 10px; } .metric-value { font-size: 23px; } }
+    @media (max-width: 900px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (max-width: 640px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 520px) { .app { padding-left: 10px; padding-right: 10px; } .grid { gap: 8px; } .summary { grid-template-columns: repeat(3, minmax(0, 1fr)); } .metric { min-height: 62px; padding: 9px; } .metric-value { font-size: 21px; } .storage { left: 7px; top: 7px; height: 22px; padding: 0 7px; font-size: 10px; } .card-overlay { top: 34px; padding: 0 8px; } .card-name { font-size: 12px; } .overlay-row { margin-top: 4px; } .overlay-num { font-size: 27px; } .overlay-mini { display: none; } .body { left: 7px; right: 7px; bottom: 7px; } .minus-btn, .plus-btn { height: 34px; } .memo { height: 28px; font-size: 11px; } .history { display: none; } .count-btn { height: 28px; font-size: 11px; } .complete-btn { height: 31px; font-size: 12px; } }
   </style>
 </head>
 <body>
@@ -309,9 +320,22 @@
           <div class="thumb-wrap">
             <img class="thumb" src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy">
             <span class="storage ${storageClass(item.storageMethod)}">${storageIcon(item.storageMethod)} · ${esc(item.storageMethod)}</span>
+            <div class="card-overlay">
+              <div class="card-name">${esc(item.productName)}</div>
+              <div class="overlay-row">
+                <div class="overlay-stat">
+                  <span class="overlay-label">버퍼잔여</span>
+                  <span class="overlay-num">${number(item.bufferRemainingQuantity)}</span>
+                </div>
+                <div class="overlay-mini">
+                  <span class="overlay-chip">입고 ${number(item.inboundQuantity)}</span>
+                  <span class="overlay-chip">본사 ${number(item.hqBufferQuantity)}</span>
+                  <span class="overlay-chip">우리 ${number(item.ourBufferQuantity)}</span>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="body">
-            <div class="name">${esc(item.productName)}</div>
             <div class="mini">
               <span class="chip">총잔여 ${number(item.remainingQuantity)}</span>
               <span class="chip">본사 ${number(item.hqBufferQuantity)}</span>
@@ -365,9 +389,22 @@
           <div class="thumb-wrap">
             <img class="thumb" src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy">
             <span class="storage ${storageClass(item.storageMethod)}">${storageIcon(item.storageMethod)} · ${esc(item.storageMethod)}</span>
+            <div class="card-overlay">
+              <div class="card-name">${esc(item.productName)}</div>
+              <div class="overlay-row">
+                <div class="overlay-stat">
+                  <span class="overlay-label">입고수량</span>
+                  <span class="overlay-num">${number(item.inboundQuantity)}</span>
+                </div>
+                <div class="overlay-mini">
+                  <span class="overlay-chip">카운팅 ${number(item.countedQuantity)}</span>
+                  <span class="overlay-chip">우리 ${number(item.ourBufferQuantity)}</span>
+                  <span class="overlay-chip">본사 ${number(item.hqBufferQuantity)}</span>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="body">
-            <div class="name">${esc(item.productName)}</div>
             <div class="mini">
               <span class="chip">공급 ${money(item.supplyPrice)}</span>
               <span class="chip">판매 ${money(item.salePrice)}</span>
