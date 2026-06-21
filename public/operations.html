@@ -1201,6 +1201,216 @@
       background: #08a05c;
       box-shadow: 0 10px 20px rgba(8,160,92,.14);
     }
+    .buffer-box.interactive {
+      border: 0;
+      padding: 0;
+      color: inherit;
+      cursor: pointer;
+      transition: transform 90ms ease, filter 90ms ease;
+    }
+    .buffer-box.interactive:active {
+      transform: scale(.97);
+      filter: saturate(1.08);
+    }
+    .storage-board {
+      display: grid;
+      gap: 10px;
+    }
+    .storage-board-head,
+    .storage-section-title {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      padding: 2px 2px 0;
+    }
+    .storage-board-head h2 {
+      margin: 0;
+      color: #151517;
+      font-size: 17px;
+      line-height: 1.05;
+      font-weight: 600 !important;
+    }
+    .storage-board-head p {
+      margin: 5px 0 0;
+      color: #858c98;
+      font-size: 10.5px;
+      line-height: 1.25;
+      font-weight: 400 !important;
+      word-break: keep-all;
+    }
+    .storage-queue-list {
+      display: grid;
+      gap: 7px;
+    }
+    .storage-queue-card {
+      display: grid;
+      grid-template-columns: 52px minmax(0, 1fr) auto;
+      gap: 9px;
+      align-items: center;
+      min-height: 78px;
+      padding: 8px;
+      border-radius: 18px;
+      background: #fff;
+      border: 1px solid rgba(255,255,255,.9);
+      box-shadow: 0 8px 22px rgba(36,42,54,.06);
+    }
+    .storage-queue-card.pending {
+      background: linear-gradient(135deg, #fffdf8, #fff);
+      border-color: rgba(246, 180, 67, .24);
+    }
+    .storage-queue-card.completed {
+      background: #fbfcfd;
+      box-shadow: 0 6px 16px rgba(36,42,54,.045);
+    }
+    .storage-queue-card img {
+      width: 52px;
+      height: 52px;
+      display: block;
+      object-fit: cover;
+      border-radius: 14px;
+      background: #f3f5f8;
+    }
+    .storage-queue-main {
+      min-width: 0;
+      display: grid;
+      gap: 4px;
+    }
+    .storage-queue-top {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .storage-queue-top strong {
+      min-width: 0;
+      color: #151517;
+      font-size: 12px;
+      line-height: 1;
+      font-weight: 600 !important;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .storage-queue-name {
+      min-width: 0;
+      color: #353941;
+      font-size: 11.5px;
+      line-height: 1.15;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .storage-queue-meta {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      color: #858c98;
+      font-size: 9.5px;
+      line-height: 1;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .storage-queue-note {
+      min-width: 0;
+      color: #687180;
+      font-size: 10px;
+      line-height: 1.15;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .storage-queue-side {
+      display: grid;
+      justify-items: center;
+      gap: 2px;
+      min-width: 48px;
+    }
+    .storage-queue-side strong {
+      font-family: 'TheJamsilOps', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #2563eb;
+      font-size: 24px;
+      line-height: .9;
+      font-weight: 500 !important;
+    }
+    .storage-queue-side span {
+      color: #858c98;
+      font-size: 9px;
+      line-height: 1;
+    }
+    .storage-done-btn {
+      height: 25px;
+      min-width: 45px;
+      border: 0;
+      border-radius: 10px;
+      background: #111827;
+      color: #fff;
+      font-size: 10px;
+      line-height: 1;
+      font-weight: 600 !important;
+      box-shadow: 0 8px 16px rgba(17,24,39,.13);
+    }
+    .storage-queue-empty {
+      min-height: 54px;
+      display: grid;
+      place-items: center;
+      border-radius: 17px;
+      background: rgba(255,255,255,.76);
+      color: #8a909c;
+      font-size: 12px;
+      box-shadow: 0 6px 16px rgba(36,42,54,.04);
+    }
+    .quick-register {
+      margin-top: 4px;
+    }
+    .storage-completed-section {
+      display: grid;
+      gap: 7px;
+      margin-top: 4px;
+    }
+    .storage-section-title strong {
+      color: #151517;
+      font-size: 14px;
+      line-height: 1;
+      font-weight: 600 !important;
+    }
+    .storage-section-title span {
+      color: #858c98;
+      font-size: 11px;
+      line-height: 1;
+    }
+    .storage-date-field {
+      min-width: 0;
+      display: grid;
+      gap: 4px;
+    }
+    .storage-date-field span {
+      color: #7a828e;
+      font-size: 9.5px;
+      line-height: 1;
+      padding-left: 4px;
+    }
+    .storage-input.date {
+      min-width: 0;
+      appearance: auto;
+      -webkit-appearance: auto;
+      color-scheme: light;
+    }
+    .storage-time-toggle {
+      height: 38px;
+      align-self: end;
+      border: 1px solid #e2e7ef;
+      border-radius: 13px;
+      background: #f8fafc;
+      color: #6b7280;
+      font-size: 11px;
+      font-weight: 600 !important;
+    }
+    .storage-time-toggle.active {
+      background: #111827;
+      border-color: #111827;
+      color: #fff;
+    }
   </style>
 </head>
 <body>
@@ -1289,6 +1499,8 @@
         selected: {},
         locationMemo: '',
         visitDateText: '',
+        visitTimeText: '',
+        showVisitTime: false,
         requestMemo: '',
         loading: false,
         complete: null,
@@ -1583,61 +1795,177 @@
       `;
     }
 
-    function renderStorageRequest() {
+    function renderStorageRequest(data) {
       const storage = state.storage;
+      const queues = getStorageRequestQueues(data);
       const selectedCount = Object.values(storage.selected || {}).filter(Boolean).length;
       const selectedQuantity = getSelectedStorageItems()
         .reduce((sum, item) => sum + getStorageQtyValue(storageItemKey(item), item.quantity), 0);
 
       els.storageRequestRoot.innerHTML = `
-        <section class="storage-request-panel">
-          <div class="storage-request-head">
+        <section class="storage-board">
+          <div class="storage-board-head">
             <div>
-              <h2>보관요청</h2>
-              <p>핸드폰 뒷4자리로 최근 픽업 상품을 찾고, 따로 빼둔 뒤 완료 기록을 남깁니다.</p>
+              <h2>보관처리대기</h2>
+              <p>빼둘 물건부터 처리하고, 완료되면 바로 아래 기록으로 내려갑니다.</p>
             </div>
             <div class="storage-request-total">
-              <span>선택</span>
-              <strong>${number(selectedCount)}</strong>
+              <span>대기</span>
+              <strong>${number(queues.pending.length)}</strong>
             </div>
           </div>
+          ${renderStorageQueue(queues.pending, 'pending')}
 
-          <div class="storage-search-row">
-            <input
-              class="storage-input digits"
-              data-storage-field="digits"
-              value="${esc(storage.digits)}"
-              placeholder="핸드폰 뒷4자리"
-              aria-label="핸드폰 뒷4자리"
-              inputmode="numeric"
-              maxlength="4"
-              autocomplete="off"
-            >
-            <button class="storage-primary-btn" data-action="storage-lookup" type="button" ${storage.loading ? 'disabled' : ''}>${storage.loading ? '조회중' : '조회'}</button>
-          </div>
-
-          ${storage.message ? `<div class="storage-message">${esc(storage.message)}</div>` : ''}
-          ${renderStorageCandidates(storage)}
-          ${renderStorageItems(storage)}
-
-          <div class="storage-memo-grid">
-            <input class="storage-input" data-storage-field="locationMemo" value="${esc(storage.locationMemo)}" placeholder="보관장소 메모 선택" aria-label="보관장소 메모">
-            <input class="storage-input" data-storage-field="visitDateText" value="${esc(storage.visitDateText)}" placeholder="방문예정일 메모" aria-label="방문예정일 메모">
-            <input class="storage-input full" data-storage-field="requestMemo" value="${esc(storage.requestMemo)}" placeholder="추가 메모" aria-label="추가 메모">
-          </div>
-
-          <button class="storage-complete-btn" data-action="storage-complete" type="button" ${!selectedCount || storage.loading ? 'disabled' : ''}>
-            보관처리 완료
-            <span>${number(selectedQuantity)}개</span>
-          </button>
-
-          ${storage.complete ? `
-            <div class="storage-success">
-              <strong>보관완료</strong>
-              <span>${esc(storage.complete.customerLabel || storage.digits)} · ${number(storage.complete.quantity)}개 · ${esc(storage.complete.time)}</span>
+          <section class="storage-request-panel quick-register">
+            <div class="storage-request-head">
+              <div>
+                <h2>빠른 대기 등록</h2>
+                <p>핸드폰 뒷4자리 조회 후 상품과 수량만 고르면 대기 목록에 올라갑니다.</p>
+              </div>
+              <div class="storage-request-total">
+                <span>선택</span>
+                <strong>${number(selectedCount)}</strong>
+              </div>
             </div>
-          ` : ''}
+
+            <div class="storage-search-row">
+              <input
+                class="storage-input digits"
+                data-storage-field="digits"
+                value="${esc(storage.digits)}"
+                placeholder="핸드폰 뒷4자리"
+                aria-label="핸드폰 뒷4자리"
+                inputmode="numeric"
+                maxlength="4"
+                autocomplete="off"
+              >
+              <button class="storage-primary-btn" data-action="storage-lookup" type="button" ${storage.loading ? 'disabled' : ''}>${storage.loading ? '조회중' : '조회'}</button>
+            </div>
+
+            ${storage.message ? `<div class="storage-message">${esc(storage.message)}</div>` : ''}
+            ${renderStorageCandidates(storage)}
+            ${renderStorageItems(storage)}
+
+            <div class="storage-memo-grid">
+              <input class="storage-input" data-storage-field="locationMemo" value="${esc(storage.locationMemo)}" placeholder="보관장소 선택 메모" aria-label="보관장소 메모">
+              <label class="storage-date-field">
+                <span>방문예정일</span>
+                <input class="storage-input date" type="date" data-storage-field="visitDateText" value="${esc(storage.visitDateText)}" aria-label="방문예정일">
+              </label>
+              <button class="storage-time-toggle ${storage.showVisitTime ? 'active' : ''}" data-action="storage-toggle-time" type="button">시간 옵션</button>
+              ${storage.showVisitTime ? `
+                <label class="storage-date-field time">
+                  <span>예정시간</span>
+                  <input class="storage-input date" type="time" data-storage-field="visitTimeText" value="${esc(storage.visitTimeText)}" aria-label="방문예정시간">
+                </label>
+              ` : ''}
+              <input class="storage-input full" data-storage-field="requestMemo" value="${esc(storage.requestMemo)}" placeholder="추가 메모" aria-label="추가 메모">
+            </div>
+
+            <button class="storage-complete-btn" data-action="storage-register-pending" type="button" ${!selectedCount || storage.loading ? 'disabled' : ''}>
+              보관대기 등록
+              <span>${number(selectedQuantity)}개</span>
+            </button>
+
+            ${storage.complete ? `
+              <div class="storage-success">
+                <strong>${esc(storage.complete.title || '보관대기 등록')}</strong>
+                <span>${esc(storage.complete.customerLabel || storage.digits)} · ${number(storage.complete.quantity)}개 · ${esc(storage.complete.time)}</span>
+              </div>
+            ` : ''}
+          </section>
+
+          <section class="storage-completed-section">
+            <div class="storage-section-title">
+              <strong>보관처리완료</strong>
+              <span>${number(queues.completed.length)}건</span>
+            </div>
+            ${renderStorageQueue(queues.completed, 'completed')}
+          </section>
         </section>
+      `;
+    }
+
+    function getStorageRequestQueues(data) {
+      const seen = new Set();
+      const sourceItems = [
+        ...(data?.salesAllItems || []),
+        ...(data?.salesItems || []),
+        ...(data?.inboundItems || []),
+        ...(data?.latestInboundItems || []),
+        ...(data?.staleItems || [])
+      ];
+      const requests = [];
+
+      sourceItems.forEach(item => {
+        (item.storageRequests || []).forEach(request => {
+          const eventId = request.eventId || `${item.id}-${request.createdAt}-${request.customerLabel}`;
+          if (seen.has(eventId)) return;
+          seen.add(eventId);
+
+          requests.push({
+            ...request,
+            eventId,
+            itemId: item.id,
+            productName: item.productName,
+            storageMethod: item.storageMethod,
+            imageUrl: item.imageUrl,
+            salePrice: item.salePrice,
+            status: request.status === 'pending' ? 'pending' : 'completed'
+          });
+        });
+      });
+
+      requests.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+
+      return {
+        pending: requests.filter(request => request.status === 'pending'),
+        completed: requests.filter(request => request.status !== 'pending')
+      };
+    }
+
+    function renderStorageQueue(items, status) {
+      if (!items.length) {
+        return `<div class="storage-queue-empty">${status === 'pending' ? '현재 보관처리 대기 상품이 없습니다.' : '아직 완료 기록이 없습니다.'}</div>`;
+      }
+
+      return `
+        <div class="storage-queue-list ${status}">
+          ${items.map(item => renderStorageQueueItem(item, status)).join('')}
+        </div>
+      `;
+    }
+
+    function renderStorageQueueItem(item, status) {
+      const visitText = item.visitDateText || '';
+      const locationText = item.locationMemo || '';
+      const customerText = item.customerLabel || (item.customerDigits4 ? `뒷4자리 ${item.customerDigits4}` : '고객 미입력');
+      const timeText = status === 'pending'
+        ? formatDateTime(item.createdAt)
+        : formatDateTime(item.completedAt || item.createdAt);
+
+      return `
+        <article class="storage-queue-card ${status}">
+          <img src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy">
+          <div class="storage-queue-main">
+            <div class="storage-queue-top">
+              <strong>${esc(customerText)}</strong>
+              ${storageBadge(item.storageMethod)}
+            </div>
+            <div class="storage-queue-name">${esc(item.productName)}</div>
+            <div class="storage-queue-meta">
+              ${visitText ? `<span>방문 ${esc(visitText)}</span>` : ''}
+              ${locationText ? `<span>장소 ${esc(locationText)}</span>` : ''}
+              ${timeText ? `<span>${status === 'pending' ? '등록' : '완료'} ${esc(timeText)}</span>` : ''}
+            </div>
+            ${item.requestMemo ? `<div class="storage-queue-note">${esc(item.requestMemo)}</div>` : ''}
+          </div>
+          <div class="storage-queue-side">
+            <strong>${number(item.quantity)}</strong>
+            <span>개</span>
+            ${status === 'pending' ? `<button class="storage-done-btn" data-action="storage-mark-complete" data-event-id="${esc(item.eventId)}" data-customer-label="${esc(customerText)}" data-quantity="${esc(item.quantity)}" type="button">완료</button>` : ''}
+          </div>
+        </article>
       `;
     }
 
@@ -1726,10 +2054,10 @@
             <span class="buffer-label">본사버퍼</span>
             <strong class="buffer-value">${number(hqBuffer)}</strong>
           </div>
-          <div class="buffer-box our">
+          <button class="buffer-box our interactive" data-action="show-our-buffer-list" type="button">
             <span class="buffer-label">우리버퍼</span>
             <strong class="buffer-value">${number(ourBuffer)}</strong>
-          </div>
+          </button>
           <div class="buffer-box remaining">
             <span class="buffer-label">잔여버퍼</span>
             <div class="buffer-ratio">
@@ -1796,6 +2124,32 @@
         : '<div class="empty">버퍼 차감 기록이 없습니다.</div>');
     }
 
+    function openOurBufferListModal(id) {
+      const item = findItem(id);
+      if (!item) return;
+
+      const rows = (item.ourBufferNotes || [])
+        .filter(row => Number(row.quantity || 0) > 0 || row.noteText)
+        .map(row => ({
+          name: row.noteText || '내용 없음',
+          quantity: Number(row.quantity || 0),
+          time: row.syncedAt,
+          source: row.sourceRowNumber ? `${row.sourceSheetName || 'Raw'} ${row.sourceRowNumber}행` : ''
+        }));
+
+      openModal('우리버퍼 목록', item.productName || '', rows.length
+        ? rows.map(row => `
+            <div class="sheet-row">
+              <div>
+                <div class="sheet-row-name">${esc(row.name)}</div>
+                <div class="sheet-row-time">${esc(row.source || formatDateTime(row.time) || '시간 없음')}</div>
+              </div>
+              <div class="sheet-row-qty">${number(row.quantity)}</div>
+            </div>
+          `).join('')
+        : '<div class="empty">우리버퍼 메모가 없습니다.</div>');
+    }
+
     async function openOrderCustomersModal(id) {
       const item = findItem(id);
       if (!item) return;
@@ -1820,7 +2174,7 @@
                 <div>
                   <div class="sheet-row-name">${esc(row.customerLabel || '닉네임 비어있음')}</div>
                   <div class="sheet-row-time">${esc(row.orderDateText || '')}${row.pickupDateText ? ` · 픽업 ${esc(row.pickupDateText)}` : ''}</div>
-                  ${row.noteText ? `<div class="sheet-row-note important">메모 : ${esc(row.noteText)}</div>` : ''}
+                  ${row.noteText ? `<div class="sheet-row-note important">${esc(row.noteText)}</div>` : ''}
                 </div>
                 <div class="sheet-row-qty">${number(row.quantity)}</div>
               </div>
@@ -2483,7 +2837,14 @@
       }
     }
 
-    async function runStorageComplete() {
+    function getStorageVisitText() {
+      const dateText = String(state.storage.visitDateText || '').trim();
+      const timeText = String(state.storage.visitTimeText || '').trim();
+      if (!dateText) return '';
+      return timeText ? `${dateText} ${timeText}` : dateText;
+    }
+
+    async function runStorageRegisterPending() {
       if (state.busy || state.storage.loading) return;
 
       const selectedItems = getSelectedStorageItems()
@@ -2494,7 +2855,7 @@
         }));
 
       if (!selectedItems.length) {
-        state.storage.message = '보관처리할 상품을 선택해주세요.';
+        state.storage.message = '보관대기로 등록할 상품을 선택해주세요.';
         render();
         return;
       }
@@ -2512,21 +2873,22 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            action: 'storage_request_complete',
+            action: 'storage_request_pending',
             customerLabel: state.storage.selectedCustomerLabel,
             customerDigits4: state.storage.digits,
             locationMemo: state.storage.locationMemo,
-            visitDateText: state.storage.visitDateText,
+            visitDateText: getStorageVisitText(),
             requestMemo: state.storage.requestMemo,
             items: selectedItems
           })
         });
         const data = await response.json();
-        if (!response.ok || !data.ok) throw new Error(data.message || '보관완료를 저장하지 못했습니다.');
+        if (!response.ok || !data.ok) throw new Error(data.message || '보관대기를 등록하지 못했습니다.');
 
         const totalQuantity = selectedItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
         state.dashboard = data.dashboard;
         state.storage.complete = {
+          title: '보관대기 등록',
           customerLabel: state.storage.selectedCustomerLabel,
           quantity: totalQuantity,
           time: formatDateTime(new Date().toISOString()) || '방금'
@@ -2534,6 +2896,8 @@
         state.storage.selected = {};
         state.storage.locationMemo = '';
         state.storage.visitDateText = '';
+        state.storage.visitTimeText = '';
+        state.storage.showVisitTime = false;
         state.storage.requestMemo = '';
       } catch (error) {
         state.storage.message = error.message || String(error);
@@ -2541,6 +2905,41 @@
         state.busy = false;
         state.storage.loading = false;
         render();
+      }
+    }
+
+    async function runStorageMarkComplete(eventId, customerLabel = '', quantity = 0) {
+      if (state.busy || !eventId) return;
+
+      state.busy = true;
+
+      try {
+        const url = new URL('/api/buffer-action', location.origin);
+        url.searchParams.set('token', state.token);
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'storage_request_complete',
+            eventId
+          })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.message || '보관완료 처리에 실패했습니다.');
+
+        state.dashboard = data.dashboard;
+        state.storage.complete = {
+          title: '보관처리 완료',
+          customerLabel,
+          quantity: Number(quantity || 0),
+          time: formatDateTime(new Date().toISOString()) || '방금'
+        };
+        window.navigator?.vibrate?.(12);
+        render();
+      } catch (error) {
+        alert(error.message || String(error));
+      } finally {
+        state.busy = false;
       }
     }
 
@@ -2567,8 +2966,23 @@
         return true;
       }
 
-      if (action === 'storage-complete') {
-        runStorageComplete();
+      if (action === 'storage-register-pending') {
+        runStorageRegisterPending();
+        return true;
+      }
+
+      if (action === 'storage-mark-complete') {
+        runStorageMarkComplete(
+          button.dataset.eventId || '',
+          button.dataset.customerLabel || '',
+          button.dataset.quantity || 0
+        );
+        return true;
+      }
+
+      if (action === 'storage-toggle-time') {
+        state.storage.showVisitTime = !state.storage.showVisitTime;
+        render();
         return true;
       }
 
@@ -2589,6 +3003,11 @@
 
           if (action === 'show-buffer-list') {
             openBufferListModal(id);
+            return;
+          }
+
+          if (action === 'show-our-buffer-list') {
+            openOurBufferListModal(id);
             return;
           }
 

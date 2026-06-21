@@ -1,4 +1,5 @@
 import {
+  completeStorageRequestEvent,
   createBufferEvent,
   createReceivingCount,
   createStorageRequestEvent,
@@ -44,7 +45,7 @@ export default async function handler(req, res) {
         isComplete: body.isComplete,
         completedBy: body.completedBy
       });
-    } else if (action === 'storage_request_complete') {
+    } else if (action === 'storage_request_pending') {
       const items = Array.isArray(body.items) && body.items.length
         ? body.items
         : [{
@@ -60,8 +61,38 @@ export default async function handler(req, res) {
           customerDigits4: body.customerDigits4,
           locationMemo: body.locationMemo,
           visitDateText: body.visitDateText,
+          requestMemo: body.requestMemo,
+          status: 'pending'
+        });
+      }
+    } else if (action === 'storage_request_complete') {
+      if (body.eventId) {
+        await completeStorageRequestEvent({
+          eventId: body.eventId,
+          locationMemo: body.locationMemo,
+          visitDateText: body.visitDateText,
           requestMemo: body.requestMemo
         });
+      } else {
+        const items = Array.isArray(body.items) && body.items.length
+          ? body.items
+          : [{
+              inventoryStableId: body.inventoryStableId,
+              quantity: body.quantity
+            }];
+
+        for (const item of items) {
+          await createStorageRequestEvent({
+            inventoryStableId: item.inventoryStableId,
+            quantity: item.quantity,
+            customerLabel: body.customerLabel,
+            customerDigits4: body.customerDigits4,
+            locationMemo: body.locationMemo,
+            visitDateText: body.visitDateText,
+            requestMemo: body.requestMemo,
+            status: 'completed'
+          });
+        }
       }
     } else {
       return res.status(400).json({
