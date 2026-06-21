@@ -1366,6 +1366,39 @@
       font-weight: 400 !important;
       word-break: keep-all;
     }
+    .storage-board-actions {
+      display: grid;
+      justify-items: end;
+      gap: 6px;
+    }
+    .storage-new-btn {
+      height: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 0 11px;
+      border: 0;
+      border-radius: 13px;
+      background: #111827;
+      color: #fff;
+      box-shadow: 0 10px 22px rgba(17,24,39,.16);
+      font-size: 11.5px;
+      line-height: 1;
+      font-weight: 600 !important;
+      white-space: nowrap;
+    }
+    .storage-new-btn span {
+      display: inline-grid;
+      place-items: center;
+      width: 17px;
+      height: 17px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.18);
+      font-size: 14px;
+      line-height: 1;
+      font-weight: 500 !important;
+    }
     .storage-queue-list {
       display: grid;
       gap: 7px;
@@ -1549,8 +1582,8 @@
       font-size: 12px;
       box-shadow: 0 6px 16px rgba(36,42,54,.04);
     }
-    .quick-register {
-      margin-top: 4px;
+    .storage-success-board {
+      margin-top: -2px;
     }
     .storage-completed-section {
       display: grid;
@@ -1623,6 +1656,69 @@
       color: #63739a;
       font-size: 10.5px;
       line-height: 1;
+    }
+    .storage-form-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 78;
+      display: grid;
+      align-items: end;
+      padding: 12px 10px max(12px, env(safe-area-inset-bottom));
+      background: rgba(20, 23, 30, .38);
+      backdrop-filter: blur(10px);
+    }
+    .storage-form-sheet {
+      width: min(760px, 100%);
+      max-height: min(88vh, 780px);
+      display: grid;
+      gap: 9px;
+      margin: 0 auto;
+      padding: 9px;
+      border-radius: 28px 28px 22px 22px;
+      background: #f8f9fb;
+      box-shadow: 0 24px 70px rgba(20,23,30,.26);
+      overflow: auto;
+      overscroll-behavior: contain;
+    }
+    .storage-form-grabber {
+      width: 46px;
+      height: 5px;
+      margin: 2px auto 4px;
+      border-radius: 999px;
+      background: #d5dae3;
+    }
+    .storage-form-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: start;
+      padding: 2px 4px 1px;
+    }
+    .storage-form-head h2 {
+      margin: 0;
+      color: #151517;
+      font-size: 18px;
+      line-height: 1.05;
+      font-weight: 600 !important;
+    }
+    .storage-form-head p {
+      margin: 5px 0 0;
+      color: #858c98;
+      font-size: 11px;
+      line-height: 1.25;
+      font-weight: 400 !important;
+      word-break: keep-all;
+    }
+    .storage-form-close {
+      width: 34px;
+      height: 34px;
+      border: 0;
+      border-radius: 13px;
+      background: #eef1f6;
+      color: #151517;
+      font-size: 21px;
+      line-height: 1;
+      font-weight: 500 !important;
     }
   </style>
 </head>
@@ -1715,6 +1811,7 @@
         showVisitTime: false,
         requestMemo: '',
         editingGroup: null,
+        formOpen: false,
         loading: false,
         complete: null,
         message: ''
@@ -2011,16 +2108,6 @@
     function renderStorageRequest(data) {
       const storage = state.storage;
       const queues = getStorageRequestQueues(data);
-      const isEditing = Boolean(storage.editingGroup);
-      const selectedCount = isEditing
-        ? (storage.items || []).length
-        : Object.values(storage.selected || {}).filter(Boolean).length;
-      const selectedQuantity = getActiveStorageItems()
-        .reduce((sum, item) => sum + getStorageQtyValue(storageItemKey(item), item.quantity), 0);
-      const formTitle = isEditing ? '보관요청 수정' : '빠른 대기 등록';
-      const formDesc = isEditing
-        ? '목록에서 누른 보관요청의 수량, 방문일, 보관장소 메모를 수정합니다.'
-        : '핸드폰 뒷4자리 조회 후 상품과 수량만 고르면 대기 목록에 올라갑니다.';
 
       els.storageRequestRoot.innerHTML = `
         <section class="storage-board">
@@ -2029,82 +2116,24 @@
               <h2>보관처리대기</h2>
               <p>빼둘 물건부터 처리하고, 완료되면 바로 아래 기록으로 내려갑니다.</p>
             </div>
-            <div class="storage-request-total">
-              <span>대기</span>
-              <strong>${number(queues.pending.length)}</strong>
+            <div class="storage-board-actions">
+              <div class="storage-request-total">
+                <span>대기</span>
+                <strong>${number(queues.pending.length)}</strong>
+              </div>
+              <button class="storage-new-btn" data-action="storage-open-new" type="button">
+                <span>+</span>
+                새로운 보관요청
+              </button>
             </div>
           </div>
+          ${storage.complete ? `
+            <div class="storage-success storage-success-board">
+              <strong>${esc(storage.complete.title || '보관요청')}</strong>
+              <span>${esc(storage.complete.customerLabel || storage.digits)} · ${number(storage.complete.quantity)}개 · ${esc(storage.complete.time)}</span>
+            </div>
+          ` : ''}
           ${renderStorageQueue(queues.pending, 'pending')}
-
-          <section class="storage-request-panel quick-register">
-            <div class="storage-request-head">
-              <div>
-                <h2>${esc(formTitle)}</h2>
-                <p>${esc(formDesc)}</p>
-              </div>
-              <div class="storage-request-total">
-                <span>${isEditing ? '수량' : '선택'}</span>
-                <strong>${number(selectedCount)}</strong>
-              </div>
-            </div>
-
-            ${isEditing ? renderStorageEditBanner(storage.editingGroup) : `
-              <div class="storage-search-row">
-                <input
-                  class="storage-input digits"
-                  data-storage-field="digits"
-                  value="${esc(storage.digits)}"
-                  placeholder="핸드폰 뒷4자리"
-                  aria-label="핸드폰 뒷4자리"
-                  inputmode="numeric"
-                  maxlength="4"
-                  autocomplete="off"
-                >
-                <button class="storage-primary-btn" data-action="storage-lookup" type="button" ${storage.loading ? 'disabled' : ''}>${storage.loading ? '조회중' : '조회'}</button>
-              </div>
-            `}
-
-            ${storage.message ? `<div class="storage-message">${esc(storage.message)}</div>` : ''}
-            ${isEditing ? '' : renderStorageCandidates(storage)}
-            ${renderStorageItems(storage)}
-
-            <div class="storage-memo-grid">
-              <div class="storage-schedule-row ${storage.showVisitTime ? 'with-time' : ''}">
-                <label class="storage-date-field">
-                  <span>방문예정일</span>
-                  <input class="storage-input date" type="date" data-storage-field="visitDateText" value="${esc(storage.visitDateText)}" aria-label="방문예정일">
-                </label>
-                <button class="storage-time-toggle ${storage.showVisitTime ? 'active' : ''}" data-action="storage-toggle-time" type="button">${storage.showVisitTime ? '시간 사용' : '시간 옵션'}</button>
-                ${storage.showVisitTime ? `
-                  <label class="storage-date-field time">
-                    <span>예정시간</span>
-                    <input class="storage-input date" type="time" data-storage-field="visitTimeText" value="${esc(storage.visitTimeText)}" aria-label="방문예정시간">
-                  </label>
-                ` : ''}
-              </div>
-              <input class="storage-input full storage-location-memo" data-storage-field="locationMemo" value="${esc(storage.locationMemo)}" placeholder="보관장소등 메모" aria-label="보관장소등 메모">
-            </div>
-
-            <div class="storage-form-actions">
-              ${isEditing ? `<button class="storage-secondary-btn" data-action="storage-cancel-edit" type="button">수정 취소</button>` : ''}
-              <button class="storage-complete-btn" data-action="${isEditing ? 'storage-save-edit' : 'storage-register-pending'}" type="button" ${!selectedCount || storage.loading ? 'disabled' : ''}>
-                ${isEditing ? '수정 저장' : '보관대기 등록'}
-                <span>${number(selectedQuantity)}개</span>
-              </button>
-              ${isEditing && storage.editingGroup?.status === 'pending' ? `
-                <button class="storage-complete-btn storage-complete-now" data-action="storage-save-complete" type="button" ${storage.loading ? 'disabled' : ''}>
-                  수정 후 완료
-                </button>
-              ` : ''}
-            </div>
-
-            ${storage.complete ? `
-              <div class="storage-success">
-                <strong>${esc(storage.complete.title || '보관대기 등록')}</strong>
-                <span>${esc(storage.complete.customerLabel || storage.digits)} · ${number(storage.complete.quantity)}개 · ${esc(storage.complete.time)}</span>
-              </div>
-            ` : ''}
-          </section>
 
           <section class="storage-completed-section">
             <div class="storage-section-title">
@@ -2113,7 +2142,100 @@
             </div>
             ${renderStorageQueue(queues.completed, 'completed')}
           </section>
+          ${renderStorageFormSheet(storage)}
         </section>
+      `;
+    }
+
+    function renderStorageFormSheet(storage) {
+      if (!storage.formOpen) return '';
+
+      const isEditing = Boolean(storage.editingGroup);
+      const selectedCount = isEditing
+        ? (storage.items || []).length
+        : Object.values(storage.selected || {}).filter(Boolean).length;
+      const selectedQuantity = getActiveStorageItems()
+        .reduce((sum, item) => sum + getStorageQtyValue(storageItemKey(item), item.quantity), 0);
+      const formTitle = isEditing ? '보관요청 수정' : '새로운 보관요청';
+      const formDesc = isEditing
+        ? '수량, 방문예정일, 보관장소 메모를 필요한 만큼만 수정합니다.'
+        : '핸드폰 뒷4자리로 고객을 찾고 보관할 상품만 빠르게 선택합니다.';
+
+      return `
+        <div class="storage-form-overlay" role="presentation">
+          <section class="storage-form-sheet" role="dialog" aria-modal="true" aria-label="${esc(formTitle)}">
+            <div class="storage-form-grabber" aria-hidden="true"></div>
+            <div class="storage-form-head">
+              <div>
+                <h2>${esc(formTitle)}</h2>
+                <p>${esc(formDesc)}</p>
+              </div>
+              <button class="storage-form-close" data-action="storage-close-form" type="button" aria-label="닫기">×</button>
+            </div>
+            <div class="storage-request-panel">
+              <div class="storage-request-head">
+                <div>
+                  <h2>${isEditing ? '수정 내용' : '빠른 등록'}</h2>
+                  <p>방문예정일과 보관장소등 메모는 선택값입니다.</p>
+                </div>
+                <div class="storage-request-total">
+                  <span>${isEditing ? '수량' : '선택'}</span>
+                  <strong>${number(selectedCount)}</strong>
+                </div>
+              </div>
+
+              ${isEditing ? renderStorageEditBanner(storage.editingGroup) : `
+                <div class="storage-search-row">
+                  <input
+                    class="storage-input digits"
+                    data-storage-field="digits"
+                    value="${esc(storage.digits)}"
+                    placeholder="핸드폰 뒷4자리"
+                    aria-label="핸드폰 뒷4자리"
+                    inputmode="numeric"
+                    maxlength="4"
+                    autocomplete="off"
+                  >
+                  <button class="storage-primary-btn" data-action="storage-lookup" type="button" ${storage.loading ? 'disabled' : ''}>${storage.loading ? '조회중' : '조회'}</button>
+                </div>
+              `}
+
+              ${storage.message ? `<div class="storage-message">${esc(storage.message)}</div>` : ''}
+              ${isEditing ? '' : renderStorageCandidates(storage)}
+              ${renderStorageItems(storage)}
+
+              <div class="storage-memo-grid">
+                <div class="storage-schedule-row ${storage.showVisitTime ? 'with-time' : ''}">
+                  <label class="storage-date-field">
+                    <span>방문예정일 선택</span>
+                    <input class="storage-input date" type="date" data-storage-field="visitDateText" value="${esc(storage.visitDateText)}" aria-label="방문예정일">
+                  </label>
+                  <button class="storage-time-toggle ${storage.showVisitTime ? 'active' : ''}" data-action="storage-toggle-time" type="button">${storage.showVisitTime ? '시간 사용' : '시간 옵션'}</button>
+                  ${storage.showVisitTime ? `
+                    <label class="storage-date-field time">
+                      <span>예정시간</span>
+                      <input class="storage-input date" type="time" data-storage-field="visitTimeText" value="${esc(storage.visitTimeText)}" aria-label="방문예정시간">
+                    </label>
+                  ` : ''}
+                </div>
+                <input class="storage-input full storage-location-memo" data-storage-field="locationMemo" value="${esc(storage.locationMemo)}" placeholder="보관장소등 메모 (선택)" aria-label="보관장소등 메모">
+              </div>
+
+              <div class="storage-form-actions">
+                ${isEditing ? `<button class="storage-secondary-btn" data-action="storage-cancel-edit" type="button">수정 취소</button>` : ''}
+                <button class="storage-complete-btn" data-action="${isEditing ? 'storage-save-edit' : 'storage-register-pending'}" type="button" ${!selectedCount || storage.loading ? 'disabled' : ''}>
+                  ${isEditing ? '수정 저장' : '보관대기 등록'}
+                  <span>${number(selectedQuantity)}개</span>
+                </button>
+                ${isEditing && storage.editingGroup?.status === 'pending' ? `
+                  <button class="storage-complete-btn storage-complete-now" data-action="storage-save-complete" type="button" ${storage.loading ? 'disabled' : ''}>
+                    수정 후 완료
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+          </section>
+        </div>
       `;
     }
 
@@ -3254,8 +3376,19 @@
       state.storage.showVisitTime = false;
       state.storage.requestMemo = '';
       state.storage.editingGroup = null;
+      state.storage.formOpen = false;
       state.storage.message = '';
       state.storage.complete = complete;
+    }
+
+    function openStorageNewRequest() {
+      resetStorageForm();
+      state.storage.formOpen = true;
+      state.storage.complete = null;
+      render();
+      window.requestAnimationFrame(() => {
+        document.querySelector('[data-storage-field="digits"]')?.focus?.();
+      });
     }
 
     function enterStorageEditGroup(groupId) {
@@ -3275,6 +3408,7 @@
       state.storage.message = '';
       state.storage.complete = null;
       state.storage.selected = {};
+      state.storage.formOpen = true;
       state.storage.items = (group.items || []).map(item => {
         const editItem = {
           ...item,
@@ -3286,9 +3420,6 @@
         return editItem;
       });
       render();
-      window.requestAnimationFrame(() => {
-        document.querySelector('.quick-register')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
     }
 
     function getStorageEditItemsPayload() {
@@ -3445,6 +3576,17 @@
     }
 
     function handleStorageAction(button, action) {
+      if (action === 'storage-open-new') {
+        openStorageNewRequest();
+        return true;
+      }
+
+      if (action === 'storage-close-form') {
+        resetStorageForm();
+        render();
+        return true;
+      }
+
       if (action === 'storage-lookup') {
         runStorageLookup();
         return true;
@@ -3612,6 +3754,14 @@
             event.preventDefault();
             runStorageLookup();
           }
+        };
+      });
+
+      document.querySelectorAll('.storage-form-overlay').forEach(overlay => {
+        overlay.onclick = event => {
+          if (event.target !== overlay) return;
+          resetStorageForm();
+          render();
         };
       });
 
