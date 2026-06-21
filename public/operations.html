@@ -4491,6 +4491,28 @@
       });
     }
 
+    function bindImeSafeInput(input, onCommit) {
+      let lastCommittedValue = input.value || '';
+      const commit = () => {
+        const nextValue = input.value || '';
+        if (nextValue === lastCommittedValue && input.dataset.composing !== '1') return;
+        lastCommittedValue = nextValue;
+        onCommit(nextValue);
+      };
+
+      input.oncompositionstart = () => {
+        input.dataset.composing = '1';
+      };
+      input.oncompositionend = () => {
+        input.dataset.composing = '';
+        commit();
+      };
+      input.oninput = event => {
+        if (event.isComposing || input.dataset.composing === '1') return;
+        commit();
+      };
+    }
+
     function bindControls() {
       document.querySelectorAll('[data-action]').forEach(button => {
         button.onclick = async event => {
@@ -4591,8 +4613,7 @@
       });
 
       document.querySelectorAll('[data-settlement-search]').forEach(input => {
-        input.oninput = () => {
-          const nextValue = input.value || '';
+        bindImeSafeInput(input, nextValue => {
           state.settlementQuery = nextValue;
           renderSettlementReview(state.dashboard || {});
           bindControls();
@@ -4602,13 +4623,12 @@
             const end = nextValue.length;
             nextInput?.setSelectionRange?.(end, end);
           });
-        };
+        });
       });
 
       document.querySelectorAll('[data-ops-search]').forEach(input => {
-        input.oninput = () => {
+        bindImeSafeInput(input, nextValue => {
           const kind = input.dataset.opsSearch || '';
-          const nextValue = input.value || '';
           if (kind === 'sales') state.salesQuery = nextValue;
           if (kind === 'inbound') state.inboundQuery = nextValue;
           if (kind === 'stale') state.staleQuery = nextValue;
@@ -4619,24 +4639,24 @@
             const end = nextValue.length;
             nextInput?.setSelectionRange?.(end, end);
           });
-        };
+        });
       });
 
       document.querySelectorAll('[data-storage-field]').forEach(input => {
-        input.oninput = () => {
+        bindImeSafeInput(input, nextValue => {
           const field = input.dataset.storageField || '';
           if (!field || !(field in state.storage)) return;
 
           state.storage[field] = field === 'digits'
-            ? input.value.replace(/\D/g, '').slice(-4)
-            : input.value;
+            ? nextValue.replace(/\D/g, '').slice(-4)
+            : nextValue;
           if (field === 'digits') {
             input.value = state.storage[field];
           }
           if (field === 'digits' || field === 'customerQuery' || field === 'productQuery') {
             scheduleStorageLookup();
           }
-        };
+        });
         input.onkeydown = event => {
           if ((input.dataset.storageField === 'digits' || input.dataset.storageField === 'customerQuery' || input.dataset.storageField === 'productQuery') && event.key === 'Enter') {
             event.preventDefault();
