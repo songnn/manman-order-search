@@ -1,10 +1,11 @@
+import crypto from 'node:crypto';
 import {
-  completeStorageRequestEvent,
   createBufferEvent,
   createReceivingCount,
   createStorageRequestEvent,
   getOperationsDashboardData,
-  setReceivingComplete
+  setReceivingComplete,
+  updateStorageRequestEvents
 } from '../lib/opsData.js';
 
 export default async function handler(req, res) {
@@ -46,6 +47,7 @@ export default async function handler(req, res) {
         completedBy: body.completedBy
       });
     } else if (action === 'storage_request_pending') {
+      const storageGroupId = String(body.storageGroupId || crypto.randomUUID()).trim();
       const items = Array.isArray(body.items) && body.items.length
         ? body.items
         : [{
@@ -62,18 +64,35 @@ export default async function handler(req, res) {
           locationMemo: body.locationMemo,
           visitDateText: body.visitDateText,
           requestMemo: body.requestMemo,
+          storageGroupId,
           status: 'pending'
         });
       }
+    } else if (action === 'storage_request_update') {
+      await updateStorageRequestEvents({
+        eventIds: Array.isArray(body.eventIds) ? body.eventIds : [body.eventId],
+        status: body.status,
+        locationMemo: body.locationMemo,
+        visitDateText: body.visitDateText,
+        requestMemo: body.requestMemo,
+        items: body.items
+      });
     } else if (action === 'storage_request_complete') {
-      if (body.eventId) {
-        await completeStorageRequestEvent({
-          eventId: body.eventId,
+      const eventIds = Array.isArray(body.eventIds) && body.eventIds.length
+        ? body.eventIds
+        : [body.eventId].filter(Boolean);
+
+      if (eventIds.length) {
+        await updateStorageRequestEvents({
+          eventIds,
+          status: 'completed',
           locationMemo: body.locationMemo,
           visitDateText: body.visitDateText,
-          requestMemo: body.requestMemo
+          requestMemo: body.requestMemo,
+          items: body.items
         });
       } else {
+        const storageGroupId = String(body.storageGroupId || crypto.randomUUID()).trim();
         const items = Array.isArray(body.items) && body.items.length
           ? body.items
           : [{
@@ -90,6 +109,7 @@ export default async function handler(req, res) {
             locationMemo: body.locationMemo,
             visitDateText: body.visitDateText,
             requestMemo: body.requestMemo,
+            storageGroupId,
             status: 'completed'
           });
         }

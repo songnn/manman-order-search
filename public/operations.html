@@ -848,7 +848,7 @@
     .storage-input.digits {
       text-align: center;
       font-family: 'TheJamsilOps', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 18px;
+      font-size: 14px;
       font-weight: 500 !important;
       letter-spacing: 0;
     }
@@ -1011,10 +1011,21 @@
     }
     .storage-memo-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
       gap: 7px;
     }
+    .storage-schedule-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 7px;
+      align-items: end;
+    }
+    .storage-schedule-row.with-time {
+      grid-template-columns: minmax(0, 1fr) 78px minmax(0, .72fr);
+    }
     .storage-memo-grid .full {
+      grid-column: 1 / -1;
+    }
+    .storage-location-memo {
       grid-column: 1 / -1;
     }
     .storage-complete-btn {
@@ -1029,6 +1040,36 @@
       font-family: 'TheJamsilOps', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
       font-size: 16px;
       font-weight: 500 !important;
+    }
+    .storage-form-actions {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 7px;
+      align-items: stretch;
+    }
+    .storage-form-actions .storage-complete-now {
+      grid-column: 1 / -1;
+      background: #2563eb;
+      box-shadow: 0 12px 22px rgba(37,99,235,.16);
+    }
+    .storage-form-actions .storage-complete-btn:first-child:last-child {
+      grid-column: 1 / -1;
+    }
+    .storage-secondary-btn {
+      min-width: 76px;
+      height: 44px;
+      border: 1px solid #e2e7ef;
+      border-radius: 13px;
+      background: #f8fafc;
+      color: #687180;
+      font-size: 12px;
+      font-weight: 600 !important;
+    }
+    .storage-secondary-btn.compact {
+      min-width: 52px;
+      height: 30px;
+      border-radius: 11px;
+      font-size: 10.5px;
     }
     .storage-success {
       display: grid;
@@ -1142,7 +1183,7 @@
       height: 22px;
     }
     .inbound-card .count-actions {
-      grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(86px, 1.35fr);
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 7px;
       padding-top: 9px;
       border-top-color: #eef1f5;
@@ -1183,6 +1224,11 @@
       background: linear-gradient(135deg, #fff5f5, #ffecec);
       box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 8px 18px rgba(223,63,63,.08);
     }
+    .inbound-card .count-btn.count-reset {
+      color: #687180;
+      background: linear-gradient(135deg, #f8fafc, #eef1f6);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 8px 18px rgba(104,113,128,.07);
+    }
     .inbound-card .count-btn:active {
       transform: scale(.955);
       filter: saturate(1.08);
@@ -1192,6 +1238,7 @@
       box-shadow: 0 0 0 7px rgba(223,63,63,.11);
     }
     .inbound-card .complete-btn {
+      grid-column: span 2;
       background: #111827;
       box-shadow: 0 10px 20px rgba(17,24,39,.13);
       font-size: 12px;
@@ -1254,6 +1301,7 @@
       background: #fff;
       border: 1px solid rgba(255,255,255,.9);
       box-shadow: 0 8px 22px rgba(36,42,54,.06);
+      cursor: pointer;
     }
     .storage-queue-card.pending {
       background: linear-gradient(135deg, #fffdf8, #fff);
@@ -1311,6 +1359,12 @@
       white-space: nowrap;
       overflow: hidden;
     }
+    .storage-queue-time.done {
+      color: #0f9f68;
+    }
+    .storage-queue-time.pending {
+      color: #b77900;
+    }
     .storage-queue-note {
       min-width: 0;
       color: #687180;
@@ -1319,6 +1373,17 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+    .storage-queue-note.important {
+      display: inline-flex;
+      width: fit-content;
+      max-width: 100%;
+      padding: 4px 7px;
+      border-radius: 9px;
+      background: #fff2f2;
+      color: #df3f3f;
+      font-size: 10.5px;
+      line-height: 1.05;
     }
     .storage-queue-side {
       display: grid;
@@ -1411,6 +1476,30 @@
       border-color: #111827;
       color: #fff;
     }
+    .storage-edit-banner {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+      padding: 9px 10px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #f5f8ff, #fff);
+      border: 1px solid #d8e3ff;
+    }
+    .storage-edit-banner strong {
+      display: block;
+      color: #151517;
+      font-size: 13px;
+      line-height: 1.1;
+      font-weight: 600 !important;
+    }
+    .storage-edit-banner span {
+      display: block;
+      margin-top: 4px;
+      color: #63739a;
+      font-size: 10.5px;
+      line-height: 1;
+    }
   </style>
 </head>
 <body>
@@ -1502,6 +1591,7 @@
         visitTimeText: '',
         showVisitTime: false,
         requestMemo: '',
+        editingGroup: null,
         loading: false,
         complete: null,
         message: ''
@@ -1798,9 +1888,16 @@
     function renderStorageRequest(data) {
       const storage = state.storage;
       const queues = getStorageRequestQueues(data);
-      const selectedCount = Object.values(storage.selected || {}).filter(Boolean).length;
-      const selectedQuantity = getSelectedStorageItems()
+      const isEditing = Boolean(storage.editingGroup);
+      const selectedCount = isEditing
+        ? (storage.items || []).length
+        : Object.values(storage.selected || {}).filter(Boolean).length;
+      const selectedQuantity = getActiveStorageItems()
         .reduce((sum, item) => sum + getStorageQtyValue(storageItemKey(item), item.quantity), 0);
+      const formTitle = isEditing ? '보관요청 수정' : '빠른 대기 등록';
+      const formDesc = isEditing
+        ? '목록에서 누른 보관요청의 수량, 방문일, 보관장소 메모를 수정합니다.'
+        : '핸드폰 뒷4자리 조회 후 상품과 수량만 고르면 대기 목록에 올라갑니다.';
 
       els.storageRequestRoot.innerHTML = `
         <section class="storage-board">
@@ -1819,53 +1916,64 @@
           <section class="storage-request-panel quick-register">
             <div class="storage-request-head">
               <div>
-                <h2>빠른 대기 등록</h2>
-                <p>핸드폰 뒷4자리 조회 후 상품과 수량만 고르면 대기 목록에 올라갑니다.</p>
+                <h2>${esc(formTitle)}</h2>
+                <p>${esc(formDesc)}</p>
               </div>
               <div class="storage-request-total">
-                <span>선택</span>
+                <span>${isEditing ? '수량' : '선택'}</span>
                 <strong>${number(selectedCount)}</strong>
               </div>
             </div>
 
-            <div class="storage-search-row">
-              <input
-                class="storage-input digits"
-                data-storage-field="digits"
-                value="${esc(storage.digits)}"
-                placeholder="핸드폰 뒷4자리"
-                aria-label="핸드폰 뒷4자리"
-                inputmode="numeric"
-                maxlength="4"
-                autocomplete="off"
-              >
-              <button class="storage-primary-btn" data-action="storage-lookup" type="button" ${storage.loading ? 'disabled' : ''}>${storage.loading ? '조회중' : '조회'}</button>
-            </div>
+            ${isEditing ? renderStorageEditBanner(storage.editingGroup) : `
+              <div class="storage-search-row">
+                <input
+                  class="storage-input digits"
+                  data-storage-field="digits"
+                  value="${esc(storage.digits)}"
+                  placeholder="핸드폰 뒷4자리"
+                  aria-label="핸드폰 뒷4자리"
+                  inputmode="numeric"
+                  maxlength="4"
+                  autocomplete="off"
+                >
+                <button class="storage-primary-btn" data-action="storage-lookup" type="button" ${storage.loading ? 'disabled' : ''}>${storage.loading ? '조회중' : '조회'}</button>
+              </div>
+            `}
 
             ${storage.message ? `<div class="storage-message">${esc(storage.message)}</div>` : ''}
-            ${renderStorageCandidates(storage)}
+            ${isEditing ? '' : renderStorageCandidates(storage)}
             ${renderStorageItems(storage)}
 
             <div class="storage-memo-grid">
-              <input class="storage-input" data-storage-field="locationMemo" value="${esc(storage.locationMemo)}" placeholder="보관장소 선택 메모" aria-label="보관장소 메모">
-              <label class="storage-date-field">
-                <span>방문예정일</span>
-                <input class="storage-input date" type="date" data-storage-field="visitDateText" value="${esc(storage.visitDateText)}" aria-label="방문예정일">
-              </label>
-              <button class="storage-time-toggle ${storage.showVisitTime ? 'active' : ''}" data-action="storage-toggle-time" type="button">시간 옵션</button>
-              ${storage.showVisitTime ? `
-                <label class="storage-date-field time">
-                  <span>예정시간</span>
-                  <input class="storage-input date" type="time" data-storage-field="visitTimeText" value="${esc(storage.visitTimeText)}" aria-label="방문예정시간">
+              <div class="storage-schedule-row ${storage.showVisitTime ? 'with-time' : ''}">
+                <label class="storage-date-field">
+                  <span>방문예정일</span>
+                  <input class="storage-input date" type="date" data-storage-field="visitDateText" value="${esc(storage.visitDateText)}" aria-label="방문예정일">
                 </label>
-              ` : ''}
-              <input class="storage-input full" data-storage-field="requestMemo" value="${esc(storage.requestMemo)}" placeholder="추가 메모" aria-label="추가 메모">
+                <button class="storage-time-toggle ${storage.showVisitTime ? 'active' : ''}" data-action="storage-toggle-time" type="button">${storage.showVisitTime ? '시간 사용' : '시간 옵션'}</button>
+                ${storage.showVisitTime ? `
+                  <label class="storage-date-field time">
+                    <span>예정시간</span>
+                    <input class="storage-input date" type="time" data-storage-field="visitTimeText" value="${esc(storage.visitTimeText)}" aria-label="방문예정시간">
+                  </label>
+                ` : ''}
+              </div>
+              <input class="storage-input full storage-location-memo" data-storage-field="locationMemo" value="${esc(storage.locationMemo)}" placeholder="보관장소등 메모" aria-label="보관장소등 메모">
             </div>
 
-            <button class="storage-complete-btn" data-action="storage-register-pending" type="button" ${!selectedCount || storage.loading ? 'disabled' : ''}>
-              보관대기 등록
-              <span>${number(selectedQuantity)}개</span>
-            </button>
+            <div class="storage-form-actions">
+              ${isEditing ? `<button class="storage-secondary-btn" data-action="storage-cancel-edit" type="button">수정 취소</button>` : ''}
+              <button class="storage-complete-btn" data-action="${isEditing ? 'storage-save-edit' : 'storage-register-pending'}" type="button" ${!selectedCount || storage.loading ? 'disabled' : ''}>
+                ${isEditing ? '수정 저장' : '보관대기 등록'}
+                <span>${number(selectedQuantity)}개</span>
+              </button>
+              ${isEditing && storage.editingGroup?.status === 'pending' ? `
+                <button class="storage-complete-btn storage-complete-now" data-action="storage-save-complete" type="button" ${storage.loading ? 'disabled' : ''}>
+                  수정 후 완료
+                </button>
+              ` : ''}
+            </div>
 
             ${storage.complete ? `
               <div class="storage-success">
@@ -1888,6 +1996,7 @@
 
     function getStorageRequestQueues(data) {
       const seen = new Set();
+      const groups = new Map();
       const sourceItems = [
         ...(data?.salesAllItems || []),
         ...(data?.salesItems || []),
@@ -1895,15 +2004,13 @@
         ...(data?.latestInboundItems || []),
         ...(data?.staleItems || [])
       ];
-      const requests = [];
-
       sourceItems.forEach(item => {
         (item.storageRequests || []).forEach(request => {
           const eventId = request.eventId || `${item.id}-${request.createdAt}-${request.customerLabel}`;
           if (seen.has(eventId)) return;
           seen.add(eventId);
 
-          requests.push({
+          const enriched = {
             ...request,
             eventId,
             itemId: item.id,
@@ -1912,16 +2019,73 @@
             imageUrl: item.imageUrl,
             salePrice: item.salePrice,
             status: request.status === 'pending' ? 'pending' : 'completed'
-          });
+          };
+
+          const groupId = request.storageGroupId || storageFallbackGroupKey(enriched);
+          const group = groups.get(groupId) || {
+            groupId,
+            status: enriched.status,
+            customerLabel: enriched.customerLabel || '',
+            customerDigits4: enriched.customerDigits4 || '',
+            locationMemo: enriched.locationMemo || '',
+            visitDateText: enriched.visitDateText || '',
+            requestMemo: enriched.requestMemo || '',
+            createdAt: enriched.createdAt || '',
+            completedAt: enriched.completedAt || '',
+            items: [],
+            eventIds: [],
+            quantity: 0,
+            productName: '',
+            storageMethod: '',
+            imageUrl: ''
+          };
+
+          group.items.push(enriched);
+          group.eventIds.push(eventId);
+          group.quantity += Number(enriched.quantity || 0);
+          group.status = group.status === 'pending' || enriched.status === 'pending' ? 'pending' : 'completed';
+          group.createdAt = latestDateText(group.createdAt, enriched.createdAt);
+          group.completedAt = latestDateText(group.completedAt, enriched.completedAt);
+          group.customerLabel = group.customerLabel || enriched.customerLabel || '';
+          group.customerDigits4 = group.customerDigits4 || enriched.customerDigits4 || '';
+          group.locationMemo = group.locationMemo || enriched.locationMemo || '';
+          group.visitDateText = group.visitDateText || enriched.visitDateText || '';
+          group.requestMemo = group.requestMemo || enriched.requestMemo || '';
+          group.productName = group.items.length > 1
+            ? `${group.items[0].productName} 외 ${number(group.items.length - 1)}건`
+            : enriched.productName;
+          group.storageMethod = group.storageMethod || enriched.storageMethod || '';
+          group.imageUrl = group.imageUrl || enriched.imageUrl || '';
+          groups.set(groupId, group);
         });
       });
 
-      requests.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+      const groupedRequests = Array.from(groups.values())
+        .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
 
       return {
-        pending: requests.filter(request => request.status === 'pending'),
-        completed: requests.filter(request => request.status !== 'pending')
+        all: groupedRequests,
+        pending: groupedRequests.filter(request => request.status === 'pending'),
+        completed: groupedRequests.filter(request => request.status !== 'pending')
       };
+    }
+
+    function storageFallbackGroupKey(request) {
+      const createdMinute = String(request.createdAt || '').slice(0, 16);
+      return [
+        request.status || '',
+        request.customerLabel || request.customerDigits4 || '',
+        request.visitDateText || '',
+        request.locationMemo || '',
+        request.requestMemo || '',
+        createdMinute
+      ].join('::');
+    }
+
+    function latestDateText(a, b) {
+      if (!a) return b || '';
+      if (!b) return a || '';
+      return String(a) > String(b) ? a : b;
     }
 
     function renderStorageQueue(items, status) {
@@ -1945,7 +2109,7 @@
         : formatDateTime(item.completedAt || item.createdAt);
 
       return `
-        <article class="storage-queue-card ${status}">
+        <article class="storage-queue-card ${status}" data-action="storage-edit-group" data-group-id="${esc(item.groupId)}">
           <img src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy">
           <div class="storage-queue-main">
             <div class="storage-queue-top">
@@ -1955,17 +2119,32 @@
             <div class="storage-queue-name">${esc(item.productName)}</div>
             <div class="storage-queue-meta">
               ${visitText ? `<span>방문 ${esc(visitText)}</span>` : ''}
-              ${locationText ? `<span>장소 ${esc(locationText)}</span>` : ''}
-              ${timeText ? `<span>${status === 'pending' ? '등록' : '완료'} ${esc(timeText)}</span>` : ''}
+              ${timeText ? `<span class="storage-queue-time ${status === 'pending' ? 'pending' : 'done'}">${status === 'pending' ? '등록' : '완료'} ${esc(timeText)}</span>` : ''}
             </div>
+            ${locationText ? `<div class="storage-queue-note important">${esc(locationText)}</div>` : ''}
             ${item.requestMemo ? `<div class="storage-queue-note">${esc(item.requestMemo)}</div>` : ''}
           </div>
           <div class="storage-queue-side">
             <strong>${number(item.quantity)}</strong>
             <span>개</span>
-            ${status === 'pending' ? `<button class="storage-done-btn" data-action="storage-mark-complete" data-event-id="${esc(item.eventId)}" data-customer-label="${esc(customerText)}" data-quantity="${esc(item.quantity)}" type="button">완료</button>` : ''}
+            ${status === 'pending' ? `<button class="storage-done-btn" data-action="storage-mark-complete" data-event-ids="${esc(item.eventIds.join(','))}" data-customer-label="${esc(customerText)}" data-quantity="${esc(item.quantity)}" type="button">완료</button>` : ''}
           </div>
         </article>
+      `;
+    }
+
+    function renderStorageEditBanner(group) {
+      const customerText = group?.customerLabel || (group?.customerDigits4 ? `뒷4자리 ${group.customerDigits4}` : '고객 미입력');
+      const statusText = group?.status === 'pending' ? '보관처리대기' : '보관처리완료';
+
+      return `
+        <div class="storage-edit-banner">
+          <div>
+            <strong>${esc(customerText)}</strong>
+            <span>${esc(statusText)} · ${number(group?.items?.length || 0)}건</span>
+          </div>
+          <button class="storage-secondary-btn compact" data-action="storage-cancel-edit" type="button">닫기</button>
+        </div>
       `;
     }
 
@@ -1995,7 +2174,9 @@
       }
 
       if (!storage.items?.length) {
-        return '<div class="empty">핸드폰 뒷4자리를 조회하면 보관할 상품이 여기에 뜹니다.</div>';
+        return state.storage.editingGroup
+          ? '<div class="empty">수정할 보관 상품이 없습니다.</div>'
+          : '<div class="empty">핸드폰 뒷4자리를 조회하면 보관할 상품이 여기에 뜹니다.</div>';
       }
 
       return `
@@ -2007,13 +2188,14 @@
 
     function renderStorageItem(item) {
       const key = storageItemKey(item);
-      const selected = Boolean(state.storage.selected[key]);
+      const selected = state.storage.editingGroup ? true : Boolean(state.storage.selected[key]);
       const quantity = getStorageQtyValue(key, item.quantity);
       const canStore = item.canStore !== false && item.inventoryStableId;
+      const isEditing = Boolean(state.storage.editingGroup);
 
       return `
         <article class="storage-item ${selected ? 'selected' : ''} ${!canStore ? 'disabled' : ''}" data-storage-key="${esc(key)}">
-          <button class="storage-item-pick" data-action="storage-toggle-item" data-storage-key="${esc(key)}" type="button" ${!canStore ? 'disabled' : ''} aria-label="보관 상품 선택">
+          <button class="storage-item-pick" data-action="storage-toggle-item" data-storage-key="${esc(key)}" type="button" ${!canStore || isEditing ? 'disabled' : ''} aria-label="보관 상품 선택">
             <img src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy">
             <span class="storage-check">${selected ? '✓' : ''}</span>
           </button>
@@ -2023,7 +2205,7 @@
               ${storageBadge(item.storageMethod)}
             </div>
             <div class="storage-item-meta">
-              <span>픽업 ${esc(item.pickupDateText || item.pickupDateKey)}</span>
+              <span>${isEditing ? '보관' : '픽업'} ${esc(item.pickupDateText || item.pickupDateKey || '')}</span>
               <span>주문 ${number(item.quantity)}개</span>
               ${item.salePrice ? `<span>판매가 ${money(item.salePrice)}</span>` : ''}
             </div>
@@ -2040,6 +2222,10 @@
 
     function getSelectedStorageItems() {
       return (state.storage.items || []).filter(item => state.storage.selected[storageItemKey(item)]);
+    }
+
+    function getActiveStorageItems() {
+      return state.storage.editingGroup ? (state.storage.items || []) : getSelectedStorageItems();
     }
 
     function renderBufferSummary(item) {
@@ -2129,9 +2315,10 @@
       if (!item) return;
 
       const rows = (item.ourBufferNotes || [])
-        .filter(row => Number(row.quantity || 0) > 0 || row.noteText)
+        .filter(row => Number(row.quantity || 0) > 0)
         .map(row => ({
-          name: row.noteText || '내용 없음',
+          customerLabel: row.customerLabel || '닉네임 비어있음',
+          noteText: row.noteText || '',
           quantity: Number(row.quantity || 0),
           time: row.syncedAt,
           source: row.sourceRowNumber ? `${row.sourceSheetName || 'Raw'} ${row.sourceRowNumber}행` : ''
@@ -2141,8 +2328,9 @@
         ? rows.map(row => `
             <div class="sheet-row">
               <div>
-                <div class="sheet-row-name">${esc(row.name)}</div>
+                <div class="sheet-row-name">${esc(row.customerLabel)}</div>
                 <div class="sheet-row-time">${esc(row.source || formatDateTime(row.time) || '시간 없음')}</div>
+                ${row.noteText ? `<div class="sheet-row-note important">${esc(row.noteText)}</div>` : ''}
               </div>
               <div class="sheet-row-qty">${number(row.quantity)}</div>
             </div>
@@ -2312,10 +2500,13 @@
             </div>
           </div>
           <div class="count-actions">
+            <button class="count-btn count-add count-major" data-action="count-20"><span>+20</span></button>
             <button class="count-btn count-add count-major" data-action="count-10"><span>+10</span></button>
             <button class="count-btn count-add" data-action="count-5"><span>+5</span></button>
+            <button class="count-btn count-add" data-action="count-3"><span>+3</span></button>
             <button class="count-btn count-add" data-action="count-1"><span>+1</span></button>
             <button class="count-btn count-minus" data-action="count-minus"><span>−1</span></button>
+            <button class="count-btn count-reset" data-action="count-reset"><span>0으로</span></button>
             <button class="complete-btn ${item.isReceivingComplete ? 'done' : ''}" data-action="receive-complete">${item.isReceivingComplete ? '완료해제' : '체크완료'}</button>
           </div>
         </article>
@@ -2844,6 +3035,79 @@
       return timeText ? `${dateText} ${timeText}` : dateText;
     }
 
+    function splitStorageVisitText(value) {
+      const text = String(value || '').trim();
+      const match = text.match(/^(\d{4}-\d{2}-\d{2})(?:[ T](\d{2}:\d{2}))?/);
+      return {
+        dateText: match?.[1] || '',
+        timeText: match?.[2] || ''
+      };
+    }
+
+    function findStorageGroup(groupId) {
+      return getStorageRequestQueues(state.dashboard || {}).all
+        .find(group => group.groupId === groupId) || null;
+    }
+
+    function resetStorageForm({ keepComplete = false } = {}) {
+      const complete = keepComplete ? state.storage.complete : null;
+      state.storage.digits = '';
+      state.storage.selectedCustomerLabel = '';
+      state.storage.candidates = [];
+      state.storage.items = [];
+      state.storage.selected = {};
+      state.storage.locationMemo = '';
+      state.storage.visitDateText = '';
+      state.storage.visitTimeText = '';
+      state.storage.showVisitTime = false;
+      state.storage.requestMemo = '';
+      state.storage.editingGroup = null;
+      state.storage.message = '';
+      state.storage.complete = complete;
+    }
+
+    function enterStorageEditGroup(groupId) {
+      const group = findStorageGroup(groupId);
+      if (!group) return;
+
+      const visit = splitStorageVisitText(group.visitDateText || '');
+      state.storage.editingGroup = group;
+      state.storage.digits = group.customerDigits4 || '';
+      state.storage.selectedCustomerLabel = group.customerLabel || '';
+      state.storage.candidates = [];
+      state.storage.locationMemo = group.locationMemo || '';
+      state.storage.visitDateText = visit.dateText;
+      state.storage.visitTimeText = visit.timeText;
+      state.storage.showVisitTime = Boolean(visit.timeText);
+      state.storage.requestMemo = group.requestMemo || '';
+      state.storage.message = '';
+      state.storage.complete = null;
+      state.storage.selected = {};
+      state.storage.items = (group.items || []).map(item => {
+        const editItem = {
+          ...item,
+          id: item.itemId || item.inventoryStableId || item.eventId,
+          canStore: true,
+          pickupDateText: group.visitDateText || item.pickupDateText || item.pickupDateKey || ''
+        };
+        state.storageQuantities[storageItemKey(editItem)] = Math.max(1, Math.min(QTY_PICKER_MAX, Number(item.quantity || 1)));
+        return editItem;
+      });
+      render();
+      window.requestAnimationFrame(() => {
+        document.querySelector('.quick-register')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+
+    function getStorageEditItemsPayload() {
+      return (state.storage.items || [])
+        .filter(item => item.eventId)
+        .map(item => ({
+          eventId: item.eventId,
+          quantity: getStorageQtyValue(storageItemKey(item), item.quantity)
+        }));
+    }
+
     async function runStorageRegisterPending() {
       if (state.busy || state.storage.loading) return;
 
@@ -2893,12 +3157,7 @@
           quantity: totalQuantity,
           time: formatDateTime(new Date().toISOString()) || '방금'
         };
-        state.storage.selected = {};
-        state.storage.locationMemo = '';
-        state.storage.visitDateText = '';
-        state.storage.visitTimeText = '';
-        state.storage.showVisitTime = false;
-        state.storage.requestMemo = '';
+        resetStorageForm({ keepComplete: true });
       } catch (error) {
         state.storage.message = error.message || String(error);
       } finally {
@@ -2908,8 +3167,58 @@
       }
     }
 
-    async function runStorageMarkComplete(eventId, customerLabel = '', quantity = 0) {
-      if (state.busy || !eventId) return;
+    async function runStorageSaveEdit({ complete = false } = {}) {
+      const group = state.storage.editingGroup;
+      if (state.busy || !group?.eventIds?.length) return;
+
+      state.busy = true;
+      state.storage.loading = true;
+      state.storage.message = '';
+      render();
+
+      try {
+        const url = new URL('/api/buffer-action', location.origin);
+        url.searchParams.set('token', state.token);
+        const status = complete ? 'completed' : group.status;
+        const items = getStorageEditItemsPayload();
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'storage_request_update',
+            eventIds: group.eventIds,
+            status,
+            locationMemo: state.storage.locationMemo,
+            visitDateText: getStorageVisitText(),
+            requestMemo: state.storage.requestMemo,
+            items
+          })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.message || '보관요청 수정에 실패했습니다.');
+
+        const totalQuantity = items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+        state.dashboard = data.dashboard;
+        state.storage.complete = {
+          title: complete ? '보관처리 완료' : '보관요청 수정',
+          customerLabel: group.customerLabel || group.customerDigits4,
+          quantity: totalQuantity,
+          time: formatDateTime(new Date().toISOString()) || '방금'
+        };
+        resetStorageForm({ keepComplete: true });
+        window.navigator?.vibrate?.(12);
+      } catch (error) {
+        state.storage.message = error.message || String(error);
+      } finally {
+        state.busy = false;
+        state.storage.loading = false;
+        render();
+      }
+    }
+
+    async function runStorageMarkComplete(eventIds, customerLabel = '', quantity = 0) {
+      const ids = Array.isArray(eventIds) ? eventIds.filter(Boolean) : [eventIds].filter(Boolean);
+      if (state.busy || !ids.length) return;
 
       state.busy = true;
 
@@ -2921,7 +3230,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             action: 'storage_request_complete',
-            eventId
+            eventIds: ids
           })
         });
         const data = await response.json();
@@ -2957,6 +3266,7 @@
       }
 
       if (action === 'storage-toggle-item') {
+        if (state.storage.editingGroup) return true;
         const key = button.dataset.storageKey || '';
         if (!key) return true;
 
@@ -2971,9 +3281,30 @@
         return true;
       }
 
+      if (action === 'storage-edit-group') {
+        enterStorageEditGroup(button.dataset.groupId || '');
+        return true;
+      }
+
+      if (action === 'storage-cancel-edit') {
+        resetStorageForm();
+        render();
+        return true;
+      }
+
+      if (action === 'storage-save-edit') {
+        runStorageSaveEdit();
+        return true;
+      }
+
+      if (action === 'storage-save-complete') {
+        runStorageSaveEdit({ complete: true });
+        return true;
+      }
+
       if (action === 'storage-mark-complete') {
         runStorageMarkComplete(
-          button.dataset.eventId || '',
+          String(button.dataset.eventIds || '').split(',').filter(Boolean),
           button.dataset.customerLabel || '',
           button.dataset.quantity || 0
         );
@@ -3040,8 +3371,20 @@
             setBufferQtyValue(id, 1);
           }
 
-          if (action === 'count-10' || action === 'count-5' || action === 'count-1' || action === 'count-minus') {
-            const qty = action === 'count-10' ? 10 : action === 'count-5' ? 5 : action === 'count-1' ? 1 : -1;
+          if (action === 'count-20' || action === 'count-10' || action === 'count-5' || action === 'count-3' || action === 'count-1' || action === 'count-minus' || action === 'count-reset') {
+            const qty = action === 'count-20'
+              ? 20
+              : action === 'count-10'
+                ? 10
+                : action === 'count-5'
+                  ? 5
+                  : action === 'count-3'
+                    ? 3
+                    : action === 'count-1'
+                      ? 1
+                      : action === 'count-reset'
+                        ? -Number(item.countedQuantity || 0)
+                        : -1;
             runReceivingCount(button, id, action, qty);
           }
 
