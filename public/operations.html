@@ -152,7 +152,7 @@
     .settlement-top { min-width: 0; display: grid; gap: 3px; align-items: center; }
     .settlement-name { min-width: 0; color: #151517; font-size: 13px; line-height: 1.16; font-weight: 600 !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .settlement-card-sub { color: #8a909c; font-size: 9.5px; line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .settlement-prices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+    .settlement-prices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
     .settlement-price-box { min-width: 0; display: grid; gap: 3px; padding: 7px 8px; border-radius: 13px; background: #f7f8fa; }
     .settlement-price-box span { color: #858c98; font-size: 9px; line-height: 1; font-weight: 500 !important; }
     .settlement-price-box strong { color: #151517; font-size: 12px; line-height: 1; font-weight: 500 !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -3136,7 +3136,7 @@
         ${missingImages.length ? `
           <div class="settlement-alert">
             <strong>이미지가 필요한 상시·과일·야채 항목이 ${number(missingImages.length)}개 있습니다.</strong>
-            <span>서버에서 OpenAI 기본 이미지 모델로 생성 후 Supabase Storage에 저장해서 계속 재사용합니다.</span>
+            <span>서버에서 OpenAI mini 이미지 모델로 생성 후 Supabase Storage에 저장해서 계속 재사용합니다.</span>
             <button class="settlement-generate-btn" data-action="settlement-generate-images" type="button" ${state.busy ? 'disabled' : ''}>
               ${state.busy ? '생성 중' : '이미지 생성'}
             </button>
@@ -3168,12 +3168,16 @@
           <div class="settlement-main">
             <div class="settlement-top">
               <div class="settlement-name">${esc(item.productName)}</div>
-              <div class="settlement-card-sub">${esc(item.fileName || item.sheetName || '')}${item.taxStatus ? ` · ${esc(item.taxStatus)}` : ''}</div>
+              <div class="settlement-card-sub">${esc(item.fileName || item.sheetName || '')}</div>
             </div>
             <div class="settlement-prices">
               <div class="settlement-price-box">
-                <span>공급가</span>
+                <span>공급가 VAT포함</span>
                 <strong>${money(item.supplyPriceVatIncluded)}</strong>
+              </div>
+              <div class="settlement-price-box">
+                <span>공급가 VAT별도</span>
+                <strong>${money(item.supplyPriceExVat)}</strong>
               </div>
               <div class="settlement-price-box">
                 <span>판매가</span>
@@ -4192,7 +4196,7 @@
         const response = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ limit: 40 })
+          body: JSON.stringify({ limit: 8 })
         });
         const data = await response.json();
         if (!response.ok || !data.ok) throw new Error(data.message || '이미지 생성에 실패했습니다.');
