@@ -123,6 +123,7 @@
     .settlement-search { width: 100%; height: 42px; border: 1px solid #e3e8f0; border-radius: 16px; background: #fff; padding: 0 13px; color: #151517; font-size: 13px; font-weight: 500; outline: none; box-shadow: 0 8px 20px rgba(36,42,54,.045); }
     .ops-search { width: 100%; height: 38px; margin: 0 0 8px; border: 1px solid #dfe5ee; border-radius: 15px; background: #fff; padding: 0 13px; color: #151517; font-size: 13px; line-height: 1; outline: none; box-shadow: 0 8px 20px rgba(36,42,54,.045); }
     .ops-search::placeholder { color: #a0a6b2; }
+    .ops-results { min-width: 0; display: grid; grid-template-columns: 1fr; gap: 8px; }
     .settlement-date-strip { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 1px; scrollbar-width: none; }
     .settlement-date-strip::-webkit-scrollbar { display: none; }
     .settlement-date-btn { flex: 0 0 auto; min-width: 126px; min-height: 52px; border: 1px solid #e4e9f1; border-radius: 16px; background: #fff; color: #717985; padding: 7px 10px; text-align: left; box-shadow: 0 8px 18px rgba(36,42,54,.045); }
@@ -145,8 +146,11 @@
     .settlement-generate-btn:disabled { background: #d8dde6; color: #8b929f; box-shadow: none; }
     .settlement-section { display: grid; gap: 8px; margin-top: 12px; }
     .settlement-section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 2px; }
+    .settlement-section-title { min-width: 0; display: grid; gap: 3px; }
     .settlement-section-head strong { color: #151517; font-size: 14px; line-height: 1; font-weight: 600 !important; }
     .settlement-section-head span { color: #858c98; font-size: 10px; line-height: 1; font-weight: 500 !important; }
+    .settlement-review-btn { flex: 0 0 auto; height: 28px; border: 1px solid #dfe6f0; border-radius: 999px; background: #fff; color: #657083; padding: 0 10px; font-size: 10px; line-height: 1; font-weight: 500 !important; box-shadow: 0 6px 14px rgba(36,42,54,.045); }
+    .settlement-review-btn.done { border-color: #bbf7d0; background: #ecfdf3; color: #138a43; }
     .settlement-list { display: grid; gap: 8px; }
     .settlement-card { position: relative; overflow: hidden; display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 10px; padding: 9px 9px 9px 13px; border-radius: 18px; background: #fff; border: 1px solid rgba(255,255,255,.9); box-shadow: 0 8px 22px rgba(36,42,54,.055); }
     .settlement-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: #d7dde6; }
@@ -2018,6 +2022,7 @@
 
   <script>
     const DASHBOARD_CACHE_KEY = 'opsDashboardCache:v4';
+    const SETTLEMENT_REVIEW_CHECKS_KEY = 'opsSettlementReviewChecks:v1';
 
     const state = {
       tab: 'sales',
@@ -2030,6 +2035,7 @@
       staleQuery: '',
       settlementDateKey: '',
       settlementQuery: '',
+      settlementReviewChecks: loadSettlementReviewChecks(),
       token: new URLSearchParams(location.search).get('token') || localStorage.getItem('opsToken') || '03064',
       doubleTap: { id: '', at: 0 },
       bufferQuantities: {},
@@ -2312,17 +2318,22 @@
     }
 
     function renderSales(data) {
-      const sourceItems = getSelectedSalesItems(data);
-      const items = sourceItems.filter(item => matchesProductQuery(item, state.salesQuery));
       els.salesSummary.innerHTML = '';
       renderSalesDateStrip(data);
 
       els.salesGrid.innerHTML = [
         renderOpsSearch('sales', state.salesQuery, '상품명 일부만 입력하면 바로 검색'),
-        items.length
-          ? items.map(renderSalesCard).join('')
-          : `<div class="empty">${state.salesQuery ? '검색 결과가 없습니다.' : '해당 날짜의 공구 상품이 없습니다.'}</div>`
+        `<div class="ops-results" data-ops-results="sales">${renderSalesResults(data)}</div>`
       ].join('');
+    }
+
+    function renderSalesResults(data) {
+      const sourceItems = getSelectedSalesItems(data);
+      const items = sourceItems.filter(item => matchesProductQuery(item, state.salesQuery));
+
+      return items.length
+        ? items.map(renderSalesCard).join('')
+        : `<div class="empty">${state.salesQuery ? '검색 결과가 없습니다.' : '해당 날짜의 공구 상품이 없습니다.'}</div>`;
     }
 
     function renderSalesCard(item) {
@@ -2985,9 +2996,20 @@
       const fallbackItems = !todayItems.length ? (data.latestInboundItems || []) : [];
       const sourceItems = todayItems.length ? todayItems : fallbackItems;
       const items = sourceItems.filter(item => matchesProductQuery(item, state.inboundQuery));
+
+      renderInboundSummary(data, items);
+      els.inboundGrid.innerHTML = [
+        renderOpsSearch('inbound', state.inboundQuery, '입고 상품명 바로 검색'),
+        `<div class="ops-results" data-ops-results="inbound">${renderInboundResults(data)}</div>`
+      ].join('');
+
+      els.staleList.innerHTML = renderStaleGroups(data);
+    }
+
+    function renderInboundSummary(data, items) {
+      const todayItems = data.inboundItems || [];
       const targetDate = todayItems.length ? data.todayKey : data.latestInboundDate;
       const totalInbound = items.reduce((sum, item) => sum + Number(item.inboundQuantity || 0), 0);
-      const totalCounted = items.reduce((sum, item) => sum + Number(item.countedQuantity || 0), 0);
       const completeCount = items.filter(item => item.isReceivingComplete).length;
 
       els.inboundSummary.innerHTML = [
@@ -2995,15 +3017,21 @@
         renderReceivingMetric('입고수량', number(totalInbound)),
         renderReceivingMetric('완료', `${number(completeCount)}/${number(items.length)}`, 'done')
       ].join('');
+    }
 
-      els.inboundGrid.innerHTML = [
-        renderOpsSearch('inbound', state.inboundQuery, '입고 상품명 바로 검색'),
-        items.length
-          ? renderInboundStorageSections(items)
-          : `<div class="empty">${state.inboundQuery ? '검색 결과가 없습니다.' : '입고 상품이 없습니다.'}</div>`
-      ].join('');
+    function getInboundSearchItems(data) {
+      const todayItems = data.inboundItems || [];
+      const fallbackItems = !todayItems.length ? (data.latestInboundItems || []) : [];
+      const sourceItems = todayItems.length ? todayItems : fallbackItems;
+      return sourceItems.filter(item => matchesProductQuery(item, state.inboundQuery));
+    }
 
-      els.staleList.innerHTML = renderStaleGroups(data);
+    function renderInboundResults(data) {
+      const items = getInboundSearchItems(data);
+
+      return items.length
+        ? renderInboundStorageSections(items)
+        : `<div class="empty">${state.inboundQuery ? '검색 결과가 없습니다.' : '입고 상품이 없습니다.'}</div>`;
     }
 
     function renderInboundStorageSections(items) {
@@ -3119,6 +3147,13 @@
     }
 
     function renderStaleGroups(data) {
+      return [
+        renderOpsSearch('stale', state.staleQuery, '상시전환 상품명 바로 검색'),
+        `<div class="ops-results" data-ops-results="stale">${renderStaleResults(data)}</div>`
+      ].join('');
+    }
+
+    function renderStaleResults(data) {
       const groups = (data.staleDateGroups || [])
         .map(group => {
           const items = (group.items || []).filter(item => matchesProductQuery(item, state.staleQuery));
@@ -3132,10 +3167,10 @@
         .filter(group => Array.isArray(group.items) && group.items.length);
 
       if (!groups.length) {
-        return `${renderOpsSearch('stale', state.staleQuery, '상시전환 상품명 바로 검색')}<div class="empty">${state.staleQuery ? '검색 결과가 없습니다.' : '대상이 없습니다.'}</div>`;
+        return `<div class="empty">${state.staleQuery ? '검색 결과가 없습니다.' : '대상이 없습니다.'}</div>`;
       }
 
-      return renderOpsSearch('stale', state.staleQuery, '상시전환 상품명 바로 검색') + groups.map((group, index) => {
+      return groups.map((group, index) => {
         const isPrimary = group.dateKey === data.staleCutoffDateKey || index === 0;
         const body = `
           <div class="stale-date-body">
@@ -3179,27 +3214,12 @@
         state.settlementDateKey = review.latestDateKey || dateGroups[0]?.dateKey || '';
       }
 
-      const query = String(state.settlementQuery || '').trim();
-      const queryKey = normalizeSearchText(query);
       const selectedDateKey = state.settlementDateKey;
       const allItems = review.items || [];
-      const scopedItems = queryKey
-        ? allItems.filter(item => normalizeSearchText(`${item.productName} ${item.fileName} ${item.sheetName}`).includes(queryKey))
-        : allItems.filter(item => item.dateKey === selectedDateKey);
-      const groupMismatches = scopedItems.filter(item => item.category === '공구' && item.mismatch);
-      const reviewPendingItems = scopedItems.filter(item => ['상시', '과일', '야채'].includes(item.category));
-      const categoryGroups = groupSettlementItemsByCategory(scopedItems);
-      const imageTargetItems = scopedItems.filter(item => ['과일', '야채', '상시', '특이항목'].includes(item.category));
-      const missingImages = imageTargetItems.filter(item => item.needsGeneratedImage);
 
       els.settlementReviewRoot.innerHTML = `
-        <div class="summary">
-          ${renderReceivingMetric('정산항목', number(scopedItems.length))}
-          ${renderReceivingMetric('공구불일치', number(groupMismatches.length), groupMismatches.length ? 'warn' : 'done')}
-          ${renderReceivingMetric('검토대기', number(reviewPendingItems.length), reviewPendingItems.length ? 'warn' : 'done')}
-        </div>
         <div class="settlement-tools">
-          <input class="settlement-search" data-settlement-search="1" value="${esc(query)}" placeholder="상품명으로 공급가 검색" inputmode="search">
+          <input class="settlement-search" data-settlement-search="1" value="${esc(state.settlementQuery || '')}" placeholder="상품명으로 공급가 검색" inputmode="search">
           <div class="settlement-date-strip" aria-label="정산일 선택">
             ${dateGroups.slice(0, 24).map(group => `
               <button class="settlement-date-btn ${group.dateKey === selectedDateKey ? 'active' : ''}" data-settlement-date="${esc(group.dateKey)}" type="button">
@@ -3208,6 +3228,31 @@
               </button>
             `).join('')}
           </div>
+        </div>
+        <div data-settlement-results>${renderSettlementResults(data)}</div>
+      `;
+    }
+
+    function renderSettlementResults(data) {
+      const review = data.settlementReview || {};
+      const query = String(state.settlementQuery || '').trim();
+      const queryKey = normalizeSearchText(query);
+      const selectedDateKey = state.settlementDateKey;
+      const allItems = review.items || [];
+      const scopedItems = queryKey
+        ? allItems.filter(item => normalizeSearchText(`${item.productName} ${item.fileName} ${item.sheetName}`).includes(queryKey))
+        : allItems.filter(item => item.dateKey === selectedDateKey);
+      const groupMismatches = scopedItems.filter(item => item.category === '공구' && item.mismatch);
+      const reviewPendingItems = scopedItems.filter(item => isSettlementReviewableCategory(item.category) && !isSettlementItemReviewed(item));
+      const categoryGroups = groupSettlementItemsByCategory(scopedItems);
+      const imageTargetItems = scopedItems.filter(item => ['과일', '야채', '상시', '특이항목'].includes(item.category));
+      const missingImages = imageTargetItems.filter(item => item.needsGeneratedImage);
+
+      return `
+        <div class="summary">
+          ${renderReceivingMetric('정산항목', number(scopedItems.length))}
+          ${renderReceivingMetric('공구불일치', number(groupMismatches.length), groupMismatches.length ? 'warn' : 'done')}
+          ${renderReceivingMetric('검토대기', number(reviewPendingItems.length), reviewPendingItems.length ? 'warn' : 'done')}
         </div>
         ${groupMismatches.length ? `
           <div class="settlement-alert">
@@ -3225,24 +3270,43 @@
           </div>
         ` : ''}
         ${categoryGroups.length
-          ? categoryGroups.map(group => `
-            <section class="settlement-section">
-              <div class="settlement-section-head">
-                <strong>${esc(group.label)}</strong>
-                <span>${number(group.items.length)}개 · 정산 ${number(group.totalQuantity)}</span>
-              </div>
-              <div class="settlement-list">
-                ${group.items.slice(0, 80).map(renderSettlementCard).join('')}
-              </div>
-            </section>
-          `).join('')
+          ? categoryGroups.map(group => renderSettlementCategorySection(group, selectedDateKey, Boolean(queryKey))).join('')
           : '<div class="empty">검색 결과가 없습니다.</div>'}
+      `;
+    }
+
+    function renderSettlementCategorySection(group, selectedDateKey, isSearchMode) {
+      const canReview = !isSearchMode && isSettlementReviewableCategory(group.category);
+      const reviewed = canReview && isSettlementCategoryReviewed(selectedDateKey, group.category);
+
+      return `
+        <section class="settlement-section">
+          <div class="settlement-section-head">
+            <div class="settlement-section-title">
+              <strong>${esc(group.label)}</strong>
+              <span>${number(group.items.length)}개 · 정산 ${number(group.totalQuantity)}</span>
+            </div>
+            ${canReview ? `
+              <button
+                class="settlement-review-btn ${reviewed ? 'done' : ''}"
+                data-action="settlement-review-complete"
+                data-review-date="${esc(selectedDateKey)}"
+                data-review-category="${esc(group.category)}"
+                type="button"
+              >${reviewed ? '검토완료됨' : '검토완료'}</button>
+            ` : ''}
+          </div>
+          <div class="settlement-list">
+            ${group.items.slice(0, 80).map(renderSettlementCard).join('')}
+          </div>
+        </section>
       `;
     }
 
     function renderSettlementCard(item) {
       const categoryClass = settlementCategoryClass(item.category);
       const isGroupItem = item.category === '공구';
+      const isReviewed = isSettlementItemReviewed(item);
       const image = imageUrl({ imageUrl: item.imageUrl, productName: item.productName });
 
       return `
@@ -3286,7 +3350,7 @@
               </div>
             </div>
             <div class="settlement-meta">
-              ${!isGroupItem ? '<span>검토대기</span>' : ''}
+              ${!isGroupItem && isSettlementReviewableCategory(item.category) ? `<span>${isReviewed ? '검토완료' : '검토대기'}</span>` : ''}
               ${isGroupItem && item.listRawMismatch ? `<span class="settlement-diff">입고리스트/raw 차이 ${number(item.listRawDiffQuantity)}</span>` : ''}
               ${isGroupItem && item.mismatch && !item.listRawMismatch ? `<span class="settlement-diff">차이 ${number(item.diffQuantity)}</span>` : ''}
               ${isGroupItem && !item.hasInventoryMatch && !item.hasRawInventoryMatch ? '<span class="settlement-diff">입고 매칭없음</span>' : ''}
@@ -3336,22 +3400,80 @@
       }
 
       if (alwaysItems.length) {
+        const reviewed = isSettlementCategoryReviewed(dateKey, '상시');
         rows.push({
           label: '상시',
-          text: `${number(alwaysItems.length)}/${number(alwaysItems.length)} 검토대기`,
-          kind: 'review'
+          text: `${number(alwaysItems.length)}/${number(alwaysItems.length)} ${reviewed ? '검토완료' : '검토대기'}`,
+          kind: reviewed ? 'match' : 'review'
         });
       }
 
       if (produceItems.length) {
+        const reviewed = isSettlementCategoryReviewed(dateKey, '과일');
         rows.push({
           label: '과일',
-          text: `${number(produceItems.length)}/${number(produceItems.length)} 검토대기`,
-          kind: 'review produce'
+          text: `${number(produceItems.length)}/${number(produceItems.length)} ${reviewed ? '검토완료' : '검토대기'}`,
+          kind: reviewed ? 'match' : 'review produce'
         });
       }
 
       return rows;
+    }
+
+    function loadSettlementReviewChecks() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(SETTLEMENT_REVIEW_CHECKS_KEY) || '{}');
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function saveSettlementReviewChecks() {
+      try {
+        localStorage.setItem(SETTLEMENT_REVIEW_CHECKS_KEY, JSON.stringify(state.settlementReviewChecks || {}));
+      } catch {
+      }
+    }
+
+    function isSettlementReviewableCategory(category) {
+      return ['상시', '과일', '야채'].includes(category);
+    }
+
+    function settlementReviewCategoryKey(category) {
+      return category === '야채' ? '과일' : category;
+    }
+
+    function settlementReviewKey(dateKey, category) {
+      return `${dateKey || 'unknown'}::${settlementReviewCategoryKey(category || '')}`;
+    }
+
+    function isSettlementCategoryReviewed(dateKey, category) {
+      if (!dateKey || !isSettlementReviewableCategory(category)) return false;
+      return Boolean(state.settlementReviewChecks?.[settlementReviewKey(dateKey, category)]);
+    }
+
+    function isSettlementItemReviewed(item) {
+      return isSettlementCategoryReviewed(item?.dateKey, item?.category);
+    }
+
+    function toggleSettlementReviewComplete(dateKey, category) {
+      if (!dateKey || !isSettlementReviewableCategory(category)) return;
+      const key = settlementReviewKey(dateKey, category);
+      const checks = { ...(state.settlementReviewChecks || {}) };
+
+      if (checks[key]) {
+        delete checks[key];
+      } else {
+        checks[key] = {
+          dateKey,
+          category: settlementReviewCategoryKey(category),
+          checkedAt: new Date().toISOString()
+        };
+      }
+
+      state.settlementReviewChecks = checks;
+      saveSettlementReviewChecks();
     }
 
     function groupSettlementItemsByCategory(items) {
@@ -3924,11 +4046,20 @@
       if (!canLookup) return;
 
       state.storageLookupTimer = setTimeout(() => {
+        if (isAnyStorageFieldComposing()) {
+          scheduleStorageLookup();
+          return;
+        }
+
         runStorageLookup().catch(error => {
           state.storage.message = error.message || String(error);
           render();
         });
       }, 360);
+    }
+
+    function isAnyStorageFieldComposing() {
+      return Boolean(document.querySelector('[data-storage-field][data-composing="1"]'));
     }
 
     function getStorageVisitText() {
@@ -4486,6 +4617,14 @@
         return true;
       }
 
+      if (action === 'settlement-review-complete') {
+        toggleSettlementReviewComplete(button.dataset.reviewDate || '', button.dataset.reviewCategory || '');
+        renderSettlementReview(state.dashboard || {});
+        bindControls();
+        window.navigator?.vibrate?.(8);
+        return true;
+      }
+
       if (action === 'storage-toggle-time') {
         state.storage.showVisitTime = !state.storage.showVisitTime;
         render();
@@ -4552,10 +4691,10 @@
 
     function bindImeSafeInput(input, onCommit) {
       let lastCommittedValue = input.value || '';
-      const shouldDefer = value => input.dataset.composing === '1' || hasStandaloneHangulJamo(value);
+      const shouldDefer = () => input.dataset.composing === '1';
       const commit = () => {
         const nextValue = input.value || '';
-        if (shouldDefer(nextValue)) return;
+        if (shouldDefer()) return;
         if (nextValue === lastCommittedValue) return;
         lastCommittedValue = nextValue;
         onCommit(nextValue);
@@ -4574,13 +4713,46 @@
         if (event.isComposing) input.dataset.composing = '1';
       };
       input.oninput = event => {
-        if (event.isComposing || shouldDefer(input.value || '')) return;
+        if (event.isComposing || shouldDefer()) return;
         commit();
       };
     }
 
-    function hasStandaloneHangulJamo(value) {
-      return /[\u1100-\u11ff\u3130-\u318f\ua960-\ua97f\ud7b0-\ud7ff]/.test(String(value || ''));
+    function updateOpsSearchResults(kind) {
+      const data = state.dashboard || {};
+      const target = document.querySelector(`[data-ops-results="${kind}"]`);
+      if (!target) {
+        render();
+        return;
+      }
+
+      if (kind === 'sales') {
+        target.innerHTML = renderSalesResults(data);
+      }
+
+      if (kind === 'inbound') {
+        const items = getInboundSearchItems(data);
+        renderInboundSummary(data, items);
+        target.innerHTML = renderInboundResults(data);
+      }
+
+      if (kind === 'stale') {
+        target.innerHTML = renderStaleResults(data);
+      }
+
+      bindControls();
+    }
+
+    function updateSettlementSearchResults() {
+      const target = document.querySelector('[data-settlement-results]');
+      if (!target) {
+        renderSettlementReview(state.dashboard || {});
+        bindControls();
+        return;
+      }
+
+      target.innerHTML = renderSettlementResults(state.dashboard || {});
+      bindControls();
     }
 
     function bindControls() {
@@ -4685,14 +4857,7 @@
       document.querySelectorAll('[data-settlement-search]').forEach(input => {
         bindImeSafeInput(input, nextValue => {
           state.settlementQuery = nextValue;
-          renderSettlementReview(state.dashboard || {});
-          bindControls();
-          requestAnimationFrame(() => {
-            const nextInput = document.querySelector('[data-settlement-search]');
-            nextInput?.focus?.();
-            const end = nextValue.length;
-            nextInput?.setSelectionRange?.(end, end);
-          });
+          updateSettlementSearchResults();
         });
       });
 
@@ -4702,13 +4867,7 @@
           if (kind === 'sales') state.salesQuery = nextValue;
           if (kind === 'inbound') state.inboundQuery = nextValue;
           if (kind === 'stale') state.staleQuery = nextValue;
-          render();
-          requestAnimationFrame(() => {
-            const nextInput = document.querySelector(`[data-ops-search="${CSS.escape(kind)}"]`);
-            nextInput?.focus?.();
-            const end = nextValue.length;
-            nextInput?.setSelectionRange?.(end, end);
-          });
+          updateOpsSearchResults(kind);
         });
       });
 
