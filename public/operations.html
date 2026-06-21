@@ -2426,22 +2426,32 @@
 
     function getSalesDateOptions(data) {
       const source = getSalesAllItems(data);
-      const labels = new Map((data.salesDateOptions || []).map(option => [option.dateKey, option.label]));
+      const optionMeta = new Map((data.salesDateOptions || []).map(option => [option.dateKey, option]));
       const grouped = new Map();
 
       source.forEach(item => {
         const dateKey = item.inboundDateKey || '';
         if (!dateKey) return;
+        const meta = optionMeta.get(dateKey) || {};
         const current = grouped.get(dateKey) || {
           dateKey,
-          label: labels.get(dateKey) || compactDateWeekdayLabel(dateKey),
-          count: 0
+          label: meta.label || compactDateWeekdayLabel(dateKey),
+          count: 0,
+          totalQuantity: 0
         };
         current.count += 1;
+        current.totalQuantity += Number(item.inboundQuantity || 0);
         grouped.set(dateKey, current);
       });
 
       return Array.from(grouped.values())
+        .map(option => {
+          const meta = optionMeta.get(option.dateKey) || {};
+          return {
+            ...option,
+            totalQuantity: Number(meta.totalQuantity || option.totalQuantity || 0)
+          };
+        })
         .sort((a, b) => String(b.dateKey || '').localeCompare(String(a.dateKey || '')));
     }
 
@@ -2460,7 +2470,7 @@
             class="date-btn ${option.dateKey === state.salesDateKey ? 'active' : ''}"
             type="button"
             data-sales-date="${esc(option.dateKey)}"
-          >${esc(option.label)} · ${number(option.count)}</button>
+          >${esc(option.label)} · ${number(option.totalQuantity)}개</button>
         `).join('')
         : '';
     }
