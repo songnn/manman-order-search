@@ -163,9 +163,9 @@
     .settlement-card.raw-mismatch { border-color: rgba(239,68,68,.44); box-shadow: 0 10px 26px rgba(239,68,68,.12); }
     .settlement-card img { width: 52px; height: 52px; border-radius: 14px; object-fit: cover; background: #f3f5f8; }
     .settlement-main { min-width: 0; display: grid; gap: 6px; }
-    .settlement-top { min-width: 0; display: grid; gap: 3px; align-items: center; }
+    .settlement-top { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 7px; align-items: center; }
     .settlement-name { min-width: 0; color: #151517; font-size: 13px; line-height: 1.16; font-weight: 600 !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .settlement-card-sub { color: #8a909c; font-size: 9.5px; line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .settlement-card-sub { grid-column: 1 / -1; color: #8a909c; font-size: 9.5px; line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .settlement-prices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
     .settlement-price-box { min-width: 0; display: grid; gap: 3px; padding: 7px 8px; border-radius: 13px; background: #f7f8fa; }
     .settlement-price-box span { color: #858c98; font-size: 9px; line-height: 1; font-weight: 500 !important; }
@@ -458,6 +458,82 @@
       display: grid;
       grid-template-columns: 1fr;
       gap: 9px;
+    }
+    .stale-item {
+      grid-template-columns: 56px minmax(0, 1fr) auto;
+      gap: 10px;
+      padding: 10px;
+      border-radius: 20px;
+      background: #fff;
+      overflow: hidden;
+    }
+    .stale-item .stale-thumb {
+      width: 56px;
+      height: 56px;
+      display: block;
+      border-radius: 15px;
+      object-fit: cover;
+      background: transparent;
+    }
+    .stale-copy {
+      min-width: 0;
+      display: grid;
+      gap: 7px;
+    }
+    .stale-meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 0;
+      min-width: 0;
+    }
+    .stale-date-label {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 4px;
+      min-width: 0;
+      white-space: nowrap;
+    }
+    .stale-date-label span {
+      color: #8a909c;
+      font-size: 10px;
+      line-height: 1;
+    }
+    .stale-date-label strong {
+      color: #151517;
+      font-size: 14px;
+      line-height: 1;
+      font-weight: 600 !important;
+    }
+    .stale-side {
+      display: grid;
+      align-content: center;
+      justify-items: end;
+      gap: 5px;
+    }
+    .stale-dplus {
+      min-width: 48px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 9px;
+      border-radius: 999px;
+      background: #111827;
+      color: #fff;
+      font-family: 'TheJamsilOps', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 13px;
+      line-height: 1;
+      font-weight: 500 !important;
+      box-shadow: 0 8px 18px rgba(17,24,39,.12);
+    }
+    .stale-side .stale-qty {
+      min-width: 38px;
+      height: 24px;
+      padding: 0 8px;
+      background: #f4f7fb;
+      color: #5d6572;
+      font-size: 12px;
     }
     .sheet-modal[hidden] { display: none; }
     .sheet-modal { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 14px 10px; background: rgba(20,23,30,.38); backdrop-filter: blur(10px); }
@@ -2104,7 +2180,7 @@
 
     function money(value) {
       const n = Number(value || 0);
-      return n > 0 ? `${n.toLocaleString('ko-KR')}원` : '-';
+      return n > 0 ? `${Math.trunc(n).toLocaleString('ko-KR')}원` : '-';
     }
 
     function number(value) {
@@ -2115,6 +2191,31 @@
       const text = String(value || '').trim();
       const match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
       return match ? `${Number(match[2])}/${Number(match[3])}` : text;
+    }
+
+    function compactDateWeekdayLabel(value) {
+      const date = dateFromKey(value);
+      if (!date) return compactDateLabel(value);
+
+      const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+      return `${date.getMonth() + 1}/${date.getDate()}(${weekdays[date.getDay()]})`;
+    }
+
+    function dateFromKey(value) {
+      const match = String(value || '').trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!match) return null;
+
+      const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    function daysBetweenDateKeys(fromKey, toKey) {
+      const from = dateFromKey(fromKey);
+      const to = dateFromKey(toKey);
+      if (!from || !to) return null;
+
+      const dayMs = 24 * 60 * 60 * 1000;
+      return Math.round((to.getTime() - from.getTime()) / dayMs);
     }
 
     function esc(value) {
@@ -3132,16 +3233,24 @@
     }
 
     function renderStaleItem(item) {
+      const inboundDate = item.inboundDateKey || item.inboundDateText || '';
+      const dPlus = daysBetweenDateKeys(item.inboundDateKey, state.dashboard?.todayKey);
+      const dPlusLabel = dPlus == null ? 'D+2' : `D+${Math.max(0, dPlus)}`;
+
       return `
         <article class="stale-item" data-id="${esc(item.id)}">
-          <div class="thumb-wrap">
-            <img class="thumb" src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy">
-          </div>
-          <div>
+          <img class="stale-thumb" src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy">
+          <div class="stale-copy">
             <div class="stale-name">${esc(item.productName)}</div>
-            <div class="stale-meta">${storageBadge(item.storageMethod)} · 입고 ${esc(item.inboundDateText || item.inboundDateKey || '')}</div>
+            <div class="stale-meta">
+              <span class="stale-date-label"><span>입고</span><strong>${esc(compactDateWeekdayLabel(inboundDate))}</strong></span>
+              ${storageBadge(item.storageMethod)}
+            </div>
           </div>
-          <div class="stale-qty">${number(item.inboundQuantity)}</div>
+          <div class="stale-side">
+            <div class="stale-dplus">${esc(dPlusLabel)}</div>
+            <div class="stale-qty">${number(item.inboundQuantity)}</div>
+          </div>
         </article>
       `;
     }
@@ -3270,15 +3379,12 @@
           </div>
         ` : ''}
         ${categoryGroups.length
-          ? categoryGroups.map(group => renderSettlementCategorySection(group, selectedDateKey, Boolean(queryKey))).join('')
+          ? categoryGroups.map(group => renderSettlementCategorySection(group)).join('')
           : '<div class="empty">검색 결과가 없습니다.</div>'}
       `;
     }
 
-    function renderSettlementCategorySection(group, selectedDateKey, isSearchMode) {
-      const canReview = !isSearchMode && isSettlementReviewableCategory(group.category);
-      const reviewed = canReview && isSettlementCategoryReviewed(selectedDateKey, group.category);
-
+    function renderSettlementCategorySection(group) {
       return `
         <section class="settlement-section">
           <div class="settlement-section-head">
@@ -3286,15 +3392,6 @@
               <strong>${esc(group.label)}</strong>
               <span>${number(group.items.length)}개 · 정산 ${number(group.totalQuantity)}</span>
             </div>
-            ${canReview ? `
-              <button
-                class="settlement-review-btn ${reviewed ? 'done' : ''}"
-                data-action="settlement-review-complete"
-                data-review-date="${esc(selectedDateKey)}"
-                data-review-category="${esc(group.category)}"
-                type="button"
-              >${reviewed ? '검토완료됨' : '검토완료'}</button>
-            ` : ''}
           </div>
           <div class="settlement-list">
             ${group.items.slice(0, 80).map(renderSettlementCard).join('')}
@@ -3315,15 +3412,23 @@
           <div class="settlement-main">
             <div class="settlement-top">
               <div class="settlement-name">${esc(item.productName)}</div>
+              ${!isGroupItem && isSettlementReviewableCategory(item.category) ? `
+                <button
+                  class="settlement-review-btn ${isReviewed ? 'done' : ''}"
+                  data-action="settlement-review-complete"
+                  data-review-item-id="${esc(item.id)}"
+                  type="button"
+                >${isReviewed ? '검토완료됨' : '검토완료'}</button>
+              ` : ''}
               <div class="settlement-card-sub">${esc(item.fileName || item.sheetName || '')}</div>
             </div>
             <div class="settlement-prices">
               <div class="settlement-price-box">
-                <span>공급가 VAT포함</span>
+                <span>공급가 VAT 포함</span>
                 <strong>${money(item.supplyPriceVatIncluded)}</strong>
               </div>
               <div class="settlement-price-box">
-                <span>공급가 VAT별도</span>
+                <span>공급가 VAT 별도</span>
                 <strong>${money(item.supplyPriceExVat)}</strong>
               </div>
               <div class="settlement-price-box">
@@ -3400,19 +3505,21 @@
       }
 
       if (alwaysItems.length) {
-        const reviewed = isSettlementCategoryReviewed(dateKey, '상시');
+        const reviewedCount = alwaysItems.filter(isSettlementItemReviewed).length;
+        const reviewed = reviewedCount === alwaysItems.length;
         rows.push({
           label: '상시',
-          text: `${number(alwaysItems.length)}/${number(alwaysItems.length)} ${reviewed ? '검토완료' : '검토대기'}`,
+          text: `${number(reviewedCount)}/${number(alwaysItems.length)} ${reviewed ? '검토완료' : '검토대기'}`,
           kind: reviewed ? 'match' : 'review'
         });
       }
 
       if (produceItems.length) {
-        const reviewed = isSettlementCategoryReviewed(dateKey, '과일');
+        const reviewedCount = produceItems.filter(isSettlementItemReviewed).length;
+        const reviewed = reviewedCount === produceItems.length;
         rows.push({
           label: '과일',
-          text: `${number(produceItems.length)}/${number(produceItems.length)} ${reviewed ? '검토완료' : '검토대기'}`,
+          text: `${number(reviewedCount)}/${number(produceItems.length)} ${reviewed ? '검토완료' : '검토대기'}`,
           kind: reviewed ? 'match' : 'review produce'
         });
       }
@@ -3440,34 +3547,35 @@
       return ['상시', '과일', '야채'].includes(category);
     }
 
-    function settlementReviewCategoryKey(category) {
-      return category === '야채' ? '과일' : category;
-    }
-
-    function settlementReviewKey(dateKey, category) {
-      return `${dateKey || 'unknown'}::${settlementReviewCategoryKey(category || '')}`;
-    }
-
-    function isSettlementCategoryReviewed(dateKey, category) {
-      if (!dateKey || !isSettlementReviewableCategory(category)) return false;
-      return Boolean(state.settlementReviewChecks?.[settlementReviewKey(dateKey, category)]);
+    function settlementReviewKey(item) {
+      if (!item || !isSettlementReviewableCategory(item.category)) return '';
+      return `${item.dateKey || 'unknown'}::${item.category || 'unknown'}::${item.id || item.productKey || normalizeSearchText(item.productName)}`;
     }
 
     function isSettlementItemReviewed(item) {
-      return isSettlementCategoryReviewed(item?.dateKey, item?.category);
+      const key = settlementReviewKey(item);
+      return Boolean(key && state.settlementReviewChecks?.[key]);
     }
 
-    function toggleSettlementReviewComplete(dateKey, category) {
-      if (!dateKey || !isSettlementReviewableCategory(category)) return;
-      const key = settlementReviewKey(dateKey, category);
+    function findSettlementReviewItem(itemId) {
+      return (state.dashboard?.settlementReview?.items || []).find(item => item.id === itemId);
+    }
+
+    function toggleSettlementReviewComplete(itemId) {
+      const item = findSettlementReviewItem(itemId);
+      const key = settlementReviewKey(item);
+      if (!item || !key) return;
+
       const checks = { ...(state.settlementReviewChecks || {}) };
 
       if (checks[key]) {
         delete checks[key];
       } else {
         checks[key] = {
-          dateKey,
-          category: settlementReviewCategoryKey(category),
+          itemId: item.id,
+          dateKey: item.dateKey,
+          category: item.category,
+          productName: item.productName,
           checkedAt: new Date().toISOString()
         };
       }
@@ -4618,7 +4726,7 @@
       }
 
       if (action === 'settlement-review-complete') {
-        toggleSettlementReviewComplete(button.dataset.reviewDate || '', button.dataset.reviewCategory || '');
+        toggleSettlementReviewComplete(button.dataset.reviewItemId || '');
         renderSettlementReview(state.dashboard || {});
         bindControls();
         window.navigator?.vibrate?.(8);
@@ -4638,6 +4746,12 @@
       const sheet = document.querySelector('.storage-form-sheet');
       if (!sheet) return;
 
+      const cleanupSwipeListeners = () => {
+        window.removeEventListener('pointermove', move);
+        window.removeEventListener('pointerup', finish);
+        window.removeEventListener('pointercancel', cancel);
+      };
+
       const start = event => {
         if (event.button != null && event.button !== 0) return;
         if (event.target.closest('button, input')) return;
@@ -4653,19 +4767,24 @@
           event.currentTarget.setPointerCapture?.(event.pointerId);
         } catch {
         }
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', finish, { once: true });
+        window.addEventListener('pointercancel', cancel, { once: true });
       };
       const move = event => {
         if (!state.storageSwipeStart) return;
+        event.preventDefault();
         const deltaY = Math.max(0, event.clientY - state.storageSwipeStart.y);
-        sheet.style.transform = `translate3d(0, ${Math.min(190, deltaY)}px, 0)`;
+        sheet.style.transform = `translate3d(0, ${Math.min(280, deltaY)}px, 0)`;
       };
       const finish = event => {
         if (!state.storageSwipeStart) return;
         const deltaX = event.clientX - state.storageSwipeStart.x;
         const deltaY = event.clientY - state.storageSwipeStart.y;
-        const shouldClose = deltaY > 68 && Math.abs(deltaX) < 120;
+        const shouldClose = deltaY > 56 && Math.abs(deltaX) < 140;
         state.storageSwipeStart = null;
         sheet.classList.remove('swiping');
+        cleanupSwipeListeners();
 
         if (shouldClose) {
           resetStorageForm();
@@ -4679,13 +4798,14 @@
         state.storageSwipeStart = null;
         sheet.classList.remove('swiping');
         sheet.style.transform = '';
+        cleanupSwipeListeners();
       };
 
       sheet.querySelectorAll('.storage-form-grabber, .storage-form-head').forEach(handle => {
         handle.onpointerdown = start;
-        handle.onpointermove = move;
-        handle.onpointerup = finish;
-        handle.onpointercancel = cancel;
+        handle.onpointermove = null;
+        handle.onpointerup = null;
+        handle.onpointercancel = null;
       });
     }
 
