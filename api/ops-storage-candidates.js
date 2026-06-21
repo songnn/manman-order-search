@@ -22,11 +22,12 @@ export default async function handler(req, res) {
 
     const digits = clean(req.query?.digits || req.query?.q).replace(/\D/g, '').slice(-4);
     const hasDigits = /^\d{4}$/.test(digits);
+    const customerQuery = normalizeCustomerLabel(req.query?.customerQuery || req.query?.customer || req.query?.name);
     const productQuery = clean(req.query?.productQuery || req.query?.product || req.query?.keyword);
-    if (!hasDigits && !productQuery) {
+    if (!hasDigits && !customerQuery && !productQuery) {
       return res.status(400).json({
         ok: false,
-        message: '핸드폰 뒷4자리 또는 상품명을 입력해주세요.'
+        message: '핸드폰 뒷4자리, 닉네임, 상품명 중 하나를 입력해주세요.'
       });
     }
 
@@ -48,7 +49,14 @@ export default async function handler(req, res) {
             minPickupDateValue,
             maxPickupDateValue
           })
-        : Promise.resolve([]),
+        : customerQuery
+          ? readRecentOrderRowsByCustomer({
+              customerQuery,
+              sinceOrderDateValue,
+              minPickupDateValue,
+              maxPickupDateValue
+            })
+          : Promise.resolve([]),
       productQuery
         ? readRecentInventoryRows({
             productQuery,
@@ -63,10 +71,11 @@ export default async function handler(req, res) {
       requestedCustomerLabel ||
       (candidates.length === 1 ? candidates[0].customerLabel : '');
 
-    if (hasDigits && candidates.length > 1 && !selectedCustomerLabel && !productQuery) {
+    if ((hasDigits || customerQuery) && candidates.length > 1 && !selectedCustomerLabel && !productQuery) {
       return res.status(200).json({
         ok: true,
         digits,
+        customerQuery,
         requiresCustomerSelection: true,
         selectedCustomerLabel: '',
         candidates,
@@ -85,6 +94,7 @@ export default async function handler(req, res) {
       requiresCustomerSelection: false,
       selectedCustomerLabel,
       candidates,
+      customerQuery,
       productQuery,
       items
     });
@@ -128,6 +138,39 @@ async function readRecentOrderRows({ digits, sinceOrderDateValue, minPickupDateV
   return data || [];
 }
 
+async function readRecentOrderRowsByCustomer({ customerQuery, sinceOrderDateValue, minPickupDateValue, maxPickupDateValue }) {
+  const normalizedSearch = normalizeCustomerSearch(customerQuery);
+  if (!normalizedSearch) return [];
+
+  const { data, error } = await supabaseAdmin
+    .from('order_cache')
+    .select([
+      'source_sheet_name',
+      'source_row_number',
+      'customer_label',
+      'customer_digits4',
+      'order_date_text',
+      'order_date_value',
+      'pickup_date_text',
+      'pickup_date_value',
+      'product_name',
+      'quantity',
+      'price',
+      'image_url'
+    ].join(','))
+    .eq('store_name', STORE_NAME)
+    .gte('order_date_value', sinceOrderDateValue)
+    .gte('pickup_date_value', minPickupDateValue)
+    .lte('pickup_date_value', maxPickupDateValue)
+    .ilike('customer_search', `%${normalizedSearch}%`)
+    .order('pickup_date_value', { ascending: false })
+    .order('source_row_number', { ascending: true })
+    .limit(700);
+
+  if (error) throw error;
+  return data || [];
+}
+
 function mergeCandidates(candidates, rows, digits) {
   const grouped = new Map();
 
@@ -147,16 +190,18 @@ function mergeCandidates(candidates, rows, digits) {
   rows.forEach(row => {
     const label = normalizeCustomerLabel(row.customer_label);
     if (!label) return;
+    const rowDigits = clean(row.customer_digits4 || digits).replace(/\D/g, '').slice(-4);
 
     const current = grouped.get(label) || {
       customerLabel: label,
-      customerDigits4: digits,
+      customerDigits4: rowDigits,
       orderCount: 0,
       latestOrderDateValue: 0,
       latestPickupDateValue: 0
     };
 
     current.orderCount += 1;
+    current.customerDigits4 = current.customerDigits4 || rowDigits;
     current.latestOrderDateValue = Math.max(current.latestOrderDateValue, Number(row.order_date_value || 0));
     current.latestPickupDateValue = Math.max(current.latestPickupDateValue, Number(row.pickup_date_value || 0));
     grouped.set(label, current);
@@ -470,4 +515,8 @@ function getKstDate() {
 
 function clean(value) {
   return String(value == null ? '' : value).trim();
+}
+
+function normalizeCustomerSearch(value) {
+  return clean(value).toLowerCase().replace(/\s+/g, '');
 }

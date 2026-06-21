@@ -121,6 +121,8 @@
     .stale-qty { display: inline-flex; align-items: center; justify-content: center; min-width: 56px; height: 36px; padding: 0 10px; border-radius: 999px; background: #f3f5f8; text-align: center; font-size: 18px; font-weight: 600; }
     .settlement-tools { display: grid; gap: 8px; margin-bottom: 9px; }
     .settlement-search { width: 100%; height: 42px; border: 1px solid #e3e8f0; border-radius: 16px; background: #fff; padding: 0 13px; color: #151517; font-size: 13px; font-weight: 500; outline: none; box-shadow: 0 8px 20px rgba(36,42,54,.045); }
+    .ops-search { width: 100%; height: 38px; margin: 0 0 8px; border: 1px solid #dfe5ee; border-radius: 15px; background: #fff; padding: 0 13px; color: #151517; font-size: 13px; line-height: 1; outline: none; box-shadow: 0 8px 20px rgba(36,42,54,.045); }
+    .ops-search::placeholder { color: #a0a6b2; }
     .settlement-date-strip { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 1px; scrollbar-width: none; }
     .settlement-date-strip::-webkit-scrollbar { display: none; }
     .settlement-date-btn { flex: 0 0 auto; min-width: 78px; min-height: 34px; border: 1px solid #e4e9f1; border-radius: 14px; background: #fff; color: #717985; padding: 5px 9px; text-align: left; box-shadow: 0 8px 18px rgba(36,42,54,.045); }
@@ -147,6 +149,7 @@
     .settlement-card.category-vegetable::before { background: linear-gradient(180deg, #16a34a, #86efac); }
     .settlement-card.category-special::before { background: linear-gradient(180deg, #ef4444, #f59e0b); }
     .settlement-card.mismatch { border-color: rgba(251,146,60,.36); box-shadow: 0 9px 22px rgba(251,146,60,.09); }
+    .settlement-card.raw-mismatch { border-color: rgba(239,68,68,.44); box-shadow: 0 10px 26px rgba(239,68,68,.12); }
     .settlement-card img { width: 52px; height: 52px; border-radius: 14px; object-fit: cover; background: #f3f5f8; }
     .settlement-main { min-width: 0; display: grid; gap: 6px; }
     .settlement-top { min-width: 0; display: grid; gap: 3px; align-items: center; }
@@ -965,6 +968,11 @@
       display: grid;
       gap: 7px;
     }
+    .storage-identity-grid {
+      display: grid;
+      grid-template-columns: 112px minmax(0, 1fr);
+      gap: 7px;
+    }
     .storage-input {
       width: 100%;
       height: 38px;
@@ -990,6 +998,12 @@
       background: #fff;
       border-color: #dfe5ee;
       font-size: 12.5px;
+    }
+    .storage-input.customer-search {
+      height: 38px;
+      background: #fff;
+      border-color: #dfe5ee;
+      font-size: 12px;
     }
     .storage-primary-btn,
     .storage-complete-btn {
@@ -1052,6 +1066,10 @@
     .storage-list {
       display: grid;
       gap: 7px;
+      max-height: 38vh;
+      overflow: auto;
+      padding-right: 1px;
+      overscroll-behavior: contain;
     }
     .storage-item {
       display: grid;
@@ -1172,12 +1190,15 @@
     }
     .storage-schedule-row {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-columns: minmax(0, 1fr) 92px;
       gap: 7px;
       align-items: end;
+      padding: 8px;
+      border-radius: 17px;
+      background: #f3f6fa;
     }
     .storage-schedule-row.with-time {
-      grid-template-columns: minmax(0, 1fr) 78px minmax(0, .72fr);
+      grid-template-columns: minmax(0, 1fr) 86px minmax(0, .72fr);
     }
     .storage-memo-grid .full {
       grid-column: 1 / -1;
@@ -1335,6 +1356,7 @@
       overflow: hidden;
       border: 1px solid rgba(255,255,255,.9);
       background: #fff !important;
+      padding-left: 17px;
     }
     .inbound-card::before {
       content: '';
@@ -1342,7 +1364,7 @@
       left: 0;
       top: 0;
       bottom: 0;
-      width: 5px;
+      width: 8px;
       border-radius: 0;
       background: #d5dae3;
     }
@@ -1791,7 +1813,7 @@
       align-self: end;
       border: 1px solid #e2e7ef;
       border-radius: 13px;
-      background: #f8fafc;
+      background: #fff;
       color: #6b7280;
       font-size: 11px;
       font-weight: 600 !important;
@@ -1830,7 +1852,7 @@
       inset: 0;
       z-index: 78;
       display: grid;
-      align-items: end;
+      place-items: center;
       padding: 12px 10px max(12px, env(safe-area-inset-bottom));
       background: rgba(20, 23, 30, .38);
       backdrop-filter: blur(10px);
@@ -1847,11 +1869,31 @@
       box-shadow: 0 24px 70px rgba(20,23,30,.26);
       overflow: auto;
       overscroll-behavior: contain;
+      animation: storageSheetIn 190ms cubic-bezier(.2,.82,.2,1) both;
+      transition: transform 180ms cubic-bezier(.2,.8,.2,1);
+      will-change: transform;
+      touch-action: pan-y;
+    }
+    .storage-form-sheet.swiping {
+      transition: none;
     }
     .storage-form-grabber {
       width: 46px;
+      min-height: 19px;
+      display: grid;
+      place-items: start center;
+      margin: 0 auto;
+      border-radius: 999px;
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    .storage-form-grabber::before {
+      content: '';
+      width: 46px;
       height: 5px;
-      margin: 2px auto 4px;
       border-radius: 999px;
       background: #d5dae3;
     }
@@ -1861,6 +1903,11 @@
       gap: 10px;
       align-items: start;
       padding: 2px 4px 1px;
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
     }
     .storage-form-head h2 {
       margin: 0;
@@ -1887,6 +1934,10 @@
       font-size: 21px;
       line-height: 1;
       font-weight: 500 !important;
+    }
+    @keyframes storageSheetIn {
+      from { opacity: 0; transform: translate3d(0, 26px, 0) scale(.985); }
+      to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
     }
   </style>
 </head>
@@ -1967,6 +2018,9 @@
       managementTab: 'receiving',
       dashboard: null,
       salesDateKey: '',
+      salesQuery: '',
+      inboundQuery: '',
+      staleQuery: '',
       settlementDateKey: '',
       settlementQuery: '',
       token: new URLSearchParams(location.search).get('token') || localStorage.getItem('opsToken') || '03064',
@@ -1975,6 +2029,7 @@
       storageQuantities: {},
       storage: {
         digits: '',
+        customerQuery: '',
         productQuery: '',
         selectedCustomerLabel: '',
         candidates: [],
@@ -1992,6 +2047,8 @@
         message: ''
       },
       modalScrollY: 0,
+      storageSwipeStart: null,
+      storageLookupTimer: null,
       busy: false
     };
 
@@ -2248,13 +2305,17 @@
     }
 
     function renderSales(data) {
-      const items = getSelectedSalesItems(data);
+      const sourceItems = getSelectedSalesItems(data);
+      const items = sourceItems.filter(item => matchesProductQuery(item, state.salesQuery));
       els.salesSummary.innerHTML = '';
       renderSalesDateStrip(data);
 
-      els.salesGrid.innerHTML = items.length
-        ? items.map(renderSalesCard).join('')
-        : '<div class="empty">해당 날짜의 공구 상품이 없습니다.</div>';
+      els.salesGrid.innerHTML = [
+        renderOpsSearch('sales', state.salesQuery, '상품명 일부만 입력하면 바로 검색'),
+        items.length
+          ? items.map(renderSalesCard).join('')
+          : `<div class="empty">${state.salesQuery ? '검색 결과가 없습니다.' : '해당 날짜의 공구 상품이 없습니다.'}</div>`
+      ].join('');
     }
 
     function renderSalesCard(item) {
@@ -2372,23 +2433,33 @@
               ${isEditing ? renderStorageEditBanner(storage.editingGroup) : `
                 <div class="storage-search-stack">
                   <div class="storage-search-row">
-                    <input
-                      class="storage-input digits"
-                      data-storage-field="digits"
-                      value="${esc(storage.digits)}"
-                      placeholder="핸드폰 뒷4자리"
-                      aria-label="핸드폰 뒷4자리"
-                      inputmode="numeric"
-                      maxlength="4"
-                      autocomplete="off"
-                    >
+                    <div class="storage-identity-grid">
+                      <input
+                        class="storage-input digits"
+                        data-storage-field="digits"
+                        value="${esc(storage.digits)}"
+                        placeholder="뒷4자리"
+                        aria-label="핸드폰 뒷4자리"
+                        inputmode="numeric"
+                        maxlength="4"
+                        autocomplete="off"
+                      >
+                      <input
+                        class="storage-input customer-search"
+                        data-storage-field="customerQuery"
+                        value="${esc(storage.customerQuery)}"
+                        placeholder="닉네임으로도 검색"
+                        aria-label="닉네임 검색"
+                        autocomplete="off"
+                      >
+                    </div>
                     <button class="storage-primary-btn" data-action="storage-lookup" type="button" ${storage.loading ? 'disabled' : ''}>${storage.loading ? '조회중' : '조회'}</button>
                   </div>
                   <input
                     class="storage-input product-search"
                     data-storage-field="productQuery"
                     value="${esc(storage.productQuery)}"
-                    placeholder="주문상품 외 최근 픽업 상품 검색"
+                    placeholder="주문 외 최근 픽업 상품명 검색"
                     aria-label="최근 픽업 상품 검색"
                     autocomplete="off"
                   >
@@ -2905,7 +2976,8 @@
     function renderInbound(data) {
       const todayItems = data.inboundItems || [];
       const fallbackItems = !todayItems.length ? (data.latestInboundItems || []) : [];
-      const items = todayItems.length ? todayItems : fallbackItems;
+      const sourceItems = todayItems.length ? todayItems : fallbackItems;
+      const items = sourceItems.filter(item => matchesProductQuery(item, state.inboundQuery));
       const targetDate = todayItems.length ? data.todayKey : data.latestInboundDate;
       const totalInbound = items.reduce((sum, item) => sum + Number(item.inboundQuantity || 0), 0);
       const totalCounted = items.reduce((sum, item) => sum + Number(item.countedQuantity || 0), 0);
@@ -2917,9 +2989,12 @@
         renderReceivingMetric('완료', `${number(completeCount)}/${number(items.length)}`, 'done')
       ].join('');
 
-      els.inboundGrid.innerHTML = items.length
-        ? renderInboundStorageSections(items)
-        : '<div class="empty">입고 상품이 없습니다.</div>';
+      els.inboundGrid.innerHTML = [
+        renderOpsSearch('inbound', state.inboundQuery, '입고 상품명 바로 검색'),
+        items.length
+          ? renderInboundStorageSections(items)
+          : `<div class="empty">${state.inboundQuery ? '검색 결과가 없습니다.' : '입고 상품이 없습니다.'}</div>`
+      ].join('');
 
       els.staleList.innerHTML = renderStaleGroups(data);
     }
@@ -3014,7 +3089,7 @@
             <button class="count-btn count-add" data-action="count-2"><span>+2</span></button>
             <button class="count-btn count-add" data-action="count-1"><span>+1</span></button>
             <button class="count-btn count-minus" data-action="count-minus"><span>−1</span></button>
-            <button class="count-btn count-reset" data-action="count-reset"><span>0으로</span></button>
+            <button class="count-btn count-reset" data-action="count-reset" aria-label="카운팅 초기화"><span>C</span></button>
             <button class="complete-btn ${item.isReceivingComplete ? 'done' : ''}" data-action="receive-complete">${item.isReceivingComplete ? '완료해제' : '체크완료'}</button>
           </div>
         </article>
@@ -3023,38 +3098,37 @@
 
     function renderStaleItem(item) {
       return `
-        <article class="product-card sales-card stale-card" data-id="${esc(item.id)}">
+        <article class="stale-item" data-id="${esc(item.id)}">
           <div class="thumb-wrap">
             <img class="thumb" src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy">
           </div>
-          <div class="card-main">
-            <div class="card-head">
-              <h3 class="card-name">${esc(item.productName)}</h3>
-              ${storageBadge(item.storageMethod)}
-            </div>
-            <div class="sales-line">
-              <span class="sales-price">판매가 ${money(item.salePrice)}</span>
-              ${renderListButtons(item)}
-            </div>
-            <div class="sales-sub-line">
-              <span>입고일 <strong>${esc(item.inboundDateText || item.inboundDateKey)}</strong></span>
-              <span>입고수량 <strong>${number(item.inboundQuantity)}</strong></span>
-            </div>
+          <div>
+            <div class="stale-name">${esc(item.productName)}</div>
+            <div class="stale-meta">${storageBadge(item.storageMethod)} · 입고 ${esc(item.inboundDateText || item.inboundDateKey || '')}</div>
           </div>
-          ${renderBufferSummary(item)}
+          <div class="stale-qty">${number(item.inboundQuantity)}</div>
         </article>
       `;
     }
 
     function renderStaleGroups(data) {
       const groups = (data.staleDateGroups || [])
+        .map(group => {
+          const items = (group.items || []).filter(item => matchesProductQuery(item, state.staleQuery));
+          return {
+            ...group,
+            items,
+            count: items.length,
+            totalQuantity: items.reduce((sum, item) => sum + Number(item.inboundQuantity || 0), 0)
+          };
+        })
         .filter(group => Array.isArray(group.items) && group.items.length);
 
       if (!groups.length) {
-        return '<div class="empty">대상이 없습니다.</div>';
+        return `${renderOpsSearch('stale', state.staleQuery, '상시전환 상품명 바로 검색')}<div class="empty">${state.staleQuery ? '검색 결과가 없습니다.' : '대상이 없습니다.'}</div>`;
       }
 
-      return groups.map((group, index) => {
+      return renderOpsSearch('stale', state.staleQuery, '상시전환 상품명 바로 검색') + groups.map((group, index) => {
         const isPrimary = group.dateKey === data.staleCutoffDateKey || index === 0;
         const body = `
           <div class="stale-date-body">
@@ -3129,7 +3203,7 @@
         </div>
         ${mismatches.length ? `
           <div class="settlement-alert">
-            <strong>정산서 입고량과 입고리스트 수량이 다른 항목이 ${number(mismatches.length)}개 있습니다.</strong>
+            <strong>확인이 필요한 수량 차이가 ${number(mismatches.length)}개 있습니다.</strong>
             <span>${mismatches.slice(0, 3).map(item => `${item.productName} 정산 ${number(item.settlementQuantity)} / 입고리스트 ${item.hasInventoryMatch ? number(item.inventoryListQuantity) : '매칭없음'} / raw ${item.hasRawInventoryMatch ? number(item.inventoryRawQuantity) : '-'}`).join(' · ')}</span>
           </div>
         ` : ''}
@@ -3163,7 +3237,7 @@
       const image = imageUrl({ imageUrl: item.imageUrl, productName: item.productName });
 
       return `
-        <article class="settlement-card ${categoryClass} ${item.mismatch ? 'mismatch' : ''}">
+        <article class="settlement-card ${categoryClass} ${item.mismatch ? 'mismatch' : ''} ${item.listRawMismatch ? 'raw-mismatch' : ''}">
           <img src="${esc(image)}" alt="${esc(item.productName)}" loading="lazy">
           <div class="settlement-main">
             <div class="settlement-top">
@@ -3203,8 +3277,10 @@
               </div>
             </div>
             <div class="settlement-meta">
-              ${item.mismatch ? `<span class="settlement-diff">차이 ${number(item.diffQuantity)}</span>` : ''}
-              ${!item.hasInventoryMatch ? '<span class="settlement-diff">입고리스트 매칭없음</span>' : ''}
+              ${item.listRawMismatch ? `<span class="settlement-diff">입고리스트/raw 차이 ${number(item.listRawDiffQuantity)}</span>` : ''}
+              ${item.mismatch && !item.listRawMismatch ? `<span class="settlement-diff">차이 ${number(item.diffQuantity)}</span>` : ''}
+              ${!item.hasInventoryMatch && !item.hasRawInventoryMatch ? '<span class="settlement-diff">입고 매칭없음</span>' : ''}
+              ${!item.hasInventoryMatch && item.hasRawInventoryMatch ? '<span>입고 raw 기준 정상</span>' : ''}
               ${item.hasInventoryMatch && !item.inventoryMatchIsExact ? '<span>근접 입고일 매칭</span>' : ''}
               ${item.hasRawInventoryMatch && !item.rawInventoryMatchIsExact ? '<span>근접 raw일 매칭</span>' : ''}
               ${item.rawSettlementType ? `<span>정산분류 ${esc(item.rawSettlementType)}</span>` : ''}
@@ -3253,6 +3329,22 @@
 
     function normalizeSearchText(value) {
       return String(value || '').trim().toLowerCase().replace(/\s+/g, '');
+    }
+
+    function matchesProductQuery(item, query) {
+      const queryKey = normalizeSearchText(query);
+      if (!queryKey) return true;
+
+      return normalizeSearchText([
+        item.productName,
+        item.productKey,
+        item.storageMethod,
+        item.salesType
+      ].filter(Boolean).join(' ')).includes(queryKey);
+    }
+
+    function renderOpsSearch(kind, value, placeholder) {
+      return `<input class="ops-search" data-ops-search="${esc(kind)}" value="${esc(value || '')}" placeholder="${esc(placeholder)}" inputmode="search" autocomplete="off">`;
     }
 
     function findItem(id) {
@@ -3647,11 +3739,12 @@
       fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'receive_count',
-          inventoryStableId: id,
-          countedQuantity: quantity
-        })
+          body: JSON.stringify({
+            action: 'receive_count',
+            inventoryStableId: id,
+            countedQuantity: quantity,
+            returnDashboard: false
+          })
       })
         .then(async response => {
           const data = await response.json();
@@ -3666,52 +3759,58 @@
         });
     }
 
-    async function runReceivingComplete(id, nextComplete) {
-      if (state.busy) return;
-
+    function runReceivingComplete(id, nextComplete) {
       const previous = Boolean(findItem(id)?.isReceivingComplete);
-      state.busy = true;
       updateItem(id, target => {
         target.isReceivingComplete = Boolean(nextComplete);
       });
       render();
       flashActionButton(id, 'receive-complete', nextComplete ? '완료' : '해제', nextComplete ? '' : 'minus');
 
-      try {
-        const url = new URL('/api/buffer-action', location.origin);
-        url.searchParams.set('token', state.token);
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'receive_complete',
-            inventoryStableId: id,
-            isComplete: Boolean(nextComplete)
-          })
+      const url = new URL('/api/buffer-action', location.origin);
+      url.searchParams.set('token', state.token);
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'receive_complete',
+          inventoryStableId: id,
+          isComplete: Boolean(nextComplete),
+          returnDashboard: false
+        })
+      })
+        .then(async response => {
+          const data = await response.json();
+          if (!response.ok || !data.ok) throw new Error(data.message || '저장하지 못했습니다.');
+        })
+        .catch(error => {
+          updateItem(id, target => {
+            target.isReceivingComplete = previous;
+          });
+          render();
+          alert(error.message || String(error));
         });
-        const data = await response.json();
-        if (!response.ok || !data.ok) throw new Error(data.message || '저장하지 못했습니다.');
-
-        state.dashboard = data.dashboard;
-        render();
-      } catch (error) {
-        updateItem(id, target => {
-          target.isReceivingComplete = previous;
-        });
-        render();
-        alert(error.message || String(error));
-      } finally {
-        state.busy = false;
-      }
     }
 
     async function runStorageLookup(customerLabel = '') {
       const digits = String(state.storage.digits || '').replace(/\D/g, '').slice(-4);
+      const customerQuery = String(state.storage.customerQuery || '').trim();
       const productQuery = String(state.storage.productQuery || '').trim();
       const hasDigits = /^\d{4}$/.test(digits);
-      if (!hasDigits && !productQuery) {
-        state.storage.message = '핸드폰 뒷4자리 또는 상품명을 입력해주세요.';
+      const activeStorageField = document.activeElement?.dataset?.storageField || '';
+      const restoreStorageFocus = () => {
+        if (!activeStorageField) return;
+        requestAnimationFrame(() => {
+          const input = document.querySelector(`[data-storage-field="${CSS.escape(activeStorageField)}"]`);
+          input?.focus?.();
+          const end = String(input?.value || '').length;
+          input?.setSelectionRange?.(end, end);
+        });
+      };
+      if (!hasDigits && !customerQuery && !productQuery) {
+        state.storage.message = '핸드폰 뒷4자리, 닉네임, 상품명 중 하나를 입력해주세요.';
         render();
+        restoreStorageFocus();
         return;
       }
 
@@ -3719,11 +3818,13 @@
       state.storage.message = '';
       state.storage.complete = null;
       render();
+      restoreStorageFocus();
 
       try {
         const url = new URL('/api/ops-storage-candidates', location.origin);
         url.searchParams.set('token', state.token);
         if (hasDigits) url.searchParams.set('digits', digits);
+        if (customerQuery) url.searchParams.set('customerQuery', customerQuery);
         if (productQuery) url.searchParams.set('productQuery', productQuery);
         if (customerLabel) url.searchParams.set('customerLabel', customerLabel);
 
@@ -3732,6 +3833,7 @@
         if (!response.ok || !data.ok) throw new Error(data.message || '보관요청 상품을 찾지 못했습니다.');
 
         state.storage.digits = hasDigits ? digits : '';
+        state.storage.customerQuery = customerQuery;
         state.storage.productQuery = productQuery;
         state.storage.candidates = data.candidates || [];
         state.storage.selectedCustomerLabel = data.selectedCustomerLabel || customerLabel || '';
@@ -3748,7 +3850,26 @@
       } finally {
         state.storage.loading = false;
         render();
+        restoreStorageFocus();
       }
+    }
+
+    function scheduleStorageLookup() {
+      clearTimeout(state.storageLookupTimer);
+      if (state.storage.editingGroup) return;
+
+      const digits = String(state.storage.digits || '').replace(/\D/g, '').slice(-4);
+      const customerQuery = String(state.storage.customerQuery || '').trim();
+      const productQuery = String(state.storage.productQuery || '').trim();
+      const canLookup = /^\d{4}$/.test(digits) || customerQuery.length >= 2 || productQuery.length >= 2;
+      if (!canLookup) return;
+
+      state.storageLookupTimer = setTimeout(() => {
+        runStorageLookup().catch(error => {
+          state.storage.message = error.message || String(error);
+          render();
+        });
+      }, 360);
     }
 
     function getStorageVisitText() {
@@ -3773,8 +3894,10 @@
     }
 
     function resetStorageForm({ keepComplete = false } = {}) {
+      clearTimeout(state.storageLookupTimer);
       const complete = keepComplete ? state.storage.complete : null;
       state.storage.digits = '';
+      state.storage.customerQuery = '';
       state.storage.productQuery = '';
       state.storage.selectedCustomerLabel = '';
       state.storage.candidates = [];
@@ -3789,12 +3912,14 @@
       state.storage.formOpen = false;
       state.storage.message = '';
       state.storage.complete = complete;
+      unlockPageScroll();
     }
 
     function openStorageNewRequest() {
       resetStorageForm();
       state.storage.formOpen = true;
       state.storage.complete = null;
+      lockPageScroll();
       render();
       window.requestAnimationFrame(() => {
         document.querySelector('[data-storage-field="digits"]')?.focus?.();
@@ -3808,6 +3933,7 @@
       const visit = splitStorageVisitText(group.visitDateText || '');
       state.storage.editingGroup = group;
       state.storage.digits = group.customerDigits4 || '';
+      state.storage.customerQuery = group.customerLabel || '';
       state.storage.selectedCustomerLabel = group.customerLabel || '';
       state.storage.candidates = [];
       state.storage.locationMemo = group.locationMemo || '';
@@ -3819,6 +3945,7 @@
       state.storage.complete = null;
       state.storage.selected = {};
       state.storage.formOpen = true;
+      lockPageScroll();
       state.storage.items = (group.items || []).map(item => {
         const editItem = {
           ...item,
@@ -4309,6 +4436,61 @@
       return false;
     }
 
+    function bindStorageFormSwipe() {
+      const sheet = document.querySelector('.storage-form-sheet');
+      if (!sheet) return;
+
+      const start = event => {
+        if (event.button != null && event.button !== 0) return;
+        if (event.target.closest('button, input')) return;
+
+        event.preventDefault();
+        state.storageSwipeStart = {
+          x: event.clientX,
+          y: event.clientY,
+          pointerId: event.pointerId
+        };
+        sheet.classList.add('swiping');
+        try {
+          event.currentTarget.setPointerCapture?.(event.pointerId);
+        } catch {
+        }
+      };
+      const move = event => {
+        if (!state.storageSwipeStart) return;
+        const deltaY = Math.max(0, event.clientY - state.storageSwipeStart.y);
+        sheet.style.transform = `translate3d(0, ${Math.min(190, deltaY)}px, 0)`;
+      };
+      const finish = event => {
+        if (!state.storageSwipeStart) return;
+        const deltaX = event.clientX - state.storageSwipeStart.x;
+        const deltaY = event.clientY - state.storageSwipeStart.y;
+        const shouldClose = deltaY > 68 && Math.abs(deltaX) < 120;
+        state.storageSwipeStart = null;
+        sheet.classList.remove('swiping');
+
+        if (shouldClose) {
+          resetStorageForm();
+          render();
+          return;
+        }
+
+        sheet.style.transform = '';
+      };
+      const cancel = () => {
+        state.storageSwipeStart = null;
+        sheet.classList.remove('swiping');
+        sheet.style.transform = '';
+      };
+
+      sheet.querySelectorAll('.storage-form-grabber, .storage-form-head').forEach(handle => {
+        handle.onpointerdown = start;
+        handle.onpointermove = move;
+        handle.onpointerup = finish;
+        handle.onpointercancel = cancel;
+      });
+    }
+
     function bindControls() {
       document.querySelectorAll('[data-action]').forEach(button => {
         button.onclick = async event => {
@@ -4423,6 +4605,23 @@
         };
       });
 
+      document.querySelectorAll('[data-ops-search]').forEach(input => {
+        input.oninput = () => {
+          const kind = input.dataset.opsSearch || '';
+          const nextValue = input.value || '';
+          if (kind === 'sales') state.salesQuery = nextValue;
+          if (kind === 'inbound') state.inboundQuery = nextValue;
+          if (kind === 'stale') state.staleQuery = nextValue;
+          render();
+          requestAnimationFrame(() => {
+            const nextInput = document.querySelector(`[data-ops-search="${CSS.escape(kind)}"]`);
+            nextInput?.focus?.();
+            const end = nextValue.length;
+            nextInput?.setSelectionRange?.(end, end);
+          });
+        };
+      });
+
       document.querySelectorAll('[data-storage-field]').forEach(input => {
         input.oninput = () => {
           const field = input.dataset.storageField || '';
@@ -4434,9 +4633,12 @@
           if (field === 'digits') {
             input.value = state.storage[field];
           }
+          if (field === 'digits' || field === 'customerQuery' || field === 'productQuery') {
+            scheduleStorageLookup();
+          }
         };
         input.onkeydown = event => {
-          if ((input.dataset.storageField === 'digits' || input.dataset.storageField === 'productQuery') && event.key === 'Enter') {
+          if ((input.dataset.storageField === 'digits' || input.dataset.storageField === 'customerQuery' || input.dataset.storageField === 'productQuery') && event.key === 'Enter') {
             event.preventDefault();
             runStorageLookup();
           }
@@ -4452,6 +4654,7 @@
       });
 
       bindQuantityPickers();
+      bindStorageFormSwipe();
     }
 
     document.addEventListener('click', event => {
