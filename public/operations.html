@@ -132,6 +132,8 @@
     .settlement-alert { display: grid; gap: 7px; margin-bottom: 10px; padding: 10px; border-radius: 17px; background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; }
     .settlement-alert strong { font-size: 13px; line-height: 1.15; font-weight: 600 !important; }
     .settlement-alert span { font-size: 10.5px; line-height: 1.25; color: #c2410c; }
+    .settlement-generate-btn { width: fit-content; height: 30px; border: 0; border-radius: 12px; background: #111827; color: #fff; padding: 0 11px; font-size: 11px; line-height: 1; font-weight: 600 !important; box-shadow: 0 8px 18px rgba(17,24,39,.14); }
+    .settlement-generate-btn:disabled { background: #d8dde6; color: #8b929f; box-shadow: none; }
     .settlement-section { display: grid; gap: 8px; margin-top: 12px; }
     .settlement-section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 2px; }
     .settlement-section-head strong { color: #151517; font-size: 14px; line-height: 1; font-weight: 600 !important; }
@@ -3079,7 +3081,10 @@
         ${missingImages.length ? `
           <div class="settlement-alert">
             <strong>이미지가 필요한 비공구/과일 항목이 ${number(missingImages.length)}개 있습니다.</strong>
-            <span>이미지 자동 생성 캐시는 별도 저장 테이블 연결 후 안전하게 켤 수 있습니다.</span>
+            <span>OpenAI 기본 이미지 모델로 생성 후 Supabase Storage에 저장해서 계속 재사용합니다.</span>
+            <button class="settlement-generate-btn" data-action="settlement-generate-images" type="button" ${state.busy ? 'disabled' : ''}>
+              ${state.busy ? '생성 중' : '이미지 생성'}
+            </button>
           </div>
         ` : ''}
         <section class="settlement-section">
@@ -3917,6 +3922,38 @@
       }
     }
 
+    async function runSettlementImageGeneration() {
+      if (state.busy) return;
+
+      state.busy = true;
+      renderSettlementReview(state.dashboard || {});
+      bindControls();
+
+      try {
+        const url = new URL('/api/ops-generate-images', location.origin);
+        url.searchParams.set('token', state.token);
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ limit: 8 })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.message || '이미지 생성에 실패했습니다.');
+
+        if (data.dashboard) {
+          state.dashboard = data.dashboard;
+          saveDashboardCache(data.dashboard);
+        }
+        alert(`이미지 ${number(data.generatedCount || 0)}개 생성 완료${data.errorCount ? ` · 실패 ${number(data.errorCount)}개` : ''}`);
+        render();
+      } catch (error) {
+        alert(error.message || String(error));
+      } finally {
+        state.busy = false;
+        render();
+      }
+    }
+
     function handleStorageAction(button, action, event) {
       if (action === 'storage-open-new') {
         openStorageNewRequest();
@@ -3994,6 +4031,11 @@
           button.dataset.customerLabel || '',
           button.dataset.quantity || 0
         );
+        return true;
+      }
+
+      if (action === 'settlement-generate-images') {
+        runSettlementImageGeneration();
         return true;
       }
 
