@@ -318,6 +318,86 @@
     .stale-qty { min-width: 44px; height: 28px; font-size: 14px; }
     .stale-metrics { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
     .stale-actions { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .stale-date-section {
+      display: grid;
+      gap: 8px;
+    }
+    .stale-date-section + .stale-date-section {
+      margin-top: 10px;
+    }
+    .stale-date-head,
+    .stale-date-section summary {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      min-height: 38px;
+      padding: 0 4px;
+      color: #151517;
+      list-style: none;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .stale-date-section summary::-webkit-details-marker {
+      display: none;
+    }
+    .stale-date-head strong,
+    .stale-date-section summary span {
+      min-width: 0;
+      font-size: 14px;
+      line-height: 1;
+      font-weight: 600 !important;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .stale-date-head span,
+    .stale-date-section summary strong {
+      min-width: 74px;
+      height: 27px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 9px;
+      border-radius: 999px;
+      background: #eef4ff;
+      color: #2563eb;
+      font-size: 10.5px;
+      line-height: 1;
+      font-weight: 500 !important;
+    }
+    .stale-date-section.collapsed summary {
+      border-radius: 15px;
+      background: rgba(255,255,255,.82);
+      box-shadow: 0 7px 18px rgba(36,42,54,.05);
+    }
+    .stale-date-section.collapsed summary::before {
+      content: '열기';
+      order: 3;
+      width: 34px;
+      height: 27px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      background: #f2f4f8;
+      color: #7b8390;
+      font-size: 10px;
+      line-height: 1;
+    }
+    .stale-date-section.collapsed[open] summary::before {
+      content: '닫기';
+    }
+    .stale-date-section.collapsed summary {
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      padding: 6px 8px;
+    }
+    .stale-date-body {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 9px;
+    }
     .sheet-modal[hidden] { display: none; }
     .sheet-modal { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 14px 10px; background: rgba(20,23,30,.38); backdrop-filter: blur(10px); }
     .sheet-panel { width: min(760px, 100%); height: min(90vh, 760px); display: flex; flex-direction: column; border-radius: 28px; background: #fff; box-shadow: 0 24px 70px rgba(20,23,30,.25); overflow: hidden; touch-action: pan-y; }
@@ -1216,8 +1296,8 @@
     }
     .inbound-card .count-btn.count-major {
       color: #fff;
-      background: linear-gradient(135deg, #1f2937, #111827);
-      box-shadow: 0 10px 22px rgba(17,24,39,.16);
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      box-shadow: 0 10px 22px rgba(37,99,235,.16);
     }
     .inbound-card .count-btn.count-minus {
       color: #df3f3f;
@@ -1238,7 +1318,7 @@
       box-shadow: 0 0 0 7px rgba(223,63,63,.11);
     }
     .inbound-card .complete-btn {
-      grid-column: span 2;
+      grid-column: 1 / -1;
       background: #111827;
       box-shadow: 0 10px 20px rgba(17,24,39,.13);
       font-size: 12px;
@@ -1590,7 +1670,6 @@
           <div class="inbound-sections" id="inboundGrid"></div>
         </section>
         <section class="management-view" id="staleView">
-          <h2 class="section-title stale-title">상시전환 대상</h2>
           <div class="stale-list" id="staleList"></div>
         </section>
       </section>
@@ -1729,20 +1808,20 @@
 
     function packageUnitLabel(item) {
       const unit = String(item.packageUnit || '').trim();
-      if (!unit) return '';
+      const normalizedUnit = unit.replace(/,/g, '');
+      if (!unit || /^1(?:\.0+)?$/.test(normalizedUnit)) return '';
       return unit;
     }
 
     function salesTypeBadge(value) {
       const label = String(value || '').trim() || '구분없음';
       const normalized = label.replace(/\s+/g, '');
-      const typeClass = normalized.includes('공구')
-        ? 'group'
-        : normalized.includes('상시')
-          ? 'always'
-          : 'etc';
+      if (!normalized.includes('상시')) return '';
+      return `<span class="sales-type-badge always">상시</span>`;
+    }
 
-      return `<span class="sales-type-badge ${typeClass}">${esc(label)}</span>`;
+    function isAlwaysSaleValue(value) {
+      return String(value || '').replace(/\s+/g, '').includes('상시');
     }
 
     function stockClass(value) {
@@ -2484,9 +2563,7 @@
         ? renderInboundStorageSections(items)
         : '<div class="empty">입고 상품이 없습니다.</div>';
 
-      els.staleList.innerHTML = (data.staleItems || []).length
-        ? data.staleItems.map(renderStaleItem).join('')
-        : '<div class="empty">상시전환 대상이 없습니다.</div>';
+      els.staleList.innerHTML = renderStaleGroups(data);
     }
 
     function renderInboundStorageSections(items) {
@@ -2519,10 +2596,16 @@
           const groupItems = grouped.get(storage) || [];
           return {
             storage,
-            items: groupItems,
+            items: groupItems.sort(sortReceivingItems),
             totalQuantity: groupItems.reduce((sum, item) => sum + Number(item.inboundQuantity || 0), 0)
           };
         });
+    }
+
+    function sortReceivingItems(a, b) {
+      const alwaysDiff = Number(isAlwaysSaleValue(a.salesType)) - Number(isAlwaysSaleValue(b.salesType));
+      if (alwaysDiff) return alwaysDiff;
+      return String(a.productName || '').localeCompare(String(b.productName || ''), 'ko');
     }
 
     function renderInboundCard(item) {
@@ -2566,12 +2649,13 @@
             </div>
           </div>
           <div class="count-actions">
-            <button class="count-btn count-add count-major" data-action="count-20"><span>+20</span></button>
             <button class="count-btn count-add count-major" data-action="count-10"><span>+10</span></button>
             <button class="count-btn count-add" data-action="count-5"><span>+5</span></button>
             <button class="count-btn count-add" data-action="count-3"><span>+3</span></button>
             <button class="count-btn count-add" data-action="count-1"><span>+1</span></button>
             <button class="count-btn count-minus" data-action="count-minus"><span>−1</span></button>
+            <button class="count-btn count-minus" data-action="count-minus-3"><span>−3</span></button>
+            <button class="count-btn count-minus" data-action="count-minus-5"><span>−5</span></button>
             <button class="count-btn count-reset" data-action="count-reset"><span>0으로</span></button>
             <button class="complete-btn ${item.isReceivingComplete ? 'done' : ''}" data-action="receive-complete">${item.isReceivingComplete ? '완료해제' : '체크완료'}</button>
           </div>
@@ -2604,6 +2688,46 @@
       `;
     }
 
+    function renderStaleGroups(data) {
+      const groups = (data.staleDateGroups || [])
+        .filter(group => Array.isArray(group.items) && group.items.length);
+
+      if (!groups.length) {
+        return '<div class="empty">대상이 없습니다.</div>';
+      }
+
+      return groups.map((group, index) => {
+        const isPrimary = group.dateKey === data.staleCutoffDateKey || index === 0;
+        const body = `
+          <div class="stale-date-body">
+            ${group.items.map(renderStaleItem).join('')}
+          </div>
+        `;
+
+        if (isPrimary) {
+          return `
+            <section class="stale-date-section primary">
+              <div class="stale-date-head">
+                <strong>${esc(group.label || group.dateKey)}</strong>
+                <span>${number(group.count)}종 · ${number(group.totalQuantity)}개</span>
+              </div>
+              ${body}
+            </section>
+          `;
+        }
+
+        return `
+          <details class="stale-date-section collapsed">
+            <summary>
+              <span>${esc(group.label || group.dateKey)}</span>
+              <strong>${number(group.count)}종 · ${number(group.totalQuantity)}개</strong>
+            </summary>
+            ${body}
+          </details>
+        `;
+      }).join('');
+    }
+
     function findItem(id) {
       const data = state.dashboard || {};
       return [
@@ -2611,7 +2735,8 @@
         ...(data.salesAllItems || []),
         ...(data.inboundItems || []),
         ...(data.latestInboundItems || []),
-        ...(data.staleItems || [])
+        ...(data.staleItems || []),
+        ...(data.staleDateGroups || []).flatMap(group => group.items || [])
       ].find(item => item.id === id);
     }
 
@@ -2622,7 +2747,8 @@
         data.salesAllItems,
         data.inboundItems,
         data.latestInboundItems,
-        data.staleItems
+        data.staleItems,
+        ...(data.staleDateGroups || []).map(group => group.items)
       ];
 
       groups.forEach(items => {
@@ -3437,20 +3563,22 @@
             setBufferQtyValue(id, 1);
           }
 
-          if (action === 'count-20' || action === 'count-10' || action === 'count-5' || action === 'count-3' || action === 'count-1' || action === 'count-minus' || action === 'count-reset') {
-            const qty = action === 'count-20'
-              ? 20
-              : action === 'count-10'
-                ? 10
-                : action === 'count-5'
-                  ? 5
-                  : action === 'count-3'
-                    ? 3
-                    : action === 'count-1'
-                      ? 1
-                      : action === 'count-reset'
-                        ? -Number(item.countedQuantity || 0)
-                        : -1;
+          if (action === 'count-10' || action === 'count-5' || action === 'count-3' || action === 'count-1' || action === 'count-minus' || action === 'count-minus-3' || action === 'count-minus-5' || action === 'count-reset') {
+            const qty = action === 'count-10'
+              ? 10
+              : action === 'count-5'
+                ? 5
+                : action === 'count-3'
+                  ? 3
+                  : action === 'count-1'
+                    ? 1
+                    : action === 'count-minus-3'
+                      ? -3
+                      : action === 'count-minus-5'
+                        ? -5
+                        : action === 'count-reset'
+                          ? -Number(item.countedQuantity || 0)
+                          : -1;
             runReceivingCount(button, id, action, qty);
           }
 
