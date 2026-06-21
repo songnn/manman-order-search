@@ -139,20 +139,30 @@
     .settlement-section-head strong { color: #151517; font-size: 14px; line-height: 1; font-weight: 600 !important; }
     .settlement-section-head span { color: #858c98; font-size: 10px; line-height: 1; font-weight: 500 !important; }
     .settlement-list { display: grid; gap: 8px; }
-    .settlement-card { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 10px; padding: 9px; border-radius: 18px; background: #fff; border: 1px solid rgba(255,255,255,.9); box-shadow: 0 8px 22px rgba(36,42,54,.055); }
+    .settlement-card { position: relative; overflow: hidden; display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 10px; padding: 9px 9px 9px 13px; border-radius: 18px; background: #fff; border: 1px solid rgba(255,255,255,.9); box-shadow: 0 8px 22px rgba(36,42,54,.055); }
+    .settlement-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: #d7dde6; }
+    .settlement-card.category-group::before { background: linear-gradient(180deg, #2563eb, #38bdf8); }
+    .settlement-card.category-always::before { background: linear-gradient(180deg, #7c3aed, #c084fc); }
+    .settlement-card.category-fruit::before { background: linear-gradient(180deg, #f97316, #fb7185); }
+    .settlement-card.category-vegetable::before { background: linear-gradient(180deg, #16a34a, #86efac); }
+    .settlement-card.category-special::before { background: linear-gradient(180deg, #ef4444, #f59e0b); }
     .settlement-card.mismatch { border-color: rgba(251,146,60,.36); box-shadow: 0 9px 22px rgba(251,146,60,.09); }
     .settlement-card img { width: 52px; height: 52px; border-radius: 14px; object-fit: cover; background: #f3f5f8; }
     .settlement-main { min-width: 0; display: grid; gap: 6px; }
-    .settlement-top { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+    .settlement-top { min-width: 0; display: grid; gap: 3px; align-items: center; }
     .settlement-name { min-width: 0; color: #151517; font-size: 13px; line-height: 1.16; font-weight: 600 !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .settlement-chip { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; background: #f2f4f8; color: #687180; font-size: 10px; line-height: 1; font-weight: 500 !important; white-space: nowrap; }
-    .settlement-chip.always { background: #f4f1ff; color: #7154d9; }
-    .settlement-chip.produce { background: #ecfdf3; color: #11844f; }
-    .settlement-chip.special { background: #fff2f2; color: #df3f3f; }
+    .settlement-card-sub { color: #8a909c; font-size: 9.5px; line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .settlement-prices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
     .settlement-price-box { min-width: 0; display: grid; gap: 3px; padding: 7px 8px; border-radius: 13px; background: #f7f8fa; }
     .settlement-price-box span { color: #858c98; font-size: 9px; line-height: 1; font-weight: 500 !important; }
     .settlement-price-box strong { color: #151517; font-size: 12px; line-height: 1; font-weight: 500 !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .settlement-quantity-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+    .settlement-quantity-box { min-width: 0; display: grid; gap: 3px; padding: 7px 8px; border-radius: 13px; background: #f7f8fa; }
+    .settlement-quantity-box.primary { background: #edf5ff; }
+    .settlement-quantity-box.raw { background: #f4f1ff; }
+    .settlement-quantity-box span { color: #858c98; font-size: 9px; line-height: 1; font-weight: 500 !important; white-space: nowrap; }
+    .settlement-quantity-box strong { color: #151517; font-family: 'TheJamsilOps', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif; font-size: 15px; line-height: .95; font-weight: 500 !important; }
+    .settlement-quantity-box.primary strong { color: #2563eb; }
     .settlement-meta { display: flex; flex-wrap: wrap; gap: 5px 8px; color: #8a909c; font-size: 10px; line-height: 1.15; }
     .settlement-diff { color: #df3f3f !important; font-weight: 500 !important; }
     .settlement-extra { grid-column: 1 / -1; display: grid; gap: 4px; margin-top: 1px; padding: 7px 8px; border-radius: 13px; background: #fff7ed; color: #9a3412; font-size: 10px; line-height: 1.25; }
@@ -3096,14 +3106,15 @@
         ? allItems.filter(item => normalizeSearchText(`${item.productName} ${item.fileName} ${item.sheetName}`).includes(queryKey))
         : allItems.filter(item => item.dateKey === selectedDateKey);
       const mismatches = scopedItems.filter(item => item.mismatch);
-      const nonGroupItems = scopedItems.filter(item => item.category !== '공구');
-      const missingImages = nonGroupItems.filter(item => item.needsGeneratedImage);
+      const categoryGroups = groupSettlementItemsByCategory(scopedItems);
+      const imageTargetItems = scopedItems.filter(item => ['과일', '야채', '상시', '특이항목'].includes(item.category));
+      const missingImages = imageTargetItems.filter(item => item.needsGeneratedImage);
 
       els.settlementReviewRoot.innerHTML = `
         <div class="summary">
           ${renderReceivingMetric('정산항목', number(scopedItems.length))}
           ${renderReceivingMetric('수량불일치', number(mismatches.length), mismatches.length ? 'warn' : 'done')}
-          ${renderReceivingMetric('비공구/과일', number(nonGroupItems.length))}
+          ${renderReceivingMetric('이미지필요', number(missingImages.length), missingImages.length ? 'warn' : 'done')}
         </div>
         <div class="settlement-tools">
           <input class="settlement-search" data-settlement-search="1" value="${esc(query)}" placeholder="상품명으로 공급가 검색" inputmode="search">
@@ -3119,56 +3130,45 @@
         ${mismatches.length ? `
           <div class="settlement-alert">
             <strong>정산서 입고량과 입고리스트 수량이 다른 항목이 ${number(mismatches.length)}개 있습니다.</strong>
-            <span>${mismatches.slice(0, 3).map(item => `${item.productName} 정산 ${number(item.settlementQuantity)} / 입고 ${item.hasInventoryMatch ? number(item.inventoryQuantity) : '매칭없음'}`).join(' · ')}</span>
+            <span>${mismatches.slice(0, 3).map(item => `${item.productName} 정산 ${number(item.settlementQuantity)} / 입고리스트 ${item.hasInventoryMatch ? number(item.inventoryListQuantity) : '매칭없음'} / raw ${item.hasRawInventoryMatch ? number(item.inventoryRawQuantity) : '-'}`).join(' · ')}</span>
           </div>
         ` : ''}
         ${missingImages.length ? `
           <div class="settlement-alert">
-            <strong>이미지가 필요한 비공구/과일 항목이 ${number(missingImages.length)}개 있습니다.</strong>
-            <span>OpenAI 기본 이미지 모델로 생성 후 Supabase Storage에 저장해서 계속 재사용합니다.</span>
+            <strong>이미지가 필요한 상시·과일·야채 항목이 ${number(missingImages.length)}개 있습니다.</strong>
+            <span>서버에서 OpenAI 기본 이미지 모델로 생성 후 Supabase Storage에 저장해서 계속 재사용합니다.</span>
             <button class="settlement-generate-btn" data-action="settlement-generate-images" type="button" ${state.busy ? 'disabled' : ''}>
               ${state.busy ? '생성 중' : '이미지 생성'}
             </button>
           </div>
         ` : ''}
-        <section class="settlement-section">
-          <div class="settlement-section-head">
-            <strong>${query ? '검색 결과' : '정산서 항목'}</strong>
-            <span>${number(scopedItems.length)}개</span>
-          </div>
-          <div class="settlement-list">
-            ${scopedItems.length ? scopedItems.slice(0, 80).map(renderSettlementCard).join('') : '<div class="empty">검색 결과가 없습니다.</div>'}
-          </div>
-        </section>
-        <section class="settlement-section">
-          <div class="settlement-section-head">
-            <strong>공구 제외 상시·과일·야채·특이항목</strong>
-            <span>${number(nonGroupItems.length)}개</span>
-          </div>
-          <div class="settlement-list">
-            ${nonGroupItems.length ? nonGroupItems.slice(0, 80).map(renderSettlementCard).join('') : '<div class="empty">선택 범위에 비공구 항목이 없습니다.</div>'}
-          </div>
-        </section>
+        ${categoryGroups.length
+          ? categoryGroups.map(group => `
+            <section class="settlement-section">
+              <div class="settlement-section-head">
+                <strong>${esc(group.label)}</strong>
+                <span>${number(group.items.length)}개 · 정산 ${number(group.totalQuantity)}</span>
+              </div>
+              <div class="settlement-list">
+                ${group.items.slice(0, 80).map(renderSettlementCard).join('')}
+              </div>
+            </section>
+          `).join('')
+          : '<div class="empty">검색 결과가 없습니다.</div>'}
       `;
     }
 
     function renderSettlementCard(item) {
-      const categoryClass = item.category === '상시'
-        ? 'always'
-        : item.category === '과일·야채'
-          ? 'produce'
-          : item.category === '특이항목'
-            ? 'special'
-            : '';
+      const categoryClass = settlementCategoryClass(item.category);
       const image = imageUrl({ imageUrl: item.imageUrl, productName: item.productName });
 
       return `
-        <article class="settlement-card ${item.mismatch ? 'mismatch' : ''}">
+        <article class="settlement-card ${categoryClass} ${item.mismatch ? 'mismatch' : ''}">
           <img src="${esc(image)}" alt="${esc(item.productName)}" loading="lazy">
           <div class="settlement-main">
             <div class="settlement-top">
               <div class="settlement-name">${esc(item.productName)}</div>
-              <span class="settlement-chip ${categoryClass}">${esc(item.category || '분류없음')}</span>
+              <div class="settlement-card-sub">${esc(item.fileName || item.sheetName || '')}${item.taxStatus ? ` · ${esc(item.taxStatus)}` : ''}</div>
             </div>
             <div class="settlement-prices">
               <div class="settlement-price-box">
@@ -3184,12 +3184,26 @@
                 <strong>${number(item.hqBufferQuantity)}</strong>
               </div>
             </div>
+            <div class="settlement-quantity-grid">
+              <div class="settlement-quantity-box">
+                <span>정산</span>
+                <strong>${number(item.settlementQuantity)}</strong>
+              </div>
+              <div class="settlement-quantity-box primary">
+                <span>입고리스트${item.inventoryMatchDateKey ? ` ${esc(compactDateLabel(item.inventoryMatchDateKey))}` : ''}</span>
+                <strong>${item.hasInventoryMatch ? number(item.inventoryListQuantity) : '-'}</strong>
+              </div>
+              <div class="settlement-quantity-box raw">
+                <span>입고 raw${item.rawInventoryMatchDateKey ? ` ${esc(compactDateLabel(item.rawInventoryMatchDateKey))}` : ''}</span>
+                <strong>${item.hasRawInventoryMatch ? number(item.inventoryRawQuantity) : '-'}</strong>
+              </div>
+            </div>
             <div class="settlement-meta">
-              <span>정산 ${number(item.settlementQuantity)}</span>
-              <span>입고 ${item.hasInventoryMatch ? number(item.inventoryQuantity) : '매칭없음'}</span>
               ${item.mismatch ? `<span class="settlement-diff">차이 ${number(item.diffQuantity)}</span>` : ''}
-              ${item.taxStatus ? `<span>${esc(item.taxStatus)}</span>` : ''}
-              <span>${esc(item.fileName || item.sheetName || '')}</span>
+              ${!item.hasInventoryMatch ? '<span class="settlement-diff">입고리스트 매칭없음</span>' : ''}
+              ${item.hasInventoryMatch && !item.inventoryMatchIsExact ? '<span>근접 입고일 매칭</span>' : ''}
+              ${item.hasRawInventoryMatch && !item.rawInventoryMatchIsExact ? '<span>근접 raw일 매칭</span>' : ''}
+              ${item.rawSettlementType ? `<span>정산분류 ${esc(item.rawSettlementType)}</span>` : ''}
             </div>
             ${item.extraFields?.length ? `
               <div class="settlement-extra">
@@ -3199,6 +3213,38 @@
           </div>
         </article>
       `;
+    }
+
+    function groupSettlementItemsByCategory(items) {
+      const order = ['공구', '상시', '과일', '야채', '특이항목', '비공구'];
+      const grouped = new Map();
+
+      (items || []).forEach(item => {
+        const category = item.category || '특이항목';
+        if (!grouped.has(category)) grouped.set(category, []);
+        grouped.get(category).push(item);
+      });
+
+      return [...order, ...Array.from(grouped.keys()).filter(category => !order.includes(category))]
+        .filter(category => grouped.has(category))
+        .map(category => {
+          const groupItems = grouped.get(category) || [];
+          return {
+            category,
+            label: category,
+            items: groupItems,
+            totalQuantity: groupItems.reduce((sum, item) => sum + Number(item.settlementQuantity || 0), 0)
+          };
+        });
+    }
+
+    function settlementCategoryClass(category) {
+      if (category === '공구') return 'category-group';
+      if (category === '상시') return 'category-always';
+      if (category === '과일') return 'category-fruit';
+      if (category === '야채') return 'category-vegetable';
+      if (category === '특이항목') return 'category-special';
+      return '';
     }
 
     function normalizeSearchText(value) {
@@ -4146,7 +4192,7 @@
         const response = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ limit: 8 })
+          body: JSON.stringify({ limit: 40 })
         });
         const data = await response.json();
         if (!response.ok || !data.ok) throw new Error(data.message || '이미지 생성에 실패했습니다.');

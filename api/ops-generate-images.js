@@ -21,7 +21,7 @@ export default async function handler(req, res) {
     }
 
     const body = req.method === 'POST' ? (req.body || {}) : {};
-    const limit = Number(body.limit || req.query?.limit || 8);
+    const limit = Number(body.limit || req.query?.limit || 40);
     const category = String(body.category || req.query?.category || '').trim();
     const dryRun = String(body.dryRun || req.query?.dryRun || '') === '1';
     const result = await generateSettlementProductImages({
