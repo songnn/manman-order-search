@@ -1013,10 +1013,20 @@
     .storage-item.disabled {
       opacity: .58;
     }
+    .storage-item[data-action="storage-toggle-item"] {
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+    .storage-item[data-action="storage-toggle-item"]:active {
+      transform: scale(.992);
+    }
     .storage-item-pick {
       position: relative;
       width: 58px;
       height: 58px;
+      display: block;
       border: 0;
       border-radius: 15px;
       overflow: hidden;
@@ -1470,6 +1480,33 @@
       border-radius: 14px;
       background: #f3f5f8;
     }
+    .storage-queue-thumbs {
+      width: 52px;
+      min-height: 52px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 3px;
+      align-self: start;
+    }
+    .storage-queue-thumbs img {
+      width: 100%;
+      height: 25px;
+      border-radius: 8px;
+    }
+    .storage-queue-thumbs img:first-child:nth-last-child(1) {
+      grid-column: 1 / -1;
+      height: 52px;
+      border-radius: 14px;
+    }
+    .storage-queue-thumbs img:first-child:nth-last-child(2),
+    .storage-queue-thumbs img:first-child:nth-last-child(2) ~ img {
+      height: 52px;
+      border-radius: 10px;
+    }
+    .storage-queue-thumbs img:first-child:nth-last-child(n+3),
+    .storage-queue-thumbs img:first-child:nth-last-child(n+3) ~ img {
+      height: 25px;
+    }
     .storage-queue-main {
       min-width: 0;
       display: grid;
@@ -1510,9 +1547,16 @@
     }
     .storage-queue-product {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 8px;
+      grid-template-columns: 24px minmax(0, 1fr) auto;
+      gap: 7px;
       align-items: start;
+    }
+    .storage-queue-product img {
+      width: 24px;
+      height: 24px;
+      border-radius: 8px;
+      object-fit: cover;
+      background: #eef1f5;
     }
     .storage-queue-product-name {
       min-width: 0;
@@ -1584,7 +1628,7 @@
       display: grid;
       justify-items: center;
       gap: 2px;
-      min-width: 48px;
+      min-width: 82px;
     }
     .storage-queue-side strong {
       font-family: 'TheJamsilOps', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
@@ -1609,6 +1653,18 @@
       line-height: 1;
       font-weight: 600 !important;
       box-shadow: 0 8px 16px rgba(17,24,39,.13);
+    }
+    .storage-pickup-done-btn {
+      height: 25px;
+      min-width: 76px;
+      border: 0;
+      border-radius: 10px;
+      background: #0f9f68;
+      color: #fff;
+      font-size: 10px;
+      line-height: 1;
+      font-weight: 600 !important;
+      box-shadow: 0 8px 16px rgba(15,159,104,.14);
     }
     .storage-queue-empty {
       min-height: 54px;
@@ -2305,7 +2361,7 @@
             storageMethod: item.storageMethod,
             imageUrl: item.imageUrl,
             salePrice: item.salePrice,
-            status: request.status === 'pending' ? 'pending' : 'completed'
+            status: request.status === 'pending' ? 'pending' : request.status === 'picked_up' ? 'picked_up' : 'completed'
           };
 
           const groupId = request.storageGroupId || storageFallbackGroupKey(enriched);
@@ -2330,7 +2386,12 @@
           group.items.push(enriched);
           group.eventIds.push(eventId);
           group.quantity += Number(enriched.quantity || 0);
-          group.status = group.status === 'pending' || enriched.status === 'pending' ? 'pending' : 'completed';
+          const groupStatuses = group.items.map(row => row.status);
+          group.status = groupStatuses.includes('pending')
+            ? 'pending'
+            : groupStatuses.includes('completed')
+              ? 'completed'
+              : 'picked_up';
           group.createdAt = latestDateText(group.createdAt, enriched.createdAt);
           group.completedAt = latestDateText(group.completedAt, enriched.completedAt);
           group.customerLabel = group.customerLabel || enriched.customerLabel || '';
@@ -2353,7 +2414,7 @@
       return {
         all: groupedRequests,
         pending: groupedRequests.filter(request => request.status === 'pending'),
-        completed: groupedRequests.filter(request => request.status !== 'pending')
+        completed: groupedRequests.filter(request => request.status === 'completed')
       };
     }
 
@@ -2391,13 +2452,11 @@
       const visitText = item.visitDateText || '';
       const locationText = item.locationMemo || '';
       const customerText = item.customerLabel || (item.customerDigits4 ? `뒷4자리 ${item.customerDigits4}` : '고객 미입력');
-      const timeText = status === 'pending'
-        ? formatDateTime(item.createdAt)
-        : formatDateTime(item.completedAt || item.createdAt);
+      const timeText = formatStorageQueueTime(status === 'pending' ? item.createdAt : item.completedAt || item.createdAt);
 
       return `
         <article class="storage-queue-card ${status}" data-action="storage-edit-group" data-group-id="${esc(item.groupId)}">
-          <img src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy">
+          ${renderStorageQueueThumbs(item)}
           <div class="storage-queue-main">
             <div class="storage-queue-top">
               <strong>${esc(customerText)}</strong>
@@ -2407,7 +2466,7 @@
             ${renderStorageQueueProducts(item)}
             <div class="storage-queue-meta">
               ${visitText ? `<span>방문 ${esc(visitText)}</span>` : ''}
-              ${timeText ? `<span class="storage-queue-time ${status === 'pending' ? 'pending' : 'done'}">${status === 'pending' ? '등록' : '완료'} ${esc(timeText)}</span>` : ''}
+              ${timeText ? `<span class="storage-queue-time ${status === 'pending' ? 'pending' : 'done'}">${status === 'pending' ? '등록' : '처리완료'} ${esc(timeText)}</span>` : ''}
             </div>
             ${locationText ? `<div class="storage-queue-note important">${esc(locationText)}</div>` : ''}
             ${item.requestMemo ? `<div class="storage-queue-note">${esc(item.requestMemo)}</div>` : ''}
@@ -2416,9 +2475,37 @@
             <strong>${number(item.quantity)}</strong>
             <span>개</span>
             ${status === 'pending' ? `<button class="storage-done-btn" data-action="storage-mark-complete" data-event-ids="${esc(item.eventIds.join(','))}" data-customer-label="${esc(customerText)}" data-quantity="${esc(item.quantity)}" type="button">완료</button>` : ''}
+            ${status === 'completed' ? `<button class="storage-pickup-done-btn" data-action="storage-pickup-complete" data-event-ids="${esc(item.eventIds.join(','))}" data-customer-label="${esc(customerText)}" data-quantity="${esc(item.quantity)}" type="button">고객 픽업완료</button>` : ''}
           </div>
         </article>
       `;
+    }
+
+    function renderStorageQueueThumbs(group) {
+      const products = Array.isArray(group?.items) && group.items.length ? group.items : [group];
+      const thumbs = products.slice(0, 4);
+
+      return `
+        <div class="storage-queue-thumbs" aria-hidden="true">
+          ${thumbs.map(product => `
+            <img src="${esc(imageUrl(product))}" alt="" loading="lazy">
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function formatStorageQueueTime(value) {
+      if (!value) return '';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '';
+      const weekday = new Intl.DateTimeFormat('ko-KR', { weekday: 'short' }).format(date).replace('요일', '');
+      const dateText = `${date.getMonth() + 1}/${date.getDate()}(${weekday})`;
+      const timeText = new Intl.DateTimeFormat('ko-KR', {
+        hour: 'numeric',
+        minute: '2-digit'
+      }).format(date).replace(/\s+/g, ' ');
+
+      return `${dateText} ${timeText}`;
     }
 
     function renderStorageQueueProducts(group) {
@@ -2429,6 +2516,7 @@
         <div class="storage-queue-products" aria-label="포함 상품 목록">
           ${products.map(product => `
             <div class="storage-queue-product">
+              <img src="${esc(imageUrl(product))}" alt="" loading="lazy">
               <div>
                 <div class="storage-queue-product-name">${esc(product.productName || '상품명 없음')}</div>
                 <div class="storage-queue-product-meta">
@@ -2501,13 +2589,16 @@
       const quantity = getStorageQtyValue(key, item.quantity);
       const canStore = item.canStore !== false && item.inventoryStableId;
       const isEditing = Boolean(state.storage.editingGroup);
+      const cardActionAttrs = canStore && !isEditing
+        ? `data-action="storage-toggle-item" role="button" tabindex="0"`
+        : '';
 
       return `
-        <article class="storage-item ${selected ? 'selected' : ''} ${!canStore ? 'disabled' : ''}" data-storage-key="${esc(key)}">
-          <button class="storage-item-pick" data-action="storage-toggle-item" data-storage-key="${esc(key)}" type="button" ${!canStore || isEditing ? 'disabled' : ''} aria-label="보관 상품 선택">
+        <article class="storage-item ${selected ? 'selected' : ''} ${!canStore ? 'disabled' : ''}" data-storage-key="${esc(key)}" ${cardActionAttrs}>
+          <div class="storage-item-pick" aria-hidden="true">
             <img src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy">
             <span class="storage-check">${selected ? '✓' : ''}</span>
-          </button>
+          </div>
           <div class="storage-item-main">
             <div class="storage-item-title">
               <h3>${esc(item.productName)}</h3>
@@ -3617,7 +3708,43 @@
       }
     }
 
-    function handleStorageAction(button, action) {
+    async function runStoragePickupComplete(eventIds, customerLabel = '', quantity = 0) {
+      const ids = Array.isArray(eventIds) ? eventIds.filter(Boolean) : [eventIds].filter(Boolean);
+      if (state.busy || !ids.length) return;
+
+      state.busy = true;
+
+      try {
+        const url = new URL('/api/buffer-action', location.origin);
+        url.searchParams.set('token', state.token);
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'storage_request_pickup_complete',
+            eventIds: ids
+          })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.message || '고객 픽업완료 처리에 실패했습니다.');
+
+        state.dashboard = data.dashboard;
+        state.storage.complete = {
+          title: '고객 픽업완료',
+          customerLabel,
+          quantity: Number(quantity || 0),
+          time: formatDateTime(new Date().toISOString()) || '방금'
+        };
+        window.navigator?.vibrate?.(12);
+        render();
+      } catch (error) {
+        alert(error.message || String(error));
+      } finally {
+        state.busy = false;
+      }
+    }
+
+    function handleStorageAction(button, action, event) {
       if (action === 'storage-open-new') {
         openStorageNewRequest();
         return true;
@@ -3643,6 +3770,7 @@
 
       if (action === 'storage-toggle-item') {
         if (state.storage.editingGroup) return true;
+        if (event?.target?.closest?.('[data-qty-picker], button, input, a')) return true;
         const key = button.dataset.storageKey || '';
         if (!key) return true;
 
@@ -3687,6 +3815,15 @@
         return true;
       }
 
+      if (action === 'storage-pickup-complete') {
+        runStoragePickupComplete(
+          String(button.dataset.eventIds || '').split(',').filter(Boolean),
+          button.dataset.customerLabel || '',
+          button.dataset.quantity || 0
+        );
+        return true;
+      }
+
       if (action === 'storage-toggle-time') {
         state.storage.showVisitTime = !state.storage.showVisitTime;
         render();
@@ -3701,7 +3838,7 @@
         button.onclick = async event => {
           event.stopPropagation();
           const action = button.dataset.action;
-          if (handleStorageAction(button, action)) return;
+          if (handleStorageAction(button, action, event)) return;
 
           const card = button.closest('[data-id]');
           const id = card?.dataset.id || '';
@@ -3770,6 +3907,15 @@
             runReceivingComplete(id, !item.isReceivingComplete);
           }
         };
+
+        if (button.dataset.action === 'storage-toggle-item') {
+          button.onkeydown = event => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            event.stopPropagation();
+            handleStorageAction(button, button.dataset.action, event);
+          };
+        }
       });
 
       document.querySelectorAll('[data-sales-date]').forEach(button => {

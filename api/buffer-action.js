@@ -77,6 +77,12 @@ export default async function handler(req, res) {
         requestMemo: body.requestMemo,
         items: body.items
       });
+    } else if (action === 'storage_request_pickup_complete') {
+      await updateStorageRequestEvents({
+        eventIds: Array.isArray(body.eventIds) ? body.eventIds : [body.eventId],
+        status: 'picked_up',
+        items: body.items
+      });
     } else if (action === 'storage_request_complete') {
       const eventIds = Array.isArray(body.eventIds) && body.eventIds.length
         ? body.eventIds
