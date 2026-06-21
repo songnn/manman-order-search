@@ -149,8 +149,8 @@
     .settlement-section-title { min-width: 0; display: grid; gap: 3px; }
     .settlement-section-head strong { color: #151517; font-size: 14px; line-height: 1; font-weight: 600 !important; }
     .settlement-section-head span { color: #858c98; font-size: 10px; line-height: 1; font-weight: 500 !important; }
-    .settlement-review-btn { flex: 0 0 auto; height: 28px; border: 1px solid #dfe6f0; border-radius: 999px; background: #fff; color: #657083; padding: 0 10px; font-size: 10px; line-height: 1; font-weight: 500 !important; box-shadow: 0 6px 14px rgba(36,42,54,.045); }
-    .settlement-review-btn.done { border-color: #bbf7d0; background: #ecfdf3; color: #138a43; }
+    .settlement-review-btn { flex: 0 0 auto; height: 30px; border: 0; border-radius: 999px; background: #111827; color: #fff; padding: 0 12px; font-size: 10.5px; line-height: 1; font-weight: 600 !important; box-shadow: 0 8px 18px rgba(17,24,39,.16); }
+    .settlement-review-btn.done { background: #16a34a; color: #fff; box-shadow: 0 8px 18px rgba(22,163,74,.16); }
     .settlement-list { display: grid; gap: 8px; }
     .settlement-card { position: relative; overflow: hidden; display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 10px; padding: 9px 9px 9px 13px; border-radius: 18px; background: #fff; border: 1px solid rgba(255,255,255,.9); box-shadow: 0 8px 22px rgba(36,42,54,.055); }
     .settlement-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: #d7dde6; }
@@ -536,11 +536,12 @@
       font-size: 12px;
     }
     .sheet-modal[hidden] { display: none; }
-    .sheet-modal { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 14px 10px; background: rgba(20,23,30,.38); backdrop-filter: blur(10px); }
-    .sheet-panel { width: min(760px, 100%); height: min(90vh, 760px); display: flex; flex-direction: column; border-radius: 28px; background: #fff; box-shadow: 0 24px 70px rgba(20,23,30,.25); overflow: hidden; touch-action: pan-y; }
+    .sheet-modal { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: max(24px, env(safe-area-inset-top)) 12px max(28px, env(safe-area-inset-bottom)); background: rgba(20,23,30,.38); backdrop-filter: blur(10px); }
+    .sheet-panel { width: min(760px, calc(100% - 8px)); height: min(90dvh, 760px); max-height: calc(100dvh - 52px); display: flex; flex-direction: column; border-radius: 28px; background: #fff; box-shadow: 0 24px 70px rgba(20,23,30,.25); overflow: hidden; touch-action: pan-y; }
     .sheet-grabber { display: grid; place-items: center; gap: 5px; padding: 10px 0 2px; color: #a0a6b2; font-size: 10px; line-height: 1; }
     .sheet-grabber::before { content: ''; width: 42px; height: 5px; border-radius: 999px; background: #d9dde5; }
     .sheet-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 16px 12px; border-bottom: 1px solid #edf0f4; }
+    .sheet-panel.swiping { transition: none; }
     .sheet-title { min-width: 0; font-size: 18px; line-height: 1.2; font-weight: 600; }
     .sheet-sub { margin-top: 4px; color: #8b92a0; font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .sheet-close { width: 36px; height: 36px; border: 0; border-radius: 13px; background: #f2f4f8; color: #151517; font-size: 20px; font-weight: 600; }
@@ -1889,6 +1890,21 @@
       line-height: 1;
       padding-left: 4px;
     }
+    .storage-date-preview {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      min-height: 22px;
+      margin-top: 1px;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: #eef4ff;
+      color: #2563eb;
+      font-size: 11px;
+      line-height: 1;
+      font-style: normal;
+      font-weight: 500 !important;
+    }
     .storage-input.date {
       min-width: 0;
       appearance: auto;
@@ -2594,6 +2610,7 @@
                   <label class="storage-date-field">
                     <span>방문예정일 선택</span>
                     <input class="storage-input date" type="date" data-storage-field="visitDateText" value="${esc(storage.visitDateText)}" aria-label="방문예정일">
+                    ${storage.visitDateText ? `<em class="storage-date-preview">${esc(formatStorageVisitDisplay(storage.visitDateText))}</em>` : ''}
                   </label>
                   <button class="storage-time-toggle ${storage.showVisitTime ? 'active' : ''}" data-action="storage-toggle-time" type="button">${storage.showVisitTime ? '시간 사용' : '시간 옵션'}</button>
                   ${storage.showVisitTime ? `
@@ -2741,7 +2758,7 @@
     }
 
     function renderStorageQueueItem(item, status) {
-      const visitText = item.visitDateText || '';
+      const visitText = formatStorageVisitDisplay(item.visitDateText || '');
       const locationText = item.locationMemo || '';
       const customerText = item.customerLabel || (item.customerDigits4 ? `뒷4자리 ${item.customerDigits4}` : '고객 미입력');
       const timeText = formatStorageQueueTime(status === 'pending' ? item.createdAt : item.completedAt || item.createdAt);
@@ -2798,6 +2815,17 @@
       }).format(date).replace(/\s+/g, ' ');
 
       return `${dateText} ${timeText}`;
+    }
+
+    function formatStorageVisitDisplay(value) {
+      const text = String(value || '').trim();
+      if (!text) return '';
+
+      const match = text.match(/^(\d{4}-\d{2}-\d{2})(?:[ T](\d{2}:\d{2}))?/);
+      if (!match) return text;
+
+      const dateText = compactDateWeekdayLabel(match[1]);
+      return match[2] ? `${dateText} ${match[2]}` : dateText;
     }
 
     function renderStorageQueueProducts(group) {
@@ -4750,6 +4778,45 @@
         window.removeEventListener('pointermove', move);
         window.removeEventListener('pointerup', finish);
         window.removeEventListener('pointercancel', cancel);
+        window.removeEventListener('touchmove', moveTouch);
+        window.removeEventListener('touchend', finishTouch);
+        window.removeEventListener('touchcancel', cancel);
+      };
+
+      const begin = (clientX, clientY, pointerId = null) => {
+        state.storageSwipeStart = {
+          x: clientX,
+          y: clientY,
+          pointerId
+        };
+        sheet.classList.add('swiping');
+      };
+
+      const moveTo = (clientY) => {
+        if (!state.storageSwipeStart) return;
+        const deltaY = Math.max(0, clientY - state.storageSwipeStart.y);
+        sheet.style.transform = `translate3d(0, ${Math.min(320, deltaY)}px, 0)`;
+      };
+
+      const finishAt = (clientX, clientY) => {
+        if (!state.storageSwipeStart) return;
+        const deltaX = clientX - state.storageSwipeStart.x;
+        const deltaY = clientY - state.storageSwipeStart.y;
+        const shouldClose = deltaY > 52 && Math.abs(deltaX) < 150;
+        state.storageSwipeStart = null;
+        sheet.classList.remove('swiping');
+        cleanupSwipeListeners();
+
+        if (shouldClose) {
+          sheet.style.transform = `translate3d(0, ${window.innerHeight}px, 0)`;
+          window.setTimeout(() => {
+            resetStorageForm();
+            render();
+          }, 80);
+          return;
+        }
+
+        sheet.style.transform = '';
       };
 
       const start = event => {
@@ -4757,12 +4824,7 @@
         if (event.target.closest('button, input')) return;
 
         event.preventDefault();
-        state.storageSwipeStart = {
-          x: event.clientX,
-          y: event.clientY,
-          pointerId: event.pointerId
-        };
-        sheet.classList.add('swiping');
+        begin(event.clientX, event.clientY, event.pointerId);
         try {
           event.currentTarget.setPointerCapture?.(event.pointerId);
         } catch {
@@ -4774,25 +4836,10 @@
       const move = event => {
         if (!state.storageSwipeStart) return;
         event.preventDefault();
-        const deltaY = Math.max(0, event.clientY - state.storageSwipeStart.y);
-        sheet.style.transform = `translate3d(0, ${Math.min(280, deltaY)}px, 0)`;
+        moveTo(event.clientY);
       };
       const finish = event => {
-        if (!state.storageSwipeStart) return;
-        const deltaX = event.clientX - state.storageSwipeStart.x;
-        const deltaY = event.clientY - state.storageSwipeStart.y;
-        const shouldClose = deltaY > 56 && Math.abs(deltaX) < 140;
-        state.storageSwipeStart = null;
-        sheet.classList.remove('swiping');
-        cleanupSwipeListeners();
-
-        if (shouldClose) {
-          resetStorageForm();
-          render();
-          return;
-        }
-
-        sheet.style.transform = '';
+        finishAt(event.clientX, event.clientY);
       };
       const cancel = () => {
         state.storageSwipeStart = null;
@@ -4800,12 +4847,36 @@
         sheet.style.transform = '';
         cleanupSwipeListeners();
       };
+      const startTouch = event => {
+        if (event.target.closest('button, input')) return;
+        const touch = event.touches?.[0];
+        if (!touch) return;
+
+        event.preventDefault();
+        begin(touch.clientX, touch.clientY);
+        window.addEventListener('touchmove', moveTouch, { passive: false });
+        window.addEventListener('touchend', finishTouch, { once: true });
+        window.addEventListener('touchcancel', cancel, { once: true });
+      };
+      const moveTouch = event => {
+        const touch = event.touches?.[0];
+        if (!state.storageSwipeStart || !touch) return;
+
+        event.preventDefault();
+        moveTo(touch.clientY);
+      };
+      const finishTouch = event => {
+        const touch = event.changedTouches?.[0];
+        if (!touch) return cancel();
+        finishAt(touch.clientX, touch.clientY);
+      };
 
       sheet.querySelectorAll('.storage-form-grabber, .storage-form-head').forEach(handle => {
         handle.onpointerdown = start;
         handle.onpointermove = null;
         handle.onpointerup = null;
         handle.onpointercancel = null;
+        handle.ontouchstart = startTouch;
       });
     }
 
@@ -5055,37 +5126,39 @@
     });
     let modalSwipeStart = null;
 
-    function startModalSwipe(event) {
-      if (event.button != null && event.button !== 0) return;
-      if (event.target.closest('button')) return;
-
-      event.preventDefault();
-      modalSwipeStart = {
-        x: event.clientX,
-        y: event.clientY,
-        pointerId: event.pointerId
-      };
-      els.listModalPanel.classList.add('swiping');
-      try {
-        event.currentTarget.setPointerCapture?.(event.pointerId);
-      } catch {
-      }
+    function cleanupModalSwipeListeners() {
+      window.removeEventListener('pointermove', moveModalSwipe);
+      window.removeEventListener('pointerup', finishModalSwipe);
+      window.removeEventListener('pointercancel', cancelModalSwipe);
+      window.removeEventListener('touchmove', moveModalSwipeTouch);
+      window.removeEventListener('touchend', finishModalSwipeTouch);
+      window.removeEventListener('touchcancel', cancelModalSwipe);
     }
 
-    function moveModalSwipe(event) {
+    function beginModalSwipe(clientX, clientY, pointerId = null) {
+      modalSwipeStart = {
+        x: clientX,
+        y: clientY,
+        pointerId
+      };
+      els.listModalPanel.classList.add('swiping');
+    }
+
+    function moveModalSwipeTo(clientY) {
       if (!modalSwipeStart) return;
-      const deltaY = Math.max(0, event.clientY - modalSwipeStart.y);
-      const easedY = Math.min(180, deltaY);
+      const deltaY = Math.max(0, clientY - modalSwipeStart.y);
+      const easedY = Math.min(260, deltaY);
       els.listModalPanel.style.transform = `translate3d(0, ${easedY}px, 0)`;
     }
 
-    function finishModalSwipe(event) {
+    function finishModalSwipeAt(clientX, clientY) {
       if (!modalSwipeStart) return;
 
-      const deltaX = event.clientX - modalSwipeStart.x;
-      const deltaY = event.clientY - modalSwipeStart.y;
-      const shouldClose = deltaY > 64 && Math.abs(deltaX) < 120;
+      const deltaX = clientX - modalSwipeStart.x;
+      const deltaY = clientY - modalSwipeStart.y;
+      const shouldClose = deltaY > 58 && Math.abs(deltaX) < 140;
       modalSwipeStart = null;
+      cleanupModalSwipeListeners();
 
       els.listModalPanel.classList.remove('swiping');
       if (shouldClose) {
@@ -5096,17 +5169,67 @@
       els.listModalPanel.style.transform = '';
     }
 
+    function startModalSwipe(event) {
+      if (event.button != null && event.button !== 0) return;
+      if (event.target.closest('button')) return;
+
+      event.preventDefault();
+      beginModalSwipe(event.clientX, event.clientY, event.pointerId);
+      try {
+        event.currentTarget.setPointerCapture?.(event.pointerId);
+      } catch {
+      }
+      window.addEventListener('pointermove', moveModalSwipe);
+      window.addEventListener('pointerup', finishModalSwipe, { once: true });
+      window.addEventListener('pointercancel', cancelModalSwipe, { once: true });
+    }
+
+    function moveModalSwipe(event) {
+      if (!modalSwipeStart) return;
+      event.preventDefault();
+      moveModalSwipeTo(event.clientY);
+    }
+
+    function finishModalSwipe(event) {
+      finishModalSwipeAt(event.clientX, event.clientY);
+    }
+
     function cancelModalSwipe() {
       modalSwipeStart = null;
+      cleanupModalSwipeListeners();
       els.listModalPanel.classList.remove('swiping');
       els.listModalPanel.style.transform = '';
     }
 
+    function startModalSwipeTouch(event) {
+      if (event.target.closest('button')) return;
+      const touch = event.touches?.[0];
+      if (!touch) return;
+
+      event.preventDefault();
+      beginModalSwipe(touch.clientX, touch.clientY);
+      window.addEventListener('touchmove', moveModalSwipeTouch, { passive: false });
+      window.addEventListener('touchend', finishModalSwipeTouch, { once: true });
+      window.addEventListener('touchcancel', cancelModalSwipe, { once: true });
+    }
+
+    function moveModalSwipeTouch(event) {
+      const touch = event.touches?.[0];
+      if (!modalSwipeStart || !touch) return;
+
+      event.preventDefault();
+      moveModalSwipeTo(touch.clientY);
+    }
+
+    function finishModalSwipeTouch(event) {
+      const touch = event.changedTouches?.[0];
+      if (!touch) return cancelModalSwipe();
+      finishModalSwipeAt(touch.clientX, touch.clientY);
+    }
+
     [els.listModalGrabber, els.listModalHead].forEach(handle => {
       handle.addEventListener('pointerdown', startModalSwipe);
-      handle.addEventListener('pointermove', moveModalSwipe);
-      handle.addEventListener('pointerup', finishModalSwipe);
-      handle.addEventListener('pointercancel', cancelModalSwipe);
+      handle.addEventListener('touchstart', startModalSwipeTouch, { passive: false });
     });
     document.addEventListener('keydown', event => {
       if (event.key === 'Escape' && !els.listModal.hidden) closeListModal();
