@@ -2290,6 +2290,11 @@
       return String(value || '').replace(/\s+/g, '').includes('상시');
     }
 
+    function isGroupSalesValue(value) {
+      const normalized = String(value || '').replace(/\s+/g, '');
+      return normalized.includes('공구') && !normalized.includes('상시');
+    }
+
     function stockClass(value) {
       const quantity = Number(value || 0);
       if (quantity <= 0) return 'empty';
@@ -2406,7 +2411,7 @@
     }
 
     function syncSalesDateSelection(data) {
-      const options = data.salesDateOptions || [];
+      const options = getSalesDateOptions(data);
       const keys = new Set(options.map(option => option.dateKey));
 
       if (!state.salesDateKey || !keys.has(state.salesDateKey)) {
@@ -2414,14 +2419,40 @@
       }
     }
 
+    function getSalesAllItems(data) {
+      return (data.salesAllItems || data.salesItems || [])
+        .filter(item => isGroupSalesValue(item.salesType));
+    }
+
+    function getSalesDateOptions(data) {
+      const source = getSalesAllItems(data);
+      const labels = new Map((data.salesDateOptions || []).map(option => [option.dateKey, option.label]));
+      const grouped = new Map();
+
+      source.forEach(item => {
+        const dateKey = item.inboundDateKey || '';
+        if (!dateKey) return;
+        const current = grouped.get(dateKey) || {
+          dateKey,
+          label: labels.get(dateKey) || compactDateWeekdayLabel(dateKey),
+          count: 0
+        };
+        current.count += 1;
+        grouped.set(dateKey, current);
+      });
+
+      return Array.from(grouped.values())
+        .sort((a, b) => String(b.dateKey || '').localeCompare(String(a.dateKey || '')));
+    }
+
     function getSelectedSalesItems(data) {
-      const allItems = data.salesAllItems || data.salesItems || [];
-      if (!state.salesDateKey) return data.salesItems || [];
+      const allItems = getSalesAllItems(data);
+      if (!state.salesDateKey) return allItems;
       return allItems.filter(item => item.inboundDateKey === state.salesDateKey);
     }
 
     function renderSalesDateStrip(data) {
-      const options = data.salesDateOptions || [];
+      const options = getSalesDateOptions(data);
 
       els.salesDateStrip.innerHTML = options.length
         ? options.map(option => `
