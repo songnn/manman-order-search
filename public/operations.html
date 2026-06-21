@@ -125,12 +125,19 @@
     .ops-search::placeholder { color: #a0a6b2; }
     .settlement-date-strip { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 1px; scrollbar-width: none; }
     .settlement-date-strip::-webkit-scrollbar { display: none; }
-    .settlement-date-btn { flex: 0 0 auto; min-width: 78px; min-height: 34px; border: 1px solid #e4e9f1; border-radius: 14px; background: #fff; color: #717985; padding: 5px 9px; text-align: left; box-shadow: 0 8px 18px rgba(36,42,54,.045); }
+    .settlement-date-btn { flex: 0 0 auto; min-width: 126px; min-height: 52px; border: 1px solid #e4e9f1; border-radius: 16px; background: #fff; color: #717985; padding: 7px 10px; text-align: left; box-shadow: 0 8px 18px rgba(36,42,54,.045); }
     .settlement-date-btn strong { display: block; color: #151517; font-size: 11.5px; line-height: 1; font-weight: 600 !important; }
     .settlement-date-btn span { display: block; margin-top: 4px; color: #8d949f; font-size: 9px; line-height: 1; font-weight: 500 !important; }
     .settlement-date-btn.active { background: #111827; border-color: #111827; color: #fff; }
     .settlement-date-btn.active strong,
     .settlement-date-btn.active span { color: #fff; }
+    .settlement-date-status { display: flex; align-items: center; gap: 4px; margin-top: 5px; color: #717985; font-size: 9px; line-height: 1; white-space: nowrap; }
+    .settlement-date-status::before { content: ''; width: 6px; height: 6px; border-radius: 999px; background: #aeb6c2; flex: 0 0 auto; }
+    .settlement-date-status.match::before { background: #18a957; box-shadow: 0 0 0 3px rgba(24,169,87,.11); }
+    .settlement-date-status.review::before { background: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,.13); }
+    .settlement-date-status.warn::before { background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,.11); }
+    .settlement-date-status.produce::before { background: #fb7185; box-shadow: 0 0 0 3px rgba(251,113,133,.12); }
+    .settlement-date-btn.active .settlement-date-status { color: rgba(255,255,255,.86); }
     .settlement-alert { display: grid; gap: 7px; margin-bottom: 10px; padding: 10px; border-radius: 17px; background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; }
     .settlement-alert strong { font-size: 13px; line-height: 1.15; font-weight: 600 !important; }
     .settlement-alert span { font-size: 10.5px; line-height: 1.25; color: #c2410c; }
@@ -1356,7 +1363,7 @@
       overflow: hidden;
       border: 1px solid rgba(255,255,255,.9);
       background: #fff !important;
-      padding-left: 17px;
+      padding-left: 22px;
     }
     .inbound-card::before {
       content: '';
@@ -1364,7 +1371,7 @@
       left: 0;
       top: 0;
       bottom: 0;
-      width: 8px;
+      width: 10px;
       border-radius: 0;
       background: #d5dae3;
     }
@@ -3179,7 +3186,8 @@
       const scopedItems = queryKey
         ? allItems.filter(item => normalizeSearchText(`${item.productName} ${item.fileName} ${item.sheetName}`).includes(queryKey))
         : allItems.filter(item => item.dateKey === selectedDateKey);
-      const mismatches = scopedItems.filter(item => item.mismatch);
+      const groupMismatches = scopedItems.filter(item => item.category === '공구' && item.mismatch);
+      const reviewPendingItems = scopedItems.filter(item => ['상시', '과일', '야채'].includes(item.category));
       const categoryGroups = groupSettlementItemsByCategory(scopedItems);
       const imageTargetItems = scopedItems.filter(item => ['과일', '야채', '상시', '특이항목'].includes(item.category));
       const missingImages = imageTargetItems.filter(item => item.needsGeneratedImage);
@@ -3187,8 +3195,8 @@
       els.settlementReviewRoot.innerHTML = `
         <div class="summary">
           ${renderReceivingMetric('정산항목', number(scopedItems.length))}
-          ${renderReceivingMetric('수량불일치', number(mismatches.length), mismatches.length ? 'warn' : 'done')}
-          ${renderReceivingMetric('이미지필요', number(missingImages.length), missingImages.length ? 'warn' : 'done')}
+          ${renderReceivingMetric('공구불일치', number(groupMismatches.length), groupMismatches.length ? 'warn' : 'done')}
+          ${renderReceivingMetric('검토대기', number(reviewPendingItems.length), reviewPendingItems.length ? 'warn' : 'done')}
         </div>
         <div class="settlement-tools">
           <input class="settlement-search" data-settlement-search="1" value="${esc(query)}" placeholder="상품명으로 공급가 검색" inputmode="search">
@@ -3196,15 +3204,15 @@
             ${dateGroups.slice(0, 24).map(group => `
               <button class="settlement-date-btn ${group.dateKey === selectedDateKey ? 'active' : ''}" data-settlement-date="${esc(group.dateKey)}" type="button">
                 <strong>${esc(compactDateLabel(group.dateKey || group.label))}</strong>
-                <span>${number(group.count)}종 · 불일치 ${number(group.mismatchCount)}</span>
+                ${renderSettlementDateStatuses(group, allItems)}
               </button>
             `).join('')}
           </div>
         </div>
-        ${mismatches.length ? `
+        ${groupMismatches.length ? `
           <div class="settlement-alert">
-            <strong>확인이 필요한 수량 차이가 ${number(mismatches.length)}개 있습니다.</strong>
-            <span>${mismatches.slice(0, 3).map(item => `${item.productName} 정산 ${number(item.settlementQuantity)} / 입고리스트 ${item.hasInventoryMatch ? number(item.inventoryListQuantity) : '매칭없음'} / raw ${item.hasRawInventoryMatch ? number(item.inventoryRawQuantity) : '-'}`).join(' · ')}</span>
+            <strong>공구 수량 차이가 ${number(groupMismatches.length)}개 있습니다.</strong>
+            <span>${groupMismatches.slice(0, 3).map(item => `${item.productName} 정산 ${number(item.settlementQuantity)} / 입고리스트 ${item.hasInventoryMatch ? number(item.inventoryListQuantity) : '매칭없음'} / raw ${item.hasRawInventoryMatch ? number(item.inventoryRawQuantity) : '-'}`).join(' · ')}</span>
           </div>
         ` : ''}
         ${missingImages.length ? `
@@ -3234,10 +3242,11 @@
 
     function renderSettlementCard(item) {
       const categoryClass = settlementCategoryClass(item.category);
+      const isGroupItem = item.category === '공구';
       const image = imageUrl({ imageUrl: item.imageUrl, productName: item.productName });
 
       return `
-        <article class="settlement-card ${categoryClass} ${item.mismatch ? 'mismatch' : ''} ${item.listRawMismatch ? 'raw-mismatch' : ''}">
+        <article class="settlement-card ${categoryClass} ${isGroupItem && item.mismatch ? 'mismatch' : ''} ${isGroupItem && item.listRawMismatch ? 'raw-mismatch' : ''}">
           <img src="${esc(image)}" alt="${esc(item.productName)}" loading="lazy">
           <div class="settlement-main">
             <div class="settlement-top">
@@ -3277,10 +3286,11 @@
               </div>
             </div>
             <div class="settlement-meta">
-              ${item.listRawMismatch ? `<span class="settlement-diff">입고리스트/raw 차이 ${number(item.listRawDiffQuantity)}</span>` : ''}
-              ${item.mismatch && !item.listRawMismatch ? `<span class="settlement-diff">차이 ${number(item.diffQuantity)}</span>` : ''}
-              ${!item.hasInventoryMatch && !item.hasRawInventoryMatch ? '<span class="settlement-diff">입고 매칭없음</span>' : ''}
-              ${!item.hasInventoryMatch && item.hasRawInventoryMatch ? '<span>입고 raw 기준 정상</span>' : ''}
+              ${!isGroupItem ? '<span>검토대기</span>' : ''}
+              ${isGroupItem && item.listRawMismatch ? `<span class="settlement-diff">입고리스트/raw 차이 ${number(item.listRawDiffQuantity)}</span>` : ''}
+              ${isGroupItem && item.mismatch && !item.listRawMismatch ? `<span class="settlement-diff">차이 ${number(item.diffQuantity)}</span>` : ''}
+              ${isGroupItem && !item.hasInventoryMatch && !item.hasRawInventoryMatch ? '<span class="settlement-diff">입고 매칭없음</span>' : ''}
+              ${isGroupItem && !item.hasInventoryMatch && item.hasRawInventoryMatch ? '<span>입고 raw 기준 정상</span>' : ''}
               ${item.hasInventoryMatch && !item.inventoryMatchIsExact ? '<span>근접 입고일 매칭</span>' : ''}
               ${item.hasRawInventoryMatch && !item.rawInventoryMatchIsExact ? '<span>근접 raw일 매칭</span>' : ''}
               ${item.rawSettlementType ? `<span>정산분류 ${esc(item.rawSettlementType)}</span>` : ''}
@@ -3293,6 +3303,55 @@
           </div>
         </article>
       `;
+    }
+
+    function renderSettlementDateStatuses(group, allItems) {
+      const rows = settlementDateStatusRows(group, allItems);
+      if (!rows.length) {
+        return `<span>${number(group.count)}종</span>`;
+      }
+
+      return rows.map(row => `
+        <div class="settlement-date-status ${esc(row.kind)}">
+          ${esc(row.label)} ${esc(row.text)}
+        </div>
+      `).join('');
+    }
+
+    function settlementDateStatusRows(group, allItems) {
+      const dateKey = group.dateKey || '';
+      const items = (allItems || []).filter(item => item.dateKey === dateKey);
+      const rows = [];
+      const groupItems = items.filter(item => item.category === '공구');
+      const alwaysItems = items.filter(item => item.category === '상시');
+      const produceItems = items.filter(item => item.category === '과일' || item.category === '야채');
+
+      if (groupItems.length) {
+        const matchedCount = groupItems.filter(item => !item.mismatch).length;
+        rows.push({
+          label: '공구',
+          text: `${number(matchedCount)}/${number(groupItems.length)} ${matchedCount === groupItems.length ? '수량일치' : '확인필요'}`,
+          kind: matchedCount === groupItems.length ? 'match' : 'warn'
+        });
+      }
+
+      if (alwaysItems.length) {
+        rows.push({
+          label: '상시',
+          text: `${number(alwaysItems.length)}/${number(alwaysItems.length)} 검토대기`,
+          kind: 'review'
+        });
+      }
+
+      if (produceItems.length) {
+        rows.push({
+          label: '과일',
+          text: `${number(produceItems.length)}/${number(produceItems.length)} 검토대기`,
+          kind: 'review produce'
+        });
+      }
+
+      return rows;
     }
 
     function groupSettlementItemsByCategory(items) {
@@ -4493,9 +4552,11 @@
 
     function bindImeSafeInput(input, onCommit) {
       let lastCommittedValue = input.value || '';
+      const shouldDefer = value => input.dataset.composing === '1' || hasStandaloneHangulJamo(value);
       const commit = () => {
         const nextValue = input.value || '';
-        if (nextValue === lastCommittedValue && input.dataset.composing !== '1') return;
+        if (shouldDefer(nextValue)) return;
+        if (nextValue === lastCommittedValue) return;
         lastCommittedValue = nextValue;
         onCommit(nextValue);
       };
@@ -4504,13 +4565,22 @@
         input.dataset.composing = '1';
       };
       input.oncompositionend = () => {
-        input.dataset.composing = '';
-        commit();
+        window.setTimeout(() => {
+          input.dataset.composing = '';
+          commit();
+        }, 0);
+      };
+      input.onbeforeinput = event => {
+        if (event.isComposing) input.dataset.composing = '1';
       };
       input.oninput = event => {
-        if (event.isComposing || input.dataset.composing === '1') return;
+        if (event.isComposing || shouldDefer(input.value || '')) return;
         commit();
       };
+    }
+
+    function hasStandaloneHangulJamo(value) {
+      return /[\u1100-\u11ff\u3130-\u318f\ua960-\ua97f\ud7b0-\ud7ff]/.test(String(value || ''));
     }
 
     function bindControls() {
