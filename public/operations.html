@@ -2815,7 +2815,7 @@
             <strong class="buffer-value">${number(hqBuffer)}</strong>
           </div>
           <button class="buffer-box our interactive" data-action="show-our-buffer-list" type="button">
-            <span class="buffer-label">우리버퍼</span>
+            <span class="buffer-label">지점버퍼</span>
             <strong class="buffer-value">${number(ourBuffer)}</strong>
           </button>
           <div class="buffer-box remaining">
@@ -2898,7 +2898,7 @@
           source: row.sourceRowNumber ? `${row.sourceSheetName || 'Raw'} ${row.sourceRowNumber}행` : ''
         }));
 
-      openModal('우리버퍼 목록', item.productName || '', rows.length
+      openModal('지점버퍼 목록', item.productName || '', rows.length
         ? rows.map(row => `
             <div class="sheet-row">
               <div>
@@ -2909,7 +2909,7 @@
               <div class="sheet-row-qty">${number(row.quantity)}</div>
             </div>
           `).join('')
-        : '<div class="empty">우리버퍼 메모가 없습니다.</div>');
+        : '<div class="empty">지점버퍼 메모가 없습니다.</div>');
     }
 
     async function openOrderCustomersModal(id) {
@@ -3064,7 +3064,7 @@
               ${salesTypeBadge(item.salesType)}
               ${packageUnit ? `<span class="pack-badge">포장 ${esc(packageUnit)}</span>` : ''}
               <span class="soft-tag">본사버퍼 ${number(item.hqBufferQuantity)}</span>
-              <span class="soft-tag">우리버퍼 ${number(item.ourBufferQuantity)}</span>
+              <span class="soft-tag">지점버퍼 ${number(item.ourBufferQuantity)}</span>
             </div>
             <div class="inbound-status">
               <div class="status-box important">
