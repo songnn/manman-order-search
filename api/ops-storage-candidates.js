@@ -21,10 +21,12 @@ export default async function handler(req, res) {
     }
 
     const digits = clean(req.query?.digits || req.query?.q).replace(/\D/g, '').slice(-4);
-    if (!/^\d{4}$/.test(digits)) {
+    const hasDigits = /^\d{4}$/.test(digits);
+    const productQuery = clean(req.query?.productQuery || req.query?.product || req.query?.keyword);
+    if (!hasDigits && !productQuery) {
       return res.status(400).json({
         ok: false,
-        message: '핸드폰 뒷 4자리를 입력해주세요.'
+        message: '핸드폰 뒷4자리 또는 상품명을 입력해주세요.'
       });
     }
 
@@ -34,14 +36,26 @@ export default async function handler(req, res) {
     const minPickupDateValue = dateKeyToNumber(formatDateKey(addDays(today, -7)));
     const maxPickupDateValue = dateKeyToNumber(formatDateKey(addDays(today, 7)));
 
-    const [candidateResult, rows] = await Promise.all([
-      findCustomerCandidatesByDigits({ digits }),
-      readRecentOrderRows({
-        digits,
-        sinceOrderDateValue,
-        minPickupDateValue,
-        maxPickupDateValue
-      })
+    const minInventoryDateKey = formatDateKey(addDays(today, -10));
+    const maxInventoryDateKey = formatDateKey(addDays(today, 10));
+
+    const [candidateResult, rows, searchedInventoryRows] = await Promise.all([
+      hasDigits ? findCustomerCandidatesByDigits({ digits }) : Promise.resolve({ candidates: [] }),
+      hasDigits
+        ? readRecentOrderRows({
+            digits,
+            sinceOrderDateValue,
+            minPickupDateValue,
+            maxPickupDateValue
+          })
+        : Promise.resolve([]),
+      productQuery
+        ? readRecentInventoryRows({
+            productQuery,
+            minDateKey: minInventoryDateKey,
+            maxDateKey: maxInventoryDateKey
+          })
+        : Promise.resolve([])
     ]);
 
     const candidates = mergeCandidates(candidateResult.candidates || [], rows, digits);
@@ -49,7 +63,7 @@ export default async function handler(req, res) {
       requestedCustomerLabel ||
       (candidates.length === 1 ? candidates[0].customerLabel : '');
 
-    if (candidates.length > 1 && !selectedCustomerLabel) {
+    if (hasDigits && candidates.length > 1 && !selectedCustomerLabel && !productQuery) {
       return res.status(200).json({
         ok: true,
         digits,
@@ -63,7 +77,7 @@ export default async function handler(req, res) {
     const scopedRows = selectedCustomerLabel
       ? rows.filter(row => normalizeCustomerLabel(row.customer_label) === selectedCustomerLabel)
       : rows;
-    const items = await buildStorageItems(scopedRows);
+    const items = await buildStorageItems(scopedRows, searchedInventoryRows);
 
     return res.status(200).json({
       ok: true,
@@ -71,6 +85,7 @@ export default async function handler(req, res) {
       requiresCustomerSelection: false,
       selectedCustomerLabel,
       candidates,
+      productQuery,
       items
     });
   } catch (error) {
@@ -161,7 +176,7 @@ function mergeCandidates(candidates, rows, digits) {
     });
 }
 
-async function buildStorageItems(rows) {
+async function buildStorageItems(rows, searchedInventoryRows = []) {
   const grouped = new Map();
 
   rows.forEach(row => {
@@ -181,17 +196,22 @@ async function buildStorageItems(rows) {
       orderDateText: clean(row.order_date_text),
       price: Number(row.price || 0),
       imageUrl: clean(row.image_url),
+      sourceType: 'order',
       sourceRows: []
     };
 
-    current.quantity += Number(row.quantity || 0);
+    current.quantity += Math.max(1, Number(row.quantity || 0));
     if (!current.imageUrl) current.imageUrl = clean(row.image_url);
     current.sourceRows.push(Number(row.source_row_number || 0));
     grouped.set(key, current);
   });
 
   const items = Array.from(grouped.values());
-  const inventoryRows = await readInventoryRows([...new Set(items.map(item => item.pickupDateKey))]);
+  const matchedInventoryRows = await readInventoryRows([...new Set(items.map(item => item.pickupDateKey))]);
+  const inventoryRows = mergeInventoryRows([
+    ...matchedInventoryRows,
+    ...searchedInventoryRows
+  ]);
 
   const mappedItems = items
     .map(item => {
@@ -202,17 +222,49 @@ async function buildStorageItems(rows) {
         id: inventory?.stable_id || '',
         inventoryStableId: inventory?.stable_id || '',
         productName: inventory?.product_name || item.productName,
+        productKey: inventory?.product_key || item.productKey,
         storageMethod: normalizeStorageMethod(inventory?.storage_method),
         inboundQuantity: Number(inventory?.inbound_quantity || 0),
         salePrice: Number(inventory?.sale_price || item.price || 0),
         imageUrl: inventory?.image_url || item.imageUrl,
-        canStore: Boolean(inventory?.stable_id)
+        canStore: true,
+        matchMessage: inventory?.stable_id ? '' : '입고리스트 미매칭 · 임시 보관요청으로 등록됩니다.'
       };
     });
-  const hasStorableItems = mappedItems.some(item => item.canStore);
 
-  return mappedItems
-    .filter(item => hasStorableItems ? item.canStore : true)
+  const seenKeys = new Set(mappedItems.map(item =>
+    item.inventoryStableId ? `inventory:${item.inventoryStableId}` : `fallback:${item.key}`
+  ));
+  const inventorySearchItems = searchedInventoryRows
+    .filter(row => row?.stable_id)
+    .filter(row => {
+      const key = `inventory:${row.stable_id}`;
+      if (seenKeys.has(key)) return false;
+      seenKeys.add(key);
+      return true;
+    })
+    .map(row => ({
+      key: `inventory:${row.stable_id}`,
+      id: row.stable_id,
+      inventoryStableId: row.stable_id,
+      productName: row.product_name || '',
+      productKey: row.product_key || normalizeProductKey(row.product_name),
+      pickupDateKey: row.inbound_date || '',
+      pickupDateText: row.inbound_date_text || row.inbound_date || '',
+      quantity: 1,
+      orderDateText: '',
+      price: Number(row.sale_price || 0),
+      salePrice: Number(row.sale_price || 0),
+      imageUrl: row.image_url || '',
+      storageMethod: normalizeStorageMethod(row.storage_method),
+      inboundQuantity: Number(row.inbound_quantity || 0),
+      sourceType: 'inventory',
+      sourceRows: [Number(row.source_row_number || 0)],
+      canStore: true,
+      matchMessage: '최근 픽업 상품 · 기본 1개'
+    }));
+
+  return [...mappedItems, ...inventorySearchItems]
     .sort((a, b) => {
       if (Number(b.canStore) !== Number(a.canStore)) return Number(b.canStore) - Number(a.canStore);
       if (b.pickupDateKey !== a.pickupDateKey) return b.pickupDateKey.localeCompare(a.pickupDateKey);
@@ -243,6 +295,52 @@ async function readInventoryRows(dateKeys) {
 
   if (error) throw error;
   return data || [];
+}
+
+async function readRecentInventoryRows({ productQuery, minDateKey, maxDateKey }) {
+  const normalizedQuery = normalizeProductKey(productQuery);
+  if (!normalizedQuery) return [];
+
+  const { data, error } = await supabaseAdmin
+    .from('operations_inventory_items')
+    .select([
+      'stable_id',
+      'source_row_number',
+      'product_name',
+      'product_key',
+      'storage_method',
+      'sales_type',
+      'inbound_date',
+      'inbound_date_text',
+      'inbound_quantity',
+      'sale_price',
+      'image_url'
+    ].join(','))
+    .eq('store_name', STORE_NAME)
+    .gte('inbound_date', minDateKey)
+    .lte('inbound_date', maxDateKey)
+    .order('inbound_date', { ascending: false })
+    .order('source_row_number', { ascending: true })
+    .limit(1000);
+
+  if (error) throw error;
+
+  return (data || [])
+    .filter(row => {
+      const productKey = normalizeProductKey(row.product_name || row.product_key);
+      if (!productKey) return false;
+      return productKey.includes(normalizedQuery) || normalizedQuery.includes(productKey);
+    })
+    .slice(0, 80);
+}
+
+function mergeInventoryRows(rows) {
+  const result = new Map();
+  rows.forEach(row => {
+    if (!row?.stable_id) return;
+    result.set(row.stable_id, row);
+  });
+  return Array.from(result.values());
 }
 
 function findMatchingInventory(inventoryRows, item) {

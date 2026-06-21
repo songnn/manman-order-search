@@ -27,6 +27,8 @@ export default async function handler(req, res) {
 
     const body = req.body || {};
     const action = String(body.action || '').trim();
+    const shouldReturnDashboard = body.returnDashboard !== false;
+    const storageEvents = [];
 
     if (action === 'buffer_delta') {
       await createBufferEvent({
@@ -56,8 +58,15 @@ export default async function handler(req, res) {
           }];
 
       for (const item of items) {
-        await createStorageRequestEvent({
+        const result = await createStorageRequestEvent({
           inventoryStableId: item.inventoryStableId,
+          productName: item.productName,
+          productKey: item.productKey,
+          pickupDateKey: item.pickupDateKey,
+          pickupDateText: item.pickupDateText,
+          storageMethod: item.storageMethod,
+          imageUrl: item.imageUrl,
+          salePrice: item.salePrice,
           quantity: item.quantity,
           customerLabel: body.customerLabel,
           customerDigits4: body.customerDigits4,
@@ -67,6 +76,7 @@ export default async function handler(req, res) {
           storageGroupId,
           status: 'pending'
         });
+        storageEvents.push(result);
       }
     } else if (action === 'storage_request_update') {
       await updateStorageRequestEvents({
@@ -107,8 +117,15 @@ export default async function handler(req, res) {
             }];
 
         for (const item of items) {
-          await createStorageRequestEvent({
+          const result = await createStorageRequestEvent({
             inventoryStableId: item.inventoryStableId,
+            productName: item.productName,
+            productKey: item.productKey,
+            pickupDateKey: item.pickupDateKey,
+            pickupDateText: item.pickupDateText,
+            storageMethod: item.storageMethod,
+            imageUrl: item.imageUrl,
+            salePrice: item.salePrice,
             quantity: item.quantity,
             customerLabel: body.customerLabel,
             customerDigits4: body.customerDigits4,
@@ -118,6 +135,7 @@ export default async function handler(req, res) {
             storageGroupId,
             status: 'completed'
           });
+          storageEvents.push(result);
         }
       }
     } else {
@@ -127,9 +145,10 @@ export default async function handler(req, res) {
       });
     }
 
-    const dashboard = await getOperationsDashboardData();
+    const dashboard = shouldReturnDashboard ? await getOperationsDashboardData() : null;
     return res.status(200).json({
       ok: true,
+      events: storageEvents,
       dashboard
     });
   } catch (error) {

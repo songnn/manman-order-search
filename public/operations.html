@@ -951,6 +951,10 @@
       grid-template-columns: minmax(0, 1fr) 68px;
       gap: 7px;
     }
+    .storage-search-stack {
+      display: grid;
+      gap: 7px;
+    }
     .storage-input {
       width: 100%;
       height: 38px;
@@ -970,6 +974,12 @@
       font-size: 14px;
       font-weight: 500 !important;
       letter-spacing: 0;
+    }
+    .storage-input.product-search {
+      height: 40px;
+      background: #fff;
+      border-color: #dfe5ee;
+      font-size: 12.5px;
     }
     .storage-primary-btn,
     .storage-complete-btn {
@@ -1126,9 +1136,17 @@
       overflow: hidden;
     }
     .storage-warning {
-      color: #c88910;
+      width: fit-content;
+      max-width: 100%;
+      padding: 3px 7px;
+      border-radius: 999px;
+      background: #fff6dc;
+      color: #a56f00;
       font-size: 10px;
       line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .storage-qty {
       width: 44px;
@@ -1175,6 +1193,14 @@
       grid-template-columns: auto minmax(0, 1fr);
       gap: 7px;
       align-items: stretch;
+      position: sticky;
+      bottom: -9px;
+      z-index: 5;
+      margin: 0 -2px -9px;
+      padding: 10px 2px max(9px, env(safe-area-inset-bottom));
+      background: linear-gradient(180deg, rgba(248,249,251,.72), #f8f9fb 36%);
+      border-top: 1px solid rgba(226,231,239,.88);
+      backdrop-filter: blur(10px);
     }
     .storage-form-actions .storage-complete-now {
       grid-column: 1 / -1;
@@ -1681,7 +1707,8 @@
     }
     .storage-done-btn {
       height: 25px;
-      min-width: 45px;
+      min-width: 78px;
+      padding: 0 8px;
       border: 0;
       border-radius: 10px;
       background: #111827;
@@ -1693,15 +1720,15 @@
     }
     .storage-pickup-done-btn {
       height: 25px;
-      min-width: 76px;
-      border: 0;
+      min-width: 70px;
+      border: 1px solid #e3e8ef;
       border-radius: 10px;
-      background: #0f9f68;
-      color: #fff;
-      font-size: 10px;
+      background: #f8fafc;
+      color: #7b838f;
+      font-size: 9.5px;
       line-height: 1;
-      font-weight: 600 !important;
-      box-shadow: 0 8px 16px rgba(15,159,104,.14);
+      font-weight: 500 !important;
+      box-shadow: none;
     }
     .storage-queue-empty {
       min-height: 54px;
@@ -1938,6 +1965,7 @@
       storageQuantities: {},
       storage: {
         digits: '',
+        productQuery: '',
         selectedCustomerLabel: '',
         candidates: [],
         items: [],
@@ -2306,7 +2334,7 @@
       const formTitle = isEditing ? '보관요청 수정' : '새로운 보관요청';
       const formDesc = isEditing
         ? '수량, 방문예정일, 보관장소 메모를 필요한 만큼만 수정합니다.'
-        : '핸드폰 뒷4자리로 고객을 찾고 보관할 상품만 빠르게 선택합니다.';
+        : '핸드폰 뒷4자리 또는 상품명으로 보관할 상품을 빠르게 선택합니다.';
 
       return `
         <div class="storage-form-overlay" role="presentation">
@@ -2332,18 +2360,28 @@
               </div>
 
               ${isEditing ? renderStorageEditBanner(storage.editingGroup) : `
-                <div class="storage-search-row">
+                <div class="storage-search-stack">
+                  <div class="storage-search-row">
+                    <input
+                      class="storage-input digits"
+                      data-storage-field="digits"
+                      value="${esc(storage.digits)}"
+                      placeholder="핸드폰 뒷4자리"
+                      aria-label="핸드폰 뒷4자리"
+                      inputmode="numeric"
+                      maxlength="4"
+                      autocomplete="off"
+                    >
+                    <button class="storage-primary-btn" data-action="storage-lookup" type="button" ${storage.loading ? 'disabled' : ''}>${storage.loading ? '조회중' : '조회'}</button>
+                  </div>
                   <input
-                    class="storage-input digits"
-                    data-storage-field="digits"
-                    value="${esc(storage.digits)}"
-                    placeholder="핸드폰 뒷4자리"
-                    aria-label="핸드폰 뒷4자리"
-                    inputmode="numeric"
-                    maxlength="4"
+                    class="storage-input product-search"
+                    data-storage-field="productQuery"
+                    value="${esc(storage.productQuery)}"
+                    placeholder="주문상품 외 최근 픽업 상품 검색"
+                    aria-label="최근 픽업 상품 검색"
                     autocomplete="off"
                   >
-                  <button class="storage-primary-btn" data-action="storage-lookup" type="button" ${storage.loading ? 'disabled' : ''}>${storage.loading ? '조회중' : '조회'}</button>
                 </div>
               `}
 
@@ -2390,11 +2428,13 @@
       const seen = new Set();
       const groups = new Map();
       const sourceItems = [
+        ...(data?.storageRequestItems || []),
         ...(data?.salesAllItems || []),
         ...(data?.salesItems || []),
         ...(data?.inboundItems || []),
         ...(data?.latestInboundItems || []),
-        ...(data?.staleItems || [])
+        ...(data?.staleItems || []),
+        ...(data?.staleDateGroups || []).flatMap(group => group.items || [])
       ];
       sourceItems.forEach(item => {
         (item.storageRequests || []).forEach(request => {
@@ -2406,10 +2446,13 @@
             ...request,
             eventId,
             itemId: item.id,
-            productName: item.productName,
-            storageMethod: item.storageMethod,
-            imageUrl: item.imageUrl,
-            salePrice: item.salePrice,
+            productName: request.productName || item.productName,
+            productKey: request.productKey || item.productKey,
+            storageMethod: request.storageMethod || item.storageMethod,
+            imageUrl: request.imageUrl || item.imageUrl,
+            salePrice: request.salePrice || item.salePrice,
+            pickupDateKey: request.pickupDateKey || item.inboundDateKey || '',
+            pickupDateText: request.pickupDateText || item.inboundDateText || '',
             status: request.status === 'pending' ? 'pending' : request.status === 'picked_up' ? 'picked_up' : 'completed'
           };
 
@@ -2523,7 +2566,7 @@
           <div class="storage-queue-side">
             <strong>${number(item.quantity)}</strong>
             <span>개</span>
-            ${status === 'pending' ? `<button class="storage-done-btn" data-action="storage-mark-complete" data-event-ids="${esc(item.eventIds.join(','))}" data-customer-label="${esc(customerText)}" data-quantity="${esc(item.quantity)}" type="button">완료</button>` : ''}
+            ${status === 'pending' ? `<button class="storage-done-btn" data-action="storage-mark-complete" data-event-ids="${esc(item.eventIds.join(','))}" data-customer-label="${esc(customerText)}" data-quantity="${esc(item.quantity)}" type="button">보관처리 완료</button>` : ''}
             ${status === 'completed' ? `<button class="storage-pickup-done-btn" data-action="storage-pickup-complete" data-event-ids="${esc(item.eventIds.join(','))}" data-customer-label="${esc(customerText)}" data-quantity="${esc(item.quantity)}" type="button">고객 픽업완료</button>` : ''}
           </div>
         </article>
@@ -2622,7 +2665,7 @@
       if (!storage.items?.length) {
         return state.storage.editingGroup
           ? '<div class="empty">수정할 보관 상품이 없습니다.</div>'
-          : '<div class="empty">핸드폰 뒷4자리를 조회하면 보관할 상품이 여기에 뜹니다.</div>';
+          : '<div class="empty">핸드폰 뒷4자리 또는 상품명을 조회하면 보관할 상품이 여기에 뜹니다.</div>';
       }
 
       return `
@@ -2636,11 +2679,12 @@
       const key = storageItemKey(item);
       const selected = state.storage.editingGroup ? true : Boolean(state.storage.selected[key]);
       const quantity = getStorageQtyValue(key, item.quantity);
-      const canStore = item.canStore !== false && item.inventoryStableId;
+      const canStore = item.canStore !== false;
       const isEditing = Boolean(state.storage.editingGroup);
       const cardActionAttrs = canStore && !isEditing
         ? `data-action="storage-toggle-item" role="button" tabindex="0"`
         : '';
+      const quantityLabel = item.sourceType === 'inventory' ? '기본' : '주문';
 
       return `
         <article class="storage-item ${selected ? 'selected' : ''} ${!canStore ? 'disabled' : ''}" data-storage-key="${esc(key)}" ${cardActionAttrs}>
@@ -2655,10 +2699,10 @@
             </div>
             <div class="storage-item-meta">
               <span>${isEditing ? '보관' : '픽업'} ${esc(item.pickupDateText || item.pickupDateKey || '')}</span>
-              <span>주문 ${number(item.quantity)}개</span>
+              <span>${esc(quantityLabel)} ${number(item.quantity)}개</span>
               ${item.salePrice ? `<span>판매가 ${money(item.salePrice)}</span>` : ''}
             </div>
-            ${canStore ? '' : '<div class="storage-warning">입고상품 매칭이 필요합니다.</div>'}
+            ${item.matchMessage ? `<div class="storage-warning">${esc(item.matchMessage)}</div>` : ''}
           </div>
           <button class="storage-qty qty-stepper" data-storage-qty="${esc(key)}" data-qty-key="storage:${esc(key)}" data-qty-picker="1" type="button" aria-label="보관수량 선택">${number(quantity)}</button>
         </article>
@@ -3164,6 +3208,7 @@
     function findItem(id) {
       const data = state.dashboard || {};
       return [
+        ...(data.storageRequestItems || []),
         ...(data.salesItems || []),
         ...(data.salesAllItems || []),
         ...(data.inboundItems || []),
@@ -3176,6 +3221,7 @@
     function updateItem(id, update) {
       const data = state.dashboard || {};
       const groups = [
+        data.storageRequestItems,
         data.salesItems,
         data.salesAllItems,
         data.inboundItems,
@@ -3611,8 +3657,10 @@
 
     async function runStorageLookup(customerLabel = '') {
       const digits = String(state.storage.digits || '').replace(/\D/g, '').slice(-4);
-      if (!/^\d{4}$/.test(digits)) {
-        state.storage.message = '핸드폰 뒷4자리를 입력해주세요.';
+      const productQuery = String(state.storage.productQuery || '').trim();
+      const hasDigits = /^\d{4}$/.test(digits);
+      if (!hasDigits && !productQuery) {
+        state.storage.message = '핸드폰 뒷4자리 또는 상품명을 입력해주세요.';
         render();
         return;
       }
@@ -3625,14 +3673,16 @@
       try {
         const url = new URL('/api/ops-storage-candidates', location.origin);
         url.searchParams.set('token', state.token);
-        url.searchParams.set('digits', digits);
+        if (hasDigits) url.searchParams.set('digits', digits);
+        if (productQuery) url.searchParams.set('productQuery', productQuery);
         if (customerLabel) url.searchParams.set('customerLabel', customerLabel);
 
         const response = await fetch(url);
         const data = await response.json();
         if (!response.ok || !data.ok) throw new Error(data.message || '보관요청 상품을 찾지 못했습니다.');
 
-        state.storage.digits = digits;
+        state.storage.digits = hasDigits ? digits : '';
+        state.storage.productQuery = productQuery;
         state.storage.candidates = data.candidates || [];
         state.storage.selectedCustomerLabel = data.selectedCustomerLabel || customerLabel || '';
         state.storage.items = data.items || [];
@@ -3640,9 +3690,7 @@
         state.storage.message = data.requiresCustomerSelection ? '중복 고객이 있어 고객을 먼저 선택해주세요.' : '';
         state.storage.items.forEach(item => {
           const key = storageItemKey(item);
-          if (!state.storageQuantities[key]) {
-            state.storageQuantities[key] = Math.max(1, Math.min(QTY_PICKER_MAX, Number(item.quantity || 1)));
-          }
+          state.storageQuantities[key] = Math.max(1, Math.min(QTY_PICKER_MAX, Number(item.quantity || 1)));
         });
       } catch (error) {
         state.storage.message = error.message || String(error);
@@ -3677,6 +3725,7 @@
     function resetStorageForm({ keepComplete = false } = {}) {
       const complete = keepComplete ? state.storage.complete : null;
       state.storage.digits = '';
+      state.storage.productQuery = '';
       state.storage.selectedCustomerLabel = '';
       state.storage.candidates = [];
       state.storage.items = [];
@@ -3742,13 +3791,136 @@
         }));
     }
 
+    function createStorageGroupId() {
+      return window.crypto?.randomUUID?.() || `storage-${Date.now()}-${Math.round(Math.random() * 100000)}`;
+    }
+
+    function snapshotDashboard() {
+      return state.dashboard ? JSON.parse(JSON.stringify(state.dashboard)) : null;
+    }
+
+    function forEachDashboardStorageItem(callback) {
+      const data = state.dashboard || {};
+      const groups = [
+        data.storageRequestItems,
+        data.salesItems,
+        data.salesAllItems,
+        data.inboundItems,
+        data.latestInboundItems,
+        data.staleItems,
+        ...(data.staleDateGroups || []).map(group => group.items)
+      ];
+
+      groups.forEach(items => {
+        (items || []).forEach(item => callback(item));
+      });
+    }
+
+    function addOptimisticStorageRequests({ groupId, items, customerLabel, customerDigits4, locationMemo, visitDateText, requestMemo, createdAt }) {
+      if (!state.dashboard) state.dashboard = { ok: true };
+      if (!Array.isArray(state.dashboard.storageRequestItems)) state.dashboard.storageRequestItems = [];
+
+      const tempEventIds = [];
+      items.forEach((item, index) => {
+        const eventId = `temp:${groupId}:${index}`;
+        tempEventIds.push(eventId);
+        const quantity = Number(item.quantity || 1);
+        const request = {
+          eventId,
+          inventoryStableId: item.inventoryStableId || '',
+          storageGroupId: groupId,
+          customerLabel,
+          customerDigits4,
+          quantity,
+          productName: item.productName || '',
+          productKey: item.productKey || '',
+          pickupDateKey: item.pickupDateKey || '',
+          pickupDateText: item.pickupDateText || '',
+          storageMethod: item.storageMethod || '',
+          imageUrl: item.imageUrl || '',
+          salePrice: Number(item.salePrice || item.price || 0),
+          locationMemo,
+          visitDateText,
+          requestMemo,
+          status: 'pending',
+          eventSource: 'storage_request_pending',
+          createdAt,
+          completedAt: '',
+          pickedUpAt: ''
+        };
+
+        state.dashboard.storageRequestItems.unshift({
+          id: `storage-temp:${eventId}`,
+          productName: request.productName,
+          productKey: request.productKey,
+          storageMethod: request.storageMethod,
+          inboundDateKey: request.pickupDateKey,
+          inboundDateText: request.pickupDateText,
+          salePrice: request.salePrice,
+          imageUrl: request.imageUrl,
+          storageRequests: [request],
+          bufferHistory: [],
+          ourBufferNotes: []
+        });
+      });
+
+      return tempEventIds;
+    }
+
+    function replaceOptimisticStorageEventIds(tempEventIds, events = []) {
+      const replacements = new Map();
+      tempEventIds.forEach((tempId, index) => {
+        const eventId = events[index]?.eventId;
+        if (eventId) replacements.set(tempId, eventId);
+      });
+      if (!replacements.size) return;
+
+      forEachDashboardStorageItem(item => {
+        (item.storageRequests || []).forEach(request => {
+          if (!replacements.has(request.eventId)) return;
+          request.eventId = replacements.get(request.eventId);
+        });
+      });
+    }
+
+    function setStorageRequestStatusOptimistic(eventIds, status) {
+      const ids = new Set((Array.isArray(eventIds) ? eventIds : [eventIds]).filter(Boolean));
+      if (!ids.size) return;
+
+      const now = new Date().toISOString();
+      forEachDashboardStorageItem(item => {
+        (item.storageRequests || []).forEach(request => {
+          if (!ids.has(request.eventId)) return;
+          request.status = status;
+          request.eventSource = status === 'pending'
+            ? 'storage_request_pending'
+            : status === 'picked_up'
+              ? 'storage_request_picked_up'
+              : 'storage_request';
+          if (status === 'completed') {
+            request.completedAt = request.completedAt || now;
+          }
+          if (status === 'picked_up') {
+            request.completedAt = request.completedAt || now;
+            request.pickedUpAt = now;
+          }
+        });
+      });
+    }
+
     async function runStorageRegisterPending() {
       if (state.busy || state.storage.loading) return;
 
       const selectedItems = getSelectedStorageItems()
-        .filter(item => item.inventoryStableId)
         .map(item => ({
           inventoryStableId: item.inventoryStableId,
+          productName: item.productName,
+          productKey: item.productKey,
+          pickupDateKey: item.pickupDateKey,
+          pickupDateText: item.pickupDateText,
+          storageMethod: item.storageMethod,
+          imageUrl: item.imageUrl,
+          salePrice: item.salePrice || item.price,
           quantity: getStorageQtyValue(storageItemKey(item), item.quantity)
         }));
 
@@ -3758,10 +3930,38 @@
         return;
       }
 
+      const dashboardSnapshot = snapshotDashboard();
+      const storageSnapshot = JSON.parse(JSON.stringify(state.storage));
+      const storageGroupId = createStorageGroupId();
+      const createdAt = new Date().toISOString();
+      const customerLabel = state.storage.selectedCustomerLabel;
+      const customerDigits4 = state.storage.digits;
+      const locationMemo = state.storage.locationMemo;
+      const visitDateText = getStorageVisitText();
+      const requestMemo = state.storage.requestMemo;
+      const totalQuantity = selectedItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+      const tempEventIds = addOptimisticStorageRequests({
+        groupId: storageGroupId,
+        items: selectedItems,
+        customerLabel,
+        customerDigits4,
+        locationMemo,
+        visitDateText,
+        requestMemo,
+        createdAt
+      });
+      state.storage.complete = {
+        title: '보관대기 등록',
+        customerLabel: customerLabel || (customerDigits4 ? `뒷4자리 ${customerDigits4}` : ''),
+        quantity: totalQuantity,
+        time: formatDateTime(createdAt) || '방금'
+      };
+      resetStorageForm({ keepComplete: true });
+      render();
+
       state.busy = true;
       state.storage.loading = true;
       state.storage.message = '';
-      render();
 
       try {
         const url = new URL('/api/buffer-action', location.origin);
@@ -3772,28 +3972,27 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             action: 'storage_request_pending',
-            customerLabel: state.storage.selectedCustomerLabel,
-            customerDigits4: state.storage.digits,
-            locationMemo: state.storage.locationMemo,
-            visitDateText: getStorageVisitText(),
-            requestMemo: state.storage.requestMemo,
+            customerLabel,
+            customerDigits4,
+            locationMemo,
+            visitDateText,
+            requestMemo,
+            storageGroupId,
+            returnDashboard: false,
             items: selectedItems
           })
         });
         const data = await response.json();
         if (!response.ok || !data.ok) throw new Error(data.message || '보관대기를 등록하지 못했습니다.');
 
-        const totalQuantity = selectedItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
-        state.dashboard = data.dashboard;
-        state.storage.complete = {
-          title: '보관대기 등록',
-          customerLabel: state.storage.selectedCustomerLabel,
-          quantity: totalQuantity,
-          time: formatDateTime(new Date().toISOString()) || '방금'
-        };
-        resetStorageForm({ keepComplete: true });
+        replaceOptimisticStorageEventIds(tempEventIds, data.events || []);
+        loadDashboard({ refresh: true }).catch(() => {});
       } catch (error) {
+        state.dashboard = dashboardSnapshot;
+        state.storage = storageSnapshot;
         state.storage.message = error.message || String(error);
+        state.storage.formOpen = true;
+        alert(error.message || String(error));
       } finally {
         state.busy = false;
         state.storage.loading = false;
@@ -3854,7 +4053,17 @@
       const ids = Array.isArray(eventIds) ? eventIds.filter(Boolean) : [eventIds].filter(Boolean);
       if (state.busy || !ids.length) return;
 
+      const dashboardSnapshot = snapshotDashboard();
+      const completedAt = new Date().toISOString();
       state.busy = true;
+      setStorageRequestStatusOptimistic(ids, 'completed');
+      state.storage.complete = {
+        title: '보관처리 완료',
+        customerLabel,
+        quantity: Number(quantity || 0),
+        time: formatDateTime(completedAt) || '방금'
+      };
+      render();
 
       try {
         const url = new URL('/api/buffer-action', location.origin);
@@ -3864,22 +4073,18 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             action: 'storage_request_complete',
-            eventIds: ids
+            eventIds: ids,
+            returnDashboard: false
           })
         });
         const data = await response.json();
         if (!response.ok || !data.ok) throw new Error(data.message || '보관완료 처리에 실패했습니다.');
 
-        state.dashboard = data.dashboard;
-        state.storage.complete = {
-          title: '보관처리 완료',
-          customerLabel,
-          quantity: Number(quantity || 0),
-          time: formatDateTime(new Date().toISOString()) || '방금'
-        };
+        loadDashboard({ refresh: true }).catch(() => {});
         window.navigator?.vibrate?.(12);
-        render();
       } catch (error) {
+        state.dashboard = dashboardSnapshot;
+        render();
         alert(error.message || String(error));
       } finally {
         state.busy = false;
@@ -3890,7 +4095,17 @@
       const ids = Array.isArray(eventIds) ? eventIds.filter(Boolean) : [eventIds].filter(Boolean);
       if (state.busy || !ids.length) return;
 
+      const dashboardSnapshot = snapshotDashboard();
+      const completedAt = new Date().toISOString();
       state.busy = true;
+      setStorageRequestStatusOptimistic(ids, 'picked_up');
+      state.storage.complete = {
+        title: '고객 픽업완료',
+        customerLabel,
+        quantity: Number(quantity || 0),
+        time: formatDateTime(completedAt) || '방금'
+      };
+      render();
 
       try {
         const url = new URL('/api/buffer-action', location.origin);
@@ -3900,22 +4115,18 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             action: 'storage_request_pickup_complete',
-            eventIds: ids
+            eventIds: ids,
+            returnDashboard: false
           })
         });
         const data = await response.json();
         if (!response.ok || !data.ok) throw new Error(data.message || '고객 픽업완료 처리에 실패했습니다.');
 
-        state.dashboard = data.dashboard;
-        state.storage.complete = {
-          title: '고객 픽업완료',
-          customerLabel,
-          quantity: Number(quantity || 0),
-          time: formatDateTime(new Date().toISOString()) || '방금'
-        };
+        loadDashboard({ refresh: true }).catch(() => {});
         window.navigator?.vibrate?.(12);
-        render();
       } catch (error) {
+        state.dashboard = dashboardSnapshot;
+        render();
         alert(error.message || String(error));
       } finally {
         state.busy = false;
@@ -4175,7 +4386,7 @@
           }
         };
         input.onkeydown = event => {
-          if (input.dataset.storageField === 'digits' && event.key === 'Enter') {
+          if ((input.dataset.storageField === 'digits' || input.dataset.storageField === 'productQuery') && event.key === 'Enter') {
             event.preventDefault();
             runStorageLookup();
           }
