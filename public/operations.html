@@ -1246,6 +1246,44 @@
       gap: 5px;
       align-items: center;
     }
+    .inbound-card {
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.9);
+    }
+    .inbound-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 14px;
+      bottom: 14px;
+      width: 4px;
+      border-radius: 0 999px 999px 0;
+      background: #d5dae3;
+    }
+    .inbound-card.storage-card-cold {
+      background: linear-gradient(135deg, rgba(6, 182, 212, .12), rgba(255,255,255,.98) 48%, #fff);
+      border-color: rgba(6, 182, 212, .20);
+      box-shadow: 0 10px 26px rgba(6, 182, 212, .07);
+    }
+    .inbound-card.storage-card-cold::before { background: linear-gradient(180deg, #22d3ee, #0891b2); }
+    .inbound-card.storage-card-frozen {
+      background: linear-gradient(135deg, rgba(59, 130, 246, .13), rgba(255,255,255,.98) 50%, #fff);
+      border-color: rgba(37, 99, 235, .20);
+      box-shadow: 0 10px 26px rgba(37, 99, 235, .075);
+    }
+    .inbound-card.storage-card-frozen::before { background: linear-gradient(180deg, #60a5fa, #2563eb); }
+    .inbound-card.storage-card-room {
+      background: linear-gradient(135deg, rgba(245, 158, 11, .13), rgba(255,255,255,.98) 50%, #fff);
+      border-color: rgba(245, 158, 11, .20);
+      box-shadow: 0 10px 26px rgba(245, 158, 11, .065);
+    }
+    .inbound-card.storage-card-room::before { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
+    .inbound-card.storage-card-cold .status-box { background: rgba(236, 254, 255, .78); }
+    .inbound-card.storage-card-frozen .status-box { background: rgba(239, 246, 255, .82); }
+    .inbound-card.storage-card-room .status-box { background: rgba(255, 251, 235, .82); }
+    .inbound-card.storage-card-cold .status-box.compact { background: linear-gradient(135deg, #e6fbff, #eaf8fb); }
+    .inbound-card.storage-card-frozen .status-box.compact { background: linear-gradient(135deg, #eaf3ff, #edf5ff); }
+    .inbound-card.storage-card-room .status-box.compact { background: linear-gradient(135deg, #fff8e7, #fff4d8); }
     .inbound-card .pack-badge {
       height: 22px;
       padding: 0 9px;
@@ -1887,6 +1925,10 @@
     function storageBadge(value) {
       const storage = value || '상온';
       return `<span class="storage ${storageClass(storage)}">${storageIconSvg(storage)}${esc(storage)}</span>`;
+    }
+
+    function storageCardClass(value) {
+      return `storage-card-${storageClass(value || '상온')}`;
     }
 
     function storageIconSvg(value) {
@@ -2738,7 +2780,7 @@
       const statusLabel = item.isReceivingComplete ? '입고완료' : '입고';
 
       return `
-        <article class="product-card inbound-card ${item.isReceivingComplete ? 'done' : ''}" data-id="${esc(item.id)}" data-receive-card="1">
+        <article class="product-card inbound-card ${storageCardClass(item.storageMethod)} ${item.isReceivingComplete ? 'done' : ''}" data-id="${esc(item.id)}" data-receive-card="1">
           <div class="thumb-wrap">
             <img class="thumb" src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy">
           </div>
@@ -2771,13 +2813,13 @@
             </div>
           </div>
           <div class="count-actions">
+            <button class="count-btn count-add count-major" data-action="count-20"><span>+20</span></button>
             <button class="count-btn count-add count-major" data-action="count-10"><span>+10</span></button>
             <button class="count-btn count-add" data-action="count-5"><span>+5</span></button>
             <button class="count-btn count-add" data-action="count-3"><span>+3</span></button>
+            <button class="count-btn count-add" data-action="count-2"><span>+2</span></button>
             <button class="count-btn count-add" data-action="count-1"><span>+1</span></button>
             <button class="count-btn count-minus" data-action="count-minus"><span>−1</span></button>
-            <button class="count-btn count-minus" data-action="count-minus-3"><span>−3</span></button>
-            <button class="count-btn count-minus" data-action="count-minus-5"><span>−5</span></button>
             <button class="count-btn count-reset" data-action="count-reset"><span>0으로</span></button>
             <button class="complete-btn ${item.isReceivingComplete ? 'done' : ''}" data-action="receive-complete">${item.isReceivingComplete ? '완료해제' : '체크완료'}</button>
           </div>
@@ -2830,7 +2872,7 @@
           return `
             <section class="stale-date-section primary">
               <div class="stale-date-head">
-                <strong>${esc(group.label || group.dateKey)}</strong>
+                <strong>${esc(group.label || group.dateKey)} 입고</strong>
                 <span>${number(group.count)}종 · ${number(group.totalQuantity)}개</span>
               </div>
               ${body}
@@ -2841,7 +2883,7 @@
         return `
           <details class="stale-date-section collapsed">
             <summary>
-              <span>${esc(group.label || group.dateKey)}</span>
+              <span>${esc(group.label || group.dateKey)} 입고</span>
               <strong>${number(group.count)}종 · ${number(group.totalQuantity)}개</strong>
             </summary>
             ${body}
@@ -3705,19 +3747,19 @@
             setBufferQtyValue(id, 1);
           }
 
-          if (action === 'count-10' || action === 'count-5' || action === 'count-3' || action === 'count-1' || action === 'count-minus' || action === 'count-minus-3' || action === 'count-minus-5' || action === 'count-reset') {
-            const qty = action === 'count-10'
-              ? 10
-              : action === 'count-5'
-                ? 5
-                : action === 'count-3'
-                  ? 3
-                  : action === 'count-1'
-                    ? 1
-                    : action === 'count-minus-3'
-                      ? -3
-                      : action === 'count-minus-5'
-                        ? -5
+          if (action === 'count-20' || action === 'count-10' || action === 'count-5' || action === 'count-3' || action === 'count-2' || action === 'count-1' || action === 'count-minus' || action === 'count-reset') {
+            const qty = action === 'count-20'
+              ? 20
+              : action === 'count-10'
+                ? 10
+                : action === 'count-5'
+                  ? 5
+                  : action === 'count-3'
+                    ? 3
+                    : action === 'count-2'
+                      ? 2
+                      : action === 'count-1'
+                        ? 1
                         : action === 'count-reset'
                           ? -Number(item.countedQuantity || 0)
                           : -1;
