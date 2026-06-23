@@ -2113,7 +2113,7 @@
   </div>
 
   <script>
-    const DASHBOARD_CACHE_KEY = 'opsDashboardCache:v4';
+    const DASHBOARD_CACHE_KEY = 'opsDashboardCache:v5';
     const SETTLEMENT_REVIEW_CHECKS_KEY = 'opsSettlementReviewChecks:v1';
 
     const state = {
@@ -2268,8 +2268,14 @@
       return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v3M12 17v3M4 12h3M17 12h3M6.6 6.6l2.1 2.1M15.3 15.3l2.1 2.1M17.4 6.6l-2.1 2.1M8.7 15.3l-2.1 2.1"/><circle cx="12" cy="12" r="4"/></svg>';
     }
 
+    const OPS_IMAGE_FALLBACK = '/store-purchase-icon.png';
+
     function imageUrl(item) {
-      return item.imageUrl || 'https://picsum.photos/seed/manman-ops/800/800';
+      return item.imageUrl || OPS_IMAGE_FALLBACK;
+    }
+
+    function imageFallbackAttr() {
+      return `onerror="this.onerror=null;this.src='${OPS_IMAGE_FALLBACK}'"`;
     }
 
     function packageUnitLabel(item) {
@@ -2500,7 +2506,7 @@
       return `
         <article class="product-card sales-card" data-id="${esc(item.id)}">
           <div class="thumb-wrap">
-            <img class="thumb" src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy">
+            <img class="thumb" src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy" ${imageFallbackAttr()}>
           </div>
           <div class="card-main">
             <div class="card-head">
@@ -2838,7 +2844,7 @@
       return `
         <div class="storage-queue-thumbs" aria-hidden="true">
           ${thumbs.map(product => `
-            <img src="${esc(imageUrl(product))}" alt="" loading="lazy">
+            <img src="${esc(imageUrl(product))}" alt="" loading="lazy" ${imageFallbackAttr()}>
           `).join('')}
         </div>
       `;
@@ -2877,7 +2883,7 @@
         <div class="storage-queue-products" aria-label="포함 상품 목록">
           ${products.map(product => `
             <div class="storage-queue-product">
-              <img src="${esc(imageUrl(product))}" alt="" loading="lazy">
+              <img src="${esc(imageUrl(product))}" alt="" loading="lazy" ${imageFallbackAttr()}>
               <div>
                 <div class="storage-queue-product-name">${esc(product.productName || '상품명 없음')}</div>
                 <div class="storage-queue-product-meta">
@@ -2958,7 +2964,7 @@
       return `
         <article class="storage-item ${selected ? 'selected' : ''} ${!canStore ? 'disabled' : ''}" data-storage-key="${esc(key)}" ${cardActionAttrs}>
           <div class="storage-item-pick" aria-hidden="true">
-            <img src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy">
+            <img src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy" ${imageFallbackAttr()}>
             <span class="storage-check">${selected ? '✓' : ''}</span>
           </div>
           <div class="storage-item-main">
@@ -3256,7 +3262,7 @@
       return `
         <article class="product-card inbound-card ${storageCardClass(item.storageMethod)} ${item.isReceivingComplete ? 'done' : ''}" data-id="${esc(item.id)}" data-receive-card="1">
           <div class="thumb-wrap">
-            <img class="thumb" src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy">
+            <img class="thumb" src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy" ${imageFallbackAttr()}>
           </div>
           <div class="inbound-main">
             <div class="card-head">
@@ -3308,7 +3314,7 @@
 
       return `
         <article class="stale-item" data-id="${esc(item.id)}">
-          <img class="stale-thumb" src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy">
+          <img class="stale-thumb" src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy" ${imageFallbackAttr()}>
           <div class="stale-copy">
             <div class="stale-name">${esc(item.productName)}</div>
             <div class="stale-meta">
@@ -3477,7 +3483,7 @@
 
       return `
         <article class="settlement-card ${categoryClass} ${isGroupItem && item.mismatch ? 'mismatch' : ''} ${isGroupItem && item.listRawMismatch ? 'raw-mismatch' : ''}">
-          <img src="${esc(image)}" alt="${esc(item.productName)}" loading="lazy">
+          <img src="${esc(image)}" alt="${esc(item.productName)}" loading="lazy" ${imageFallbackAttr()}>
           <div class="settlement-main">
             <div class="settlement-top">
               <div class="settlement-name">${esc(item.productName)}</div>

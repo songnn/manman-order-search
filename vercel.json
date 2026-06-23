@@ -24,11 +24,10 @@
       "regions": ["icn1"]
     }
   },
+  "env": {
+    "ORDER_CACHE_FREEZE": "1"
+  },
   "crons": [
-    {
-      "path": "/api/sync-orders",
-      "schedule": "*/5 * * * *"
-    },
     {
       "path": "/api/sync-ops-data",
       "schedule": "*/15 * * * *"

@@ -15,6 +15,15 @@ export default async function handler(req, res) {
       });
     }
 
+    if (process.env.ORDER_CACHE_FREEZE === '1') {
+      return res.status(200).json({
+        ok: true,
+        skipped: true,
+        frozen: true,
+        message: '주문 캐시 freeze 중이라 구글시트 동기화를 건너뜁니다.'
+      });
+    }
+
     const syncRunId = crypto.randomUUID();
 
     const rows = await readUnifiedRowsWithRowNumbers_();
