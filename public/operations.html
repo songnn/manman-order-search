@@ -2113,8 +2113,9 @@
   </div>
 
   <script>
-    const DASHBOARD_CACHE_KEY = 'opsDashboardCache:v6';
+    const DASHBOARD_CACHE_KEY = 'opsDashboardCache:v7';
     const SETTLEMENT_REVIEW_CHECKS_KEY = 'opsSettlementReviewChecks:v1';
+    const DASHBOARD_AUTO_REFRESH_MS = 5000;
 
     const state = {
       tab: 'sales',
@@ -2154,7 +2155,11 @@
       modalScrollY: 0,
       storageSwipeStart: null,
       storageLookupTimer: null,
-      busy: false
+      busy: false,
+      pendingWrites: 0,
+      dashboardLoading: false,
+      dashboardRefreshQueued: false,
+      lastDashboardRefreshAt: 0
     };
 
     if (state.token) localStorage.setItem('opsToken', state.token);
@@ -2309,17 +2314,92 @@
     }
 
     async function loadDashboard(options = {}) {
+      if (state.dashboardLoading) {
+        state.dashboardRefreshQueued = !options.auto;
+        return false;
+      }
+
+      if (options.auto && shouldDeferDashboardRefresh(options)) {
+        return false;
+      }
+
+      state.dashboardLoading = true;
       const url = new URL('/api/buffer-dashboard', location.origin);
       url.searchParams.set('token', state.token);
       if (options.refresh) url.searchParams.set('refresh', '1');
 
-      const response = await fetch(url);
-      const data = await response.json();
-      if (!response.ok || !data.ok) throw new Error(data.message || '데이터를 불러오지 못했습니다.');
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.message || '데이터를 불러오지 못했습니다.');
 
+        applyDashboardData(data);
+        return true;
+      } finally {
+        state.dashboardLoading = false;
+        if (state.dashboardRefreshQueued) {
+          state.dashboardRefreshQueued = false;
+          scheduleDashboardRefresh({ refresh: true, silent: true, force: true }, 300);
+        }
+      }
+    }
+
+    function applyDashboardData(data) {
       state.dashboard = data;
+      state.lastDashboardRefreshAt = Date.now();
       saveDashboardCache(data);
       render();
+    }
+
+    function shouldDeferDashboardRefresh(options = {}) {
+      if (options.force) return false;
+      if (document.visibilityState === 'hidden') return true;
+      if (state.busy || state.pendingWrites > 0 || state.storage.loading || state.storage.formOpen || state.storageSwipeStart) return true;
+      if (els.listModal && !els.listModal.hidden) return true;
+      if (document.querySelector('.qty-wheel-popover')) return true;
+
+      const active = document.activeElement;
+      if (!active || active === document.body) return false;
+
+      return Boolean(active.closest?.('input, textarea, select, [contenteditable="true"]'));
+    }
+
+    let scheduledDashboardRefresh = 0;
+
+    function scheduleDashboardRefresh(options = {}, delayMs = 300) {
+      if (scheduledDashboardRefresh) {
+        window.clearTimeout(scheduledDashboardRefresh);
+      }
+
+      scheduledDashboardRefresh = window.setTimeout(() => {
+        scheduledDashboardRefresh = 0;
+        loadDashboard(options).catch(error => {
+          if (options.silent) {
+            console.warn('dashboard refresh failed:', error);
+            return;
+          }
+
+          alert(error.message || String(error));
+        });
+      }, Math.max(0, Number(delayMs || 0)));
+    }
+
+    function startDashboardAutoRefresh() {
+      window.setInterval(() => {
+        loadDashboard({ refresh: true, silent: true, auto: true }).catch(error => {
+          console.warn('dashboard auto refresh failed:', error);
+        });
+      }, DASHBOARD_AUTO_REFRESH_MS);
+
+      window.addEventListener('focus', () => {
+        scheduleDashboardRefresh({ refresh: true, silent: true, auto: true }, 200);
+      });
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          scheduleDashboardRefresh({ refresh: true, silent: true, auto: true }, 200);
+        }
+      });
     }
 
     function saveDashboardCache(data) {
@@ -4068,8 +4148,7 @@
         const data = await response.json();
         if (!response.ok || !data.ok) throw new Error(data.message || '저장하지 못했습니다.');
 
-        state.dashboard = data.dashboard;
-        render();
+        applyDashboardData(data.dashboard);
       } catch (error) {
         updateItem(id, target => {
           target.bufferRemainingQuantity = Math.max(0, Number(target.bufferRemainingQuantity || 0) - delta);
@@ -4098,6 +4177,7 @@
       render();
       flashActionButton(id, action, quantity > 0 ? `+${number(quantity)}` : `${number(quantity)}`, quantity > 0 ? '' : 'minus');
 
+      state.pendingWrites += 1;
       const url = new URL('/api/buffer-action', location.origin);
       url.searchParams.set('token', state.token);
       fetch(url, {
@@ -4113,6 +4193,7 @@
         .then(async response => {
           const data = await response.json();
           if (!response.ok || !data.ok) throw new Error(data.message || '저장하지 못했습니다.');
+          scheduleDashboardRefresh({ refresh: true, silent: true, force: true }, 200);
         })
         .catch(error => {
           updateItem(id, target => {
@@ -4120,6 +4201,9 @@
           });
           render();
           alert(error.message || String(error));
+        })
+        .finally(() => {
+          state.pendingWrites = Math.max(0, state.pendingWrites - 1);
         });
     }
 
@@ -4131,6 +4215,7 @@
       render();
       flashActionButton(id, 'receive-complete', nextComplete ? '완료' : '해제', nextComplete ? '' : 'minus');
 
+      state.pendingWrites += 1;
       const url = new URL('/api/buffer-action', location.origin);
       url.searchParams.set('token', state.token);
       fetch(url, {
@@ -4146,6 +4231,7 @@
         .then(async response => {
           const data = await response.json();
           if (!response.ok || !data.ok) throw new Error(data.message || '저장하지 못했습니다.');
+          scheduleDashboardRefresh({ refresh: true, silent: true, force: true }, 200);
         })
         .catch(error => {
           updateItem(id, target => {
@@ -4153,6 +4239,9 @@
           });
           render();
           alert(error.message || String(error));
+        })
+        .finally(() => {
+          state.pendingWrites = Math.max(0, state.pendingWrites - 1);
         });
     }
 
@@ -4536,7 +4625,7 @@
         if (!response.ok || !data.ok) throw new Error(data.message || '보관대기를 등록하지 못했습니다.');
 
         replaceOptimisticStorageEventIds(tempEventIds, data.events || []);
-        loadDashboard({ refresh: true }).catch(() => {});
+        scheduleDashboardRefresh({ refresh: true, silent: true, force: true }, 200);
       } catch (error) {
         state.dashboard = dashboardSnapshot;
         state.storage = storageSnapshot;
@@ -4630,7 +4719,7 @@
         const data = await response.json();
         if (!response.ok || !data.ok) throw new Error(data.message || '보관완료 처리에 실패했습니다.');
 
-        loadDashboard({ refresh: true }).catch(() => {});
+        scheduleDashboardRefresh({ refresh: true, silent: true, force: true }, 200);
         window.navigator?.vibrate?.(12);
       } catch (error) {
         state.dashboard = dashboardSnapshot;
@@ -4672,7 +4761,7 @@
         const data = await response.json();
         if (!response.ok || !data.ok) throw new Error(data.message || '고객 픽업완료 처리에 실패했습니다.');
 
-        loadDashboard({ refresh: true }).catch(() => {});
+        scheduleDashboardRefresh({ refresh: true, silent: true, force: true }, 200);
         window.navigator?.vibrate?.(12);
       } catch (error) {
         state.dashboard = dashboardSnapshot;
@@ -5290,6 +5379,7 @@
         console.warn(error);
       }
     });
+    startDashboardAutoRefresh();
   </script>
 </body>
 </html>
