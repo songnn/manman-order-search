@@ -2113,7 +2113,12 @@
   </div>
 
   <script>
-    const DASHBOARD_CACHE_KEY = 'opsDashboardCache:v9';
+    const DASHBOARD_CACHE_KEY = 'opsDashboardCache:v10';
+    const DASHBOARD_CACHE_FALLBACK_KEYS = [
+      'opsDashboardCache:v9',
+      'opsDashboardCache:v8',
+      'opsDashboardCache:v7'
+    ];
     const SETTLEMENT_REVIEW_CHECKS_KEY = 'opsSettlementReviewChecks:v1';
     const DASHBOARD_AUTO_REFRESH_MS = 5000;
 
@@ -2420,14 +2425,26 @@
       }
     }
 
-    function restoreDashboardCache() {
+    function readDashboardCache(key) {
       try {
-        const cached = JSON.parse(localStorage.getItem(DASHBOARD_CACHE_KEY) || 'null');
-        if (!cached?.ok) return;
+        const cached = JSON.parse(localStorage.getItem(key) || 'null');
+        return cached?.ok ? cached : null;
+      } catch {
+        return null;
+      }
+    }
+
+    function restoreDashboardCache() {
+      const candidates = [DASHBOARD_CACHE_KEY, ...DASHBOARD_CACHE_FALLBACK_KEYS];
+
+      for (const key of candidates) {
+        const cached = readDashboardCache(key);
+        if (!cached) continue;
 
         state.dashboard = cached;
+        if (key !== DASHBOARD_CACHE_KEY) saveDashboardCache(cached);
         render();
-      } catch {
+        return;
       }
     }
 
@@ -2485,13 +2502,34 @@
 
       els.subtitle.textContent = `${data.storeName || '만만마켓'} · ${data.todayKey || ''}`;
       syncSalesDateSelection(data);
-      renderSales(data);
-      renderStorageRequest(data);
-      renderInbound(data);
-      renderSettlementReview(data);
+      setTab(state.tab);
       setSalesMode(state.salesMode);
       setManagementTab(state.managementTab);
+      renderActiveDashboardSections(data);
       bindControls();
+    }
+
+    function renderActiveDashboardSections(data) {
+      if (state.tab === 'sales') {
+        if (state.salesMode === 'storage') {
+          renderStorageRequest(data);
+        } else {
+          renderSales(data);
+        }
+        return;
+      }
+
+      if (state.managementTab === 'stale') {
+        renderStale(data);
+        return;
+      }
+
+      if (state.managementTab === 'settlement') {
+        renderSettlementReview(data);
+        return;
+      }
+
+      renderInboundReceiving(data);
     }
 
     function renderMetric(label, value, sub = '') {
@@ -3201,8 +3239,20 @@
       const item = findItem(id);
       if (!item) return;
 
-      const rows = Array.isArray(item.orderCustomers) ? item.orderCustomers : [];
+      const rows = getOrderCustomersForItem(item);
       openModal('공구주문 고객', item.productName || '', renderOrderCustomersRows(rows));
+    }
+
+    function getOrderCustomerKey(item) {
+      if (!item) return '';
+      return item.orderCustomerKey || `${item.productKey || ''}::${item.inboundDateKey || ''}`;
+    }
+
+    function getOrderCustomersForItem(item) {
+      const key = getOrderCustomerKey(item);
+      const rows = key ? state.dashboard?.orderCustomersByKey?.[key] : null;
+      if (Array.isArray(rows)) return rows;
+      return Array.isArray(item?.orderCustomers) ? item.orderCustomers : [];
     }
 
     function renderOrderCustomersRows(rows = []) {
@@ -3247,6 +3297,11 @@
     }
 
     function renderInbound(data) {
+      renderInboundReceiving(data);
+      renderStale(data);
+    }
+
+    function renderInboundReceiving(data) {
       const todayItems = data.inboundItems || [];
       const fallbackItems = !todayItems.length ? (data.latestInboundItems || []) : [];
       const sourceItems = todayItems.length ? todayItems : fallbackItems;
@@ -3257,7 +3312,9 @@
         renderOpsSearch('inbound', state.inboundQuery, '입고 상품명 바로 검색'),
         `<div class="ops-results" data-ops-results="inbound">${renderInboundResults(data)}</div>`
       ].join('');
+    }
 
+    function renderStale(data) {
       els.staleList.innerHTML = renderStaleGroups(data);
     }
 
@@ -3417,7 +3474,7 @@
     }
 
     function renderStaleResults(data) {
-      const groups = (data.staleDateGroups || [])
+      const groups = getStaleDateGroups(data)
         .map(group => {
           const items = (group.items || []).filter(item => matchesProductQuery(item, state.staleQuery));
           return {
@@ -3463,6 +3520,45 @@
           </details>
         `;
       }).join('');
+    }
+
+    function getStaleDateGroups(data) {
+      if (Array.isArray(data.staleDateGroups) && data.staleDateGroups.length) {
+        return data.staleDateGroups;
+      }
+
+      const cutoffDateKey = data.staleCutoffDateKey || '';
+      const startDateKey = data.staleHistoryStartDateKey || cutoffDateKey;
+      const grouped = new Map();
+
+      getSalesAllItems(data)
+        .filter(item =>
+          item.inboundDateKey &&
+          item.inboundDateKey >= startDateKey &&
+          item.inboundDateKey <= cutoffDateKey
+        )
+        .forEach(item => {
+          const dateKey = item.inboundDateKey || '';
+          const group = grouped.get(dateKey) || {
+            dateKey,
+            label: compactDateWeekdayLabel(dateKey),
+            items: [],
+            count: 0,
+            totalQuantity: 0
+          };
+
+          group.items.push(item);
+          group.count += 1;
+          group.totalQuantity += Number(item.inboundQuantity || 0);
+          grouped.set(dateKey, group);
+        });
+
+      return Array.from(grouped.values())
+        .map(group => ({
+          ...group,
+          items: group.items.sort((a, b) => String(a.productName || '').localeCompare(String(b.productName || ''), 'ko'))
+        }))
+        .sort((a, b) => String(b.dateKey || '').localeCompare(String(a.dateKey || '')));
     }
 
     function renderSettlementReview(data) {
@@ -5267,14 +5363,33 @@
       runReceivingComplete(id, !item.isReceivingComplete);
     });
 
-    els.salesTab.addEventListener('click', () => setTab('sales'));
-    els.inboundTab.addEventListener('click', () => setTab('inbound'));
-    els.bufferModeTab.addEventListener('click', () => setSalesMode('buffer'));
-    els.storageModeTab.addEventListener('click', () => setSalesMode('storage'));
-    els.receivingSubTab.addEventListener('click', () => setManagementTab('receiving'));
-    els.staleSubTab.addEventListener('click', () => setManagementTab('stale'));
+    els.salesTab.addEventListener('click', () => {
+      setTab('sales');
+      render();
+    });
+    els.inboundTab.addEventListener('click', () => {
+      setTab('inbound');
+      render();
+    });
+    els.bufferModeTab.addEventListener('click', () => {
+      setSalesMode('buffer');
+      render();
+    });
+    els.storageModeTab.addEventListener('click', () => {
+      setSalesMode('storage');
+      render();
+    });
+    els.receivingSubTab.addEventListener('click', () => {
+      setManagementTab('receiving');
+      render();
+    });
+    els.staleSubTab.addEventListener('click', () => {
+      setManagementTab('stale');
+      render();
+    });
     els.settlementSubTab.addEventListener('click', () => {
       setManagementTab('settlement');
+      render();
       ensureSettlementReviewLoaded();
     });
     els.refreshBtn.addEventListener('click', () => loadDashboard().catch(error => alert(error.message)));
