@@ -21,7 +21,9 @@ export default async function handler(req, res) {
       await syncInventorySheets();
     }
 
-    const data = await getOperationsDashboardData();
+    const data = await getOperationsDashboardData({
+      includeSettlement: String(req.query?.settlement || '') === '1'
+    });
     return res.status(200).json(data);
   } catch (error) {
     console.error('buffer-dashboard error:', error);

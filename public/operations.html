@@ -2113,7 +2113,7 @@
   </div>
 
   <script>
-    const DASHBOARD_CACHE_KEY = 'opsDashboardCache:v8';
+    const DASHBOARD_CACHE_KEY = 'opsDashboardCache:v9';
     const SETTLEMENT_REVIEW_CHECKS_KEY = 'opsSettlementReviewChecks:v1';
     const DASHBOARD_AUTO_REFRESH_MS = 5000;
 
@@ -2158,8 +2158,9 @@
       busy: false,
       pendingWrites: 0,
       dashboardLoading: false,
-      dashboardRefreshQueued: false,
-      lastDashboardRefreshAt: 0
+      dashboardRefreshQueued: null,
+      lastDashboardRefreshAt: 0,
+      settlementLoading: false
     };
 
     if (state.token) localStorage.setItem('opsToken', state.token);
@@ -2315,7 +2316,7 @@
 
     async function loadDashboard(options = {}) {
       if (state.dashboardLoading) {
-        state.dashboardRefreshQueued = !options.auto;
+        if (!options.auto) state.dashboardRefreshQueued = { ...options };
         return false;
       }
 
@@ -2327,6 +2328,7 @@
       const url = new URL('/api/buffer-dashboard', location.origin);
       url.searchParams.set('token', state.token);
       if (options.refresh) url.searchParams.set('refresh', '1');
+      if (options.includeSettlement) url.searchParams.set('settlement', '1');
 
       try {
         const response = await fetch(url);
@@ -2338,13 +2340,22 @@
       } finally {
         state.dashboardLoading = false;
         if (state.dashboardRefreshQueued) {
-          state.dashboardRefreshQueued = false;
-          scheduleDashboardRefresh({ refresh: true, silent: true, force: true }, 300);
+          const queuedOptions = state.dashboardRefreshQueued;
+          state.dashboardRefreshQueued = null;
+          scheduleDashboardRefresh({ ...queuedOptions, silent: true, force: true }, 300);
         }
       }
     }
 
     function applyDashboardData(data) {
+      if (!data.settlementReview && state.dashboard?.settlementReview) {
+        data = {
+          ...data,
+          settlementReview: state.dashboard.settlementReview,
+          settlementReviewLoaded: true
+        };
+      }
+
       state.dashboard = data;
       state.lastDashboardRefreshAt = Date.now();
       saveDashboardCache(data);
@@ -2386,18 +2397,18 @@
 
     function startDashboardAutoRefresh() {
       window.setInterval(() => {
-        loadDashboard({ refresh: true, silent: true, auto: true }).catch(error => {
+        loadDashboard({ silent: true, auto: true }).catch(error => {
           console.warn('dashboard auto refresh failed:', error);
         });
       }, DASHBOARD_AUTO_REFRESH_MS);
 
       window.addEventListener('focus', () => {
-        scheduleDashboardRefresh({ refresh: true, silent: true, auto: true }, 200);
+        scheduleDashboardRefresh({ silent: true, auto: true }, 200);
       });
 
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
-          scheduleDashboardRefresh({ refresh: true, silent: true, auto: true }, 200);
+          scheduleDashboardRefresh({ silent: true, auto: true }, 200);
         }
       });
     }
@@ -3190,35 +3201,23 @@
       const item = findItem(id);
       if (!item) return;
 
-      openModal('공구주문 고객', item.productName || '', '<div class="empty">공구주문 목록을 불러오는 중입니다.</div>');
+      const rows = Array.isArray(item.orderCustomers) ? item.orderCustomers : [];
+      openModal('공구주문 고객', item.productName || '', renderOrderCustomersRows(rows));
+    }
 
-      try {
-        const url = new URL('/api/ops-order-customers', location.origin);
-        url.searchParams.set('token', state.token);
-        url.searchParams.set('productKey', item.productKey || '');
-        url.searchParams.set('productName', item.productName || '');
-        url.searchParams.set('dateKey', item.inboundDateKey || '');
-
-        const response = await fetch(url);
-        const data = await response.json();
-        if (!response.ok || !data.ok) throw new Error(data.message || '공구주문 목록을 불러오지 못했습니다.');
-
-        const rows = data.customers || [];
-        openModal('공구주문 고객', item.productName || '', rows.length
-          ? rows.map(row => `
-              <div class="sheet-row">
-                <div>
-                  <div class="sheet-row-name">${esc(row.customerLabel || '닉네임 비어있음')}</div>
-                  <div class="sheet-row-time">${esc(row.orderDateText || '')}${row.pickupDateText ? ` · 픽업 ${esc(row.pickupDateText)}` : ''}</div>
-                  ${row.noteText ? `<div class="sheet-row-note important">${esc(row.noteText)}</div>` : ''}
-                </div>
-                <div class="sheet-row-qty">${number(row.quantity)}</div>
+    function renderOrderCustomersRows(rows = []) {
+      return rows.length
+        ? rows.map(row => `
+            <div class="sheet-row">
+              <div>
+                <div class="sheet-row-name">${esc(row.customerLabel || '닉네임 비어있음')}</div>
+                <div class="sheet-row-time">${esc(row.orderDateText || '')}${row.pickupDateText ? ` · 픽업 ${esc(row.pickupDateText)}` : ''}</div>
+                ${row.noteText ? `<div class="sheet-row-note important">${esc(row.noteText)}</div>` : ''}
               </div>
-            `).join('')
-          : '<div class="empty">공구주문 고객이 없습니다.</div>');
-      } catch (error) {
-        openModal('공구주문 고객', item.productName || '', `<div class="empty">${esc(error.message || String(error))}</div>`);
-      }
+              <div class="sheet-row-qty">${number(row.quantity)}</div>
+            </div>
+          `).join('')
+        : '<div class="empty">공구주문 고객이 없습니다.</div>';
     }
 
     function closeListModal() {
@@ -3467,6 +3466,11 @@
     }
 
     function renderSettlementReview(data) {
+      if (!data.settlementReview) {
+        els.settlementReviewRoot.innerHTML = `<div class="empty">${state.settlementLoading ? '정산 데이터를 불러오는 중입니다.' : '정산 탭을 열면 데이터를 불러옵니다.'}</div>`;
+        return;
+      }
+
       const review = data.settlementReview || {};
       const dateGroups = review.dateGroups || [];
       if (!dateGroups.length) {
@@ -3495,6 +3499,21 @@
         </div>
         <div data-settlement-results>${renderSettlementResults(data)}</div>
       `;
+    }
+
+    async function ensureSettlementReviewLoaded() {
+      if (state.dashboard?.settlementReview || state.settlementLoading) return;
+
+      state.settlementLoading = true;
+      renderSettlementReview(state.dashboard || {});
+
+      try {
+        await loadDashboard({ includeSettlement: true, silent: true, force: true });
+      } catch (error) {
+        els.settlementReviewRoot.innerHTML = `<div class="empty">${esc(error.message || String(error))}</div>`;
+      } finally {
+        state.settlementLoading = false;
+      }
     }
 
     function renderSettlementResults(data) {
@@ -4193,7 +4212,7 @@
         .then(async response => {
           const data = await response.json();
           if (!response.ok || !data.ok) throw new Error(data.message || '저장하지 못했습니다.');
-          scheduleDashboardRefresh({ refresh: true, silent: true, force: true }, 200);
+          scheduleDashboardRefresh({ silent: true, force: true }, 200);
         })
         .catch(error => {
           updateItem(id, target => {
@@ -4231,7 +4250,7 @@
         .then(async response => {
           const data = await response.json();
           if (!response.ok || !data.ok) throw new Error(data.message || '저장하지 못했습니다.');
-          scheduleDashboardRefresh({ refresh: true, silent: true, force: true }, 200);
+          scheduleDashboardRefresh({ silent: true, force: true }, 200);
         })
         .catch(error => {
           updateItem(id, target => {
@@ -4625,7 +4644,7 @@
         if (!response.ok || !data.ok) throw new Error(data.message || '보관대기를 등록하지 못했습니다.');
 
         replaceOptimisticStorageEventIds(tempEventIds, data.events || []);
-        scheduleDashboardRefresh({ refresh: true, silent: true, force: true }, 200);
+        scheduleDashboardRefresh({ silent: true, force: true }, 200);
       } catch (error) {
         state.dashboard = dashboardSnapshot;
         state.storage = storageSnapshot;
@@ -4719,7 +4738,7 @@
         const data = await response.json();
         if (!response.ok || !data.ok) throw new Error(data.message || '보관완료 처리에 실패했습니다.');
 
-        scheduleDashboardRefresh({ refresh: true, silent: true, force: true }, 200);
+        scheduleDashboardRefresh({ silent: true, force: true }, 200);
         window.navigator?.vibrate?.(12);
       } catch (error) {
         state.dashboard = dashboardSnapshot;
@@ -4761,7 +4780,7 @@
         const data = await response.json();
         if (!response.ok || !data.ok) throw new Error(data.message || '고객 픽업완료 처리에 실패했습니다.');
 
-        scheduleDashboardRefresh({ refresh: true, silent: true, force: true }, 200);
+        scheduleDashboardRefresh({ silent: true, force: true }, 200);
         window.navigator?.vibrate?.(12);
       } catch (error) {
         state.dashboard = dashboardSnapshot;
@@ -5254,8 +5273,11 @@
     els.storageModeTab.addEventListener('click', () => setSalesMode('storage'));
     els.receivingSubTab.addEventListener('click', () => setManagementTab('receiving'));
     els.staleSubTab.addEventListener('click', () => setManagementTab('stale'));
-    els.settlementSubTab.addEventListener('click', () => setManagementTab('settlement'));
-    els.refreshBtn.addEventListener('click', () => loadDashboard({ refresh: true }).catch(error => alert(error.message)));
+    els.settlementSubTab.addEventListener('click', () => {
+      setManagementTab('settlement');
+      ensureSettlementReviewLoaded();
+    });
+    els.refreshBtn.addEventListener('click', () => loadDashboard().catch(error => alert(error.message)));
     els.listModalClose.addEventListener('click', closeListModal);
     els.listModal.addEventListener('click', event => {
       if (event.target === els.listModal) closeListModal();
