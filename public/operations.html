@@ -1550,14 +1550,53 @@
     }
     .inbound-card .complete-btn {
       grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
       background: #111827;
       box-shadow: 0 10px 20px rgba(17,24,39,.13);
       font-size: 12px;
       white-space: nowrap;
+      padding: 0 14px;
     }
     .inbound-card .complete-btn.done {
       background: #08a05c;
       box-shadow: 0 10px 20px rgba(8,160,92,.14);
+    }
+    .inbound-card .complete-main {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: left;
+      font-size: 13px;
+      line-height: 1;
+      font-weight: 600 !important;
+    }
+    .inbound-card .complete-sub {
+      min-width: 0;
+      color: rgba(255,255,255,.76);
+      font-size: 10px;
+      line-height: 1;
+      font-weight: 500 !important;
+    }
+    .inbound-card.done {
+      border-color: rgba(8,160,92,.28) !important;
+      background: linear-gradient(135deg, #fff, #f3fff8) !important;
+      box-shadow: 0 14px 32px rgba(8,160,92,.12) !important;
+    }
+    .inbound-card.done::before {
+      background: linear-gradient(180deg, #34d399, #08a05c) !important;
+    }
+    .inbound-card.done::after {
+      content: none;
+      display: none;
+    }
+    .inbound-card.done .status-box {
+      background: rgba(237, 253, 244, .82);
+    }
+    .inbound-card.done .status-value {
+      color: #07824d;
     }
     .buffer-box.interactive {
       border: 0;
@@ -3393,7 +3432,7 @@
       const counted = Number(item.countedQuantity || 0);
       const inbound = Number(item.inboundQuantity || 0);
       const remainingToCount = Math.max(0, inbound - counted);
-      const statusLabel = item.isReceivingComplete ? '입고완료' : '입고';
+      const statusLabel = item.isReceivingComplete ? '완료' : '입고';
 
       return `
         <article class="product-card inbound-card ${storageCardClass(item.storageMethod)} ${item.isReceivingComplete ? 'done' : ''}" data-id="${esc(item.id)}" data-receive-card="1">
@@ -3437,10 +3476,52 @@
             <button class="count-btn count-add" data-action="count-1"><span>+1</span></button>
             <button class="count-btn count-minus" data-action="count-minus"><span>−1</span></button>
             <button class="count-btn count-reset" data-action="count-reset" aria-label="카운팅 초기화"><span>C</span></button>
-            <button class="complete-btn ${item.isReceivingComplete ? 'done' : ''}" data-action="receive-complete">${item.isReceivingComplete ? '완료해제' : '체크완료'}</button>
+            ${renderReceivingCompleteButton(item, counted, inbound)}
           </div>
         </article>
       `;
+    }
+
+    function renderReceivingCompleteButton(item, counted, inbound) {
+      const complete = Boolean(item.isReceivingComplete);
+      const mainText = complete ? '입고완료됨' : '입고완료 처리';
+      const subText = complete ? '완료 취소' : `${number(counted)}/${number(inbound)}`;
+
+      return `
+        <button class="complete-btn ${complete ? 'done' : ''}" data-action="receive-complete" aria-label="${complete ? '입고완료 취소' : '입고완료 처리'}">
+          <span class="complete-main">${esc(mainText)}</span>
+          <span class="complete-sub">${esc(subText)}</span>
+        </button>
+      `;
+    }
+
+    function renderDashboardItemCard(id) {
+      const item = findItem(id);
+      const card = document.querySelector(`[data-id="${CSS.escape(id)}"]`);
+      if (!item || !card) {
+        render();
+        return;
+      }
+
+      if (card.matches('[data-receive-card="1"]')) {
+        card.outerHTML = renderInboundCard(item);
+        refreshReceivingSummary();
+        bindControls();
+        return;
+      }
+
+      if (card.classList.contains('sales-card')) {
+        card.outerHTML = renderSalesCard(item);
+        bindControls();
+        return;
+      }
+
+      render();
+    }
+
+    function refreshReceivingSummary() {
+      if (!state.dashboard || state.tab !== 'inbound' || state.managementTab !== 'receiving') return;
+      renderInboundSummary(state.dashboard, getInboundSearchItems(state.dashboard));
     }
 
     function renderStaleItem(item) {
@@ -4227,7 +4308,7 @@
       return `${raw} ${number(quantity)}개`;
     }
 
-    async function runBufferDelta(button, id, delta, actorMemo) {
+    async function runBufferDelta(button, id, delta, actorMemoInput) {
       if (state.busy) return;
 
       const item = findItem(id);
@@ -4244,10 +4325,11 @@
         target.bufferRemainingQuantity = Math.max(0, Number(target.bufferRemainingQuantity || 0) + delta);
         recomputeItemQuantities(target);
       });
-      render();
+      renderDashboardItemCard(id);
       flashActionButton(id, delta < 0 ? 'buffer-use' : 'buffer-plus', delta > 0 ? `+${number(delta)}` : `${number(delta)}`, delta < 0 ? 'minus' : '');
 
       try {
+        const actorMemo = await Promise.resolve(actorMemoInput);
         const url = new URL('/api/buffer-action', location.origin);
         url.searchParams.set('token', state.token);
         const response = await fetch(url, {
@@ -4257,19 +4339,20 @@
             action: 'buffer_delta',
             inventoryStableId: id,
             deltaQuantity: delta,
-            actorMemo
+            actorMemo,
+            returnDashboard: false
           })
         });
         const data = await response.json();
         if (!response.ok || !data.ok) throw new Error(data.message || '저장하지 못했습니다.');
 
-        applyDashboardData(data.dashboard);
+        scheduleDashboardRefresh({ silent: true, force: true }, 250);
       } catch (error) {
         updateItem(id, target => {
           target.bufferRemainingQuantity = Math.max(0, Number(target.bufferRemainingQuantity || 0) - delta);
           recomputeItemQuantities(target);
         });
-        render();
+        renderDashboardItemCard(id);
         alert(error.message || String(error));
       } finally {
         state.busy = false;
@@ -4289,7 +4372,7 @@
       updateItem(id, target => {
         target.countedQuantity = Math.max(0, Number(target.countedQuantity || 0) + quantity);
       });
-      render();
+      renderDashboardItemCard(id);
       flashActionButton(id, action, quantity > 0 ? `+${number(quantity)}` : `${number(quantity)}`, quantity > 0 ? '' : 'minus');
 
       state.pendingWrites += 1;
@@ -4314,7 +4397,7 @@
           updateItem(id, target => {
             target.countedQuantity = Math.max(0, Number(target.countedQuantity || 0) - quantity);
           });
-          render();
+          renderDashboardItemCard(id);
           alert(error.message || String(error));
         })
         .finally(() => {
@@ -4326,9 +4409,10 @@
       const previous = Boolean(findItem(id)?.isReceivingComplete);
       updateItem(id, target => {
         target.isReceivingComplete = Boolean(nextComplete);
+        target.completedAt = nextComplete ? (target.completedAt || new Date().toISOString()) : '';
       });
-      render();
-      flashActionButton(id, 'receive-complete', nextComplete ? '완료' : '해제', nextComplete ? '' : 'minus');
+      renderDashboardItemCard(id);
+      flashActionButton(id, 'receive-complete', nextComplete ? '완료' : '취소', nextComplete ? '' : 'minus');
 
       state.pendingWrites += 1;
       const url = new URL('/api/buffer-action', location.origin);
@@ -4352,7 +4436,7 @@
           updateItem(id, target => {
             target.isReceivingComplete = previous;
           });
-          render();
+          renderDashboardItemCard(id);
           alert(error.message || String(error));
         })
         .finally(() => {
@@ -5225,22 +5309,20 @@
           }
 
           if (action === 'buffer-use') {
+            if (state.busy) return;
             const quantity = readBufferQuantity(card, id);
-            button.disabled = true;
-            try {
-              const actorMemo = await resolveBufferActor(card, id, quantity);
-              if (actorMemo) {
-                await runBufferDelta(button, id, -quantity, actorMemo);
-                setBufferQtyValue(id, 1);
-              }
-            } catch (error) {
-              alert(error.message || String(error));
-            } finally {
-              button.disabled = false;
+            const currentBuffer = Number(item.bufferRemainingQuantity || 0);
+            if (currentBuffer < quantity) {
+              alert(`버퍼잔여가 ${number(currentBuffer)}개입니다.`);
+              return;
             }
+            const actorMemo = resolveBufferActor(card, id, quantity);
+            runBufferDelta(button, id, -quantity, actorMemo);
+            setBufferQtyValue(id, 1);
           }
 
           if (action === 'buffer-plus') {
+            if (state.busy) return;
             const quantity = readBufferQuantity(card, id);
             const rawCustomer = readBufferCustomer(card, id);
             const actorMemo = rawCustomer ? `${rawCustomer} 복구 ${number(quantity)}개` : `버퍼복구 ${number(quantity)}개`;
