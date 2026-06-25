@@ -27,7 +27,7 @@
   "crons": [
     {
       "path": "/api/sync-orders",
-      "schedule": "*/15 * * * *"
+      "schedule": "*/5 * * * *"
     },
     {
       "path": "/api/sync-ops-data",
