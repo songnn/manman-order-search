@@ -59,20 +59,24 @@ export default async function handler(req, res) {
 
     if (deleteError) throw deleteError;
 
+    const includeAnalytics = isTruthy_(req.query?.analytics ?? req.body?.analytics);
     let productCategorySync = { ok: false, skipped: true };
-    try {
-      productCategorySync = await syncProductCategoryCache();
-    } catch (error) {
-      console.warn('product category sync skipped:', error.message);
-      productCategorySync = { ok: false, error: error.message };
-    }
-
     let kakaoCsvReanalysis = { ok: false, skipped: true };
-    try {
-      kakaoCsvReanalysis = await reanalyzeKakaoCsvMatches({ maxUploads: 20 });
-    } catch (error) {
-      console.warn('kakao csv reanalysis skipped:', error.message);
-      kakaoCsvReanalysis = { ok: false, error: error.message };
+
+    if (includeAnalytics) {
+      try {
+        productCategorySync = await syncProductCategoryCache();
+      } catch (error) {
+        console.warn('product category sync skipped:', error.message);
+        productCategorySync = { ok: false, error: error.message };
+      }
+
+      try {
+        kakaoCsvReanalysis = await reanalyzeKakaoCsvMatches({ maxUploads: 20 });
+      } catch (error) {
+        console.warn('kakao csv reanalysis skipped:', error.message);
+        kakaoCsvReanalysis = { ok: false, error: error.message };
+      }
     }
 
     return res.status(200).json({
@@ -90,6 +94,10 @@ export default async function handler(req, res) {
       message: error.message
     });
   }
+}
+
+function isTruthy_(value) {
+  return ['1', 'true', 'yes', 'y'].includes(String(value || '').trim().toLowerCase());
 }
 
 function toOrderCacheRecord_(row, syncRunId) {
