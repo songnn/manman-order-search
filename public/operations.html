@@ -1478,12 +1478,34 @@
     .inbound-card.storage-card-frozen .status-box.compact { background: linear-gradient(135deg, #eaf3ff, #edf5ff); }
     .inbound-card.storage-card-room .status-box.compact { background: linear-gradient(135deg, #fff8e7, #fff4d8); }
     .inbound-card .pack-badge {
-      height: 22px;
-      padding: 0 9px;
-      border: 1px solid rgba(200, 137, 16, .18);
-      background: linear-gradient(135deg, #fff7df, #fff1bd);
-      color: #9c6800;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.72);
+      min-height: 28px;
+      height: auto;
+      gap: 6px;
+      padding: 3px 8px 3px 10px;
+      border: 1px solid rgba(217, 119, 6, .36);
+      background: linear-gradient(135deg, #fff1b8, #ffd36a);
+      color: #7c4300;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.78), 0 8px 18px rgba(245, 158, 11, .16);
+    }
+    .inbound-card .pack-label {
+      line-height: 1;
+    }
+    .inbound-card .pack-value {
+      min-width: 20px;
+      height: 20px;
+      display: inline-grid;
+      place-items: center;
+      padding: 0 6px;
+      border-radius: 999px;
+      background: #151517;
+      color: #fff;
+      font-size: 13px;
+      line-height: 1;
+      font-weight: 700;
+      box-shadow: 0 3px 8px rgba(21, 21, 23, .18);
     }
     .inbound-card .soft-tag {
       height: 22px;
@@ -3508,7 +3530,7 @@
             <div class="tag-row">
               ${storageBadge(item.storageMethod)}
               ${salesTypeBadge(item.salesType)}
-              ${packageUnit ? `<span class="pack-badge">포장 ${esc(packageUnit)}</span>` : ''}
+              ${packageUnit ? `<span class="pack-badge"><span class="pack-label">포장</span><strong class="pack-value">${esc(packageUnit)}</strong></span>` : ''}
               <span class="soft-tag">본사버퍼 ${number(item.hqBufferQuantity)}</span>
               <span class="soft-tag">지점버퍼 ${number(item.ourBufferQuantity)}</span>
             </div>
