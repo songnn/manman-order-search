@@ -2160,6 +2160,7 @@
     ];
     const SETTLEMENT_REVIEW_CHECKS_KEY = 'opsSettlementReviewChecks:v1';
     const DASHBOARD_AUTO_REFRESH_MS = 5000;
+    const OPTIMISTIC_ITEM_LOCK_MS = 12000;
 
     const state = {
       tab: 'sales',
@@ -2201,6 +2202,7 @@
       storageLookupTimer: null,
       busy: false,
       pendingWrites: 0,
+      optimisticItemLocks: {},
       dashboardLoading: false,
       dashboardRefreshQueued: null,
       lastDashboardRefreshAt: 0,
@@ -2400,10 +2402,68 @@
         };
       }
 
+      applyOptimisticItemLocks(data);
       state.dashboard = data;
       state.lastDashboardRefreshAt = Date.now();
       saveDashboardCache(data);
       render();
+    }
+
+    function rememberOptimisticItemState(id, updates = {}) {
+      if (!id) return;
+
+      const now = Date.now();
+      state.optimisticItemLocks[id] = {
+        ...(state.optimisticItemLocks[id] || {}),
+        ...updates,
+        updatedAt: now,
+        expiresAt: now + OPTIMISTIC_ITEM_LOCK_MS
+      };
+    }
+
+    function applyOptimisticItemLocks(data) {
+      const locks = state.optimisticItemLocks || {};
+      const now = Date.now();
+
+      Object.entries(locks).forEach(([id, lock]) => {
+        if (!lock || Number(lock.expiresAt || 0) <= now) {
+          delete locks[id];
+          return;
+        }
+
+        const targets = [];
+        forEachDashboardItem(data, item => {
+          if (item.id === id) targets.push(item);
+        });
+        if (!targets.length) return;
+
+        let receivingCompleteSettled = true;
+        if (Object.prototype.hasOwnProperty.call(lock, 'isReceivingComplete')) {
+          const expectedComplete = Boolean(lock.isReceivingComplete);
+          receivingCompleteSettled = targets.every(item => Boolean(item.isReceivingComplete) === expectedComplete);
+          if (!receivingCompleteSettled) {
+            targets.forEach(item => {
+              item.isReceivingComplete = expectedComplete;
+              item.completedAt = expectedComplete ? (item.completedAt || lock.completedAt || '') : '';
+            });
+          }
+        }
+
+        let countedSettled = true;
+        if (Object.prototype.hasOwnProperty.call(lock, 'countedQuantity')) {
+          const expectedCount = Number(lock.countedQuantity || 0);
+          countedSettled = targets.every(item => Number(item.countedQuantity || 0) === expectedCount);
+          if (!countedSettled) {
+            targets.forEach(item => {
+              item.countedQuantity = expectedCount;
+            });
+          }
+        }
+
+        if (receivingCompleteSettled && countedSettled) {
+          delete locks[id];
+        }
+      });
     }
 
     function shouldDeferDashboardRefresh(options = {}) {
@@ -3989,19 +4049,22 @@
 
     function findItem(id) {
       const data = state.dashboard || {};
-      return [
-        ...(data.storageRequestItems || []),
-        ...(data.salesItems || []),
-        ...(data.salesAllItems || []),
-        ...(data.inboundItems || []),
-        ...(data.latestInboundItems || []),
-        ...(data.staleItems || []),
-        ...(data.staleDateGroups || []).flatMap(group => group.items || [])
-      ].find(item => item.id === id);
+      let found = null;
+      forEachDashboardItem(data, item => {
+        if (!found && item.id === id) found = item;
+      });
+      return found;
     }
 
     function updateItem(id, update) {
       const data = state.dashboard || {};
+      forEachDashboardItem(data, item => {
+        if (item.id === id) update(item);
+      });
+    }
+
+    function forEachDashboardItem(data, callback) {
+      data = data || {};
       const groups = [
         data.storageRequestItems,
         data.salesItems,
@@ -4013,9 +4076,7 @@
       ];
 
       groups.forEach(items => {
-        (items || []).forEach(item => {
-          if (item.id === id) update(item);
-        });
+        (items || []).forEach(item => callback(item));
       });
     }
 
@@ -4369,9 +4430,12 @@
       if (!quantity) return;
 
       window.navigator?.vibrate?.(quantity > 0 ? 10 : [8, 22, 8]);
+      let expectedCount = current;
       updateItem(id, target => {
         target.countedQuantity = Math.max(0, Number(target.countedQuantity || 0) + quantity);
+        expectedCount = Number(target.countedQuantity || 0);
       });
+      rememberOptimisticItemState(id, { countedQuantity: expectedCount });
       renderDashboardItemCard(id);
       flashActionButton(id, action, quantity > 0 ? `+${number(quantity)}` : `${number(quantity)}`, quantity > 0 ? '' : 'minus');
 
@@ -4391,12 +4455,15 @@
         .then(async response => {
           const data = await response.json();
           if (!response.ok || !data.ok) throw new Error(data.message || '저장하지 못했습니다.');
-          scheduleDashboardRefresh({ silent: true, force: true }, 200);
+          scheduleDashboardRefresh({ silent: true, force: true }, 1600);
         })
         .catch(error => {
+          let revertedCount = current;
           updateItem(id, target => {
             target.countedQuantity = Math.max(0, Number(target.countedQuantity || 0) - quantity);
+            revertedCount = Number(target.countedQuantity || 0);
           });
+          rememberOptimisticItemState(id, { countedQuantity: revertedCount });
           renderDashboardItemCard(id);
           alert(error.message || String(error));
         })
@@ -4406,10 +4473,17 @@
     }
 
     function runReceivingComplete(id, nextComplete) {
-      const previous = Boolean(findItem(id)?.isReceivingComplete);
+      const previousItem = findItem(id) || {};
+      const previous = Boolean(previousItem.isReceivingComplete);
+      const previousCompletedAt = previousItem.completedAt || '';
+      const nextCompletedAt = nextComplete ? new Date().toISOString() : '';
+      rememberOptimisticItemState(id, {
+        isReceivingComplete: Boolean(nextComplete),
+        completedAt: nextCompletedAt
+      });
       updateItem(id, target => {
         target.isReceivingComplete = Boolean(nextComplete);
-        target.completedAt = nextComplete ? (target.completedAt || new Date().toISOString()) : '';
+        target.completedAt = nextCompletedAt;
       });
       renderDashboardItemCard(id);
       flashActionButton(id, 'receive-complete', nextComplete ? '완료' : '취소', nextComplete ? '' : 'minus');
@@ -4430,11 +4504,16 @@
         .then(async response => {
           const data = await response.json();
           if (!response.ok || !data.ok) throw new Error(data.message || '저장하지 못했습니다.');
-          scheduleDashboardRefresh({ silent: true, force: true }, 200);
+          scheduleDashboardRefresh({ silent: true, force: true }, 1600);
         })
         .catch(error => {
+          rememberOptimisticItemState(id, {
+            isReceivingComplete: previous,
+            completedAt: previousCompletedAt
+          });
           updateItem(id, target => {
             target.isReceivingComplete = previous;
+            target.completedAt = previousCompletedAt;
           });
           renderDashboardItemCard(id);
           alert(error.message || String(error));
