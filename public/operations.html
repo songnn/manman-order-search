@@ -138,6 +138,7 @@
     .settlement-date-status.review::before { background: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,.13); }
     .settlement-date-status.warn::before { background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,.11); }
     .settlement-date-status.produce::before { background: #fb7185; box-shadow: 0 0 0 3px rgba(251,113,133,.12); }
+    .settlement-date-status.cs::before { background: #dc2626; box-shadow: 0 0 0 3px rgba(220,38,38,.12); }
     .settlement-date-btn.active .settlement-date-status { color: rgba(255,255,255,.86); }
     .settlement-alert { display: grid; gap: 7px; margin-bottom: 10px; padding: 10px; border-radius: 17px; background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; }
     .settlement-alert strong { font-size: 13px; line-height: 1.15; font-weight: 600 !important; }
@@ -159,6 +160,8 @@
     .settlement-card.category-fruit::before { background: linear-gradient(180deg, #f97316, #fb7185); }
     .settlement-card.category-vegetable::before { background: linear-gradient(180deg, #16a34a, #86efac); }
     .settlement-card.category-special::before { background: linear-gradient(180deg, #ef4444, #f59e0b); }
+    .settlement-card.category-cs::before { background: linear-gradient(180deg, #dc2626, #fb7185); }
+    .settlement-card.category-cs { background: linear-gradient(135deg, #fffafa, #fff); border-color: rgba(220,38,38,.16); }
     .settlement-card.mismatch { border-color: rgba(251,146,60,.36); box-shadow: 0 9px 22px rgba(251,146,60,.09); }
     .settlement-card.raw-mismatch { border-color: rgba(239,68,68,.44); box-shadow: 0 10px 26px rgba(239,68,68,.12); }
     .settlement-card img { width: 52px; height: 52px; border-radius: 14px; object-fit: cover; background: #f3f5f8; }
@@ -1723,6 +1726,13 @@
       background: #fbfcfd;
       box-shadow: 0 6px 16px rgba(36,42,54,.045);
     }
+    .storage-queue-card.picked_up {
+      cursor: default;
+      background: rgba(248,250,252,.72);
+      border-color: #edf1f6;
+      box-shadow: none;
+      opacity: .86;
+    }
     .storage-queue-card img {
       width: 52px;
       height: 52px;
@@ -1768,6 +1778,16 @@
       display: flex;
       align-items: center;
       gap: 6px;
+    }
+    .storage-methods {
+      min-width: 0;
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      align-items: center;
+    }
+    .storage-queue-top .storage {
+      flex: 0 0 auto;
     }
     .storage-queue-top strong {
       min-width: 0;
@@ -1917,6 +1937,41 @@
       line-height: 1;
       font-weight: 500 !important;
       box-shadow: none;
+    }
+    .storage-picked-section {
+      display: grid;
+      gap: 7px;
+      margin-top: 4px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.58);
+    }
+    .storage-picked-section summary {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      padding: 11px 12px;
+      border-radius: 18px;
+      background: #eef1f6;
+      color: #687180;
+      list-style: none;
+      cursor: pointer;
+    }
+    .storage-picked-section summary::-webkit-details-marker { display: none; }
+    .storage-picked-section summary strong {
+      color: #343943;
+      font-size: 12.5px;
+      line-height: 1;
+      font-weight: 600 !important;
+    }
+    .storage-picked-section summary span {
+      color: #7f8793;
+      font-size: 10px;
+      line-height: 1;
+      font-weight: 500 !important;
+    }
+    .storage-picked-section .storage-queue-list {
+      padding: 0 1px 2px;
     }
     .storage-queue-empty {
       min-height: 54px;
@@ -2190,6 +2245,8 @@
     const SETTLEMENT_REVIEW_CHECKS_KEY = 'opsSettlementReviewChecks:v1';
     const DASHBOARD_AUTO_REFRESH_MS = 5000;
     const OPTIMISTIC_ITEM_LOCK_MS = 12000;
+    const PICKED_UP_STORAGE_VISIBLE_DAYS = 7;
+    const CS_SETTLEMENT_IMAGE_URL = '/settlement-cs-item.png';
 
     const state = {
       tab: 'sales',
@@ -2333,6 +2390,16 @@
     function storageBadge(value) {
       const storage = value || '상온';
       return `<span class="storage ${storageClass(storage)}">${storageIconSvg(storage)}${esc(storage)}</span>`;
+    }
+
+    function storageBadges(values) {
+      const order = ['냉장', '냉동', '상온'];
+      const unique = Array.from(new Set((Array.isArray(values) ? values : [values])
+        .map(value => String(value || '').trim())
+        .filter(Boolean)));
+      const sorted = [...order.filter(value => unique.includes(value)), ...unique.filter(value => !order.includes(value))];
+      const badges = sorted.length ? sorted : ['상온'];
+      return `<span class="storage-methods">${badges.map(storageBadge).join('')}</span>`;
     }
 
     function storageCardClass(value) {
@@ -2830,7 +2897,6 @@
             </div>
           ` : ''}
           ${renderStorageQueue(queues.pending, 'pending')}
-
           <section class="storage-completed-section">
             <div class="storage-section-title">
               <strong>보관처리완료</strong>
@@ -2838,8 +2904,23 @@
             </div>
             ${renderStorageQueue(queues.completed, 'completed')}
           </section>
+          ${renderPickedUpStorageSection(queues.pickedUp)}
           ${renderStorageFormSheet(storage)}
         </section>
+      `;
+    }
+
+    function renderPickedUpStorageSection(items = []) {
+      if (!items.length) return '';
+
+      return `
+        <details class="storage-picked-section">
+          <summary>
+            <strong>최근 고객 픽업완료</strong>
+            <span>${number(items.length)}건 · ${number(PICKED_UP_STORAGE_VISIBLE_DAYS)}일 보관</span>
+          </summary>
+          ${renderStorageQueue(items, 'picked_up')}
+        </details>
       `;
     }
 
@@ -2999,11 +3080,13 @@
             requestMemo: enriched.requestMemo || '',
             createdAt: enriched.createdAt || '',
             completedAt: enriched.completedAt || '',
+            pickedUpAt: enriched.pickedUpAt || '',
             items: [],
             eventIds: [],
             quantity: 0,
             productName: '',
             storageMethod: '',
+            storageMethods: [],
             imageUrl: ''
           };
 
@@ -3018,6 +3101,7 @@
               : 'picked_up';
           group.createdAt = latestDateText(group.createdAt, enriched.createdAt);
           group.completedAt = latestDateText(group.completedAt, enriched.completedAt);
+          group.pickedUpAt = latestDateText(group.pickedUpAt, enriched.pickedUpAt);
           group.customerLabel = group.customerLabel || enriched.customerLabel || '';
           group.customerDigits4 = group.customerDigits4 || enriched.customerDigits4 || '';
           group.locationMemo = group.locationMemo || enriched.locationMemo || '';
@@ -3027,6 +3111,10 @@
             ? `${group.items[0].productName} 외 ${number(group.items.length - 1)}건`
             : enriched.productName;
           group.storageMethod = group.storageMethod || enriched.storageMethod || '';
+          group.storageMethods = Array.from(new Set([
+            ...(group.storageMethods || []),
+            enriched.storageMethod || ''
+          ].filter(Boolean)));
           group.imageUrl = group.imageUrl || enriched.imageUrl || '';
           groups.set(groupId, group);
         });
@@ -3038,7 +3126,8 @@
       return {
         all: groupedRequests,
         pending: groupedRequests.filter(request => request.status === 'pending'),
-        completed: groupedRequests.filter(request => request.status === 'completed')
+        completed: groupedRequests.filter(request => request.status === 'completed'),
+        pickedUp: groupedRequests.filter(request => request.status === 'picked_up' && isRecentPickedUpStorageGroup(request))
       };
     }
 
@@ -3060,9 +3149,17 @@
       return String(a) > String(b) ? a : b;
     }
 
+    function isRecentPickedUpStorageGroup(group) {
+      const value = group?.pickedUpAt || group?.completedAt || group?.createdAt || '';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return false;
+      const visibleMs = PICKED_UP_STORAGE_VISIBLE_DAYS * 24 * 60 * 60 * 1000;
+      return Date.now() - date.getTime() <= visibleMs;
+    }
+
     function renderStorageQueue(items, status) {
       if (!items.length) {
-        return `<div class="storage-queue-empty">${status === 'pending' ? '현재 보관처리 대기 상품이 없습니다.' : '아직 완료 기록이 없습니다.'}</div>`;
+        return `<div class="storage-queue-empty">${status === 'pending' ? '현재 보관처리 대기 상품이 없습니다.' : status === 'picked_up' ? '최근 고객 픽업완료 기록이 없습니다.' : '아직 완료 기록이 없습니다.'}</div>`;
       }
 
       return `
@@ -3076,21 +3173,33 @@
       const visitText = formatStorageVisitDisplay(item.visitDateText || '');
       const locationText = item.locationMemo || '';
       const customerText = item.customerLabel || (item.customerDigits4 ? `뒷4자리 ${item.customerDigits4}` : '고객 미입력');
-      const timeText = formatStorageQueueTime(status === 'pending' ? item.createdAt : item.completedAt || item.createdAt);
+      const timeText = formatStorageQueueTime(status === 'pending'
+        ? item.createdAt
+        : status === 'picked_up'
+          ? item.pickedUpAt || item.completedAt || item.createdAt
+          : item.completedAt || item.createdAt);
+      const timeLabel = status === 'pending'
+        ? '등록'
+        : status === 'picked_up'
+          ? '픽업완료'
+          : '처리완료';
+      const cardAttrs = status === 'picked_up'
+        ? ''
+        : `data-action="storage-edit-group" data-group-id="${esc(item.groupId)}"`;
 
       return `
-        <article class="storage-queue-card ${status}" data-action="storage-edit-group" data-group-id="${esc(item.groupId)}">
+        <article class="storage-queue-card ${status}" ${cardAttrs}>
           ${renderStorageQueueThumbs(item)}
           <div class="storage-queue-main">
             <div class="storage-queue-top">
               <strong>${esc(customerText)}</strong>
-              ${storageBadge(item.storageMethod)}
+              ${storageBadges(item.storageMethods?.length ? item.storageMethods : item.storageMethod)}
             </div>
             <div class="storage-queue-name">${esc(item.productName)}</div>
             ${renderStorageQueueProducts(item)}
             <div class="storage-queue-meta">
               ${visitText ? `<span>방문 ${esc(visitText)}</span>` : ''}
-              ${timeText ? `<span class="storage-queue-time ${status === 'pending' ? 'pending' : 'done'}">${status === 'pending' ? '등록' : '처리완료'} ${esc(timeText)}</span>` : ''}
+              ${timeText ? `<span class="storage-queue-time ${status === 'pending' ? 'pending' : 'done'}">${esc(timeLabel)} ${esc(timeText)}</span>` : ''}
             </div>
             ${locationText ? `<div class="storage-queue-note important">${esc(locationText)}</div>` : ''}
             ${item.requestMemo ? `<div class="storage-queue-note">${esc(item.requestMemo)}</div>` : ''}
@@ -3854,7 +3963,9 @@
       const categoryClass = settlementCategoryClass(item.category);
       const isGroupItem = item.category === '공구';
       const isReviewed = isSettlementItemReviewed(item);
-      const image = imageUrl({ imageUrl: item.imageUrl, productName: item.productName });
+      const image = item.category === 'CS'
+        ? CS_SETTLEMENT_IMAGE_URL
+        : imageUrl({ imageUrl: item.imageUrl, productName: item.productName });
 
       return `
         <article class="settlement-card ${categoryClass} ${isGroupItem && item.mismatch ? 'mismatch' : ''} ${isGroupItem && item.listRawMismatch ? 'raw-mismatch' : ''}">
@@ -3944,6 +4055,7 @@
       const groupItems = items.filter(item => item.category === '공구');
       const alwaysItems = items.filter(item => item.category === '상시');
       const produceItems = items.filter(item => item.category === '과일' || item.category === '야채');
+      const csItems = items.filter(item => item.category === 'CS');
 
       if (groupItems.length) {
         const matchedCount = groupItems.filter(item => !item.mismatch).length;
@@ -3971,6 +4083,14 @@
           label: '과일',
           text: `${number(reviewedCount)}/${number(produceItems.length)} ${reviewed ? '검토완료' : '검토대기'}`,
           kind: reviewed ? 'match' : 'review produce'
+        });
+      }
+
+      if (csItems.length) {
+        rows.push({
+          label: 'CS',
+          text: `${number(csItems.length)}건`,
+          kind: 'cs'
         });
       }
 
@@ -4044,7 +4164,13 @@
         grouped.get(category).push(item);
       });
 
-      return [...order, ...Array.from(grouped.keys()).filter(category => !order.includes(category))]
+      const orderedCategories = [
+        ...order,
+        ...Array.from(grouped.keys()).filter(category => !order.includes(category) && category !== 'CS'),
+        'CS'
+      ];
+
+      return orderedCategories
         .filter(category => grouped.has(category))
         .map(category => {
           const groupItems = grouped.get(category) || [];
@@ -4062,6 +4188,7 @@
       if (category === '상시') return 'category-always';
       if (category === '과일') return 'category-fruit';
       if (category === '야채') return 'category-vegetable';
+      if (category === 'CS') return 'category-cs';
       if (category === '특이항목') return 'category-special';
       return '';
     }
@@ -4708,6 +4835,7 @@
     function enterStorageEditGroup(groupId) {
       const group = findStorageGroup(groupId);
       if (!group) return;
+      if (group.status === 'picked_up') return;
 
       const visit = splitStorageVisitText(group.visitDateText || '');
       state.storage.editingGroup = group;
