@@ -462,6 +462,35 @@
       grid-template-columns: 1fr;
       gap: 9px;
     }
+    .stale-storage-section {
+      display: grid;
+      gap: 7px;
+    }
+    .stale-storage-section + .stale-storage-section {
+      margin-top: 3px;
+    }
+    .stale-storage-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 0 2px;
+    }
+    .stale-storage-head strong {
+      display: inline-flex;
+      min-width: 0;
+    }
+    .stale-storage-head span {
+      flex: 0 0 auto;
+      color: #858c98;
+      font-size: 10px;
+      line-height: 1;
+      font-weight: 500 !important;
+    }
+    .stale-storage-body {
+      display: grid;
+      gap: 7px;
+    }
     .stale-item {
       grid-template-columns: 56px minmax(0, 1fr) auto;
       gap: 10px;
@@ -538,6 +567,40 @@
       color: #5d6572;
       font-size: 12px;
     }
+    .stale-metrics {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+    }
+    .stale-metric {
+      min-width: 0;
+      display: grid;
+      gap: 3px;
+      padding: 7px 8px;
+      border-radius: 13px;
+      background: #f7f8fa;
+    }
+    .stale-metric span {
+      color: #858c98;
+      font-size: 9px;
+      line-height: 1;
+      font-weight: 500 !important;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .stale-metric strong {
+      color: #151517;
+      font-family: 'TheJamsilOps', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 15px;
+      line-height: .95;
+      font-weight: 500 !important;
+    }
+    .stale-metric.inbound strong { color: #2563eb; }
+    .stale-metric.orders strong { color: #7c3aed; }
+    .stale-metric.buffer strong { color: #0f9f68; }
+    .stale-metric.buffer.empty strong { color: #8a909c; }
     .sheet-modal[hidden] { display: none; }
     .sheet-modal { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: max(24px, env(safe-area-inset-top)) 12px max(28px, env(safe-area-inset-bottom)); background: rgba(20,23,30,.38); backdrop-filter: blur(10px); }
     .sheet-panel { width: min(760px, calc(100% - 8px)); height: min(90dvh, 760px); max-height: calc(100dvh - 52px); display: flex; flex-direction: column; border-radius: 28px; background: #fff; box-shadow: 0 24px 70px rgba(20,23,30,.25); overflow: hidden; touch-action: pan-y; }
@@ -3736,6 +3799,9 @@
       const inboundDate = item.inboundDateKey || item.inboundDateText || '';
       const dPlus = daysBetweenDateKeys(item.inboundDateKey, state.dashboard?.todayKey);
       const dPlusLabel = dPlus == null ? 'D+2' : `D+${Math.max(0, dPlus)}`;
+      const inboundQuantity = Number(item.inboundQuantity || 0);
+      const orderQuantity = Number(item.customerOrderQuantity || 0);
+      const bufferRemaining = Number(item.bufferRemainingQuantity || 0);
 
       return `
         <article class="stale-item" data-id="${esc(item.id)}">
@@ -3749,10 +3815,61 @@
           </div>
           <div class="stale-side">
             <div class="stale-dplus">${esc(dPlusLabel)}</div>
-            <div class="stale-qty">${number(item.inboundQuantity)}</div>
+          </div>
+          <div class="stale-metrics">
+            <div class="stale-metric inbound">
+              <span>입고수량</span>
+              <strong>${number(inboundQuantity)}</strong>
+            </div>
+            <div class="stale-metric orders">
+              <span>공구주문</span>
+              <strong>${number(orderQuantity)}</strong>
+            </div>
+            <div class="stale-metric buffer ${bufferRemaining > 0 ? '' : 'empty'}">
+              <span>잔여버퍼</span>
+              <strong>${number(bufferRemaining)}</strong>
+            </div>
           </div>
         </article>
       `;
+    }
+
+    function renderStaleStorageSections(items = []) {
+      return groupStaleItemsByStorage(items).map(group => `
+        <section class="stale-storage-section">
+          <div class="stale-storage-head">
+            <strong>${storageBadge(group.storage)}</strong>
+            <span>${number(group.items.length)}종 · 입고 ${number(group.totalQuantity)}개</span>
+          </div>
+          <div class="stale-storage-body">
+            ${group.items.map(renderStaleItem).join('')}
+          </div>
+        </section>
+      `).join('');
+    }
+
+    function groupStaleItemsByStorage(items = []) {
+      const order = ['냉동', '냉장', '상온'];
+      const grouped = new Map();
+
+      (items || []).forEach(item => {
+        const storage = item.storageMethod || '상온';
+        if (!grouped.has(storage)) grouped.set(storage, []);
+        grouped.get(storage).push(item);
+      });
+
+      return [...order, ...Array.from(grouped.keys()).filter(storage => !order.includes(storage))]
+        .filter(storage => grouped.has(storage))
+        .map(storage => {
+          const groupItems = (grouped.get(storage) || [])
+            .sort((a, b) => String(a.productName || '').localeCompare(String(b.productName || ''), 'ko'));
+
+          return {
+            storage,
+            items: groupItems,
+            totalQuantity: groupItems.reduce((sum, item) => sum + Number(item.inboundQuantity || 0), 0)
+          };
+        });
     }
 
     function renderStaleGroups(data) {
@@ -3783,7 +3900,7 @@
         const isPrimary = group.dateKey === data.staleCutoffDateKey || index === 0;
         const body = `
           <div class="stale-date-body">
-            ${group.items.map(renderStaleItem).join('')}
+            ${renderStaleStorageSections(group.items)}
           </div>
         `;
 
