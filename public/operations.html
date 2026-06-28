@@ -2310,6 +2310,7 @@
     const OPTIMISTIC_ITEM_LOCK_MS = 12000;
     const PICKED_UP_STORAGE_VISIBLE_DAYS = 7;
     const CS_SETTLEMENT_IMAGE_URL = '/settlement-cs-item.png';
+    const SETTLEMENT_AUTO_IMAGE_CATEGORIES = ['과일', '야채', '상시', '특이항목'];
 
     const state = {
       tab: 'sales',
@@ -2355,7 +2356,12 @@
       dashboardLoading: false,
       dashboardRefreshQueued: null,
       lastDashboardRefreshAt: 0,
-      settlementLoading: false
+      settlementLoading: false,
+      settlementImageGeneration: {
+        running: false,
+        scheduledKey: '',
+        lastKey: ''
+      }
     };
 
     if (state.token) localStorage.setItem('opsToken', state.token);
@@ -4001,6 +4007,7 @@
         </div>
         <div data-settlement-results>${renderSettlementResults(data)}</div>
       `;
+      scheduleSettlementImageGeneration(review);
     }
 
     async function ensureSettlementReviewLoaded() {
@@ -4030,8 +4037,6 @@
       const groupMismatches = scopedItems.filter(item => item.category === '공구' && item.mismatch);
       const reviewPendingItems = scopedItems.filter(item => isSettlementReviewableCategory(item.category) && !isSettlementItemReviewed(item));
       const categoryGroups = groupSettlementItemsByCategory(scopedItems);
-      const imageTargetItems = scopedItems.filter(item => ['과일', '야채', '상시', '특이항목'].includes(item.category));
-      const missingImages = imageTargetItems.filter(item => item.needsGeneratedImage);
 
       return `
         <div class="summary">
@@ -4045,19 +4050,41 @@
             <span>${groupMismatches.slice(0, 3).map(item => `${item.productName} 정산 ${number(item.settlementQuantity)} / 입고리스트 ${item.hasInventoryMatch ? number(item.inventoryListQuantity) : '매칭없음'} / raw ${item.hasRawInventoryMatch ? number(item.inventoryRawQuantity) : '-'}`).join(' · ')}</span>
           </div>
         ` : ''}
-        ${missingImages.length ? `
-          <div class="settlement-alert">
-            <strong>이미지가 필요한 상시·과일·야채 항목이 ${number(missingImages.length)}개 있습니다.</strong>
-            <span>서버에서 OpenAI mini 이미지 모델로 생성 후 Supabase Storage에 저장해서 계속 재사용합니다.</span>
-            <button class="settlement-generate-btn" data-action="settlement-generate-images" type="button" ${state.busy ? 'disabled' : ''}>
-              ${state.busy ? '생성 중' : '이미지 생성'}
-            </button>
-          </div>
-        ` : ''}
         ${categoryGroups.length
           ? categoryGroups.map(group => renderSettlementCategorySection(group)).join('')
           : '<div class="empty">검색 결과가 없습니다.</div>'}
       `;
+    }
+
+    function getSettlementMissingImageItems(review = {}) {
+      return (review.items || []).filter(item => (
+        SETTLEMENT_AUTO_IMAGE_CATEGORIES.includes(item.category) &&
+        item.needsGeneratedImage
+      ));
+    }
+
+    function settlementMissingImageKey(items = []) {
+      const keys = items
+        .map(item => item.imageProductKey || item.productKey || item.id || item.productName || '')
+        .filter(Boolean)
+        .sort();
+
+      return `${items.length}::${keys.slice(0, 60).join('|')}`;
+    }
+
+    function scheduleSettlementImageGeneration(review = {}) {
+      const missingItems = getSettlementMissingImageItems(review);
+      if (!missingItems.length) return;
+
+      const key = settlementMissingImageKey(missingItems);
+      const imageState = state.settlementImageGeneration || (state.settlementImageGeneration = {});
+      if (imageState.running || imageState.scheduledKey === key || imageState.lastKey === key) return;
+
+      imageState.scheduledKey = key;
+      window.setTimeout(() => {
+        if (imageState.scheduledKey !== key) return;
+        runSettlementImageGeneration({ silent: true, key });
+      }, 600);
     }
 
     function renderSettlementCategorySection(group) {
@@ -5334,13 +5361,15 @@
       }
     }
 
-    async function runSettlementImageGeneration() {
-      if (state.busy) return;
+    async function runSettlementImageGeneration(options = {}) {
+      const imageState = state.settlementImageGeneration || (state.settlementImageGeneration = {});
+      if (imageState.running) return;
 
-      state.busy = true;
-      renderSettlementReview(state.dashboard || {});
-      bindControls();
-
+      const silent = options.silent !== false;
+      const requestKey = options.key || '';
+      let shouldRender = false;
+      imageState.running = true;
+      imageState.scheduledKey = '';
       try {
         const url = new URL('/api/ops-generate-images', location.origin);
         url.searchParams.set('token', state.token);
@@ -5355,14 +5384,23 @@
         if (data.dashboard) {
           state.dashboard = data.dashboard;
           saveDashboardCache(data.dashboard);
+          shouldRender = true;
         }
-        alert(`이미지 ${number(data.generatedCount || 0)}개 생성 완료${data.errorCount ? ` · 실패 ${number(data.errorCount)}개` : ''}`);
-        render();
+
+        imageState.lastKey = requestKey || settlementMissingImageKey(getSettlementMissingImageItems(state.dashboard?.settlementReview || {}));
+        if (!silent) {
+          alert(`이미지 ${number(data.generatedCount || 0)}개 생성 완료${data.errorCount ? ` · 실패 ${number(data.errorCount)}개` : ''}`);
+        }
       } catch (error) {
-        alert(error.message || String(error));
+        imageState.lastKey = requestKey || imageState.lastKey || '';
+        if (silent) {
+          console.warn('settlement image generation failed:', error);
+        } else {
+          alert(error.message || String(error));
+        }
       } finally {
-        state.busy = false;
-        render();
+        imageState.running = false;
+        if (shouldRender) render();
       }
     }
 
@@ -5447,7 +5485,7 @@
       }
 
       if (action === 'settlement-generate-images') {
-        runSettlementImageGeneration();
+        runSettlementImageGeneration({ silent: false });
         return true;
       }
 
