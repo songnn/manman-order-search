@@ -2,6 +2,7 @@ import { findCustomerCandidatesByDigits } from '../lib/opsData.js';
 import { supabaseAdmin } from '../lib/supabaseAdmin.js';
 
 const STORE_NAME = process.env.STORE_NAME || '전농래미안크레시티점';
+const INVENTORY_PRODUCT_CODE_HEADERS = ['상품코드', '상품 코드', '제품코드', '제품 코드', '품목코드', '품목 코드', '코드'];
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -268,8 +269,13 @@ async function buildStorageItems(rows, searchedInventoryRows = []) {
         inventoryStableId: inventory?.stable_id || '',
         productName: inventory?.product_name || item.productName,
         productKey: inventory?.product_key || item.productKey,
+        productCode: inventoryProductCode(inventory),
         storageMethod: normalizeStorageMethod(inventory?.storage_method),
+        salesType: inventory?.sales_type || '',
         inboundQuantity: Number(inventory?.inbound_quantity || 0),
+        packageUnit: inventory?.package_unit || '',
+        supplyPrice: Number(inventory?.supply_price || 0),
+        hqBufferQuantity: Number(inventory?.hq_buffer_quantity || 0),
         salePrice: Number(inventory?.sale_price || item.price || 0),
         imageUrl: inventory?.image_url || item.imageUrl,
         canStore: true,
@@ -294,6 +300,7 @@ async function buildStorageItems(rows, searchedInventoryRows = []) {
       inventoryStableId: row.stable_id,
       productName: row.product_name || '',
       productKey: row.product_key || normalizeProductKey(row.product_name),
+      productCode: inventoryProductCode(row),
       pickupDateKey: row.inbound_date || '',
       pickupDateText: row.inbound_date_text || row.inbound_date || '',
       quantity: 1,
@@ -302,7 +309,11 @@ async function buildStorageItems(rows, searchedInventoryRows = []) {
       salePrice: Number(row.sale_price || 0),
       imageUrl: row.image_url || '',
       storageMethod: normalizeStorageMethod(row.storage_method),
+      salesType: row.sales_type || '',
       inboundQuantity: Number(row.inbound_quantity || 0),
+      packageUnit: row.package_unit || '',
+      supplyPrice: Number(row.supply_price || 0),
+      hqBufferQuantity: Number(row.hq_buffer_quantity || 0),
       sourceType: 'inventory',
       sourceRows: [Number(row.source_row_number || 0)],
       canStore: true,
@@ -329,11 +340,16 @@ async function readInventoryRows(dateKeys) {
       'product_name',
       'product_key',
       'storage_method',
+      'sales_type',
       'inbound_date',
       'inbound_date_text',
       'inbound_quantity',
+      'package_unit',
+      'supply_price',
+      'hq_buffer_quantity',
       'sale_price',
-      'image_url'
+      'image_url',
+      'raw_json'
     ].join(','))
     .eq('store_name', STORE_NAME)
     .in('inbound_date', dateKeys);
@@ -358,8 +374,12 @@ async function readRecentInventoryRows({ productQuery, minDateKey, maxDateKey })
       'inbound_date',
       'inbound_date_text',
       'inbound_quantity',
+      'package_unit',
+      'supply_price',
+      'hq_buffer_quantity',
       'sale_price',
-      'image_url'
+      'image_url',
+      'raw_json'
     ].join(','))
     .eq('store_name', STORE_NAME)
     .gte('inbound_date', minDateKey)
@@ -372,7 +392,11 @@ async function readRecentInventoryRows({ productQuery, minDateKey, maxDateKey })
 
   return (data || [])
     .filter(row => {
-      const productKey = normalizeProductKey(row.product_name || row.product_key);
+      const productKey = normalizeProductKey([
+        row.product_name,
+        row.product_key,
+        inventoryProductCode(row)
+      ].filter(Boolean).join(' '));
       if (!productKey) return false;
       return productKey.includes(normalizedQuery) || normalizedQuery.includes(productKey);
     })
@@ -409,6 +433,25 @@ function findMatchingInventory(inventoryRows, item) {
     .sort((a, b) => Math.abs(a.key.length - item.productKey.length) - Math.abs(b.key.length - item.productKey.length))[0]?.row || null;
 }
 
+function inventoryProductCode(row) {
+  return getRawStringByHeaders(row?.raw_json, INVENTORY_PRODUCT_CODE_HEADERS);
+}
+
+function getRawStringByHeaders(rawJson, candidates) {
+  const raw = rawJson && typeof rawJson === 'object' ? rawJson : {};
+  const normalizedCandidates = candidates.map(normalizeHeader).filter(Boolean);
+
+  for (const [key, value] of Object.entries(raw)) {
+    const normalizedKey = normalizeHeader(key);
+    if (!normalizedKey) continue;
+    if (normalizedCandidates.some(candidate => normalizedKey.includes(candidate))) {
+      return clean(value);
+    }
+  }
+
+  return '';
+}
+
 function isAuthorized(req) {
   const expectedAdmin = process.env.ADMIN_TOKEN || '03064';
   const token = req.headers['x-admin-token'] || req.query?.token;
@@ -422,6 +465,13 @@ function normalizeProductKey(value) {
     .replace(/\([^)]*\)/g, '')
     .replace(/[0-9]+(?:\.[0-9]+)?\s*(?:g|kg|ml|l|개|팩|박스|입|봉|구|세트)/gi, '')
     .replace(/[^0-9a-z가-힣]+/gi, '');
+}
+
+function normalizeHeader(value) {
+  return clean(value)
+    .replace(/\s+/g, '')
+    .replace(/[()[\]{}]/g, '')
+    .toLowerCase();
 }
 
 function normalizeCustomerLabel(value) {

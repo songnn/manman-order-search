@@ -734,13 +734,22 @@
       text-overflow: ellipsis;
     }
     .sales-sub-line {
+      min-width: 0;
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: 9px;
+      row-gap: 4px;
       color: #8a909c;
       font-size: 10px;
       line-height: 1;
-      white-space: nowrap;
+      white-space: normal;
+    }
+    .sales-sub-line > span,
+    .sales-sub-line .order-count-link {
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .sales-sub-line strong {
       margin-left: 2px;
@@ -2906,6 +2915,7 @@
 
     function renderSalesCard(item) {
       const bufferQuantity = Number(item.bufferRemainingQuantity || 0);
+      const orderQuantityLabel = item.orderQuantitySource === 'inventory_sheet' ? '발주수량' : '공구주문건수';
 
       return `
         <article class="product-card sales-card" data-id="${esc(item.id)}">
@@ -2923,7 +2933,8 @@
             </div>
             <div class="sales-sub-line">
               <span>입고수량 <strong>${number(item.inboundQuantity)}</strong></span>
-              <button class="order-count-link" data-action="show-order-list" type="button">공구주문건수 <strong>${number(item.customerOrderQuantity)}</strong></button>
+              <button class="order-count-link" data-action="show-order-list" type="button">${esc(orderQuantityLabel)} <strong>${number(item.customerOrderQuantity)}</strong></button>
+              ${item.productCode ? `<span>코드 <strong>${esc(item.productCode)}</strong></span>` : ''}
             </div>
           </div>
           ${renderBufferSummary(item)}
@@ -3421,6 +3432,7 @@
             <div class="storage-item-meta">
               <span>${isEditing ? '보관' : '픽업'} ${esc(item.pickupDateText || item.pickupDateKey || '')}</span>
               <span>${esc(quantityLabel)} ${number(item.quantity)}개</span>
+              ${item.productCode ? `<span>코드 ${esc(item.productCode)}</span>` : ''}
               ${item.salePrice ? `<span>판매가 ${money(item.salePrice)}</span>` : ''}
             </div>
             ${item.matchMessage ? `<div class="storage-warning">${esc(item.matchMessage)}</div>` : ''}
@@ -3726,6 +3738,7 @@
             <div class="tag-row">
               ${storageBadge(item.storageMethod)}
               ${salesTypeBadge(item.salesType)}
+              ${item.productCode ? `<span class="soft-tag">코드 ${esc(item.productCode)}</span>` : ''}
               <span class="soft-tag">본사버퍼 ${number(item.hqBufferQuantity)}</span>
               <span class="soft-tag">지점버퍼 ${number(item.ourBufferQuantity)}</span>
             </div>
@@ -4348,6 +4361,7 @@
       return normalizeSearchText([
         item.productName,
         item.productKey,
+        item.productCode,
         item.storageMethod,
         item.salesType
       ].filter(Boolean).join(' ')).includes(queryKey);
