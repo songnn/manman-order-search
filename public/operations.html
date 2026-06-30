@@ -465,16 +465,32 @@
     .stale-storage-section {
       display: grid;
       gap: 7px;
+      padding: 9px 0 10px 11px;
+      border-left: 4px solid #d8dee8;
+      border-radius: 0 14px 14px 0;
+      background: linear-gradient(90deg, rgba(248,250,252,.9), rgba(255,255,255,0));
     }
     .stale-storage-section + .stale-storage-section {
-      margin-top: 3px;
+      margin-top: 8px;
+    }
+    .stale-storage-section.storage-frozen {
+      border-left-color: #3b82f6;
+      background: linear-gradient(90deg, rgba(219,234,254,.9), rgba(255,255,255,0));
+    }
+    .stale-storage-section.storage-cold {
+      border-left-color: #06b6d4;
+      background: linear-gradient(90deg, rgba(207,250,254,.82), rgba(255,255,255,0));
+    }
+    .stale-storage-section.storage-room {
+      border-left-color: #22c55e;
+      background: linear-gradient(90deg, rgba(220,252,231,.78), rgba(255,255,255,0));
     }
     .stale-storage-head {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      padding: 0 2px;
+      padding: 0 8px 0 0;
     }
     .stale-storage-head strong {
       display: inline-flex;
@@ -482,7 +498,13 @@
     }
     .stale-storage-head span {
       flex: 0 0 auto;
-      color: #858c98;
+      min-height: 22px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.72);
+      color: #5f6875;
       font-size: 10px;
       line-height: 1;
       font-weight: 500 !important;
@@ -2308,12 +2330,9 @@
   </div>
 
   <script>
-    const DASHBOARD_CACHE_KEY = 'opsDashboardCache:v10';
-    const DASHBOARD_CACHE_FALLBACK_KEYS = [
-      'opsDashboardCache:v9',
-      'opsDashboardCache:v8',
-      'opsDashboardCache:v7'
-    ];
+    const DASHBOARD_CACHE_KEY = 'opsDashboardCache:v11';
+    const DASHBOARD_CACHE_FALLBACK_KEYS = [];
+    const DASHBOARD_CACHE_MAX_AGE_MS = 90 * 1000;
     const SETTLEMENT_REVIEW_CHECKS_KEY = 'opsSettlementReviewChecks:v1';
     const DASHBOARD_AUTO_REFRESH_MS = 5000;
     const OPTIMISTIC_ITEM_LOCK_MS = 12000;
@@ -2327,6 +2346,7 @@
       managementTab: 'receiving',
       dashboard: null,
       salesDateKey: '',
+      salesDateTouched: false,
       salesQuery: '',
       inboundQuery: '',
       staleQuery: '',
@@ -2459,21 +2479,45 @@
         .replace(/'/g, '&#039;');
     }
 
+    function productNameText(value) {
+      const text = String(value || '').trim();
+      return text && !looksLikeProductCodeText(text) ? text : '상품명 확인 필요';
+    }
+
+    function looksLikeProductCodeText(value) {
+      const text = String(value || '')
+        .trim()
+        .replace(/^코드\s*/i, '')
+        .replace(/\s+/g, '');
+
+      return /^GGM[0-9A-Z]+(?:\^\d+)?$/i.test(text) ||
+        /^[A-Z]{2,}\d{6,}(?:\^\d+)?$/i.test(text);
+    }
+
     function storageClass(value) {
-      if (value === '냉장') return 'cold';
-      if (value === '냉동') return 'frozen';
+      const storage = normalizeStorageValue(value);
+      if (storage === '냉장') return 'cold';
+      if (storage === '냉동') return 'frozen';
       return 'room';
     }
 
+    function normalizeStorageValue(value) {
+      const text = String(value || '').replace(/\s+/g, '');
+      if (text.includes('냉동')) return '냉동';
+      if (text.includes('냉장')) return '냉장';
+      if (text.includes('상온') || text.includes('실온')) return '상온';
+      return '상온';
+    }
+
     function storageBadge(value) {
-      const storage = value || '상온';
+      const storage = normalizeStorageValue(value);
       return `<span class="storage ${storageClass(storage)}">${storageIconSvg(storage)}${esc(storage)}</span>`;
     }
 
     function storageBadges(values) {
-      const order = ['냉장', '냉동', '상온'];
+      const order = ['냉동', '냉장', '상온'];
       const unique = Array.from(new Set((Array.isArray(values) ? values : [values])
-        .map(value => String(value || '').trim())
+        .map(normalizeStorageValue)
         .filter(Boolean)));
       const sorted = [...order.filter(value => unique.includes(value)), ...unique.filter(value => !order.includes(value))];
       const badges = sorted.length ? sorted : ['상온'];
@@ -2481,7 +2525,7 @@
     }
 
     function storageCardClass(value) {
-      return `storage-card-${storageClass(value || '상온')}`;
+      return `storage-card-${storageClass(normalizeStorageValue(value))}`;
     }
 
     function storageIconSvg(value) {
@@ -2704,7 +2748,10 @@
 
     function saveDashboardCache(data) {
       try {
-        localStorage.setItem(DASHBOARD_CACHE_KEY, JSON.stringify(data));
+        localStorage.setItem(DASHBOARD_CACHE_KEY, JSON.stringify({
+          ...data,
+          cacheSavedAt: Date.now()
+        }));
       } catch {
       }
     }
@@ -2712,10 +2759,15 @@
     function readDashboardCache(key) {
       try {
         const cached = JSON.parse(localStorage.getItem(key) || 'null');
-        return cached?.ok ? cached : null;
+        return cached?.ok && isDashboardCacheUsable(cached) ? cached : null;
       } catch {
         return null;
       }
+    }
+
+    function isDashboardCacheUsable(cached) {
+      const savedAt = Number(cached?.cacheSavedAt || 0);
+      return savedAt > 0 && Date.now() - savedAt <= DASHBOARD_CACHE_MAX_AGE_MS;
     }
 
     function restoreDashboardCache() {
@@ -2832,10 +2884,24 @@
     function syncSalesDateSelection(data) {
       const options = getSalesDateOptions(data);
       const keys = new Set(options.map(option => option.dateKey));
+      const preferredDateKey = getPreferredSalesDateKey(data, options);
 
-      if (!state.salesDateKey || !keys.has(state.salesDateKey)) {
-        state.salesDateKey = data.defaultSalesDateKey || options[0]?.dateKey || '';
+      if (
+        !state.salesDateKey ||
+        !keys.has(state.salesDateKey) ||
+        (!state.salesDateTouched && preferredDateKey && state.salesDateKey !== preferredDateKey)
+      ) {
+        state.salesDateKey = preferredDateKey;
       }
+    }
+
+    function getPreferredSalesDateKey(data, options = getSalesDateOptions(data)) {
+      const keys = new Set(options.map(option => option.dateKey));
+      if (data.defaultSalesDateKey && keys.has(data.defaultSalesDateKey)) {
+        return data.defaultSalesDateKey;
+      }
+
+      return options[0]?.dateKey || '';
     }
 
     function getSalesAllItems(data) {
@@ -2916,15 +2982,16 @@
     function renderSalesCard(item) {
       const bufferQuantity = Number(item.bufferRemainingQuantity || 0);
       const orderQuantityLabel = item.orderQuantitySource === 'inventory_sheet' ? '발주수량' : '공구주문건수';
+      const productName = productNameText(item.productName);
 
       return `
         <article class="product-card sales-card" data-id="${esc(item.id)}">
           <div class="thumb-wrap">
-            <img class="thumb" src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy" ${imageFallbackAttr()}>
+            <img class="thumb" src="${esc(imageUrl(item))}" alt="${esc(productName)}" loading="lazy" ${imageFallbackAttr()}>
           </div>
           <div class="card-main">
             <div class="card-head">
-              <h3 class="card-name">${esc(item.productName)}</h3>
+              <h3 class="card-name">${esc(productName)}</h3>
               ${storageBadge(item.storageMethod)}
             </div>
             <div class="sales-line">
@@ -2934,7 +3001,6 @@
             <div class="sales-sub-line">
               <span>입고수량 <strong>${number(item.inboundQuantity)}</strong></span>
               <button class="order-count-link" data-action="show-order-list" type="button">${esc(orderQuantityLabel)} <strong>${number(item.customerOrderQuantity)}</strong></button>
-              ${item.productCode ? `<span>코드 <strong>${esc(item.productCode)}</strong></span>` : ''}
             </div>
           </div>
           ${renderBufferSummary(item)}
@@ -3275,7 +3341,7 @@
               <strong>${esc(customerText)}</strong>
               ${storageBadges(item.storageMethods?.length ? item.storageMethods : item.storageMethod)}
             </div>
-            <div class="storage-queue-name">${esc(item.productName)}</div>
+            <div class="storage-queue-name">${esc(productNameText(item.productName))}</div>
             ${renderStorageQueueProducts(item)}
             <div class="storage-queue-meta">
               ${visitText ? `<span>방문 ${esc(visitText)}</span>` : ''}
@@ -3342,7 +3408,7 @@
             <div class="storage-queue-product">
               <img src="${esc(imageUrl(product))}" alt="" loading="lazy" ${imageFallbackAttr()}>
               <div>
-                <div class="storage-queue-product-name">${esc(product.productName || '상품명 없음')}</div>
+                <div class="storage-queue-product-name">${esc(productNameText(product.productName))}</div>
                 <div class="storage-queue-product-meta">
                   ${product.storageMethod ? `<span>${esc(product.storageMethod)}</span>` : ''}
                 </div>
@@ -3417,22 +3483,22 @@
         ? `data-action="storage-toggle-item" role="button" tabindex="0"`
         : '';
       const quantityLabel = item.sourceType === 'inventory' ? '기본' : '주문';
+      const productName = productNameText(item.productName);
 
       return `
         <article class="storage-item ${selected ? 'selected' : ''} ${!canStore ? 'disabled' : ''}" data-storage-key="${esc(key)}" ${cardActionAttrs}>
           <div class="storage-item-pick" aria-hidden="true">
-            <img src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy" ${imageFallbackAttr()}>
+            <img src="${esc(imageUrl(item))}" alt="${esc(productName)}" loading="lazy" ${imageFallbackAttr()}>
             <span class="storage-check">${selected ? '✓' : ''}</span>
           </div>
           <div class="storage-item-main">
             <div class="storage-item-title">
-              <h3>${esc(item.productName)}</h3>
+              <h3>${esc(productName)}</h3>
               ${storageBadge(item.storageMethod)}
             </div>
             <div class="storage-item-meta">
               <span>${isEditing ? '보관' : '픽업'} ${esc(item.pickupDateText || item.pickupDateKey || '')}</span>
               <span>${esc(quantityLabel)} ${number(item.quantity)}개</span>
-              ${item.productCode ? `<span>코드 ${esc(item.productCode)}</span>` : ''}
               ${item.salePrice ? `<span>판매가 ${money(item.salePrice)}</span>` : ''}
             </div>
             ${item.matchMessage ? `<div class="storage-warning">${esc(item.matchMessage)}</div>` : ''}
@@ -3523,7 +3589,7 @@
         time: event.createdAt
       }));
 
-      openModal('버퍼구매 고객', item.productName || '', rows.length
+      openModal('버퍼구매 고객', productNameText(item.productName), rows.length
         ? rows.map(row => `
             <div class="sheet-row">
               <div>
@@ -3550,7 +3616,7 @@
           source: row.sourceRowNumber ? `${row.sourceSheetName || 'Raw'} ${row.sourceRowNumber}행` : ''
         }));
 
-      openModal('지점버퍼 목록', item.productName || '', rows.length
+      openModal('지점버퍼 목록', productNameText(item.productName), rows.length
         ? rows.map(row => `
             <div class="sheet-row">
               <div>
@@ -3569,7 +3635,7 @@
       if (!item) return;
 
       const rows = getOrderCustomersForItem(item);
-      openModal('공구주문 고객', item.productName || '', renderOrderCustomersRows(rows));
+      openModal('공구주문 고객', productNameText(item.productName), renderOrderCustomersRows(rows));
     }
 
     function getOrderCustomerKey(item) {
@@ -3694,7 +3760,7 @@
       const grouped = new Map();
 
       items.forEach(item => {
-        const storage = item.storageMethod || '상온';
+        const storage = normalizeStorageValue(item.storageMethod);
         if (!grouped.has(storage)) grouped.set(storage, []);
         grouped.get(storage).push(item);
       });
@@ -3723,22 +3789,22 @@
       const counted = Number(item.countedQuantity || 0);
       const inbound = Number(item.inboundQuantity || 0);
       const remainingToCount = Math.max(0, inbound - counted);
+      const productName = productNameText(item.productName);
 
       return `
         <article class="product-card inbound-card ${storageCardClass(item.storageMethod)} ${item.isReceivingComplete ? 'done' : ''}" data-id="${esc(item.id)}" data-receive-card="1">
           <div class="thumb-wrap">
-            <img class="thumb" src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy" ${imageFallbackAttr()}>
+            <img class="thumb" src="${esc(imageUrl(item))}" alt="${esc(productName)}" loading="lazy" ${imageFallbackAttr()}>
           </div>
           <div class="inbound-main">
             <div class="card-head">
-              <h3 class="card-name">${esc(item.productName)}</h3>
+              <h3 class="card-name">${esc(productName)}</h3>
               <span class="package-pill ${packageTone}" aria-label="포장 ${esc(packageUnit)}"><span>포장</span><strong>${esc(packageUnit)}</strong></span>
             </div>
             <div class="card-desc">공급가 ${money(item.supplyPrice)} · 판매가 ${money(item.salePrice)}</div>
             <div class="tag-row">
               ${storageBadge(item.storageMethod)}
               ${salesTypeBadge(item.salesType)}
-              ${item.productCode ? `<span class="soft-tag">코드 ${esc(item.productCode)}</span>` : ''}
               <span class="soft-tag">본사버퍼 ${number(item.hqBufferQuantity)}</span>
               <span class="soft-tag">지점버퍼 ${number(item.ourBufferQuantity)}</span>
             </div>
@@ -3809,6 +3875,32 @@
       render();
     }
 
+    function renderReceivingCompleteState(id) {
+      const item = findItem(id);
+      const card = document.querySelector(`[data-receive-card="1"][data-id="${CSS.escape(id)}"]`);
+      if (!item || !card) return false;
+
+      const complete = Boolean(item.isReceivingComplete);
+      const counted = Number(item.countedQuantity || 0);
+      const inbound = Number(item.inboundQuantity || 0);
+      const button = card.querySelector('[data-action="receive-complete"]');
+
+      card.classList.toggle('done', complete);
+
+      if (button) {
+        button.classList.toggle('done', complete);
+        button.setAttribute('aria-label', complete ? '입고완료 취소' : '입고완료 처리');
+
+        const main = button.querySelector('.complete-main');
+        const sub = button.querySelector('.complete-sub');
+        if (main) main.textContent = complete ? '입고완료됨' : '입고완료 처리';
+        if (sub) sub.textContent = complete ? '완료 취소' : `${number(counted)}/${number(inbound)}`;
+      }
+
+      refreshReceivingSummary();
+      return true;
+    }
+
     function refreshReceivingSummary() {
       if (!state.dashboard || state.tab !== 'inbound' || state.managementTab !== 'receiving') return;
       renderInboundSummary(state.dashboard, getInboundSearchItems(state.dashboard));
@@ -3821,12 +3913,13 @@
       const inboundQuantity = Number(item.inboundQuantity || 0);
       const orderQuantity = Number(item.customerOrderQuantity || 0);
       const bufferRemaining = Number(item.bufferRemainingQuantity || 0);
+      const productName = productNameText(item.productName);
 
       return `
         <article class="stale-item" data-id="${esc(item.id)}">
-          <img class="stale-thumb" src="${esc(imageUrl(item))}" alt="${esc(item.productName)}" loading="lazy" ${imageFallbackAttr()}>
+          <img class="stale-thumb" src="${esc(imageUrl(item))}" alt="${esc(productName)}" loading="lazy" ${imageFallbackAttr()}>
           <div class="stale-copy">
-            <div class="stale-name">${esc(item.productName)}</div>
+            <div class="stale-name">${esc(productName)}</div>
             <div class="stale-meta">
               <span class="stale-date-label"><span>입고</span><strong>${esc(compactDateWeekdayLabel(inboundDate))}</strong></span>
               ${storageBadge(item.storageMethod)}
@@ -3855,7 +3948,7 @@
 
     function renderStaleStorageSections(items = []) {
       return groupStaleItemsByStorage(items).map(group => `
-        <section class="stale-storage-section">
+        <section class="stale-storage-section storage-${storageClass(group.storage)}">
           <div class="stale-storage-head">
             <strong>${storageBadge(group.storage)}</strong>
             <span>${number(group.items.length)}종 · 입고 ${number(group.totalQuantity)}개</span>
@@ -3872,7 +3965,7 @@
       const grouped = new Map();
 
       (items || []).forEach(item => {
-        const storage = item.storageMethod || '상온';
+        const storage = normalizeStorageValue(item.storageMethod);
         if (!grouped.has(storage)) grouped.set(storage, []);
         grouped.get(storage).push(item);
       });
@@ -4060,7 +4153,7 @@
         ${groupMismatches.length ? `
           <div class="settlement-alert">
             <strong>공구 수량 차이가 ${number(groupMismatches.length)}개 있습니다.</strong>
-            <span>${groupMismatches.slice(0, 3).map(item => `${item.productName} 정산 ${number(item.settlementQuantity)} / 입고리스트 ${item.hasInventoryMatch ? number(item.inventoryListQuantity) : '매칭없음'} / raw ${item.hasRawInventoryMatch ? number(item.inventoryRawQuantity) : '-'}`).join(' · ')}</span>
+            <span>${groupMismatches.slice(0, 3).map(item => `${productNameText(item.productName)} 정산 ${number(item.settlementQuantity)} / 입고리스트 ${item.hasInventoryMatch ? number(item.inventoryListQuantity) : '매칭없음'} / raw ${item.hasRawInventoryMatch ? number(item.inventoryRawQuantity) : '-'}`).join(' · ')}</span>
           </div>
         ` : ''}
         ${categoryGroups.length
@@ -4120,16 +4213,17 @@
       const categoryClass = settlementCategoryClass(item.category);
       const isGroupItem = item.category === '공구';
       const isReviewed = isSettlementItemReviewed(item);
+      const productName = productNameText(item.productName);
       const image = item.category === 'CS'
         ? CS_SETTLEMENT_IMAGE_URL
         : imageUrl({ imageUrl: item.imageUrl, productName: item.productName });
 
       return `
         <article class="settlement-card ${categoryClass} ${isGroupItem && item.mismatch ? 'mismatch' : ''} ${isGroupItem && item.listRawMismatch ? 'raw-mismatch' : ''}">
-          <img src="${esc(image)}" alt="${esc(item.productName)}" loading="lazy" ${imageFallbackAttr()}>
+          <img src="${esc(image)}" alt="${esc(productName)}" loading="lazy" ${imageFallbackAttr()}>
           <div class="settlement-main">
             <div class="settlement-top">
-              <div class="settlement-name">${esc(item.productName)}</div>
+              <div class="settlement-name">${esc(productName)}</div>
               ${!isGroupItem && isSettlementReviewableCategory(item.category) ? `
                 <button
                   class="settlement-review-btn ${isReviewed ? 'done' : ''}"
@@ -4361,7 +4455,6 @@
       return normalizeSearchText([
         item.productName,
         item.productKey,
-        item.productCode,
         item.storageMethod,
         item.salesType
       ].filter(Boolean).join(' ')).includes(queryKey);
@@ -4809,7 +4902,7 @@
         target.isReceivingComplete = Boolean(nextComplete);
         target.completedAt = nextCompletedAt;
       });
-      renderDashboardItemCard(id);
+      renderReceivingCompleteState(id) || renderDashboardItemCard(id);
       flashActionButton(id, 'receive-complete', nextComplete ? '완료' : '취소', nextComplete ? '' : 'minus');
 
       state.pendingWrites += 1;
@@ -4839,7 +4932,7 @@
             target.isReceivingComplete = previous;
             target.completedAt = previousCompletedAt;
           });
-          renderDashboardItemCard(id);
+          renderReceivingCompleteState(id) || renderDashboardItemCard(id);
           alert(error.message || String(error));
         })
         .finally(() => {
@@ -5782,6 +5875,7 @@
       document.querySelectorAll('[data-sales-date]').forEach(button => {
         button.onclick = () => {
           state.salesDateKey = button.dataset.salesDate || '';
+          state.salesDateTouched = true;
           render();
         };
       });

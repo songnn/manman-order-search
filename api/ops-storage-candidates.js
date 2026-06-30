@@ -1,4 +1,4 @@
-import { findCustomerCandidatesByDigits } from '../lib/opsData.js';
+import { findCustomerCandidatesByDigits, normalizeInventoryRowProductFields } from '../lib/opsData.js';
 import { supabaseAdmin } from '../lib/supabaseAdmin.js';
 
 const STORE_NAME = process.env.STORE_NAME || '전농래미안크레시티점';
@@ -136,7 +136,7 @@ async function readRecentOrderRows({ digits, sinceOrderDateValue, minPickupDateV
     .limit(700);
 
   if (error) throw error;
-  return data || [];
+  return (data || []).map(normalizeInventoryRowProductFields);
 }
 
 async function readRecentOrderRowsByCustomer({ customerQuery, sinceOrderDateValue, minPickupDateValue, maxPickupDateValue }) {
@@ -169,7 +169,7 @@ async function readRecentOrderRowsByCustomer({ customerQuery, sinceOrderDateValu
     .limit(700);
 
   if (error) throw error;
-  return data || [];
+  return (data || []).map(normalizeInventoryRowProductFields);
 }
 
 function mergeCandidates(candidates, rows, digits) {
@@ -355,7 +355,7 @@ async function readInventoryRows(dateKeys) {
     .in('inbound_date', dateKeys);
 
   if (error) throw error;
-  return data || [];
+  return (data || []).map(normalizeInventoryRowProductFields);
 }
 
 async function readRecentInventoryRows({ productQuery, minDateKey, maxDateKey }) {
@@ -391,6 +391,7 @@ async function readRecentInventoryRows({ productQuery, minDateKey, maxDateKey })
   if (error) throw error;
 
   return (data || [])
+    .map(normalizeInventoryRowProductFields)
     .filter(row => {
       const productKey = normalizeProductKey([
         row.product_name,
