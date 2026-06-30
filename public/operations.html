@@ -486,28 +486,95 @@
       background: linear-gradient(90deg, rgba(220,252,231,.78), rgba(255,255,255,0));
     }
     .stale-storage-head {
-      display: flex;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
       align-items: center;
-      justify-content: space-between;
-      gap: 8px;
+      gap: 10px;
       padding: 0 8px 0 0;
     }
-    .stale-storage-head strong {
-      display: inline-flex;
+    .stale-storage-title {
       min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 9px;
     }
-    .stale-storage-head span {
+    .stale-storage-icon {
       flex: 0 0 auto;
-      min-height: 22px;
+      width: 34px;
+      height: 34px;
       display: inline-flex;
       align-items: center;
-      padding: 0 8px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.72);
-      color: #5f6875;
+      justify-content: center;
+      border-radius: 12px;
+      color: #fff;
+      box-shadow: 0 10px 20px rgba(17,24,39,.13);
+    }
+    .stale-storage-icon.frozen {
+      background: linear-gradient(135deg, #38bdf8, #2563eb);
+    }
+    .stale-storage-icon.cold {
+      background: linear-gradient(135deg, #22d3ee, #0891b2);
+    }
+    .stale-storage-icon.room {
+      background: linear-gradient(135deg, #fbbf24, #f97316);
+    }
+    .stale-storage-icon svg {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      stroke-width: 2.25;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .stale-storage-copy {
+      min-width: 0;
+      display: grid;
+      gap: 4px;
+    }
+    .stale-storage-copy strong {
+      min-width: 0;
+      color: #111827;
+      font-size: 16px;
+      line-height: 1;
+      font-weight: 700 !important;
+      letter-spacing: 0;
+    }
+    .stale-storage-copy em {
+      color: #1d4ed8;
       font-size: 10px;
       line-height: 1;
-      font-weight: 500 !important;
+      font-style: normal;
+      font-weight: 700 !important;
+      letter-spacing: 0;
+    }
+    .stale-storage-section.storage-cold .stale-storage-copy em { color: #067488; }
+    .stale-storage-section.storage-room .stale-storage-copy em { color: #c2410c; }
+    .stale-storage-count {
+      flex: 0 0 auto;
+      min-height: 26px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: rgba(239,246,255,.95);
+      color: #1d4ed8;
+      border: 1px solid rgba(37,99,235,.16);
+      font-size: 11px;
+      line-height: 1;
+      font-weight: 700 !important;
+      white-space: nowrap;
+    }
+    .stale-storage-section.storage-cold .stale-storage-count {
+      background: rgba(236,254,255,.95);
+      color: #067488;
+      border-color: rgba(8,145,178,.18);
+    }
+    .stale-storage-section.storage-room .stale-storage-count {
+      background: rgba(255,247,237,.95);
+      color: #c2410c;
+      border-color: rgba(249,115,22,.18);
     }
     .stale-storage-body {
       display: grid;
@@ -2538,6 +2605,22 @@
       return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v3M12 17v3M4 12h3M17 12h3M6.6 6.6l2.1 2.1M15.3 15.3l2.1 2.1M17.4 6.6l-2.1 2.1M8.7 15.3l-2.1 2.1"/><circle cx="12" cy="12" r="4"/></svg>';
     }
 
+    function storageGroupIconSvg(value) {
+      if (value === '냉동') {
+        return '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="16" rx="3"/><path d="M8 9h8M8 15h8M12 7v4M10 9h4M10 15l2-2 2 2"/></svg>';
+      }
+      if (value === '냉장') {
+        return '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="3"/><path d="M9 8h6M9 13h6M10 18h4M15 3v18"/></svg>';
+      }
+      return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 10h14l-1.2 9H6.2L5 10Z"/><path d="M9 10V7a3 3 0 0 1 6 0v3M8 14h8M12 14v3"/></svg>';
+    }
+
+    function storageGroupCaption(value) {
+      if (value === '냉동') return '냉동 보관';
+      if (value === '냉장') return '냉장 보관';
+      return '상온 보관';
+    }
+
     const OPS_IMAGE_FALLBACK = '/store-purchase-icon.png';
 
     function imageUrl(item) {
@@ -3922,7 +4005,6 @@
             <div class="stale-name">${esc(productName)}</div>
             <div class="stale-meta">
               <span class="stale-date-label"><span>입고</span><strong>${esc(compactDateWeekdayLabel(inboundDate))}</strong></span>
-              ${storageBadge(item.storageMethod)}
             </div>
           </div>
           <div class="stale-side">
@@ -3949,15 +4031,30 @@
     function renderStaleStorageSections(items = []) {
       return groupStaleItemsByStorage(items).map(group => `
         <section class="stale-storage-section storage-${storageClass(group.storage)}">
-          <div class="stale-storage-head">
-            <strong>${storageBadge(group.storage)}</strong>
-            <span>${number(group.items.length)}종 · 입고 ${number(group.totalQuantity)}개</span>
-          </div>
+          ${renderStaleStorageHead(group)}
           <div class="stale-storage-body">
             ${group.items.map(renderStaleItem).join('')}
           </div>
         </section>
       `).join('');
+    }
+
+    function renderStaleStorageHead(group) {
+      const storage = normalizeStorageValue(group.storage);
+      const tone = storageClass(storage);
+
+      return `
+        <div class="stale-storage-head">
+          <div class="stale-storage-title">
+            <span class="stale-storage-icon ${tone}" aria-hidden="true">${storageGroupIconSvg(storage)}</span>
+            <span class="stale-storage-copy">
+              <strong>${esc(storage)}</strong>
+              <em>${esc(storageGroupCaption(storage))}</em>
+            </span>
+          </div>
+          <span class="stale-storage-count">${number(group.items.length)}종 · ${number(group.totalQuantity)}개</span>
+        </div>
+      `;
     }
 
     function groupStaleItemsByStorage(items = []) {
