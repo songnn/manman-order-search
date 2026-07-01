@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>만만마켓 운영</title>
-  <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preload" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"></noscript>
   <style>
     @font-face {
       font-family: 'TheJamsilOps';
@@ -40,6 +42,46 @@
     .date-btn { flex: 0 0 auto; min-width: 94px; height: 43px; border: 1px solid rgba(255,255,255,.75); border-radius: 17px; background: #fff; color: #7b808b; font-size: 14px; font-weight: 600; box-shadow: 0 10px 22px rgba(36,42,54,.06); }
     .date-btn.active { background: #151517; color: #fff; border-color: #151517; }
     .grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+    .boot-metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 7px;
+      margin-bottom: 8px;
+    }
+    .boot-metric,
+    .boot-card {
+      position: relative;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 8px 22px rgba(36,42,54,.06);
+    }
+    .boot-metric {
+      min-height: 54px;
+      border-radius: 16px;
+    }
+    .boot-card {
+      min-height: 146px;
+      border-radius: 26px;
+    }
+    .boot-card + .boot-card {
+      margin-top: 12px;
+    }
+    .boot-metric::after,
+    .boot-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      transform: translateX(-100%);
+      background: linear-gradient(90deg, transparent, rgba(241,245,249,.86), transparent);
+      animation: bootShimmer 1.15s ease-in-out infinite;
+    }
+    @keyframes bootShimmer {
+      to { transform: translateX(100%); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .boot-metric::after,
+      .boot-card::after { animation: none; }
+    }
     .product-card { position: relative; min-width: 0; display: grid; grid-template-columns: 112px minmax(0, 1fr) auto; gap: 18px; align-items: center; min-height: 146px; padding: 16px; border-radius: 30px; background: #fff; box-shadow: 0 18px 42px rgba(36, 42, 54, 0.09); }
     .sales-card { grid-template-columns: 86px minmax(0, 1fr); align-items: start; }
     .product-card.done { box-shadow: 0 18px 42px rgba(8,160,92,.13); }
@@ -2583,7 +2625,10 @@
         </div>
         <section class="sales-view active" id="bufferView">
           <div class="date-strip" id="salesDateStrip" aria-label="판매 날짜 선택"></div>
-          <div class="grid" id="salesGrid"></div>
+          <div class="grid" id="salesGrid">
+            <div class="boot-card" aria-hidden="true"></div>
+            <div class="boot-card" aria-hidden="true"></div>
+          </div>
         </section>
         <section class="sales-view" id="storageView">
           <div id="storageRequestRoot"></div>
@@ -2597,8 +2642,15 @@
           <button class="management-tab" id="settlementSubTab" type="button">정산서검토</button>
         </div>
         <section class="management-view active" id="receivingView">
-          <div class="summary" id="inboundSummary"></div>
-          <div class="inbound-sections" id="inboundGrid"></div>
+          <div class="summary" id="inboundSummary">
+            <div class="boot-metric" aria-hidden="true"></div>
+            <div class="boot-metric" aria-hidden="true"></div>
+            <div class="boot-metric" aria-hidden="true"></div>
+          </div>
+          <div class="inbound-sections" id="inboundGrid">
+            <div class="boot-card" aria-hidden="true"></div>
+            <div class="boot-card" aria-hidden="true"></div>
+          </div>
         </section>
         <section class="management-view" id="staleView">
           <div class="stale-list" id="staleList"></div>
