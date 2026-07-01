@@ -670,6 +670,20 @@
       border-radius: 13px;
       background: #f7f8fa;
     }
+    button.stale-metric {
+      width: 100%;
+      border: 0;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+      touch-action: manipulation;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    button.stale-metric:active {
+      transform: translateY(1px);
+    }
     .stale-metric span {
       color: #858c98;
       font-size: 9px;
@@ -2405,6 +2419,7 @@
     const DASHBOARD_CACHE_MAX_AGE_MS = 12 * 60 * 60 * 1000;
     const SETTLEMENT_CACHE_KEY = 'opsSettlementReviewCache:v2';
     const SETTLEMENT_CACHE_MAX_AGE_MS = 12 * 60 * 60 * 1000;
+    const SETTLEMENT_CACHE_STALE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
     const SETTLEMENT_REVIEW_CHECKS_KEY = 'opsSettlementReviewChecks:v1';
     const DASHBOARD_AUTO_REFRESH_MS = 5000;
     const OPTIMISTIC_ITEM_LOCK_MS = 12000;
@@ -2454,6 +2469,9 @@
       busy: false,
       pendingWrites: 0,
       optimisticItemLocks: {},
+      orderCustomerCache: {},
+      orderCustomerLoading: {},
+      activeOrderCustomerKey: '',
       dashboardLoading: false,
       dashboardRefreshQueued: null,
       lastDashboardRefreshAt: 0,
@@ -3002,11 +3020,12 @@
       }
     }
 
-    function readSettlementCache() {
+    function readSettlementCache(options = {}) {
       try {
         const cached = JSON.parse(localStorage.getItem(SETTLEMENT_CACHE_KEY) || 'null');
         const savedAt = Number(cached?.cacheSavedAt || 0);
-        if (!cached?.settlementReview || !savedAt || Date.now() - savedAt > SETTLEMENT_CACHE_MAX_AGE_MS) {
+        const maxAge = options.allowStale ? SETTLEMENT_CACHE_STALE_MAX_AGE_MS : SETTLEMENT_CACHE_MAX_AGE_MS;
+        if (!cached?.settlementReview || !savedAt || Date.now() - savedAt > maxAge) {
           return null;
         }
 
@@ -3213,7 +3232,7 @@
 
     function renderSalesCard(item) {
       const bufferQuantity = Number(item.bufferRemainingQuantity || 0);
-      const orderQuantityLabel = item.orderQuantitySource === 'inventory_sheet' ? '발주수량' : '공구주문건수';
+      const orderLineCount = getOrderLineCount(item);
       const productName = productNameText(item.productName);
 
       return `
@@ -3232,7 +3251,7 @@
             </div>
             <div class="sales-sub-line">
               <span>입고수량 <strong>${number(item.inboundQuantity)}</strong></span>
-              <button class="order-count-link" data-action="show-order-list" type="button">${esc(orderQuantityLabel)} <strong>${number(item.customerOrderQuantity)}</strong></button>
+              <button class="order-count-link" data-action="show-order-list" type="button">공구주문건수 <strong>${number(orderLineCount)}</strong></button>
             </div>
           </div>
           ${renderBufferSummary(item)}
@@ -3866,8 +3885,23 @@
       const item = findItem(id);
       if (!item) return;
 
+      const key = getOrderCustomerKey(item);
       const rows = getOrderCustomersForItem(item);
-      openModal('공구주문 고객', productNameText(item.productName), renderOrderCustomersRows(rows));
+      state.activeOrderCustomerKey = key;
+      openModal('공구주문 고객', productNameText(item.productName), renderOrderCustomersRows(rows, {
+        loading: !state.orderCustomerCache[key]
+      }));
+
+      fetchOrderCustomersForItem(item)
+        .then(freshRows => {
+          if (!freshRows || els.listModal.hidden || state.activeOrderCustomerKey !== key) return;
+          els.listModalBody.innerHTML = renderOrderCustomersRows(freshRows);
+        })
+        .catch(error => {
+          console.warn('order customers refresh failed:', error);
+          if (els.listModal.hidden || state.activeOrderCustomerKey !== key || rows.length) return;
+          els.listModalBody.innerHTML = `<div class="empty">${esc(error.message || String(error))}</div>`;
+        });
     }
 
     function getOrderCustomerKey(item) {
@@ -3877,12 +3911,59 @@
 
     function getOrderCustomersForItem(item) {
       const key = getOrderCustomerKey(item);
+      if (key && Array.isArray(state.orderCustomerCache[key])) return state.orderCustomerCache[key];
       const rows = key ? state.dashboard?.orderCustomersByKey?.[key] : null;
       if (Array.isArray(rows)) return rows;
       return Array.isArray(item?.orderCustomers) ? item.orderCustomers : [];
     }
 
-    function renderOrderCustomersRows(rows = []) {
+    function getOrderLineCount(item) {
+      const rows = getOrderCustomersForItem(item);
+      return Number(item?.orderLineCount || rows.length || 0);
+    }
+
+    async function fetchOrderCustomersForItem(item) {
+      const key = getOrderCustomerKey(item);
+      if (!key) return [];
+      if (Array.isArray(state.orderCustomerCache[key])) return state.orderCustomerCache[key];
+      if (state.orderCustomerLoading[key]) return state.orderCustomerLoading[key];
+
+      const url = new URL('/api/ops-order-customers', location.origin);
+      url.searchParams.set('token', state.token);
+      url.searchParams.set('productKey', item.productKey || item.productName || '');
+      url.searchParams.set('dateKey', item.inboundDateKey || '');
+
+      state.orderCustomerLoading[key] = fetch(url)
+        .then(async response => {
+          const data = await response.json();
+          if (!response.ok || !data.ok) throw new Error(data.message || '공구주문 고객을 불러오지 못했습니다.');
+
+          const rows = Array.isArray(data.customers) ? data.customers : [];
+          state.orderCustomerCache[key] = rows;
+          if (state.dashboard) {
+            state.dashboard.orderCustomersByKey = {
+              ...(state.dashboard.orderCustomersByKey || {}),
+              [key]: rows
+            };
+            updateItem(item.id, target => {
+              target.orderLineCount = rows.length;
+              target.customerOrderQuantity = rows.reduce((sum, row) => sum + Number(row.quantity || 0), 0);
+            });
+          }
+          return rows;
+        })
+        .finally(() => {
+          delete state.orderCustomerLoading[key];
+        });
+
+      return state.orderCustomerLoading[key];
+    }
+
+    function renderOrderCustomersRows(rows = [], options = {}) {
+      if (!rows.length && options.loading) {
+        return '<div class="empty">공구주문 고객을 불러오는 중입니다.</div>';
+      }
+
       return rows.length
         ? rows.map(row => `
             <div class="sheet-row">
@@ -3898,6 +3979,7 @@
     }
 
     function closeListModal() {
+      state.activeOrderCustomerKey = '';
       els.listModal.hidden = true;
       els.listModalPanel.style.transform = '';
       els.listModalPanel.classList.remove('swiping');
@@ -4143,7 +4225,7 @@
       const dPlus = daysBetweenDateKeys(item.inboundDateKey, state.dashboard?.todayKey);
       const dPlusLabel = dPlus == null ? 'D+2' : `D+${Math.max(0, dPlus)}`;
       const inboundQuantity = Number(item.inboundQuantity || 0);
-      const orderQuantity = Number(item.customerOrderQuantity || 0);
+      const orderLineCount = getOrderLineCount(item);
       const bufferRemaining = Number(item.bufferRemainingQuantity || 0);
       const productName = productNameText(item.productName);
 
@@ -4164,10 +4246,10 @@
               <span>입고수량</span>
               <strong>${number(inboundQuantity)}</strong>
             </div>
-            <div class="stale-metric orders">
+            <button class="stale-metric orders" data-action="show-order-list" type="button" aria-label="공구주문 고객 보기">
               <span>공구주문</span>
-              <strong>${number(orderQuantity)}</strong>
-            </div>
+              <strong>${number(orderLineCount)}</strong>
+            </button>
             <div class="stale-metric buffer ${bufferRemaining > 0 ? '' : 'empty'}">
               <span>잔여버퍼</span>
               <strong>${number(bufferRemaining)}</strong>
@@ -4365,7 +4447,7 @@
     async function ensureSettlementReviewLoaded() {
       if (state.dashboard?.settlementReview || state.settlementLoading) return;
 
-      const cachedSettlementReview = readSettlementCache();
+      const cachedSettlementReview = readSettlementCache({ allowStale: true });
       if (cachedSettlementReview) {
         state.dashboard = {
           ...(state.dashboard || {

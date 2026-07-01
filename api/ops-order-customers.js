@@ -1,5 +1,13 @@
 import { readUnifiedRowsWithRowNumbers_ } from '../lib/orders.js';
 
+const SOURCE_ROWS_CACHE_MS = Math.max(0, Number(process.env.OPS_ORDER_CUSTOMERS_CACHE_MS || 60000));
+const sourceRowsCache = globalThis.__opsOrderCustomersSourceRowsCache || {
+  expiresAt: 0,
+  rows: null,
+  promise: null
+};
+globalThis.__opsOrderCustomersSourceRowsCache = sourceRowsCache;
+
 const ORDER_COUNT_EXCLUDED_CUSTOMERS = new Set([
   '로지4298',
   '로지4739',
@@ -35,7 +43,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const rows = await readUnifiedRowsWithRowNumbers_();
+    const rows = await readCachedUnifiedRows();
     const customers = rows
       .filter(row => normalizeProductKey(row.productName) === productKey)
       .filter(row => parseDateKey(row.pickupDate) === dateKey)
@@ -66,6 +74,27 @@ export default async function handler(req, res) {
       message: error.message
     });
   }
+}
+
+async function readCachedUnifiedRows() {
+  const now = Date.now();
+  if (SOURCE_ROWS_CACHE_MS > 0 && Array.isArray(sourceRowsCache.rows) && sourceRowsCache.expiresAt > now) {
+    return sourceRowsCache.rows;
+  }
+
+  if (sourceRowsCache.promise) return sourceRowsCache.promise;
+
+  sourceRowsCache.promise = readUnifiedRowsWithRowNumbers_()
+    .then(rows => {
+      sourceRowsCache.rows = Array.isArray(rows) ? rows : [];
+      sourceRowsCache.expiresAt = Date.now() + SOURCE_ROWS_CACHE_MS;
+      return sourceRowsCache.rows;
+    })
+    .finally(() => {
+      sourceRowsCache.promise = null;
+    });
+
+  return sourceRowsCache.promise;
 }
 
 function isAuthorized(req) {
