@@ -106,10 +106,9 @@ function isAuthorized(req) {
 function normalizeProductKey(value) {
   return clean(value)
     .toLowerCase()
-    .replace(/\[[^\]]+\]/g, '')
-    .replace(/\([^)]*\)/g, '')
-    .replace(/[0-9]+(?:\.[0-9]+)?\s*(?:g|kg|ml|l|개|팩|박스|입|봉|구|세트)/gi, '')
-    .replace(/[^0-9a-z가-힣]+/gi, '');
+    .replace(/\s+/g, ' ')
+    .replace(/[()[\]{}]/g, '')
+    .trim();
 }
 
 function normalizeCustomerForOrderCount(value) {

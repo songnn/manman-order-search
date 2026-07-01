@@ -4299,6 +4299,7 @@
       fetchOrderCustomersForItem(item)
         .then(freshRows => {
           if (!freshRows || els.listModal.hidden || state.activeOrderCustomerKey !== key) return;
+          if (!freshRows.length && rows.length) return;
           els.listModalBody.innerHTML = renderOrderCustomersRows(freshRows);
         })
         .catch(error => {
