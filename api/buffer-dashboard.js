@@ -1,4 +1,4 @@
-import { getOperationsDashboardData, syncInventorySheets } from '../lib/opsData.js';
+import { getOperationsDashboardData, getOperationsSettlementReviewData, syncInventorySheets } from '../lib/opsData.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -21,9 +21,13 @@ export default async function handler(req, res) {
       await syncInventorySheets();
     }
 
-    const data = await getOperationsDashboardData({
-      includeSettlement: String(req.query?.settlement || '') === '1'
-    });
+    const wantsSettlement = String(req.query?.settlement || '') === '1';
+    const wantsSettlementOnly = wantsSettlement && String(req.query?.settlementOnly || '') === '1';
+    const data = wantsSettlementOnly
+      ? await getOperationsSettlementReviewData()
+      : await getOperationsDashboardData({
+          includeSettlement: wantsSettlement
+        });
     return res.status(200).json(data);
   } catch (error) {
     console.error('buffer-dashboard error:', error);

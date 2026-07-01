@@ -2397,9 +2397,14 @@
   </div>
 
   <script>
-    const DASHBOARD_CACHE_KEY = 'opsDashboardCache:v12';
-    const DASHBOARD_CACHE_FALLBACK_KEYS = [];
-    const DASHBOARD_CACHE_MAX_AGE_MS = 90 * 1000;
+    const DASHBOARD_CACHE_KEY = 'opsDashboardCache:v13';
+    const DASHBOARD_CACHE_FALLBACK_KEYS = [
+      'opsDashboardCache:v12',
+      'opsDashboardCache:v11'
+    ];
+    const DASHBOARD_CACHE_MAX_AGE_MS = 12 * 60 * 60 * 1000;
+    const SETTLEMENT_CACHE_KEY = 'opsSettlementReviewCache:v2';
+    const SETTLEMENT_CACHE_MAX_AGE_MS = 12 * 60 * 60 * 1000;
     const SETTLEMENT_REVIEW_CHECKS_KEY = 'opsSettlementReviewChecks:v1';
     const DASHBOARD_AUTO_REFRESH_MS = 5000;
     const OPTIMISTIC_ITEM_LOCK_MS = 12000;
@@ -2705,7 +2710,34 @@
       }
     }
 
+    async function loadSettlementReviewData() {
+      const url = new URL('/api/buffer-dashboard', location.origin);
+      url.searchParams.set('token', state.token);
+      url.searchParams.set('settlement', '1');
+      url.searchParams.set('settlementOnly', '1');
+
+      const response = await fetch(url);
+      const data = await response.json();
+      if (!response.ok || !data.ok) throw new Error(data.message || '정산 데이터를 불러오지 못했습니다.');
+
+      applyDashboardData(data);
+      return true;
+    }
+
     function applyDashboardData(data) {
+      if (data.settlementOnly) {
+        data = {
+          ...(state.dashboard || {
+            ok: true,
+            storeName: data.storeName || '만만마켓',
+            todayKey: data.todayKey || ''
+          }),
+          settlementReview: data.settlementReview,
+          settlementReviewLoaded: true,
+          generatedAt: data.generatedAt || new Date().toISOString()
+        };
+      }
+
       if (!data.settlementReview && state.dashboard?.settlementReview) {
         data = {
           ...data,
@@ -2831,9 +2863,15 @@
 
     function saveDashboardCache(data) {
       try {
-        localStorage.setItem(DASHBOARD_CACHE_KEY, JSON.stringify({
+        if (data?.settlementReview) saveSettlementCache(data.settlementReview);
+        const cacheData = {
           ...data,
+          settlementReview: null,
+          settlementReviewLoaded: false,
           cacheSavedAt: Date.now()
+        };
+        localStorage.setItem(DASHBOARD_CACHE_KEY, JSON.stringify({
+          ...cacheData
         }));
       } catch {
       }
@@ -2860,10 +2898,42 @@
         const cached = readDashboardCache(key);
         if (!cached) continue;
 
-        state.dashboard = cached;
-        if (key !== DASHBOARD_CACHE_KEY) saveDashboardCache(cached);
+        if (cached.settlementReview) saveSettlementCache(cached.settlementReview);
+        const dashboardCache = {
+          ...cached,
+          settlementReview: null,
+          settlementReviewLoaded: false
+        };
+        state.dashboard = dashboardCache;
+        if (key !== DASHBOARD_CACHE_KEY) saveDashboardCache(dashboardCache);
         render();
         return;
+      }
+    }
+
+    function saveSettlementCache(settlementReview) {
+      try {
+        if (!settlementReview) return;
+        localStorage.setItem(SETTLEMENT_CACHE_KEY, JSON.stringify({
+          ok: true,
+          settlementReview,
+          cacheSavedAt: Date.now()
+        }));
+      } catch {
+      }
+    }
+
+    function readSettlementCache() {
+      try {
+        const cached = JSON.parse(localStorage.getItem(SETTLEMENT_CACHE_KEY) || 'null');
+        const savedAt = Number(cached?.cacheSavedAt || 0);
+        if (!cached?.settlementReview || !savedAt || Date.now() - savedAt > SETTLEMENT_CACHE_MAX_AGE_MS) {
+          return null;
+        }
+
+        return cached.settlementReview;
+      } catch {
+        return null;
       }
     }
 
@@ -4216,16 +4286,46 @@
     async function ensureSettlementReviewLoaded() {
       if (state.dashboard?.settlementReview || state.settlementLoading) return;
 
+      const cachedSettlementReview = readSettlementCache();
+      if (cachedSettlementReview) {
+        state.dashboard = {
+          ...(state.dashboard || {
+            ok: true,
+            storeName: '만만마켓',
+            todayKey: ''
+          }),
+          settlementReview: cachedSettlementReview,
+          settlementReviewLoaded: true
+        };
+        renderSettlementReview(state.dashboard);
+        bindControls();
+        scheduleSettlementReviewRefresh();
+        return;
+      }
+
       state.settlementLoading = true;
       renderSettlementReview(state.dashboard || {});
 
       try {
-        await loadDashboard({ includeSettlement: true, silent: true, force: true });
+        await loadSettlementReviewData();
       } catch (error) {
         els.settlementReviewRoot.innerHTML = `<div class="empty">${esc(error.message || String(error))}</div>`;
       } finally {
         state.settlementLoading = false;
       }
+    }
+
+    function scheduleSettlementReviewRefresh(delayMs = 250) {
+      if (state.settlementLoading) return;
+      window.setTimeout(() => {
+        if (state.managementTab !== 'settlement' || state.settlementLoading) return;
+        state.settlementLoading = true;
+        loadSettlementReviewData()
+          .catch(error => console.warn('settlement refresh failed:', error))
+          .finally(() => {
+            state.settlementLoading = false;
+          });
+      }, Math.max(0, Number(delayMs || 0)));
     }
 
     function renderSettlementResults(data) {
