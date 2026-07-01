@@ -2116,37 +2116,96 @@
     .storage-picked-section {
       display: grid;
       gap: 7px;
-      margin-top: 4px;
-      border-radius: 18px;
-      background: rgba(255,255,255,.58);
+      margin-top: 8px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #f7fbfa, #f8fafc);
+      border: 1px solid #e7eef4;
+      box-shadow: 0 8px 20px rgba(36,42,54,.045);
+      overflow: hidden;
+    }
+    .storage-picked-section[open] {
+      background: #fff;
+      box-shadow: 0 12px 28px rgba(36,42,54,.07);
     }
     .storage-picked-section summary {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 10px;
+      grid-template-columns: auto minmax(0, 1fr) auto auto;
+      gap: 9px;
       align-items: center;
-      padding: 11px 12px;
-      border-radius: 18px;
-      background: #eef1f6;
-      color: #687180;
+      min-height: 54px;
+      padding: 10px 12px;
+      color: #394150;
       list-style: none;
       cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
     }
     .storage-picked-section summary::-webkit-details-marker { display: none; }
-    .storage-picked-section summary strong {
-      color: #343943;
-      font-size: 12.5px;
+    .storage-picked-icon {
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border-radius: 11px;
+      background: #ecfdf5;
+      color: #0f9f68;
+      box-shadow: inset 0 0 0 1px rgba(15,159,104,.14);
+    }
+    .storage-picked-icon svg,
+    .storage-picked-chevron svg {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .storage-picked-copy {
+      min-width: 0;
+      display: grid;
+      gap: 3px;
+    }
+    .storage-picked-copy strong {
+      color: #242a34;
+      font-size: 13px;
       line-height: 1;
       font-weight: 600 !important;
     }
-    .storage-picked-section summary span {
-      color: #7f8793;
+    .storage-picked-copy span {
+      color: #7a838f;
       font-size: 10px;
       line-height: 1;
       font-weight: 500 !important;
     }
+    .storage-picked-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 44px;
+      height: 26px;
+      padding: 0 9px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      color: #475569;
+      font-size: 11px;
+      line-height: 1;
+      font-weight: 600 !important;
+      white-space: nowrap;
+    }
+    .storage-picked-chevron {
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      color: #94a3b8;
+      transition: transform 160ms ease;
+    }
+    .storage-picked-section[open] .storage-picked-chevron {
+      transform: rotate(180deg);
+    }
     .storage-picked-section .storage-queue-list {
-      padding: 0 1px 2px;
+      padding: 0 8px 8px;
     }
     .storage-queue-empty {
       min-height: 54px;
@@ -2459,6 +2518,7 @@
         requestMemo: '',
         editingGroup: null,
         formOpen: false,
+        pickedUpOpen: false,
         loading: false,
         complete: null,
         message: ''
@@ -3308,13 +3368,25 @@
     }
 
     function renderPickedUpStorageSection(items = []) {
-      if (!items.length) return '';
+      if (!items.length) {
+        state.storage.pickedUpOpen = false;
+        return '';
+      }
 
       return `
-        <details class="storage-picked-section">
+        <details class="storage-picked-section" data-storage-picked-section ${state.storage.pickedUpOpen ? 'open' : ''}>
           <summary>
-            <strong>최근 고객 픽업완료</strong>
-            <span>${number(items.length)}건 · ${number(PICKED_UP_STORAGE_VISIBLE_DAYS)}일 보관</span>
+            <span class="storage-picked-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+            </span>
+            <span class="storage-picked-copy">
+              <strong>최근 고객 픽업완료</strong>
+              <span>${number(PICKED_UP_STORAGE_VISIBLE_DAYS)}일 보관된 완료 기록</span>
+            </span>
+            <span class="storage-picked-count">${number(items.length)}건</span>
+            <span class="storage-picked-chevron" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+            </span>
           </summary>
           ${renderStorageQueue(items, 'picked_up')}
         </details>
@@ -6169,9 +6241,19 @@
       bindControls();
     }
 
+    function bindStoragePickedSection() {
+      document.querySelectorAll('[data-storage-picked-section]').forEach(details => {
+        details.ontoggle = () => {
+          state.storage.pickedUpOpen = Boolean(details.open);
+        };
+      });
+    }
+
     function bindControls() {
+      bindStoragePickedSection();
       document.querySelectorAll('[data-action]').forEach(button => {
         button.onclick = async event => {
+          event.preventDefault();
           event.stopPropagation();
           const action = button.dataset.action;
           if (handleStorageAction(button, action, event)) return;
