@@ -899,6 +899,161 @@
     .receiving-metric.done strong { color: #2563eb; }
     .receiving-metric.warn { background: linear-gradient(135deg, #fff7ed, #fff1df); }
     .receiving-metric.warn strong { color: #ea580c; }
+    button.receiving-metric {
+      width: 100%;
+      border: 0;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      touch-action: manipulation;
+    }
+    .receiving-metric.date {
+      position: relative;
+      padding-right: 30px;
+      background: linear-gradient(135deg, #f8fbff, #fff);
+      border: 1px solid rgba(214, 223, 238, .74);
+    }
+    .receiving-metric.date::after {
+      content: '';
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      width: 8px;
+      height: 8px;
+      border-right: 2px solid #94a3b8;
+      border-bottom: 2px solid #94a3b8;
+      transform: translateY(-65%) rotate(45deg);
+      transition: transform 160ms ease;
+    }
+    .receiving-metric.date.open::after {
+      transform: translateY(-25%) rotate(225deg);
+    }
+    .receiving-metric.date em {
+      margin-top: -1px;
+      color: #7b8492;
+      font-size: 9px;
+      line-height: 1;
+      font-style: normal;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .inbound-date-picker {
+      grid-column: 1 / -1;
+      display: grid;
+      gap: 9px;
+      padding: 11px;
+      border-radius: 18px;
+      background: #fff;
+      border: 1px solid #e7edf5;
+      box-shadow: 0 14px 34px rgba(36,42,54,.08);
+    }
+    .inbound-calendar-top {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+    }
+    .inbound-calendar-title {
+      min-width: 0;
+      display: grid;
+      gap: 3px;
+    }
+    .inbound-calendar-title strong {
+      color: #151517;
+      font-size: 13px;
+      line-height: 1;
+      font-weight: 600 !important;
+    }
+    .inbound-calendar-title span {
+      color: #858c98;
+      font-size: 10px;
+      line-height: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .inbound-month-strip {
+      display: flex;
+      gap: 5px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      justify-content: flex-end;
+    }
+    .inbound-month-strip::-webkit-scrollbar { display: none; }
+    .inbound-month-btn {
+      height: 28px;
+      border: 0;
+      border-radius: 999px;
+      padding: 0 10px;
+      background: #f1f5f9;
+      color: #64748b;
+      font-size: 10.5px;
+      line-height: 1;
+      font-weight: 600 !important;
+      white-space: nowrap;
+    }
+    .inbound-month-btn.active {
+      background: #111827;
+      color: #fff;
+    }
+    .inbound-weekdays,
+    .inbound-calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 4px;
+    }
+    .inbound-weekdays span {
+      display: grid;
+      place-items: center;
+      height: 16px;
+      color: #94a3b8;
+      font-size: 9px;
+      line-height: 1;
+      font-weight: 600 !important;
+    }
+    .inbound-day {
+      position: relative;
+      min-width: 0;
+      aspect-ratio: 1 / .88;
+      border: 0;
+      border-radius: 12px;
+      background: #f8fafc;
+      color: #c0c7d1;
+      display: grid;
+      place-items: center;
+      font-family: 'TheJamsilOps', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 13px;
+      line-height: 1;
+      font-weight: 500 !important;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    .inbound-day.available {
+      background: #f0f7ff;
+      color: #2563eb;
+      cursor: pointer;
+    }
+    .inbound-day.selected {
+      background: #111827;
+      color: #fff;
+      box-shadow: 0 8px 18px rgba(17,24,39,.18);
+    }
+    .inbound-day.today:not(.selected)::after {
+      content: '';
+      position: absolute;
+      bottom: 5px;
+      width: 4px;
+      height: 4px;
+      border-radius: 999px;
+      background: #0f9f68;
+    }
+    .inbound-day:disabled {
+      cursor: default;
+    }
     .buffer-summary {
       grid-column: 1 / -1;
       display: grid;
@@ -2495,6 +2650,10 @@
       salesDateTouched: false,
       salesQuery: '',
       inboundQuery: '',
+      inboundDateKey: '',
+      inboundDateTouched: false,
+      inboundDatePickerOpen: false,
+      inboundCalendarMonthKey: '',
       staleQuery: '',
       settlementDateKey: '',
       settlementQuery: '',
@@ -3149,6 +3308,7 @@
 
       els.subtitle.textContent = `${data.storeName || '만만마켓'} · ${data.todayKey || ''}`;
       syncSalesDateSelection(data);
+      syncInboundDateSelection(data);
       setTab(state.tab);
       setSalesMode(state.salesMode);
       setManagementTab(state.managementTab);
@@ -3188,6 +3348,92 @@
         <div class="receiving-metric ${esc(kind)}">
           <span>${esc(label)}</span>
           <strong>${esc(value)}</strong>
+        </div>
+      `;
+    }
+
+    function renderReceivingDateMetric(dateKey, option = {}) {
+      const sub = option.count
+        ? `${number(option.count)}종 · ${number(option.totalQuantity)}개`
+        : '입고일 선택';
+
+      return `
+        <button class="receiving-metric date ${state.inboundDatePickerOpen ? 'open' : ''}" data-action="inbound-date-toggle" type="button" aria-label="입고일 선택">
+          <span>입고일</span>
+          <strong>${esc(compactDateWeekdayLabel(dateKey || '-'))}</strong>
+          <em>${esc(sub)}</em>
+        </button>
+      `;
+    }
+
+    function renderInboundDatePicker(data, selectedDateKey) {
+      const options = getInboundDateOptions(data);
+      if (!options.length) return '';
+
+      const optionByDate = new Map(options.map(option => [option.dateKey, option]));
+      const monthKeys = Array.from(new Set(options
+        .map(option => String(option.dateKey || '').slice(0, 7))
+        .filter(Boolean)))
+        .sort((a, b) => String(b).localeCompare(String(a)));
+      const selectedMonthKey = monthKeys.includes(state.inboundCalendarMonthKey)
+        ? state.inboundCalendarMonthKey
+        : String(selectedDateKey || options[0]?.dateKey || '').slice(0, 7);
+      state.inboundCalendarMonthKey = selectedMonthKey;
+
+      const [yearText, monthText] = selectedMonthKey.split('-');
+      const year = Number(yearText);
+      const monthIndex = Number(monthText) - 1;
+      const firstDate = new Date(year, monthIndex, 1);
+      const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+      const leadingBlanks = (firstDate.getDay() + 6) % 7;
+      const cells = [
+        ...Array.from({ length: leadingBlanks }, () => ({ blank: true })),
+        ...Array.from({ length: daysInMonth }, (_, index) => {
+          const day = index + 1;
+          const dateKey = `${yearText}-${monthText}-${String(day).padStart(2, '0')}`;
+          return {
+            day,
+            dateKey,
+            option: optionByDate.get(dateKey)
+          };
+        })
+      ];
+      const monthLabel = `${Number(monthText)}월`;
+      const selectedOption = optionByDate.get(selectedDateKey) || options[0] || {};
+
+      return `
+        <div class="inbound-date-picker">
+          <div class="inbound-calendar-top">
+            <div class="inbound-calendar-title">
+              <strong>${esc(monthLabel)} 입고일</strong>
+              <span>${esc(compactDateWeekdayLabel(selectedDateKey))} · ${number(selectedOption.count || 0)}종 · ${number(selectedOption.totalQuantity || 0)}개</span>
+            </div>
+            <div class="inbound-month-strip" aria-label="입고월 선택">
+              ${monthKeys.map(monthKey => `
+                <button class="inbound-month-btn ${monthKey === selectedMonthKey ? 'active' : ''}" data-action="inbound-month-select" data-inbound-month="${esc(monthKey)}" type="button">${esc(monthKey.slice(5).replace(/^0/, ''))}월</button>
+              `).join('')}
+            </div>
+          </div>
+          <div class="inbound-weekdays" aria-hidden="true">
+            ${['월', '화', '수', '목', '금', '토', '일'].map(day => `<span>${day}</span>`).join('')}
+          </div>
+          <div class="inbound-calendar-grid">
+            ${cells.map(cell => {
+              if (cell.blank) return '<span class="inbound-day" aria-hidden="true"></span>';
+              const available = Boolean(cell.option);
+              const classes = [
+                'inbound-day',
+                available ? 'available' : '',
+                cell.dateKey === selectedDateKey ? 'selected' : '',
+                cell.dateKey === data.todayKey ? 'today' : ''
+              ].filter(Boolean).join(' ');
+              return `
+                <button class="${esc(classes)}" data-action="inbound-date-select" data-inbound-date="${esc(cell.dateKey)}" type="button" ${available ? '' : 'disabled'} aria-label="${esc(compactDateWeekdayLabel(cell.dateKey))}">
+                  ${number(cell.day)}
+                </button>
+              `;
+            }).join('')}
+          </div>
         </div>
       `;
     }
@@ -3255,6 +3501,92 @@
       const allItems = getSalesAllItems(data);
       if (!state.salesDateKey) return allItems;
       return allItems.filter(item => item.inboundDateKey === state.salesDateKey);
+    }
+
+    function syncInboundDateSelection(data) {
+      const options = getInboundDateOptions(data);
+      const keys = new Set(options.map(option => option.dateKey));
+      const preferredDateKey = getPreferredInboundDateKey(data, options);
+
+      if (
+        !state.inboundDateKey ||
+        !keys.has(state.inboundDateKey) ||
+        (!state.inboundDateTouched && preferredDateKey && state.inboundDateKey !== preferredDateKey)
+      ) {
+        state.inboundDateKey = preferredDateKey;
+      }
+
+      const monthKeys = new Set(options
+        .map(option => String(option.dateKey || '').slice(0, 7))
+        .filter(Boolean));
+      const selectedMonthKey = String(state.inboundDateKey || preferredDateKey || '').slice(0, 7);
+      if (
+        !state.inboundCalendarMonthKey ||
+        !monthKeys.has(state.inboundCalendarMonthKey) ||
+        (!state.inboundDatePickerOpen && selectedMonthKey && state.inboundCalendarMonthKey !== selectedMonthKey)
+      ) {
+        state.inboundCalendarMonthKey = selectedMonthKey;
+      }
+    }
+
+    function getPreferredInboundDateKey(data, options = getInboundDateOptions(data)) {
+      const keys = new Set(options.map(option => option.dateKey));
+      if (data.latestInboundDate && keys.has(data.latestInboundDate)) return data.latestInboundDate;
+      if (data.todayKey && keys.has(data.todayKey)) return data.todayKey;
+      return options[0]?.dateKey || '';
+    }
+
+    function getInboundAllItems(data) {
+      const source = data.inboundAllItems || [
+        ...(data.inboundItems || []),
+        ...(data.latestInboundItems || [])
+      ];
+      const seen = new Set();
+      return source.filter(item => {
+        const key = item.id || `${item.productKey || item.productName || ''}::${item.inboundDateKey || ''}`;
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return Boolean(item.inboundDateKey);
+      });
+    }
+
+    function getInboundDateOptions(data) {
+      const source = getInboundAllItems(data);
+      const optionMeta = new Map((data.inboundDateOptions || []).map(option => [option.dateKey, option]));
+      const grouped = new Map();
+
+      source.forEach(item => {
+        const dateKey = item.inboundDateKey || '';
+        if (!dateKey) return;
+        const meta = optionMeta.get(dateKey) || {};
+        const current = grouped.get(dateKey) || {
+          dateKey,
+          label: meta.label || compactDateWeekdayLabel(dateKey),
+          count: 0,
+          totalQuantity: 0
+        };
+        current.count += 1;
+        current.totalQuantity += Number(item.inboundQuantity || 0);
+        grouped.set(dateKey, current);
+      });
+
+      return Array.from(grouped.values())
+        .map(option => {
+          const meta = optionMeta.get(option.dateKey) || {};
+          return {
+            ...option,
+            count: Number(meta.count || option.count || 0),
+            totalQuantity: Number(meta.totalQuantity || option.totalQuantity || 0)
+          };
+        })
+        .sort((a, b) => String(b.dateKey || '').localeCompare(String(a.dateKey || '')));
+    }
+
+    function getSelectedInboundItems(data) {
+      const allItems = getInboundAllItems(data);
+      const dateKey = state.inboundDateKey || getPreferredInboundDateKey(data);
+      const source = dateKey ? allItems.filter(item => item.inboundDateKey === dateKey) : allItems;
+      return source.filter(item => matchesProductQuery(item, state.inboundQuery));
     }
 
     function renderSalesDateStrip(data) {
@@ -4083,10 +4415,7 @@
     }
 
     function renderInboundReceiving(data) {
-      const todayItems = data.inboundItems || [];
-      const fallbackItems = !todayItems.length ? (data.latestInboundItems || []) : [];
-      const sourceItems = todayItems.length ? todayItems : fallbackItems;
-      const items = sourceItems.filter(item => matchesProductQuery(item, state.inboundQuery));
+      const items = getSelectedInboundItems(data);
 
       renderInboundSummary(data, items);
       els.inboundGrid.innerHTML = [
@@ -4100,23 +4429,21 @@
     }
 
     function renderInboundSummary(data, items) {
-      const todayItems = data.inboundItems || [];
-      const targetDate = todayItems.length ? data.todayKey : data.latestInboundDate;
+      const targetDate = state.inboundDateKey || getPreferredInboundDateKey(data);
+      const dateOption = getInboundDateOptions(data).find(option => option.dateKey === targetDate) || {};
       const totalInbound = items.reduce((sum, item) => sum + Number(item.inboundQuantity || 0), 0);
       const completeCount = items.filter(item => item.isReceivingComplete).length;
 
       els.inboundSummary.innerHTML = [
-        renderReceivingMetric('입고일', compactDateLabel(targetDate || '-')),
+        renderReceivingDateMetric(targetDate, dateOption),
         renderReceivingMetric('입고수량', number(totalInbound)),
-        renderReceivingMetric('완료', `${number(completeCount)}/${number(items.length)}`, 'done')
+        renderReceivingMetric('완료', `${number(completeCount)}/${number(items.length)}`, 'done'),
+        state.inboundDatePickerOpen ? renderInboundDatePicker(data, targetDate) : ''
       ].join('');
     }
 
     function getInboundSearchItems(data) {
-      const todayItems = data.inboundItems || [];
-      const fallbackItems = !todayItems.length ? (data.latestInboundItems || []) : [];
-      const sourceItems = todayItems.length ? todayItems : fallbackItems;
-      return sourceItems.filter(item => matchesProductQuery(item, state.inboundQuery));
+      return getSelectedInboundItems(data);
     }
 
     function renderInboundResults(data) {
@@ -4916,6 +5243,7 @@
         data.storageRequestItems,
         data.salesItems,
         data.salesAllItems,
+        data.inboundAllItems,
         data.inboundItems,
         data.latestInboundItems,
         data.staleItems,
@@ -5592,6 +5920,7 @@
         data.storageRequestItems,
         data.salesItems,
         data.salesAllItems,
+        data.inboundAllItems,
         data.inboundItems,
         data.latestInboundItems,
         data.staleItems,
@@ -5964,6 +6293,31 @@
     }
 
     function handleStorageAction(button, action, event) {
+      if (action === 'inbound-date-toggle') {
+        state.inboundDatePickerOpen = !state.inboundDatePickerOpen;
+        if (state.inboundDatePickerOpen) {
+          state.inboundCalendarMonthKey = String(state.inboundDateKey || '').slice(0, 7);
+        }
+        render();
+        return true;
+      }
+
+      if (action === 'inbound-month-select') {
+        state.inboundCalendarMonthKey = button.dataset.inboundMonth || state.inboundCalendarMonthKey || '';
+        state.inboundDatePickerOpen = true;
+        render();
+        return true;
+      }
+
+      if (action === 'inbound-date-select') {
+        state.inboundDateKey = button.dataset.inboundDate || '';
+        state.inboundDateTouched = true;
+        state.inboundCalendarMonthKey = String(state.inboundDateKey || '').slice(0, 7);
+        state.inboundDatePickerOpen = false;
+        render();
+        return true;
+      }
+
       if (action === 'storage-open-new') {
         openStorageNewRequest();
         return true;
