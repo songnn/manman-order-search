@@ -2765,6 +2765,72 @@
       };
     }
 
+    function hasActiveOptimisticItemLocks() {
+      const locks = state.optimisticItemLocks || {};
+      const now = Date.now();
+      let active = false;
+
+      Object.entries(locks).forEach(([id, lock]) => {
+        if (!lock || Number(lock.expiresAt || 0) <= now) {
+          delete locks[id];
+          return;
+        }
+
+        active = true;
+      });
+
+      return active;
+    }
+
+    function optimisticEventId(prefix = 'optimistic') {
+      if (window.crypto?.randomUUID) return `${prefix}-${window.crypto.randomUUID()}`;
+      return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
+
+    function makeOptimisticBufferEvent(delta, actorMemo) {
+      const id = optimisticEventId('buffer');
+      return {
+        eventId: id,
+        optimisticId: id,
+        eventSource: 'optimistic',
+        deltaQuantity: Number(delta || 0),
+        actorMemo: actorMemo || '저장 중',
+        createdAt: new Date().toISOString()
+      };
+    }
+
+    function setOptimisticBufferEventMemo(id, eventId, actorMemo) {
+      if (!id || !eventId || !actorMemo) return;
+
+      updateItem(id, target => {
+        if (!Array.isArray(target.bufferHistory)) return;
+        target.bufferHistory = target.bufferHistory.map(event =>
+          event.optimisticId === eventId ? { ...event, actorMemo } : event
+        );
+      });
+
+      const lock = state.optimisticItemLocks?.[id];
+      if (Array.isArray(lock?.bufferHistory)) {
+        lock.bufferHistory = lock.bufferHistory.map(event =>
+          event.optimisticId === eventId ? { ...event, actorMemo } : event
+        );
+      }
+    }
+
+    function mergeOptimisticBufferHistory(currentHistory = [], optimisticHistory = []) {
+      const current = Array.isArray(currentHistory) ? currentHistory : [];
+      const optimistic = (Array.isArray(optimisticHistory) ? optimisticHistory : [])
+        .filter(event => event?.optimisticId);
+
+      if (!optimistic.length) return current;
+
+      const optimisticIds = new Set(optimistic.map(event => event.optimisticId));
+      return [
+        ...optimistic,
+        ...current.filter(event => !optimisticIds.has(event?.optimisticId))
+      ].slice(0, 160);
+    }
+
     function applyOptimisticItemLocks(data) {
       const locks = state.optimisticItemLocks || {};
       const now = Date.now();
@@ -2804,7 +2870,20 @@
           }
         }
 
-        if (receivingCompleteSettled && countedSettled) {
+        let bufferSettled = true;
+        if (Object.prototype.hasOwnProperty.call(lock, 'bufferRemainingQuantity')) {
+          const expectedBuffer = Math.max(0, Number(lock.bufferRemainingQuantity || 0));
+          bufferSettled = targets.every(item => Number(item.bufferRemainingQuantity || 0) === expectedBuffer);
+          if (!bufferSettled) {
+            targets.forEach(item => {
+              item.bufferRemainingQuantity = expectedBuffer;
+              item.bufferHistory = mergeOptimisticBufferHistory(item.bufferHistory, lock.bufferHistory);
+              recomputeItemQuantities(item);
+            });
+          }
+        }
+
+        if (receivingCompleteSettled && countedSettled && bufferSettled) {
           delete locks[id];
         }
       });
@@ -2813,7 +2892,7 @@
     function shouldDeferDashboardRefresh(options = {}) {
       if (options.force) return false;
       if (document.visibilityState === 'hidden') return true;
-      if (state.busy || state.pendingWrites > 0 || state.storage.loading || state.storage.formOpen || state.storageSwipeStart) return true;
+      if (state.busy || state.pendingWrites > 0 || hasActiveOptimisticItemLocks() || state.storage.loading || state.storage.formOpen || state.storageSwipeStart) return true;
       if (els.listModal && !els.listModal.hidden) return true;
       if (document.querySelector('.qty-wheel-popover')) return true;
 
@@ -4984,8 +5063,6 @@
     }
 
     async function runBufferDelta(button, id, delta, actorMemoInput) {
-      if (state.busy) return;
-
       const item = findItem(id);
       if (!item) return;
 
@@ -4995,16 +5072,30 @@
         return;
       }
 
-      state.busy = true;
+      const optimisticEvent = makeOptimisticBufferEvent(
+        delta,
+        delta < 0 ? `저장중 차감 ${number(Math.abs(delta))}개` : `저장중 복구 ${number(delta)}개`
+      );
+      let expectedBuffer = currentBuffer;
+      let expectedHistory = [];
       updateItem(id, target => {
         target.bufferRemainingQuantity = Math.max(0, Number(target.bufferRemainingQuantity || 0) + delta);
+        target.bufferHistory = [optimisticEvent, ...(target.bufferHistory || [])].slice(0, 160);
         recomputeItemQuantities(target);
+        expectedBuffer = Number(target.bufferRemainingQuantity || 0);
+        expectedHistory = target.bufferHistory || [];
+      });
+      rememberOptimisticItemState(id, {
+        bufferRemainingQuantity: expectedBuffer,
+        bufferHistory: expectedHistory
       });
       renderDashboardItemCard(id);
       flashActionButton(id, delta < 0 ? 'buffer-use' : 'buffer-plus', delta > 0 ? `+${number(delta)}` : `${number(delta)}`, delta < 0 ? 'minus' : '');
 
+      state.pendingWrites += 1;
       try {
         const actorMemo = await Promise.resolve(actorMemoInput);
+        setOptimisticBufferEventMemo(id, optimisticEvent.optimisticId, actorMemo);
         const url = new URL('/api/buffer-action', location.origin);
         url.searchParams.set('token', state.token);
         const response = await fetch(url, {
@@ -5021,16 +5112,26 @@
         const data = await response.json();
         if (!response.ok || !data.ok) throw new Error(data.message || '저장하지 못했습니다.');
 
-        scheduleDashboardRefresh({ silent: true, force: true }, 250);
+        scheduleDashboardRefresh({ silent: true, auto: true }, OPTIMISTIC_ITEM_LOCK_MS + 800);
       } catch (error) {
+        let revertedBuffer = currentBuffer;
+        let revertedHistory = [];
         updateItem(id, target => {
           target.bufferRemainingQuantity = Math.max(0, Number(target.bufferRemainingQuantity || 0) - delta);
+          target.bufferHistory = (target.bufferHistory || [])
+            .filter(event => event.optimisticId !== optimisticEvent.optimisticId);
           recomputeItemQuantities(target);
+          revertedBuffer = Number(target.bufferRemainingQuantity || 0);
+          revertedHistory = target.bufferHistory || [];
+        });
+        rememberOptimisticItemState(id, {
+          bufferRemainingQuantity: revertedBuffer,
+          bufferHistory: revertedHistory
         });
         renderDashboardItemCard(id);
         alert(error.message || String(error));
       } finally {
-        state.busy = false;
+        state.pendingWrites = Math.max(0, state.pendingWrites - 1);
       }
     }
 
@@ -5069,7 +5170,7 @@
         .then(async response => {
           const data = await response.json();
           if (!response.ok || !data.ok) throw new Error(data.message || '저장하지 못했습니다.');
-          scheduleDashboardRefresh({ silent: true, force: true }, 1600);
+          scheduleDashboardRefresh({ silent: true, auto: true }, OPTIMISTIC_ITEM_LOCK_MS + 800);
         })
         .catch(error => {
           let revertedCount = current;
@@ -5118,7 +5219,7 @@
         .then(async response => {
           const data = await response.json();
           if (!response.ok || !data.ok) throw new Error(data.message || '저장하지 못했습니다.');
-          scheduleDashboardRefresh({ silent: true, force: true }, 1600);
+          scheduleDashboardRefresh({ silent: true, auto: true }, OPTIMISTIC_ITEM_LOCK_MS + 800);
         })
         .catch(error => {
           rememberOptimisticItemState(id, {
@@ -6014,7 +6115,6 @@
           }
 
           if (action === 'buffer-use') {
-            if (state.busy) return;
             const quantity = readBufferQuantity(card, id);
             const currentBuffer = Number(item.bufferRemainingQuantity || 0);
             if (currentBuffer < quantity) {
@@ -6027,11 +6127,10 @@
           }
 
           if (action === 'buffer-plus') {
-            if (state.busy) return;
             const quantity = readBufferQuantity(card, id);
             const rawCustomer = readBufferCustomer(card, id);
             const actorMemo = rawCustomer ? `${rawCustomer} 복구 ${number(quantity)}개` : `버퍼복구 ${number(quantity)}개`;
-            await runBufferDelta(button, id, quantity, actorMemo);
+            runBufferDelta(button, id, quantity, actorMemo);
             setBufferQtyValue(id, 1);
           }
 
