@@ -3676,7 +3676,7 @@
 
     function renderSalesCard(item) {
       const bufferQuantity = Number(item.bufferRemainingQuantity || 0);
-      const orderLineCount = getOrderLineCount(item);
+      const orderQuantityTotal = getOrderQuantityTotal(item);
       const productName = productNameText(item.productName);
 
       return `
@@ -3695,7 +3695,7 @@
             </div>
             <div class="sales-sub-line">
               <span>입고수량 <strong>${number(item.inboundQuantity)}</strong></span>
-              <button class="order-count-link" data-action="show-order-list" type="button">공구주문건수 <strong>${number(orderLineCount)}</strong></button>
+              <button class="order-count-link" data-action="show-order-list" type="button">공구주문수량 <strong>${number(orderQuantityTotal)}</strong></button>
             </div>
           </div>
           ${renderBufferSummary(item)}
@@ -4374,9 +4374,10 @@
       return Array.isArray(item?.orderCustomers) ? item.orderCustomers : [];
     }
 
-    function getOrderLineCount(item) {
+    function getOrderQuantityTotal(item) {
       const rows = getOrderCustomersForItem(item);
-      return Number(item?.orderLineCount || rows.length || 0);
+      const rowQuantity = rows.reduce((sum, row) => sum + Number(row.quantity || 0), 0);
+      return Number(rowQuantity || item?.customerOrderQuantity || 0);
     }
 
     async function fetchOrderCustomersForItem(item) {
@@ -4677,7 +4678,7 @@
       const dPlus = daysBetweenDateKeys(item.inboundDateKey, state.dashboard?.todayKey);
       const dPlusLabel = dPlus == null ? 'D+2' : `D+${Math.max(0, dPlus)}`;
       const inboundQuantity = Number(item.inboundQuantity || 0);
-      const orderLineCount = getOrderLineCount(item);
+      const orderQuantityTotal = getOrderQuantityTotal(item);
       const bufferRemaining = Number(item.bufferRemainingQuantity || 0);
       const productName = productNameText(item.productName);
 
@@ -4700,7 +4701,7 @@
             </div>
             <button class="stale-metric orders" data-action="show-order-list" type="button" aria-label="공구주문 고객 보기">
               <span>공구주문</span>
-              <strong>${number(orderLineCount)}</strong>
+              <strong>${number(orderQuantityTotal)}</strong>
             </button>
             <div class="stale-metric buffer ${bufferRemaining > 0 ? '' : 'empty'}">
               <span>잔여버퍼</span>
