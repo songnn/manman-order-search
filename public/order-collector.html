@@ -1046,18 +1046,8 @@
           </div>
         </div>
         <div class="hint">둘 다 비워두면 기존처럼 수집 시작시각부터 파일 끝까지 분석합니다. 사용할 때는 마감 날짜와 시간을 모두 입력하세요.</div>
-        <label>CSV 인코딩</label>
-        <select id="encodingInput">
-          <option value="UTF-8">UTF-8</option>
-          <option value="EUC-KR">EUC-KR / CP949</option>
-        </select>
         <label>카카오톡 CSV 또는 TXT 파일</label>
         <input id="csvFile" type="file" accept=".csv,.txt,text/csv,text/plain">
-
-        <div class="checkline">
-          <input id="dryRunInput" type="checkbox" checked disabled>
-          <span>항상 검수 먼저 진행합니다. 최종 입력 버튼을 눌러야 시트에 기록됩니다.</span>
-        </div>
 
         <div class="btns">
           <button class="secondary" onclick="loadProducts()">상품 불러오기</button>
@@ -1242,7 +1232,7 @@
       uploadSelectedKakaoCsvOriginal();
     });
 
-    ['dateInput', 'timeInput', 'endDateInput', 'endTimeInput', 'encodingInput'].forEach(id => {
+    ['dateInput', 'timeInput', 'endDateInput', 'endTimeInput'].forEach(id => {
       const el = document.getElementById(id);
       if (!el) return;
       el.addEventListener('change', () => {
@@ -1519,7 +1509,7 @@
     const rawChunkSize = Number(document.getElementById('chunkInput').value || 15);
     const chunkSize = Math.max(5, Math.min(rawChunkSize, 25));
     const file = document.getElementById('csvFile').files[0];
-    const encoding = document.getElementById('encodingInput').value;
+    const encoding = 'auto';
     const holiday = getHolidayPayload();
 
     if (!dateStr) return alert('공구날짜를 선택해주세요.');
@@ -1681,12 +1671,43 @@
   }
 
   function readFileAsText(file, encoding) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = e => resolve(e.target.result);
-      reader.onerror = () => reject(new Error('파일을 읽지 못했습니다.'));
-      reader.readAsText(file, encoding || 'UTF-8');
-    });
+    if (encoding && encoding !== 'auto') {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(stripTextBom(e.target.result || ''));
+        reader.onerror = () => reject(new Error('파일을 읽지 못했습니다.'));
+        reader.readAsText(file, encoding || 'UTF-8');
+      });
+    }
+
+    return file.arrayBuffer()
+      .then(buffer => {
+        const candidates = [
+          ['utf-8', { fatal: true }],
+          ['euc-kr', { fatal: false }],
+          ['windows-949', { fatal: false }]
+        ];
+
+        for (const [label, options] of candidates) {
+          try {
+            return stripTextBom(new TextDecoder(label, options).decode(buffer));
+          } catch (err) {
+            // Try the next common Kakao CSV encoding.
+          }
+        }
+
+        return stripTextBom(new TextDecoder('utf-8').decode(buffer));
+      })
+      .catch(() => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(stripTextBom(e.target.result || ''));
+        reader.onerror = () => reject(new Error('파일을 읽지 못했습니다.'));
+        reader.readAsText(file, 'UTF-8');
+      }));
+  }
+
+  function stripTextBom(text) {
+    return String(text || '').replace(/^\uFEFF/, '');
   }
 
   function getKakaoCsvUploadKey(file, encoding, dateStr, startTime, endDateStr, endTime) {
@@ -1710,7 +1731,7 @@
     const startTime = document.getElementById('timeInput').value || '08:00';
     const endDateStr = document.getElementById('endDateInput')?.value || '';
     const endTime = document.getElementById('endTimeInput')?.value || '';
-    const encoding = document.getElementById('encodingInput').value;
+    const encoding = 'auto';
 
     if (!dateStr) {
       log('카톡 CSV 원본 업로드 대기: 공구날짜를 먼저 선택해주세요.');
