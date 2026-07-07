@@ -1554,6 +1554,153 @@
       border-color: #eaeaea;
     }
 
+    /* Restore balanced collector UI after the expressive pass */
+    body {
+      background: #f6f8fb;
+    }
+    .hero {
+      background: rgba(246, 248, 251, .94);
+    }
+    .statusItem,
+    .statusItem[data-state="working"],
+    .statusItem[data-state="done"],
+    .statusItem[data-state="error"],
+    .statusItem[data-state="attention"] {
+      background: #ffffff;
+      border-color: #eaeaea;
+    }
+    .statusItem:nth-child(1)::before { background: #22c55e; }
+    .statusItem:nth-child(2)::before { background: #60a5fa; }
+    .statusItem:nth-child(3)::before { background: #8b5cf6; }
+    .statusItem:nth-child(4)::before { background: #f59e0b; }
+    .workflowStep,
+    .workflowStep.active,
+    .workflowStep.complete {
+      background: #ffffff;
+      border-color: #eaeaea;
+      color: #334155;
+      box-shadow: none;
+    }
+    .workflowStep:hover {
+      background: #f8fafc;
+      border-color: #eaeaea;
+      box-shadow: none;
+    }
+    .workflowStep .stepNo,
+    .workflowStep.active .stepNo,
+    .workflowStep.complete .stepNo {
+      color: #ffffff;
+      box-shadow: none;
+    }
+    .workflowStep:nth-child(1) .stepNo { background: #22c55e; }
+    .workflowStep:nth-child(2) .stepNo { background: #3b82f6; }
+    .workflowStep:nth-child(3) .stepNo { background: #8b5cf6; }
+    .workflowStep:nth-child(4) .stepNo { background: #f59e0b; }
+    .workflowStep.active {
+      background: #f8fafc;
+    }
+    .workflowStep.active b,
+    .workflowStep.complete b {
+      color: #0f172a;
+    }
+    .workflowStep.active small,
+    .workflowStep.complete small {
+      color: #667085;
+    }
+    .stat,
+    .stat:nth-child(1),
+    .stat:nth-child(2),
+    .stat:nth-child(3),
+    .stat:nth-child(4) {
+      background: #ffffff;
+      border-color: #eaeaea;
+    }
+    .timelineCell.issueCell {
+      background: #f0fdf4;
+    }
+    .timelineCell.aiCell {
+      background: #eef6ff;
+    }
+    .timelineCell.aiCell .miniOrderCard {
+      background: #ffffff;
+      border-color: #eaeaea;
+      box-shadow: 0 8px 18px rgba(37, 99, 235, .07);
+    }
+    .timelineCell.aiCell .miniOrderCard:hover {
+      border-color: #d7e7ff;
+      box-shadow: 0 10px 22px rgba(37, 99, 235, .09);
+    }
+    .miniOrderCard {
+      padding: 10px;
+    }
+    .miniOrderCard.issueCard {
+      padding: 10px;
+    }
+    .miniTop {
+      margin-bottom: 7px;
+    }
+    .miniMeta {
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .miniDate {
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .miniTime {
+      font-size: 15px;
+      font-weight: 950;
+    }
+    .miniGrid {
+      grid-template-columns: 72px minmax(0, 1fr);
+      gap: 6px 8px;
+      font-size: 12px;
+    }
+    .miniGrid label {
+      font-size: 11px;
+      font-weight: 900;
+    }
+    .miniGrid input,
+    .miniGrid select {
+      height: 34px;
+      border-color: #eaeaea;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 0 8px;
+    }
+    .miniGrid input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+    }
+    .miniRaw {
+      margin-top: 7px;
+      font-size: 11px;
+      font-weight: 500;
+      line-height: 1.35;
+    }
+    .miniRaw b {
+      font-weight: 900;
+    }
+    .miniBtn {
+      min-height: 30px;
+      padding: 6px 9px;
+      font-size: 11px;
+    }
+    .orderMemoDetails {
+      margin-top: 8px;
+      padding-top: 7px;
+    }
+    .orderMemoDetails summary {
+      font-size: 11px;
+    }
+    .orderMemoInput {
+      min-height: 62px;
+      margin-top: 7px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: .01ms !important;
