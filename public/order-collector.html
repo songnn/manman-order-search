@@ -1373,6 +1373,187 @@
     .scrollMarker.soldout_closed { background: #e11d48; }
     .scrollMarker.exclude_review { background: #64748b; }
 
+    /* Border correction: calm 1px outlines, no heavy dark chrome */
+    .hero {
+      border-bottom: 1px solid #eaeaea;
+      box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
+    }
+    .badge,
+    .statusItem,
+    .workflowBar,
+    .workflowStep,
+    .card,
+    input,
+    select,
+    textarea,
+    .orderMemoInput,
+    button,
+    .productBox,
+    .previewBox,
+    .stat,
+    .timelineWrap,
+    .reviewColumn,
+    .miniOrderCard,
+    .finalWritePanel,
+    .allyChip,
+    .pill,
+    .soldoutBadge,
+    .customProductBadge {
+      border-width: 1px;
+    }
+    .badge,
+    .statusItem,
+    .workflowBar,
+    .workflowStep,
+    .card,
+    input,
+    select,
+    textarea,
+    .orderMemoInput,
+    button.secondary,
+    .productBox,
+    .previewBox,
+    .stat,
+    .timelineWrap,
+    .reviewColumn,
+    .miniOrderCard,
+    .allyChip,
+    .pill,
+    .soldoutBadge,
+    .customProductBadge {
+      border-color: #eaeaea;
+    }
+    .statusItem {
+      background: #ffffff;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, .045);
+    }
+    .statusItem[data-state="working"],
+    .statusItem[data-state="done"],
+    .statusItem[data-state="error"],
+    .statusItem[data-state="attention"] {
+      border-color: #eaeaea;
+    }
+    .workflowBar {
+      background: #ffffff;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, .05);
+    }
+    .workflowStep {
+      border-color: #eaeaea;
+      background: #ffffff;
+      box-shadow: none;
+    }
+    .workflowStep:hover {
+      border-color: #eaeaea;
+      background: #f8fff9;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, .06);
+    }
+    .workflowStep .stepNo {
+      box-shadow: inset 0 0 0 1px #eaeaea;
+    }
+    .workflowStep.active {
+      border-color: #eaeaea;
+      background: #ffffff;
+      color: #0f172a;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, .06);
+    }
+    .workflowStep.active small { color: #667085; }
+    .workflowStep.active .stepNo {
+      background: #42e978;
+      color: #052e16;
+      box-shadow: none;
+    }
+    .workflowStep.complete {
+      border-color: #eaeaea;
+      background: #f8fff9;
+    }
+    .card {
+      box-shadow: 0 10px 24px rgba(15, 23, 42, .055);
+    }
+    .card:hover {
+      border-color: #eaeaea;
+      box-shadow: 0 14px 32px rgba(15, 23, 42, .075);
+    }
+    input:hover,
+    select:hover,
+    textarea:hover,
+    .orderMemoInput:hover {
+      border-color: #eaeaea;
+    }
+    input:focus,
+    select:focus,
+    textarea:focus,
+    .orderMemoInput:focus {
+      border-color: #22c55e;
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, .14);
+    }
+    button {
+      border-width: 1px;
+    }
+    button.secondary {
+      box-shadow: 0 6px 14px rgba(15, 23, 42, .05);
+    }
+    .logBox {
+      border: 1px solid #eaeaea;
+    }
+    .timelineRow {
+      border-bottom: 1px solid #eaeaea;
+    }
+    .timelineCell.issueCell {
+      border-right: 1px solid #eaeaea;
+    }
+    .miniOrderCard {
+      border-color: #eaeaea;
+      box-shadow: 0 10px 22px rgba(15, 23, 42, .06);
+    }
+    .miniOrderCard:hover {
+      border-color: #eaeaea;
+      box-shadow: 0 12px 26px rgba(15, 23, 42, .08);
+    }
+    .miniOrderCard.issueCard {
+      border-width: 1px;
+      box-shadow: 0 12px 26px rgba(15, 23, 42, .07);
+    }
+    .miniOrderCard.issueCard.action-include {
+      border-color: #8beaab;
+      box-shadow: 0 12px 28px rgba(34, 197, 94, .12);
+    }
+    .miniOrderCard.issueCard.action-past_order {
+      border-color: #ffd06e;
+      box-shadow: 0 12px 28px rgba(245, 158, 11, .12);
+    }
+    .miniOrderCard.issueCard.action-soldout_closed {
+      border-color: #ff9aac;
+      box-shadow: 0 12px 28px rgba(225, 29, 72, .10);
+    }
+    .miniOrderCard.issueCard.action-exclude_review {
+      border-color: #eaeaea;
+      box-shadow: 0 10px 22px rgba(71, 85, 105, .08);
+    }
+    .miniGrid input,
+    .miniGrid select {
+      border-width: 1px;
+      border-color: #eaeaea;
+    }
+    .miniGrid input:focus,
+    .miniGrid select:focus {
+      border-color: #22c55e;
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, .14);
+    }
+    .miniBtn {
+      border-width: 1px;
+      border-color: #eaeaea;
+    }
+    .orderMemoDetails {
+      border-top: 1px dashed #eaeaea;
+    }
+    .orderMemoInput {
+      border-width: 1px;
+      border-color: #eaeaea;
+    }
+    .finalWritePanel {
+      border-color: #eaeaea;
+    }
+
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: .01ms !important;
