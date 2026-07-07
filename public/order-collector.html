@@ -1,0 +1,3406 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>만만마켓 자동 주문수집</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --text: #17181c;
+      --muted: #6f7480;
+      --line: #e7e9ef;
+      --accent: #18b36b;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --shadow: 0 16px 40px rgba(20, 25, 40, .08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top left, #e9fff4 0, transparent 34%), var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      color: var(--text);
+    }
+    .wrap { max-width: 1920px; margin: 0 auto; padding: 34px 20px 80px; }
+    .hero { display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; margin-bottom: 22px; }
+    h1 { margin: 0 0 8px; font-size: 30px; letter-spacing: -0.04em; }
+    .sub { color: var(--muted); line-height: 1.55; font-size: 15px; }
+    .badge { padding: 9px 12px; border-radius: 999px; background: #111827; color: #fff; font-weight: 800; font-size: 13px; white-space: nowrap; }
+    .grid { display: grid; grid-template-columns: 1.02fr .98fr; gap: 18px; align-items: start; }
+    .card { background: rgba(255,255,255,.88); backdrop-filter: blur(10px); border: 1px solid var(--line); border-radius: 24px; box-shadow: var(--shadow); padding: 22px; }
+    .card h2 { margin: 0 0 16px; font-size: 18px; letter-spacing: -0.03em; }
+    label { display: block; font-size: 13px; font-weight: 800; margin: 14px 0 7px; color: #30343d; }
+    input, select {
+      width: 100%; height: 46px; border: 1px solid #dfe3ec; border-radius: 14px; padding: 0 13px;
+      font-size: 15px; outline: none; background: #fff;
+    }
+    input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(24,179,107,.12); }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .btns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+    button {
+      border: 0; border-radius: 15px; padding: 13px 17px; font-weight: 900; cursor: pointer;
+      background: #111827; color: white; font-size: 14px; transition: .16s ease;
+    }
+    button:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(17,24,39,.15); }
+    button.secondary { background: #eef2f7; color: #1f2937; }
+    button.green { background: var(--accent); }
+    button:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+    .checkline { display: flex; align-items: center; gap: 8px; margin-top: 14px; color: var(--muted); font-size: 13px; }
+    .checkline input { width: 18px; height: 18px; }
+    .productBox, .logBox, .previewBox {
+      background: #f9fafb; border: 1px solid var(--line); border-radius: 18px; padding: 14px; min-height: 80px;
+      font-size: 13px; line-height: 1.55; color: #374151; overflow: auto;
+    }
+    .productBox { max-height: 260px; }
+    .logBox { height: 280px; white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .previewBox { max-height: 420px; }
+    .pill { display: inline-flex; align-items:center; gap:6px; padding: 7px 10px; border-radius: 999px; background:#eefbf4; color:#087a43; font-size:12px; font-weight:900; margin: 0 6px 6px 0; }
+    .muted { color: var(--muted); }
+    .hint { color: var(--muted); font-size: 12px; margin-top: 6px; line-height: 1.45; }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 16px 0; }
+    .stat { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 13px; }
+    .stat b { display:block; font-size:22px; margin-bottom:4px; }
+    .stat span { color: var(--muted); font-size:12px; font-weight:800; }
+    table { border-collapse: collapse; width: 100%; font-size: 12px; }
+    th, td { border-bottom: 1px solid #e5e7eb; padding: 8px 6px; text-align: left; vertical-align: top; }
+    th { position: sticky; top: 0; background: #f9fafb; z-index: 1; }
+    .report h3 { margin: 18px 0 8px; font-size: 15px; }
+    .warn { color: var(--warning); font-weight: 900; }
+    .danger { color: var(--danger); font-weight: 900; }
+    .progressOuter { height: 12px; background:#e5e7eb; border-radius:999px; overflow:hidden; margin-top:10px; }
+    .progressInner { height:100%; width:0%; background:var(--accent); transition:width .25s ease; }
+    .smallSelect { min-width: 160px; }
+    .allyTools { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .allyTools input { max-width: 320px; }
+    .allyChip { display:inline-flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--line); border-radius:999px; background:#fff; margin:4px 6px 4px 0; font-size:13px; font-weight:800; }
+    .allyChip button { padding:4px 8px; border-radius:999px; font-size:11px; background:#eef2f7; color:#1f2937; }
+    .soldoutTools { display:grid; grid-template-columns: 1.6fr 1fr auto; gap:10px; align-items:end; }
+    .soldoutRow { display:grid; grid-template-columns: 1.4fr 1fr auto; gap:8px; align-items:center; padding:8px; border-bottom:1px solid var(--line); }
+    .soldoutBadge { display:inline-flex; align-items:center; padding:5px 9px; border-radius:999px; background:#fff1f2; color:#dc2626; font-size:12px; font-weight:900; }
+
+    .reviewCompareGrid {
+      display: grid;
+      grid-template-columns: 1.18fr .82fr;
+      gap: 14px;
+      align-items: start;
+      margin-top: 14px;
+    }
+    .reviewColumn {
+      background: #f9fafb;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      overflow: hidden;
+      min-width: 0;
+    }
+    .reviewColumn.issueCol { background: #fffaf0; }
+    .reviewColumn.aiCol { background: #f7fbff; }
+    .reviewColumnHeader {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      padding: 12px 14px;
+      font-size: 14px;
+      font-weight: 900;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,.94);
+      backdrop-filter: blur(8px);
+    }
+    .timelineWrap {
+      max-height: 760px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: #fff;
+    }
+    .timelineRow {
+      display: grid;
+      grid-template-columns: 1.18fr .82fr;
+      gap: 0;
+      border-bottom: 1px solid #edf0f5;
+    }
+    .timelineCell {
+      padding: 10px;
+      min-width: 0;
+    }
+    .timelineCell.issueCell {
+      background: #fffaf0;
+      border-right: 1px solid #edf0f5;
+    }
+    .timelineCell.aiCell {
+      background: #f7fbff;
+    }
+    .miniOrderCard {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 10px;
+      margin-bottom: 8px;
+      box-shadow: 0 4px 12px rgba(20,25,40,.04);
+    }
+    .miniOrderCard:last-child { margin-bottom: 0; }
+    .miniMeta {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 800;
+      margin-bottom: 7px;
+      line-height: 1.35;
+    }
+    .miniGrid {
+      display: grid;
+      grid-template-columns: 72px 1fr;
+      gap: 6px 8px;
+      align-items: center;
+      font-size: 12px;
+    }
+    .miniGrid label {
+      margin: 0;
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 900;
+    }
+    .miniGrid input, .miniGrid select {
+      height: 34px;
+      border-radius: 10px;
+      font-size: 12px;
+      padding: 0 8px;
+    }
+    .miniRaw {
+      margin-top: 7px;
+      font-size: 11px;
+      color: #374151;
+      line-height: 1.35;
+      word-break: break-all;
+    }
+
+    .miniTop {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      margin-bottom:7px;
+    }
+    .miniTime {
+      font-size: 15px;
+      font-weight: 950;
+      color: #111827;
+    }
+    .miniDate {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 800;
+      margin-right: 5px;
+    }
+    .cardActions {
+      display:flex;
+      gap:6px;
+      align-items:center;
+      justify-content:flex-end;
+      margin-top:8px;
+      flex-wrap:wrap;
+    }
+    .miniBtn {
+      border-radius: 999px;
+      padding: 6px 9px;
+      font-size: 11px;
+      font-weight: 900;
+      background: #eef2f7;
+      color: #1f2937;
+    }
+    .miniBtn.dangerBtn {
+      background: #fff1f2;
+      color: #dc2626;
+    }
+    .emptyTimelineCell {
+      color: #c1c7d0;
+      font-size: 12px;
+      padding: 14px 10px;
+      text-align: center;
+    }
+
+    .timelineWrap {
+      position: relative;
+      scrollbar-color: #cfd6e4 #f3f4f6;
+      scrollbar-width: thin;
+    }
+    .timelineWrap::-webkit-scrollbar { width: 13px; height: 13px; }
+    .timelineWrap::-webkit-scrollbar-track { background: #f3f4f6; border-radius: 999px; }
+    .timelineWrap::-webkit-scrollbar-thumb { background: #cfd6e4; border-radius: 999px; border: 3px solid #f3f4f6; }
+    .scrollMarkerRail {
+      position: sticky;
+      right: 3px;
+      top: 12px;
+      float: right;
+      width: 7px;
+      height: 720px;
+      margin-left: -7px;
+      pointer-events: none;
+      z-index: 5;
+    }
+    .scrollMarker {
+      position: absolute;
+      right: 0;
+      width: 7px;
+      height: 9px;
+      border-radius: 999px;
+      opacity: .96;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.7);
+    }
+    .scrollMarker.include { background: #18b36b; }
+    .scrollMarker.past_order { background: #8b5cf6; }
+    .scrollMarker.soldout_closed { background: #ef4444; }
+    .scrollMarker.exclude_review { background: #9ca3af; }
+    .miniOrderCard.issueCard { border-width: 1.5px; }
+    .miniOrderCard.issueCard.action-include { background:#f0fdf4; border-color:#86efac; }
+    .miniOrderCard.issueCard.action-past_order { background:#f5f3ff; border-color:#c4b5fd; }
+    .miniOrderCard.issueCard.action-soldout_closed { background:#fff1f2; border-color:#fca5a5; }
+    .miniOrderCard.issueCard.action-exclude_review { background:#f3f4f6; border-color:#d1d5db; opacity:.88; }
+    .miniOrderCard.issueCard {
+      transition: background-color .14s ease, border-color .14s ease, opacity .14s ease, box-shadow .14s ease;
+    }
+    .miniOrderCard.issueCard select[data-field="productName"]:disabled {
+      background: #f4f5f7;
+      color: #6b7280;
+      font-weight: 900;
+      cursor: not-allowed;
+    }
+    .miniOrderCard.invalidCard {
+      border: 3px solid #ef4444 !important;
+      box-shadow: 0 0 0 4px rgba(239,68,68,.16), 0 12px 28px rgba(239,68,68,.16) !important;
+      animation: invalidPulse .9s ease-in-out 0s 2;
+    }
+    @keyframes invalidPulse {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-3px); }
+      50% { transform: translateX(3px); }
+      75% { transform: translateX(-2px); }
+    }
+
+    .orderMemoDetails {
+      margin-top: 8px;
+      border-top: 1px dashed #d9dde6;
+      padding-top: 7px;
+    }
+    .orderMemoDetails summary {
+      cursor: pointer;
+      color: #6b7280;
+      font-size: 11px;
+      font-weight: 900;
+      list-style: none;
+      user-select: none;
+    }
+    .orderMemoDetails summary::-webkit-details-marker { display: none; }
+    .orderMemoDetails summary::before { content: '＋ '; }
+    .orderMemoDetails[open] summary::before { content: '－ '; }
+    .orderMemoInput {
+      width: 100%;
+      min-height: 62px;
+      margin-top: 7px;
+      padding: 9px 10px;
+      border: 1px solid #dfe3ec;
+      border-radius: 10px;
+      resize: vertical;
+      font-family: inherit;
+      font-size: 12px;
+      line-height: 1.45;
+      background: #fff;
+    }
+    .orderMemoInput:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(24,179,107,.10);
+    }
+
+
+    .customProductTools {
+      display:grid;
+      grid-template-columns: 1.2fr auto;
+      gap:10px;
+      align-items:end;
+      margin-bottom:12px;
+    }
+    .customProductForm {
+      display:grid;
+      grid-template-columns: 1.4fr .7fr .9fr .9fr .9fr auto;
+      gap:10px;
+      align-items:end;
+      margin-top:10px;
+    }
+    .customProductListRow {
+      display:grid;
+      grid-template-columns: 1.5fr .55fr .55fr .8fr .8fr auto;
+      gap:8px;
+      align-items:center;
+      padding:8px;
+      border-bottom:1px solid var(--line);
+      font-size:12px;
+    }
+    .customProductBadge {
+      display:inline-flex;
+      padding:5px 8px;
+      border-radius:999px;
+      background:#fff7ed;
+      color:#9a3412;
+      font-weight:900;
+      font-size:12px;
+      margin-right:4px;
+    }
+    @media (max-width: 1100px) {
+      .customProductTools,
+      .customProductForm,
+      .customProductListRow { grid-template-columns:1fr; }
+    }
+
+
+    .finalWriteOverlay {
+      position: fixed; inset: 0; z-index: 99999;
+      display: none; align-items: center; justify-content: center;
+      background: rgba(17,24,39,.48); backdrop-filter: blur(5px);
+    }
+    .finalWriteOverlay.show { display: flex; }
+    .finalWritePanel {
+      width: min(420px, calc(100vw - 36px)); background:#fff; border-radius:22px;
+      padding:28px 24px; text-align:center; box-shadow:0 26px 70px rgba(0,0,0,.24);
+    }
+    .finalWriteSpinner {
+      width:44px; height:44px; margin:0 auto 16px; border-radius:50%;
+      border:4px solid #e5e7eb; border-top-color:var(--accent);
+      animation: finalWriteSpin .8s linear infinite;
+    }
+    @keyframes finalWriteSpin { to { transform:rotate(360deg); } }
+    .finalWriteTitle { font-size:18px; font-weight:950; margin-bottom:7px; }
+    .finalWriteDesc { color:var(--muted); font-size:13px; line-height:1.55; }
+    .finalWriteProgressOuter { height: 12px; background:#e5e7eb; border-radius:999px; overflow:hidden; margin:18px 0 8px; }
+    .finalWriteProgressInner { height:100%; width:0%; background:var(--accent); transition:width .25s ease; }
+    .finalWriteProgressDetail { color:#374151; font-size:12px; font-weight:800; line-height:1.45; white-space:pre-line; }
+    body.finalWriteBusy { overflow:hidden; }
+
+    .ghostBtn {
+      background: transparent !important;
+      color: #374151 !important;
+      border: 1px solid #d1d5db !important;
+      box-shadow: none !important;
+    }
+    .ghostBtn:hover { background: #f9fafb !important; box-shadow: none !important; }
+
+    @media (max-width: 880px) { .soldoutTools, .soldoutRow { grid-template-columns: 1fr; } }
+    @media (max-width: 880px) {
+      .grid, .row { grid-template-columns: 1fr; }
+      .hero { flex-direction: column; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <div>
+        <h1>만만마켓 자동 주문수집</h1>
+        <div class="sub">CSV/TXT를 AI 묶음별로 나눠 분석합니다. 오래 걸려도 각 묶음은 별도 실행이라 Apps Script 최대 실행시간 오류를 피합니다.</div>
+      </div>
+      <div class="badge" id="apiBadge">API 확인중</div>
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <h2>1. 수집 조건</h2>
+        <div class="row">
+          <div>
+            <label>공구날짜</label>
+            <input id="dateInput" type="date">
+          </div>
+          <div>
+            <label>수집 시작 시간</label>
+            <input id="timeInput" type="time" value="08:00">
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>휴일 시작날짜 <span class="muted">(선택)</span></label>
+            <input id="holidayStartInput" type="date">
+            <div class="hint">평소에는 비워두세요. 휴일이 있을 때만 지정합니다.</div>
+          </div>
+          <div>
+            <label>휴일 끝날짜 <span class="muted">(선택)</span></label>
+            <input id="holidayEndInput" type="date">
+            <div class="hint">시작날짜를 넣으면 자동으로 같은 날짜가 들어갑니다. 연휴면 끝날짜만 수정하세요.</div>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Raw_주문입력 시작 행</label>
+            <input id="startRowInput" type="number" min="1" placeholder="예: 6000">
+          </div>
+          <div>
+            <label>AI 처리 묶음 수</label>
+            <input id="chunkInput" type="number" min="5" max="25" value="15">
+            <div class="hint">한 번에 AI에게 보낼 카톡 메시지 개수입니다. 15 권장 / 최대 25</div>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>수집 마감 날짜 <span class="muted">(선택)</span></label>
+            <input id="endDateInput" type="date">
+          </div>
+          <div>
+            <label>수집 마감 시간 <span class="muted">(선택)</span></label>
+            <input id="endTimeInput" type="time">
+          </div>
+        </div>
+        <div class="hint">둘 다 비워두면 기존처럼 수집 시작시각부터 파일 끝까지 분석합니다. 사용할 때는 마감 날짜와 시간을 모두 입력하세요.</div>
+        <label>CSV 인코딩</label>
+        <select id="encodingInput">
+          <option value="UTF-8">UTF-8</option>
+          <option value="EUC-KR">EUC-KR / CP949</option>
+        </select>
+        <label>카카오톡 CSV 또는 TXT 파일</label>
+        <input id="csvFile" type="file" accept=".csv,.txt,text/csv,text/plain">
+
+        <div class="checkline">
+          <input id="dryRunInput" type="checkbox" checked disabled>
+          <span>항상 검수 먼저 진행합니다. 최종 입력 버튼을 눌러야 시트에 기록됩니다.</span>
+        </div>
+
+        <div class="btns">
+          <button class="secondary" onclick="loadProducts()">상품 불러오기</button>
+          <button class="green" id="runBtn" onclick="runProcess()">파일 분석 시작</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>2. 유효 주문 가능 상품</h2>
+        <div id="productBox" class="productBox muted">공구날짜 선택 후 상품 불러오기를 눌러주세요.</div>
+        <div style="margin-top:18px;border-top:1px solid var(--line);padding-top:18px;">
+          <h2 style="font-size:16px;margin-bottom:12px;">공구상품 추가/삭제</h2>
+      <div class="sub" style="margin-bottom:12px;">
+        상품명을 조회하거나 입력하면 발주요청(Index) D열 상품명 기준으로 최신 공구일자의 F열 픽업일, G열 가격, H열 이미지 URL을 자동으로 불러옵니다. 기본값과 다르게 써야 할 때만 아래 값을 수정하세요.
+      </div>
+
+      <div class="customProductTools">
+        <div>
+          <label style="margin-top:0;">발주요청(Index) 상품명 조회</label>
+          <input id="customSearchInput" type="text" placeholder="상품명 일부를 입력하세요">
+        </div>
+        <button class="secondary" onclick="searchIndexProductsForCustom()">조회</button>
+      </div>
+
+      <div>
+        <label style="margin-top:0;">조회 결과</label>
+        <select id="customSearchResultSelect" onchange="applySelectedIndexProduct()">
+          <option value="">조회 후 선택하세요</option>
+        </select>
+      </div>
+
+      <div class="customProductForm">
+        <div>
+          <label>상품명</label>
+          <input id="customProductNameInput" type="text" placeholder="임의 상품명 또는 조회 상품명">
+        </div>
+        <div>
+          <label>주문입력</label>
+          <select id="customIncludeInput">
+            <option value="yes">입력함</option>
+            <option value="no">입력 안 함</option>
+          </select>
+        </div>
+        <div>
+          <label>가격 <span class="muted">자동값: Index G열 → Raw B열</span></label>
+          <input id="customPriceInput" type="text" placeholder="상품명 선택 시 자동 입력 / 필요시 수정">
+        </div>
+        <div>
+          <label>이미지 URL <span class="muted">자동값: Index H열 → Raw C열</span></label>
+          <input id="customImageInput" type="text" placeholder="상품명 선택 시 자동 입력 / 필요시 수정">
+        </div>
+        <div>
+          <label>픽업일 <span class="muted">자동값: Index F열 → Raw J열</span></label>
+          <input id="customPickupInput" type="text" placeholder="상품명 선택 시 자동 입력 / 필요시 수정">
+        </div>
+        <button class="secondary" onclick="addOrUpdateCustomProduct()">상품 추가/수정</button>
+      </div>
+
+      <div id="customProductBox" class="productBox" style="margin-top:12px;min-height:60px;">추가된 임의 공구상품이 없습니다.</div>
+        </div>
+      </section>
+    </div>
+
+
+    <section class="card" style="margin-top:18px;">
+      <h2>품절마감 상품 관리</h2>
+      <div class="sub" style="margin-bottom:12px;">
+        유효 주문 가능 상품을 불러온 뒤, 품절 공지 시각을 등록하세요. 해당 시각 이후 들어온 해당 상품 주문은 확인 필요 후보로 내려가며, 처리값을 <b>품절마감 상품</b>으로 두면 Raw_주문입력 I열에 <b style="color:#d93025;">품절마감</b>으로 기록됩니다.
+      </div>
+      <div class="soldoutTools">
+        <div>
+          <label style="margin-top:0;">품절 상품</label>
+          <select id="soldOutProductInput">
+            <option value="">상품을 먼저 불러와주세요</option>
+          </select>
+        </div>
+        <div>
+          <label style="margin-top:0;">품절공지 시각</label>
+          <input id="soldOutTimeInput" type="datetime-local">
+        </div>
+        <button class="secondary" onclick="addSoldOutRule()">품절상품 추가</button>
+      </div>
+      <div id="soldOutBox" class="productBox" style="margin-top:12px;min-height:54px;">등록된 품절마감 상품이 없습니다.</div>
+    </section>
+
+    <section class="card" style="margin-top:18px;">
+      <h2>아군 버퍼 닉네임 관리</h2>
+      <div class="sub" style="margin-bottom:12px;">여기에 등록된 닉네임이 주문하면 Raw_주문입력 I열에 <b>버퍼 수량</b> 형식으로 자동 기입됩니다. 예: 버퍼 2</div>
+      <div class="allyTools">
+        <input id="allyNameInput" type="text" placeholder="아군 닉네임 입력 예: 프리지아64">
+        <button class="secondary" onclick="addAllyName()">아군 추가</button>
+        <span id="allySaveStatus" class="muted"></span>
+      </div>
+      <div id="allyBox" class="productBox" style="margin-top:12px;min-height:54px;">아군 목록 불러오는 중...</div>
+    </section>
+
+    <section class="card" style="margin-top:18px;">
+      <h2>3. 진행 로그</h2>
+      <div id="progressWrap" style="display:none;">
+        <div class="progressOuter"><div id="progressInner" class="progressInner"></div></div>
+      </div>
+      <div id="logBox" class="logBox">대기중...</div>
+    </section>
+
+    <section class="card" style="margin-top:18px;">
+      <h2>4. 결과</h2>
+      <div id="resultBox" class="muted">아직 결과가 없습니다.</div>
+    </section>
+  </div>
+
+  <div id="finalWriteOverlay" class="finalWriteOverlay" aria-live="polite">
+    <div class="finalWritePanel">
+      <div class="finalWriteSpinner"></div>
+      <div id="finalWriteTitle" class="finalWriteTitle">주문을 입력하고 있습니다</div>
+      <div id="finalWriteDesc" class="finalWriteDesc">구글시트 입력과 지난 공구상품 확인이 끝날 때까지<br>창을 닫지 말고 잠시 기다려주세요.</div>
+      <div class="finalWriteProgressOuter"><div id="finalWriteProgressInner" class="finalWriteProgressInner"></div></div>
+      <div id="finalWriteProgressDetail" class="finalWriteProgressDetail">대기중</div>
+    </div>
+  </div>
+
+<script>
+  const ORDER_COLLECTOR_API = '/api/order-collector';
+  const ORDER_COLLECTOR_TOKEN_KEY = 'mm_order_collector_token';
+  const ALLY_NICKNAMES_LOCAL_KEY = 'mm_order_collector_ally_nicknames';
+  let adminToken = new URLSearchParams(window.location.search).get('token') || localStorage.getItem(ORDER_COLLECTOR_TOKEN_KEY) || '';
+  let lastProducts = [];
+  let previousDayProducts = [];
+  let previousDayProductRecords = [];
+  let customProducts = [];
+  let indexSearchResults = [];
+  let customProductDefaultMeta = null;
+  let currentResult = null;
+  let currentProducts = [];
+  let editableRows = [];
+  let issueRows = [];
+  let allyNames = [];
+  let soldOutRules = [];
+  let sourceMessagesForReview = [];
+  let lastCommittedRows = [];
+  let lastWriteResult = null;
+  let lastKakaoCsvUpload = null;
+  let lastKakaoCsvUploadKey = '';
+  let lastKakaoCsvUploadPromise = null;
+
+  window.addEventListener('load', async () => {
+    try {
+      const data = await gasRun('getInitialData');
+      document.getElementById('dateInput').value = data.today;
+      document.getElementById('timeInput').value = data.defaultStartTime || '08:00';
+      document.getElementById('chunkInput').value = data.defaultChunkSize || 15;
+      document.getElementById('chunkInput').max = data.maxChunkSize || 25;
+      document.getElementById('apiBadge').textContent = data.hasApiKey ? `API 준비됨 · ${data.model}` : 'API Key 필요';
+      document.getElementById('apiBadge').style.background = data.hasApiKey ? '#111827' : '#ef4444';
+      loadCustomProductsForDate(data.today);
+      renderCustomProductManager();
+      setTimeout(() => tryRestoreReviewState(data.today), 0);
+      loadAllyNicknames();
+    } catch (err) {
+      showError(err);
+    }
+  });
+
+  window.addEventListener('resize', () => {
+    window.requestAnimationFrame(renderIssueScrollMarkers);
+  });
+
+  window.addEventListener('load', () => {
+    const dateEl = document.getElementById('dateInput');
+    const holidayStartEl = document.getElementById('holidayStartInput');
+    const holidayEndEl = document.getElementById('holidayEndInput');
+    const customNameEl = document.getElementById('customProductNameInput');
+    const csvFileEl = document.getElementById('csvFile');
+
+    csvFileEl.addEventListener('change', () => {
+      lastKakaoCsvUpload = null;
+      lastKakaoCsvUploadKey = '';
+      lastKakaoCsvUploadPromise = null;
+      uploadSelectedKakaoCsvOriginal();
+    });
+
+    ['dateInput', 'timeInput', 'endDateInput', 'endTimeInput', 'encodingInput'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('change', () => {
+        if (!csvFileEl.files[0]) return;
+        lastKakaoCsvUpload = null;
+        lastKakaoCsvUploadKey = '';
+        lastKakaoCsvUploadPromise = null;
+        uploadSelectedKakaoCsvOriginal();
+      });
+    });
+
+    dateEl.addEventListener('change', () => {
+      clearCurrentReviewView();
+      document.getElementById('productBox').innerHTML = '공구날짜 선택 후 상품 불러오기를 눌러주세요.';
+      currentProducts = [];
+      lastProducts = [];
+      previousDayProducts = [];
+      previousDayProductRecords = [];
+      loadSoldOutRulesForDate(dateEl.value);
+      renderSoldOutManager();
+      loadCustomProductsForDate(dateEl.value);
+      refreshCurrentProductsWithCustom();
+      renderCustomProductManager();
+    });
+
+    holidayStartEl.addEventListener('change', () => {
+      if (holidayStartEl.value) {
+        holidayEndEl.value = holidayStartEl.value;
+      } else {
+        holidayEndEl.value = '';
+      }
+      document.getElementById('productBox').innerHTML = '휴일 설정이 변경되었습니다. 상품 불러오기를 다시 눌러주세요.';
+      currentProducts = [];
+      lastProducts = [];
+      previousDayProducts = [];
+      previousDayProductRecords = [];
+    });
+
+    holidayEndEl.addEventListener('change', () => {
+      if (holidayEndEl.value && !holidayStartEl.value) {
+        holidayStartEl.value = holidayEndEl.value;
+      }
+      document.getElementById('productBox').innerHTML = '휴일 설정이 변경되었습니다. 상품 불러오기를 다시 눌러주세요.';
+      currentProducts = [];
+      lastProducts = [];
+      previousDayProducts = [];
+      previousDayProductRecords = [];
+    });
+
+    // 추가상품 상품명을 직접 입력해도 발주요청(Index)에서 최신 기본값을 자동 조회합니다.
+    // 기본값과 다른 경우에만 가격/이미지/픽업일 입력칸을 수정하면 됩니다.
+    if (customNameEl) {
+      customNameEl.addEventListener('change', () => autoFillCustomProductDefaultsByName());
+      customNameEl.addEventListener('blur', () => autoFillCustomProductDefaultsByName());
+    }
+  });
+
+  function ensureAdminToken() {
+    if (adminToken) return adminToken;
+    const token = prompt('관리자 토큰을 입력해주세요.');
+    if (!token) throw new Error('관리자 토큰이 필요합니다.');
+    adminToken = token.trim();
+    localStorage.setItem(ORDER_COLLECTOR_TOKEN_KEY, adminToken);
+    return adminToken;
+  }
+
+  async function gasRun(fnName, payload) {
+    const token = ensureAdminToken();
+    const res = await fetch(ORDER_COLLECTOR_API, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-token': token
+      },
+      body: JSON.stringify({
+        action: fnName,
+        payload: payload || {}
+      })
+    });
+
+    let data = {};
+    try {
+      data = await res.json();
+    } catch (err) {
+      data = { ok: false, error: '서버 응답을 JSON으로 읽지 못했습니다.' };
+    }
+
+    if (res.status === 401) {
+      localStorage.removeItem(ORDER_COLLECTOR_TOKEN_KEY);
+      adminToken = '';
+      throw new Error('관리자 토큰이 올바르지 않습니다.');
+    }
+
+    if (!res.ok || data.ok === false) {
+      throw new Error(data.error || data.message || `API 오류(${res.status})`);
+    }
+
+    return data;
+  }
+
+  function log(msg) {
+    const box = document.getElementById('logBox');
+    const time = new Date().toLocaleTimeString('ko-KR', { hour12: false });
+    box.textContent += `\n[${time}] ${msg}`;
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function resetLog() {
+    document.getElementById('logBox').textContent = '시작합니다...';
+    document.getElementById('progressWrap').style.display = 'block';
+    setProgress(0);
+  }
+
+  function setProgress(percent) {
+    document.getElementById('progressInner').style.width = `${Math.max(0, Math.min(100, percent))}%`;
+  }
+
+  function getHolidayPayload() {
+    const holidayStartStr = document.getElementById('holidayStartInput')?.value || '';
+    let holidayEndStr = document.getElementById('holidayEndInput')?.value || '';
+
+    if (holidayStartStr && !holidayEndStr) {
+      holidayEndStr = holidayStartStr;
+      document.getElementById('holidayEndInput').value = holidayEndStr;
+    }
+
+    if (holidayStartStr && holidayEndStr && holidayEndStr < holidayStartStr) {
+      return { holidayStartStr: holidayEndStr, holidayEndStr: holidayStartStr };
+    }
+
+    return { holidayStartStr, holidayEndStr };
+  }
+
+
+  function renderProductPillsLimited(list, prefix, styleText) {
+    const items = list || [];
+    const limit = 300;
+    const html = items.slice(0, limit).map((p, i) => {
+      const label = `${prefix || ''}${i + 1}. ${p}`;
+      const style = styleText ? ` style="${styleText}"` : '';
+      return `<div class="pill"${style}>${escapeHtml(label)}</div>`;
+    }).join('');
+
+    if (items.length <= limit) return html;
+
+    return html + `<div class="hint">표시는 ${limit}개까지만 했습니다. 실제 AI 후보에는 전체 ${items.length}개가 모두 들어갑니다.</div>`;
+  }
+
+  function loadProducts() {
+    const dateStr = document.getElementById('dateInput').value;
+    const holiday = getHolidayPayload();
+    if (!dateStr) return alert('공구날짜를 선택해주세요.');
+
+    const startedAt = Date.now();
+    const productBox = document.getElementById('productBox');
+    productBox.innerHTML =
+      '상품 불러오는 중...' +
+      '<div class="hint">발주요청(Index)은 읽기만 합니다. 새 상품 생성/드롭다운 수정은 하지 않습니다.</div>';
+
+    log(`상품 불러오기 시작: ${dateStr}`);
+
+    gasRun('getProductsForDateForUi', {
+      dateStr,
+      holidayStartStr: holiday.holidayStartStr,
+      holidayEndStr: holiday.holidayEndStr
+    })
+      .then(res => {
+        const elapsedSec = ((Date.now() - startedAt) / 1000).toFixed(1);
+        const serverSec = res.loadMs ? (Number(res.loadMs) / 1000).toFixed(1) : elapsedSec;
+
+        lastProducts = res.products || [];
+        previousDayProducts = res.previousDayProducts || [];
+        previousDayProductRecords = res.previousDayProductRecords || [];
+
+        log(`상품 불러오기 완료: 오늘 ${lastProducts.length}개 · 어제 ${previousDayProducts.length}개 · Index ${res.indexStartRow || 1}~${res.indexLastRow || 0}행(${res.indexRowCount || res.indexLastRow || 0}행 읽음) · ${res.cached ? '캐시 사용 · ' : ''}${res.usedFallback ? '전체 fallback · ' : ''}서버 ${serverSec}초 / 화면 ${elapsedSec}초`);
+
+        if (!lastProducts.length && !previousDayProducts.length) {
+          productBox.innerHTML = '<span class="danger">해당 날짜와 하루 전 공구상품을 찾지 못했습니다.</span>';
+          return;
+        }
+
+        loadCustomProductsForDate(dateStr);
+        currentProducts = mergeCurrentProducts(mergeProductNameArrays(lastProducts, previousDayProducts), customProducts);
+        loadSoldOutRulesForDate(dateStr);
+        renderSoldOutManager();
+
+        const validDatesText = (res.validDateKeys || []).join(', ');
+        const holidayText = res.holidayStartStr
+          ? `휴일 설정: ${escapeHtml(res.holidayStartStr)}${res.holidayEndStr && res.holidayEndStr !== res.holidayStartStr ? ' ~ ' + escapeHtml(res.holidayEndStr) : ''}`
+          : '휴일 설정 없음';
+
+        const previousDateText = res.previousDayDateStr ? `하루 전 기준일: ${escapeHtml(res.previousDayDateStr)}` : '하루 전 기준일 없음';
+
+        const previousHtml = previousDayProducts.length
+          ? `<div style="margin-top:12px;padding-top:10px;border-top:1px dashed #d8dde8;">
+              <b>어제 공구상품 자동 후보 ${previousDayProducts.length}개</b>
+              <div class="hint">오늘 상품은 아니지만 주문이 들어오면 드롭다운에서 자동 선택되도록 함께 기억합니다. 가격/이미지/픽업일은 직접 쓰지 않고 Raw 시트 수식이 상품명 기준으로 자동 입력합니다. ${previousDateText}</div>
+              ${renderProductPillsLimited(previousDayProducts, '어제 ', 'background:#fff7ed;color:#9a3412;')}
+            </div>`
+          : `<div class="hint" style="margin-top:10px;">어제 공구상품 자동 후보 없음</div>`;
+
+        productBox.innerHTML =
+          `<div style="margin-bottom:10px;">
+            <b>오늘 유효상품 ${res.count}개</b>
+            <div class="hint">유효 상품 날짜: ${escapeHtml(validDatesText)}</div>
+            <div class="hint">${holidayText}</div>
+            <div class="hint">Index ${escapeHtml(res.indexStartRow || 1)}~${escapeHtml(res.indexLastRow || 0)}행 중 ${escapeHtml(res.indexRowCount || res.indexLastRow || 0)}행 읽음 · ${res.cached ? '캐시 사용 · ' : ''}${res.usedFallback ? '전체 fallback · ' : ''}서버 ${escapeHtml(serverSec)}초</div>
+          </div>` +
+          renderProductPillsLimited(lastProducts, '', '') +
+          previousHtml;
+
+        renderCustomProductManager();
+      })
+      .catch(err => {
+        log(`상품 불러오기 실패: ${(err && err.message) || err}`);
+        showError(err);
+      });
+  }
+
+  async function runProcess() {
+    const dateStr = document.getElementById('dateInput').value;
+    const startTime = document.getElementById('timeInput').value || '08:00';
+    const endDateStr = document.getElementById('endDateInput').value || '';
+    const endTime = document.getElementById('endTimeInput').value || '';
+    const startRow = Number(document.getElementById('startRowInput').value);
+    const rawChunkSize = Number(document.getElementById('chunkInput').value || 15);
+    const chunkSize = Math.max(5, Math.min(rawChunkSize, 25));
+    const file = document.getElementById('csvFile').files[0];
+    const encoding = document.getElementById('encodingInput').value;
+    const holiday = getHolidayPayload();
+
+    if (!dateStr) return alert('공구날짜를 선택해주세요.');
+    if ((endDateStr && !endTime) || (!endDateStr && endTime)) {
+      return alert('수집 마감일시를 사용하려면 마감 날짜와 시간을 모두 입력해주세요.');
+    }
+    if (endDateStr && endTime) {
+      const startAt = new Date(`${dateStr}T${startTime}:00`);
+      const endAt = new Date(`${endDateStr}T${endTime}:00`);
+      if (endAt < startAt) return alert('수집 마감일시는 수집 시작일시보다 빠를 수 없습니다.');
+    }
+    if (!startRow || startRow < 1) return alert('Raw_주문입력 시작 행을 입력해주세요.');
+    if (!file) return alert('CSV 또는 TXT 파일을 업로드해주세요.');
+
+    clearSavedReviewStateForDate(dateStr);
+    resetLog();
+    setRunning(true);
+    document.getElementById('resultBox').innerHTML = '<span class="muted">분석중입니다...</span>';
+
+    try {
+      const csvText = await readFileAsText(file, encoding);
+      log(`파일 읽기 완료: ${file.name}`);
+      if (lastKakaoCsvUploadPromise) {
+        log('카톡 CSV 원본 업로드 진행 중 · 주문수집은 계속 진행합니다.');
+      } else if (!lastKakaoCsvUpload) {
+        uploadSelectedKakaoCsvOriginal();
+      }
+      log(`AI 처리 묶음 수: ${chunkSize}개`);
+      log('1단계: CSV와 상품리스트를 준비합니다.');
+
+      const job = await gasRun('prepareCsvJob', {
+        dateStr,
+        startTime,
+        endDateStr,
+        endTime,
+        startRow,
+        csvText,
+        customProducts: getActiveCustomProducts(),
+        preloadedProductNames: currentProducts || [],
+        preloadedBaseProductNames: lastProducts || [],
+        preloadedPreviousDayProductNames: previousDayProducts || [],
+        preloadedPreviousDayProductRecords: previousDayProductRecords || [],
+        chunkSize,
+        holidayStartStr: holiday.holidayStartStr,
+        holidayEndStr: holiday.holidayEndStr
+      });
+      lastProducts = job.baseProductNames || lastProducts || [];
+      previousDayProducts = job.previousDayProductNames || [];
+      previousDayProductRecords = job.previousDayProductRecords || [];
+      currentProducts = job.productNames || mergeCurrentProducts(mergeProductNameArrays(lastProducts, previousDayProducts), customProducts);
+      sourceMessagesForReview = (job.chunks || []).flat();
+
+      if (!job.targetMessageCount) {
+        setProgress(100);
+        renderResult({
+          ...job,
+          rows: [],
+          rowsPreview: [],
+          writtenLineCount: 0
+        });
+        log('지정 시간 이후 분석할 메시지가 없습니다.');
+        setRunning(false);
+        return;
+      }
+
+      log(`분석 대상 메시지: ${job.targetMessageCount}개 / AI 묶음: ${job.chunkCount}개`);
+      log('2단계: AI 묶음별 분석을 시작합니다. 브라우저를 닫지 마세요.');
+
+      let stateRows = [];
+      let report = job.report;
+      let soldOutProducts = job.soldOutProducts || [];
+
+      for (let i = 0; i < job.chunks.length; i++) {
+        log(`AI 분석중 ${i + 1}/${job.chunks.length} 묶음...`);
+        const res = await gasRun('processJobChunk', {
+          chunk: job.chunks[i],
+          chunkIndex: i,
+          totalChunks: job.chunks.length,
+          orderDateText: job.orderDateText,
+          productNames: job.productNames,
+          previousDayProductNames: job.previousDayProductNames || [],
+          stateRows,
+          report,
+          soldOutProducts,
+          soldOutRules: getActiveSoldOutRules()
+        });
+
+        stateRows = res.stateRows || [];
+        report = res.report || report;
+        soldOutProducts = res.soldOutProducts || soldOutProducts;
+        setProgress(((i + 1) / job.chunks.length) * 100);
+        log(`완료 ${i + 1}/${job.chunks.length} · 현재 주문 후보 ${stateRows.length}줄 · 이벤트 ${res.aiEventCount || 0}개`);
+      }
+
+      const finalRows = stateRows
+        .sort((a, b) => getCandidateOrder(a) - getCandidateOrder(b) || String(a.customer).localeCompare(String(b.customer), 'ko'))
+        .map((row, i) => ({
+          id: row.lineKey || `main_${i}`,
+          sourceType: 'ai',
+          include: true,
+          orderDateText: job.orderDateText,
+          customer: row.customer,
+          productName: row.productName,
+          quantity: Number(row.quantity) || 1,
+          sourceIndex: Number(row.firstSourceIndex) || 999999999,
+          csvRowNumber: row.csvRowNumber || '',
+          dateRaw: row.dateRaw || '',
+          rawExpression: row.rawExpression || '',
+          written: false
+        }));
+
+      const result = {
+        ok: true,
+        dryRun: true,
+        dateStr: job.dateStr,
+        holidayStartStr: holiday.holidayStartStr,
+        holidayEndStr: holiday.holidayEndStr,
+        orderDateText: job.orderDateText,
+        endDateStr: job.endDateStr || '',
+        endTime: job.endTime || '',
+        startRow: job.startRow,
+        productNames: job.productNames,
+        baseProductNames: job.baseProductNames || [],
+        previousDayDateStr: job.previousDayDateStr || '',
+        previousDayProductNames: job.previousDayProductNames || [],
+        previousDayProductRecords: job.previousDayProductRecords || [],
+        productCount: job.productCount,
+        baseProductCount: job.baseProductCount || 0,
+        previousDayProductCount: job.previousDayProductCount || 0,
+        csvMessageCount: job.csvMessageCount,
+        targetMessageCount: job.targetMessageCount,
+        chunkCount: job.chunkCount,
+        writtenLineCount: finalRows.length,
+        rows: finalRows,
+        rowsPreview: finalRows.slice(0, 300),
+        report,
+        sourceMessages: sourceMessagesForReview,
+        kakaoCsvUploadId: lastKakaoCsvUpload?.uploadId || ''
+      };
+
+      currentResult = result;
+      log(`전체 분석 완료 · 최종 주문 후보 ${finalRows.length}줄`);
+      renderResult(result);
+      await runAiFinalIssueReview();
+    } catch (err) {
+      showError(err);
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  function readFileAsText(file, encoding) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result);
+      reader.onerror = () => reject(new Error('파일을 읽지 못했습니다.'));
+      reader.readAsText(file, encoding || 'UTF-8');
+    });
+  }
+
+  function getKakaoCsvUploadKey(file, encoding, dateStr, startTime, endDateStr, endTime) {
+    return [
+      file?.name || '',
+      file?.size || '',
+      file?.lastModified || '',
+      encoding || '',
+      dateStr || '',
+      startTime || '',
+      endDateStr || '',
+      endTime || ''
+    ].join('|');
+  }
+
+  async function uploadSelectedKakaoCsvOriginal() {
+    const file = document.getElementById('csvFile').files[0];
+    if (!file) return null;
+
+    const dateStr = document.getElementById('dateInput').value;
+    const startTime = document.getElementById('timeInput').value || '08:00';
+    const endDateStr = document.getElementById('endDateInput')?.value || '';
+    const endTime = document.getElementById('endTimeInput')?.value || '';
+    const encoding = document.getElementById('encodingInput').value;
+
+    if (!dateStr) {
+      log('카톡 CSV 원본 업로드 대기: 공구날짜를 먼저 선택해주세요.');
+      return null;
+    }
+
+    const uploadKey = getKakaoCsvUploadKey(file, encoding, dateStr, startTime, endDateStr, endTime);
+
+    if (lastKakaoCsvUpload && lastKakaoCsvUploadKey === uploadKey) {
+      return lastKakaoCsvUpload;
+    }
+
+    if (lastKakaoCsvUploadPromise && lastKakaoCsvUploadKey === uploadKey) {
+      return lastKakaoCsvUploadPromise;
+    }
+
+    lastKakaoCsvUploadKey = uploadKey;
+    lastKakaoCsvUpload = null;
+
+    lastKakaoCsvUploadPromise = (async () => {
+      try {
+        log(`카톡 CSV 원본 업로드 시작: ${file.name}`);
+        const csvText = await readFileAsText(file, encoding);
+        const uploadRes = await gasRun('uploadKakaoCsvOriginal', {
+          fileContent: csvText,
+          fileName: file.name,
+          fileSize: file.size,
+          mimeType: file.type || '',
+          storeName: '전농래미안크레시티점',
+          dateStr,
+          startTime,
+          endDateStr,
+          endTime
+        });
+
+        if (uploadRes && uploadRes.ok) {
+          lastKakaoCsvUpload = uploadRes;
+          log(`카톡 CSV 원본 업로드 완료: ${uploadRes.uploadId}`);
+        } else {
+          log(`카톡 CSV 원본 업로드 실패 또는 건너뜀: ${(uploadRes && uploadRes.error) || '알 수 없음'}`);
+        }
+
+        return uploadRes;
+      } catch (uploadErr) {
+        log(`카톡 CSV 원본 업로드 실패, 주문수집은 계속 진행: ${uploadErr.message}`);
+        return { ok: false, error: uploadErr.message };
+      } finally {
+        lastKakaoCsvUploadPromise = null;
+      }
+    })();
+
+    return lastKakaoCsvUploadPromise;
+  }
+
+  function setRunning(running) {
+    document.getElementById('runBtn').disabled = running;
+    document.getElementById('runBtn').textContent = running ? '분석중...' : '파일 분석 시작';
+  }
+
+  function renderResult(res) {
+    currentResult = res;
+    lastProducts = res.baseProductNames || lastProducts || [];
+    previousDayProducts = res.previousDayProductNames || previousDayProducts || [];
+    previousDayProductRecords = res.previousDayProductRecords || previousDayProductRecords || [];
+    currentProducts = res.productNames || mergeCurrentProducts(mergeProductNameArrays(lastProducts, previousDayProducts), customProducts) || [];
+
+    editableRows = (res.rows || res.rowsPreview || []).map((r, i) => normalizeEditableCandidate(r, i));
+    issueRows = buildIssueRows(res.report || {}, res.orderDateText || '');
+
+    // AI 확정 후보와 같은 원문/상품으로 겹치는 확인 필요 후보는 제거합니다.
+    issueRows = dedupeIssueRowsAgainstAi(issueRows, editableRows);
+
+    // 확인필요 → AI 주문 후보 승격은 프론트 하드코딩이 아니라 OpenAI finalReviewDecision으로 서버에서 이미 처리합니다.
+    // 화면에서는 남은 확인필요 후보를 보여주기만 합니다.
+    editableRows.sort((a, b) => getCandidateOrder(a) - getCandidateOrder(b));
+    issueRows.sort((a, b) => getCandidateOrder(a) - getCandidateOrder(b));
+
+    renderResultView(res);
+    saveReviewState();
+  }
+
+  function renderResultView(res) {
+    const resultBox = document.getElementById('resultBox');
+    const report = res.report || {};
+
+    const stats = `
+      <div class="stats">
+        <div class="stat"><b>${res.productCount || 0}</b><span>상품리스트</span></div>
+        <div class="stat"><b>${res.targetMessageCount || 0}</b><span>분석 메시지</span></div>
+        <div class="stat"><b>${editableRows.length}</b><span>AI 주문 후보</span></div>
+        <div class="stat"><b>${issueRows.length}</b><span>확인 필요 후보</span></div>
+      </div>
+    `;
+
+    resultBox.innerHTML = `
+      ${stats}
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0 18px;">
+        <span class="pill">주문일자 D열: ${escapeHtml(res.orderDateText || '')}</span>
+        <span class="pill">Raw 시작행: ${escapeHtml(res.startRow || '')}</span>
+        <span class="pill">수집 마감: ${res.endDateStr && res.endTime ? `${escapeHtml(res.endDateStr)} ${escapeHtml(res.endTime)}` : '파일 끝까지'}</span>
+        <button class="secondary" onclick="manualSaveReviewState()">임시저장</button>
+        <button class="green" onclick="commitFinalRows()">최종 주문입력 시트에 입력하기</button>
+        <button class="ghostBtn" id="missingReviewBtn" onclick="runMissingOrderReview()" style="${lastCommittedRows.length ? '' : 'display:none;'}">누락 주문 마지막 검토</button>
+        <span id="writeSummary" class="muted"></span>
+      </div>
+
+      <p class="muted" style="margin-top:0;">
+        좌측은 확인필요 주문후보, 우측은 AI 주문후보입니다. 두 목록은 원문 시간 기준으로 같은 줄에 맞춰 비교됩니다.
+      </p>
+
+      ${renderSideBySideReview()}
+      ${renderReadableReport(report)}
+
+      <div style="margin-top:22px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <button class="secondary" onclick="manualSaveReviewState()">임시저장</button>
+        <button class="green" onclick="commitFinalRows()">최종 주문입력 시트에 입력하기</button>
+        <button class="ghostBtn" id="missingReviewBtnBottom" onclick="runMissingOrderReview()" style="${lastCommittedRows.length ? '' : 'display:none;'}">누락 주문 마지막 검토</button>
+        <span id="writeSummaryBottom" class="muted"></span>
+      </div>
+    `;
+
+    renderWriteSummary();
+    setTimeout(renderIssueScrollMarkers, 0);
+  }
+
+  function buildIssueRows(report, orderDateText) {
+    const rows = [];
+    const seen = new Set();
+
+    function pushIssue(base, rawName, quantity, reason, localIndex, aiSuggestion) {
+      const raw = rawName || base.message || '';
+      const sourceIndex = Number(base.sourceIndex) || 999999999;
+      const suggestedProductName =
+        aiSuggestion && currentProducts.includes(aiSuggestion.suggestedProductName)
+          ? aiSuggestion.suggestedProductName
+          : (aiSuggestion && currentProducts.includes(aiSuggestion.productName) ? aiSuggestion.productName : '');
+      const reasonText = String(reason || base.reason || '');
+      const isSoldOutReason = /품절마감|품절\s*마감|품절 이후|품절마감 이후 들어온 주문/.test(reasonText);
+      const isPastOrderReason =
+        !isSoldOutReason &&
+        !suggestedProductName &&
+        /(지난\s*공구|이전\s*공구|전날|어제|상품리스트에\s*없|상품리스트\s*없|productNames에\s*없|현재\s*상품리스트에\s*없|유효\s*상품.*없|없는\s*상품)/i.test(reasonText);
+
+      const row = {
+        id: `issue_${sourceIndex}_${base.csvRowNumber || ''}_${localIndex}_${normalizeKo(raw).slice(0, 20)}`,
+        sourceType: 'issue',
+        action: isSoldOutReason ? 'soldout_closed' : (isPastOrderReason ? 'past_order' : 'include'),
+        orderDateText,
+        customer: base.user || '',
+        productName: suggestedProductName,
+        autoMatchConfidence: Number(aiSuggestion && aiSuggestion.suggestionConfidence || 0),
+        autoMatchReason: aiSuggestion && aiSuggestion.finalReviewDecision
+          ? `AI finalReviewDecision=${aiSuggestion.finalReviewDecision}`
+          : '',
+        quantity: Number(quantity) > 0 ? Number(quantity) : 1,
+        rawName: raw,
+        message: base.message || '',
+        dateRaw: base.dateRaw || '',
+        csvRowNumber: base.csvRowNumber || '',
+        sourceIndex,
+        reason: reason || base.reason || '사람 확인 필요',
+        memo: '',
+        manualProductName: '',
+        written: false
+      };
+
+      const key = makeIssueLooseKey(row);
+      if (seen.has(key)) return;
+      seen.add(key);
+      rows.push(row);
+    }
+
+    (report.notInProductList || []).forEach((x, i) => {
+      pushIssue(x, x.rawName || x.message || '', x.quantity, x.reason || '상품 매칭 확인 필요', `notin_${i}`, x);
+    });
+
+    (report.needsCheck || []).forEach((ev, i) => {
+      const unmatched = ev.unmatchedItems || [];
+      const cancelItems = ev.cancelItems || [];
+      const items = ev.items || [];
+
+      if (unmatched.length) {
+        unmatched.forEach((item, j) => {
+          pushIssue(ev, item.rawName || ev.message || '', item.quantity, item.reason || ev.reason || '상품명 매칭 확인 필요', `need_${i}_${j}`, item);
+        });
+        return;
+      }
+
+      if (cancelItems.length) {
+        cancelItems.forEach((item, j) => {
+          pushIssue(ev, item.rawExpression || ev.message || '', item.quantity || 1, ev.reason || '취소/차감 확인 필요', `cancel_${i}_${j}`, item);
+        });
+        return;
+      }
+
+      if (items.length) {
+        items.forEach((item, j) => {
+          pushIssue(ev, item.rawExpression || ev.message || '', item.quantity || 1, ev.reason || '정정/변경 확인 필요', `item_${i}_${j}`, item);
+        });
+        return;
+      }
+
+      pushIssue(ev, ev.message || '', inferQuantity(ev.message || '') || 1, ev.reason || '사람 확인 필요', `need_${i}`);
+    });
+
+    return rows.sort((a, b) => getCandidateOrder(a) - getCandidateOrder(b));
+  }
+
+  function dedupeIssueRowsAgainstAi(issueList, aiList) {
+    const strictAiKeys = new Set(aiList.map(r => makeCandidateDedupKey(r)));
+    const looseAiKeys = new Set(aiList.map(r => makeIssueLooseKey(r)));
+
+    return (issueList || []).filter(row => {
+      if (strictAiKeys.has(makeCandidateDedupKey(row))) return false;
+      if (row.productName && looseAiKeys.has(makeIssueLooseKey(row))) return false;
+      return true;
+    });
+  }
+
+  function promoteAutoMatchedIssueRows() {
+    // 더 이상 프론트 코드에서 상품명을 추정해 승격하지 않습니다.
+    // 확인필요 → AI 주문 후보 승격은 OpenAI의 finalReviewDecision=promote_to_order 결과만 서버에서 처리합니다.
+    return 0;
+  }
+
+  async function runAiFinalIssueReview() {
+    if (!currentResult || !issueRows.length) {
+      return;
+    }
+
+    const candidates = issueRows
+      .filter(row => {
+        if (!row) return false;
+        if (row.action === 'soldout_closed') return false;
+        if (row.action === 'past_order') return false;
+        return true;
+      })
+      .map(row => ({
+        id: row.id,
+        customer: row.customer,
+        dateRaw: row.dateRaw,
+        csvRowNumber: row.csvRowNumber,
+        rawName: row.rawName || '',
+        message: row.message || '',
+        quantity: Number(row.quantity) || 1,
+        currentSuggestedProductName: row.productName || '',
+        currentReason: row.reason || ''
+      }));
+
+    if (!candidates.length) return;
+
+    log(`확인필요 후보 AI 최종검토 시작: ${candidates.length}건`);
+    try {
+      const review = await gasRun('reviewIssueCandidatesWithAI', {
+        productNames: currentProducts,
+        candidates
+      });
+
+      applyAiFinalIssueReview(review.decisions || []);
+      log(`확인필요 후보 AI 최종검토 완료: ${review.reviewedCount || candidates.length}건`);
+      renderResultView(currentResult);
+      saveReviewState();
+    } catch (err) {
+      log(`확인필요 후보 AI 최종검토 실패: ${err.message || err}`);
+      // 최종검토가 실패해도 기본 분석 결과는 그대로 사용할 수 있게 둡니다.
+    }
+  }
+
+  function applyAiFinalIssueReview(decisions) {
+    const byId = new Map((decisions || []).map(d => [String(d.id || ''), d]));
+    const promoted = [];
+    const remain = [];
+
+    issueRows.forEach((row, i) => {
+      const decision = byId.get(String(row.id || ''));
+      if (!decision) {
+        remain.push(row);
+        return;
+      }
+
+      const productName = decision.productName || '';
+      const confidence = Number(decision.confidence || 0);
+      const shouldPromote =
+        decision.decision === 'promote_to_order' &&
+        productName &&
+        currentProducts.includes(productName) &&
+        confidence >= 0.94 &&
+        !['soldout_closed', 'past_order'].includes(row.action);
+
+      if (shouldPromote) {
+        promoted.push({
+          id: `ai_final_promoted_${row.id || i}`,
+          sourceType: 'ai_final_promoted',
+          include: true,
+          orderDateText: row.orderDateText,
+          customer: row.customer,
+          productName,
+          quantity: Number(row.quantity) || 1,
+          sourceIndex: row.sourceIndex,
+          csvRowNumber: row.csvRowNumber,
+          dateRaw: row.dateRaw,
+          rawExpression: row.rawName || row.message || '',
+          rawName: row.rawName || '',
+          message: row.message || '',
+          written: false,
+          finalReviewReason: decision.reason || '',
+          finalReviewConfidence: confidence
+        });
+      } else {
+        row.productName = productName || row.productName || '';
+        row.autoMatchConfidence = confidence || row.autoMatchConfidence || 0;
+        row.autoMatchReason = decision.reason
+          ? `AI 최종검토: ${decision.decision} · ${decision.reason}`
+          : row.autoMatchReason;
+        remain.push(row);
+      }
+    });
+
+    if (promoted.length) {
+      editableRows = editableRows.concat(promoted);
+      editableRows.sort((a, b) => getCandidateOrder(a) - getCandidateOrder(b));
+      log(`확인필요 후보 ${promoted.length}건을 AI 최종검토로 주문 후보에 승격했습니다.`);
+    }
+
+    issueRows = remain.sort((a, b) => getCandidateOrder(a) - getCandidateOrder(b));
+  }
+
+
+  
+  async function duplicateIssueRow(idx) {
+    const base = issueRows[idx];
+    if (!base) return;
+
+    const scrollTop = getTimelineScrollTop();
+
+    try {
+      log('원문을 다시 읽어 누락 주문을 AI로 확인합니다.');
+      const existingItems = collectExistingItemsForSameSource(base);
+      const res = await gasRun('reviewMissingItemsForOneMessage', {
+        sourceMessage: {
+          sourceIndex: base.sourceIndex,
+          csvRowNumber: base.csvRowNumber,
+          dateRaw: base.dateRaw,
+          customer: base.customer,
+          user: base.customer,
+          message: getIssueOriginalText(base) || base.message || base.rawName || ''
+        },
+        existingItems,
+        productNames: currentProducts || [],
+        customProducts: getActiveCustomProducts()
+      });
+
+      const missingItems = (res && res.missingItems) || [];
+      let inserts = [];
+
+      if (missingItems.length) {
+        inserts = missingItems.map((item, n) => {
+          const suggested = String(item.suggestedProductName || '').trim();
+          const action = item.suggestedAction === 'past_order' || !suggested ? 'past_order' : 'include';
+          return {
+            ...base,
+            id: `ai_missing_${Date.now()}_${n}_${Math.random().toString(36).slice(2)}`,
+            sourceType: 'issue_ai_missing_extra',
+            action,
+            productName: action === 'include' ? suggested : '',
+            manualProductName: '',
+            quantity: Number(item.quantity || 1) || 1,
+            rawName: String(item.rawName || '').trim(),
+            rawExpression: String(item.rawName || '').trim(),
+            memo: '',
+            manualAdded: true,
+            written: false,
+            reason: `원문 재검토로 누락 추가 · ${item.reason || ''}`,
+            autoMatchReason: item.confidence ? `원문 재검토 신뢰도 ${Math.round(Number(item.confidence || 0) * 100)}%` : ''
+          };
+        });
+        log(`원문 재검토 결과 누락 주문카드 ${inserts.length}개를 추가했습니다.`);
+      } else {
+        if (!confirm('AI가 이 원문에서 추가 누락 주문을 찾지 못했습니다. 그래도 빈 주문카드 1개를 추가할까요?')) {
+          return;
+        }
+        inserts = [{
+          ...base,
+          id: `manual_issue_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+          sourceType: 'issue_manual_extra',
+          action: 'include',
+          productName: '',
+          manualProductName: '',
+          memo: '',
+          manualAdded: true,
+          written: false,
+          reason: '수동 추가 주문카드'
+        }];
+      }
+
+      issueRows.splice(idx + 1, 0, ...inserts);
+      renderResultViewPreserveScroll(scrollTop);
+      saveReviewState();
+    } catch (err) {
+      log(`원문 재검토 실패: ${err.message || err}`);
+      alert(`원문 재검토에 실패했습니다.\n${err.message || err}`);
+    }
+  }
+
+  function isSameSourceRow(a, b) {
+    if (!a || !b) return false;
+    if (a.sourceIndex && b.sourceIndex && String(a.sourceIndex) === String(b.sourceIndex)) return true;
+    if (a.csvRowNumber && b.csvRowNumber && String(a.csvRowNumber) === String(b.csvRowNumber)) return true;
+    return String(a.dateRaw || '') === String(b.dateRaw || '') &&
+      String(a.customer || '') === String(b.customer || '') &&
+      String(a.message || a.rawName || '') === String(b.message || b.rawName || '');
+  }
+
+  function collectExistingItemsForSameSource(base) {
+    const rows = [];
+    (editableRows || []).forEach(r => { if (isSameSourceRow(base, r)) rows.push(r); });
+    (issueRows || []).forEach(r => { if (isSameSourceRow(base, r)) rows.push(r); });
+
+    return rows.map(r => ({
+      productName: String(r.productName || '').trim(),
+      manualProductName: String(r.manualProductName || '').trim(),
+      rawName: String(r.rawName || r.rawExpression || '').trim(),
+      quantity: Number(r.quantity || 0) || 0,
+      action: String(r.action || (r.include === false ? 'exclude' : 'include'))
+    })).filter(x => x.productName || x.manualProductName || x.rawName || x.quantity);
+  }
+
+
+  function removeIssueRow(idx) {
+    const row = issueRows[idx];
+    if (!row || !row.manualAdded) return;
+    const scrollTop = getTimelineScrollTop();
+    issueRows.splice(idx, 1);
+    renderResultViewPreserveScroll(scrollTop);
+    saveReviewState();
+  }
+
+  function getTimelineScrollTop() {
+    const wrap = document.getElementById('timelineWrap');
+    return wrap ? wrap.scrollTop : 0;
+  }
+
+  function restoreTimelineScrollTop(scrollTop) {
+    setTimeout(() => {
+      const wrap = document.getElementById('timelineWrap');
+      if (wrap) wrap.scrollTop = Number(scrollTop) || 0;
+      renderIssueScrollMarkers();
+    }, 0);
+  }
+
+  function renderResultViewPreserveScroll(scrollTop) {
+    if (!currentResult) return;
+    renderResultView(currentResult);
+    restoreTimelineScrollTop(scrollTop);
+  }
+
+  function renderIssueScrollMarkers() {
+    const wrap = document.getElementById('timelineWrap');
+    if (!wrap) return;
+    const old = wrap.querySelector('.scrollMarkerRail');
+    if (old) old.remove();
+    if (!issueRows.length) return;
+
+    const rail = document.createElement('div');
+    rail.className = 'scrollMarkerRail';
+    rail.style.height = `${Math.max(120, wrap.clientHeight - 24)}px`;
+
+    const railHeight = Math.max(120, wrap.clientHeight - 24);
+    const maxContentHeight = Math.max(1, wrap.scrollHeight);
+    const cardById = new Map();
+    wrap.querySelectorAll('.miniOrderCard.issueCard[data-issue-id]').forEach(card => {
+      cardById.set(card.dataset.issueId || '', card);
+    });
+
+    issueRows.forEach(row => {
+      const card = cardById.get(String(row.id || ''));
+      if (!card) return;
+
+      const cardRect = card.getBoundingClientRect();
+      const wrapRect = wrap.getBoundingClientRect();
+      const contentY = (cardRect.top - wrapRect.top) + wrap.scrollTop + (card.offsetHeight / 2);
+      const pct = contentY / maxContentHeight;
+      const markerTop = Math.max(0, Math.min(railHeight - 9, pct * (railHeight - 9)));
+
+      const marker = document.createElement('div');
+      marker.className = `scrollMarker ${row.action || 'include'}`;
+      marker.style.top = `${markerTop}px`;
+      marker.title = `${actionLabel(row.action)} · ${row.customer || ''} · ${getIssueParsedText(row) || getIssueOriginalText(row)}`;
+      rail.appendChild(marker);
+    });
+
+    wrap.prepend(rail);
+  }
+
+  function actionLabel(action) {
+    if (action === 'past_order') return '지난 공구주문';
+    if (action === 'soldout_closed') return '품절 마감 상품';
+    if (action === 'exclude_review') return '일단 제외/추후 확인';
+    return '주문입력에 반영';
+  }
+
+  function manualSaveReviewState() {
+    saveReviewState();
+    alert('임시저장 완료! 새로고침해도 현재 검수 상태를 다시 불러올 수 있습니다.');
+  }
+
+
+
+
+function suggestProduct(text) {
+    // 고정 별칭 하드코딩을 사용하지 않습니다.
+    // 현재 유효 상품명(currentProducts) 안에서 원문과 직접 겹치는 경우만 보조 추천합니다.
+    const t = normalizeKo(stripSpecs(text));
+    if (!t) return '';
+    const products = currentProducts || [];
+
+    for (const product of products) {
+      const p = normalizeKo(stripSpecs(product));
+      if (p && (p.includes(t) || t.includes(p))) return product;
+    }
+    return '';
+  }
+
+
+  function parseDateForUi(dateRaw) {
+    const raw = String(dateRaw || '').trim();
+    if (!raw) return null;
+    let s = raw
+      .replace(/년|월/g, '.')
+      .replace(/일/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const meridiemMatch = s.match(/(오전|오후|AM|PM)/i);
+    const meridiem = meridiemMatch ? meridiemMatch[1].toLowerCase() : '';
+    s = s.replace(/오전|오후|AM|PM/gi, '').trim();
+
+    const m = s.match(/(\d{4})[.\-/]\s*(\d{1,2})[.\-/]\s*(\d{1,2})(?:\.?\s+|\s+)?(?:(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+    if (!m) return null;
+
+    let h = m[4] !== undefined ? Number(m[4]) : 0;
+    const mi = m[5] !== undefined ? Number(m[5]) : 0;
+
+    if (meridiem === '오후' || meridiem === 'pm') {
+      if (h < 12) h += 12;
+    }
+    if (meridiem === '오전' || meridiem === 'am') {
+      if (h === 12) h = 0;
+    }
+
+    return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), h, mi, 0, 0);
+  }
+
+  function formatKakaoDateSmall(dateRaw) {
+    const dt = parseDateForUi(dateRaw);
+    if (!dt) return '';
+    return `${dt.getMonth() + 1}/${dt.getDate()}`;
+  }
+
+  function formatKakaoTimeForCard(dateRaw) {
+    const dt = parseDateForUi(dateRaw);
+    if (!dt) return '';
+    let h = dt.getHours();
+    const m = String(dt.getMinutes()).padStart(2, '0');
+    const ampm = h < 12 ? '오전' : '오후';
+    let h12 = h % 12;
+    if (h12 === 0) h12 = 12;
+    return `${ampm} ${h12}:${m}`;
+  }
+
+
+
+function normalizeKo(v) {
+    return String(v || '').toLowerCase().replace(/\s+/g, '').replace(/["'“”‘’\[\]\(\),.\/]/g, '');
+  }
+
+  function inferQuantity(text) {
+    const s = String(text || '').replace(/ㅣ/g, '1');
+    const matches = Array.from(s.matchAll(/(\d+)\s*(?:개|팩|봉|세트)?/g));
+    if (!matches.length) return 0;
+    return Number(matches[matches.length - 1][1]) || 0;
+  }
+
+
+  function renderSideBySideReview() {
+    const timeline = buildTimelineRowsForReview();
+
+    if (!timeline.length) {
+      return '<p class="muted">표시할 주문 후보가 없습니다.</p>';
+    }
+
+    return `
+      <div class="reviewCompareGrid" style="font-weight:900;margin-bottom:8px;">
+        <div>확인필요 주문후보 <span class="warn">${issueRows.length}</span></div>
+        <div>AI 주문후보 <span class="warn">${editableRows.length}</span></div>
+      </div>
+      <div class="timelineWrap" id="timelineWrap">
+        ${timeline.map(row => `
+          <div class="timelineRow">
+            <div class="timelineCell issueCell">
+              ${row.issues.length ? row.issues.map(item => renderIssueMiniCard(item.row, item.idx)).join('') : '<div class="emptyTimelineCell">—</div>'}
+            </div>
+            <div class="timelineCell aiCell">
+              ${row.ais.length ? row.ais.map(item => renderAiMiniCard(item.row, item.idx)).join('') : '<div class="emptyTimelineCell">—</div>'}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  function buildTimelineRowsForReview() {
+    const map = new Map();
+
+    function keyFor(row) {
+      const n = Number(row && row.sourceIndex);
+      if (Number.isFinite(n) && n < 999999999) return `s_${n}`;
+      const dt = String(row && row.dateRaw || '');
+      const csv = String(row && row.csvRowNumber || '');
+      return `x_${dt}_${csv}_${Math.random()}`;
+    }
+
+    function ensure(key, row) {
+      if (!map.has(key)) {
+        map.set(key, {
+          key,
+          order: getCandidateOrder(row),
+          dateRaw: row && row.dateRaw || '',
+          csvRowNumber: row && row.csvRowNumber || '',
+          issues: [],
+          ais: []
+        });
+      }
+      return map.get(key);
+    }
+
+    issueRows.forEach((row, idx) => {
+      const key = keyFor(row);
+      ensure(key, row).issues.push({ row, idx });
+    });
+
+    editableRows.forEach((row, idx) => {
+      const key = keyFor(row);
+      ensure(key, row).ais.push({ row, idx });
+    });
+
+    return Array.from(map.values())
+      .sort((a, b) => a.order - b.order || String(a.dateRaw).localeCompare(String(b.dateRaw)));
+  }
+
+  function renderAiMiniCard(r, i) {
+    return `
+      <div class="miniOrderCard" data-row-id="${escapeAttr(r.id || '')}">
+        <div class="miniTop">
+          <div class="miniMeta"><span class="miniDate">${escapeHtml(formatKakaoDateSmall(r.dateRaw || ''))}</span><span class="miniTime">${escapeHtml(formatKakaoTimeForCard(r.dateRaw || ''))}</span></div>
+        </div>
+        <div class="miniGrid">
+          <label>입력</label>
+          <input type="checkbox" ${r.include ? 'checked' : ''} data-type="main" data-idx="${i}" data-field="include" onchange="updateEditableRow(this)">
+          <label>고객명</label>
+          <input value="${escapeAttr(r.customer)}" data-type="main" data-idx="${i}" data-field="customer" oninput="updateEditableRow(this)">
+          <label>상품명</label>
+          ${productSelect('main', i, r.productName)}
+          <label>수량</label>
+          <input type="number" min="1" value="${escapeAttr(r.quantity)}" data-type="main" data-idx="${i}" data-field="quantity" oninput="updateEditableRow(this)">
+        </div>
+        ${r.rawExpression || r.message ? `<div class="miniRaw">원문: ${escapeHtml(r.rawExpression || r.message || '')}</div>` : ''}
+        ${renderOrderMemoEditor('main', i, r.memo || '')}
+        ${renderManualProductEditor('main', i, r.manualProductName || '')}
+      </div>
+    `;
+  }
+
+  function renderIssueMiniCard(r, i) {
+    return `
+      <div class="miniOrderCard issueCard action-${escapeAttr(r.action || 'include')}" data-row-id="${escapeAttr(r.id || '')}" data-issue-id="${escapeAttr(r.id || '')}" data-issue-idx="${i}">
+        <div class="miniTop">
+          <div class="miniMeta"><span class="miniDate">${escapeHtml(formatKakaoDateSmall(r.dateRaw || ''))}</span><span class="miniTime">${escapeHtml(formatKakaoTimeForCard(r.dateRaw || ''))}</span></div>
+          <div class="cardActions" style="margin-top:0;">
+            <button type="button" class="miniBtn" onclick="duplicateIssueRow(${i})">＋ 원문 누락 자동추가</button>
+            ${r.manualAdded ? `<button type="button" class="miniBtn dangerBtn" onclick="removeIssueRow(${i})">－ 삭제</button>` : ''}
+          </div>
+        </div>
+        <div class="miniGrid">
+          <label>처리</label>
+          ${issueActionSelect(i, r.action)}
+          <label>고객명</label>
+          <input value="${escapeAttr(r.customer)}" data-type="issue" data-idx="${i}" data-field="customer" oninput="updateEditableRow(this)">
+          <label>상품명</label>
+          ${productSelect('issue', i, r.productName, r.action)}
+          <label>수량</label>
+          <input type="number" min="1" value="${escapeAttr(r.quantity)}" data-type="issue" data-idx="${i}" data-field="quantity" oninput="updateEditableRow(this)">
+        </div>
+        <div class="miniRaw"><b>원문:</b> ${escapeHtml(getIssueOriginalText(r))}</div>
+        <div class="miniRaw"><b>해석:</b> ${escapeHtml(getIssueParsedText(r))}</div>
+        <div class="miniRaw"><b>AI 사유:</b> ${escapeHtml(r.reason || '')}${r.autoMatchReason ? `<br><span class="muted">${escapeHtml(r.autoMatchReason)} · ${Math.round(Number(r.autoMatchConfidence || 0) * 100)}%</span>` : ''}</div>
+        ${renderOrderMemoEditor('issue', i, r.memo || '')}
+        ${renderManualProductEditor('issue', i, r.manualProductName || '')}
+      </div>
+    `;
+  }
+
+  function renderOrderMemoEditor(type, idx, memo) {
+    const hasMemo = String(memo || '').trim().length > 0;
+    return `
+      <details class="orderMemoDetails" ${hasMemo ? 'open' : ''}>
+        <summary>${hasMemo ? '메모 수정' : '메모 추가'}</summary>
+        <textarea
+          class="orderMemoInput"
+          placeholder="이 주문에 대한 메모를 입력하세요. 최종 입력 시 I열의 기존 내용과 함께 기록됩니다."
+          data-type="${type}"
+          data-idx="${idx}"
+          data-field="memo"
+          oninput="updateEditableRow(this)"
+        >${escapeHtml(memo || '')}</textarea>
+      </details>
+    `;
+  }
+
+  function renderManualProductEditor(type, idx, value) {
+    const hasValue = String(value || '').trim().length > 0;
+    return `
+      <details class="orderMemoDetails" ${hasValue ? 'open' : ''}>
+        <summary>${hasValue ? '수기 주문명 수정' : '주문명 수기 입력'}</summary>
+        <input
+          class="orderMemoInput"
+          style="min-height:42px;resize:none;"
+          type="text"
+          placeholder="필요한 경우에만 주문명을 직접 입력하세요. 입력값이 상품 선택보다 우선합니다."
+          value="${escapeAttr(value || '')}"
+          data-type="${type}"
+          data-idx="${idx}"
+          data-field="manualProductName"
+          oninput="updateEditableRow(this)"
+        >
+      </details>
+    `;
+  }
+
+  function getIssueOriginalText(row) {
+    return String(row && (row.message || row.rawMessage || row.rawExpression || row.rawName) || '').trim();
+  }
+
+  function getIssueParsedText(row) {
+    const raw = String(row && (row.rawName || row.rawExpression || row.message) || '').trim();
+    const qty = Number(row && row.quantity);
+    if (!raw) return qty > 0 ? `수량 ${qty}` : '';
+    return qty > 0 ? `${raw} × ${qty}` : raw;
+  }
+
+  function renderEditableRows() {
+    if (!editableRows.length) return '<h3>AI 주문 후보</h3><p class="muted">AI가 입력 후보로 잡은 주문이 없습니다.</p>';
+
+    return `
+      <h3>AI 주문 후보 <span class="warn">${editableRows.length}</span></h3>
+      <div class="previewBox">
+        <table>
+          <thead>
+            <tr><th>입력</th><th>시간/행</th><th>주문일자</th><th>고객명</th><th>상품명</th><th>수량</th></tr>
+          </thead>
+          <tbody>
+            ${editableRows.map((r, i) => `
+              <tr>
+                <td><input type="checkbox" ${r.include ? 'checked' : ''} data-type="main" data-idx="${i}" data-field="include" onchange="updateEditableRow(this)"></td>
+                <td>${escapeHtml(r.dateRaw || '')}<br><span class="muted">row ${escapeHtml(r.csvRowNumber || '')}</span></td>
+                <td>${escapeHtml(r.orderDateText)}</td>
+                <td><input value="${escapeAttr(r.customer)}" data-type="main" data-idx="${i}" data-field="customer" oninput="updateEditableRow(this)"></td>
+                <td>${productSelect('main', i, r.productName)}</td>
+                <td><input type="number" min="1" value="${escapeAttr(r.quantity)}" data-type="main" data-idx="${i}" data-field="quantity" oninput="updateEditableRow(this)" style="width:80px;"></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function renderIssueRows() {
+    if (!issueRows.length) return '<h3>확인 필요 주문 후보</h3><p class="muted">확인 필요 항목이 없습니다.</p>';
+
+    return `
+      <h3>확인 필요 주문 후보 <span class="warn">${issueRows.length}</span></h3>
+      <p class="muted">확인필요 후보의 추천 상품명은 OpenAI가 마지막 검토로 제안한 값입니다. 품절마감 이후 주문은 처리값이 ⚠️ 품절 마감 상품으로 자동 지정되며, 지난 공구주문으로 판단되면 ⚠️ 지난 공구주문으로 표시됩니다.</p>
+      <div class="previewBox">
+        <table>
+          <thead>
+            <tr><th>처리</th><th>시간/행</th><th>고객명</th><th>원문</th><th>AI 사유</th><th>상품명 선택</th><th>수량</th></tr>
+          </thead>
+          <tbody>
+            ${issueRows.map((r, i) => `
+              <tr>
+                <td>${issueActionSelect(i, r.action)}</td>
+                <td>${escapeHtml(r.dateRaw)}<br><span class="muted">row ${escapeHtml(r.csvRowNumber)}</span></td>
+                <td><input value="${escapeAttr(r.customer)}" data-type="issue" data-idx="${i}" data-field="customer" oninput="updateEditableRow(this)"></td>
+                <td><b>${escapeHtml(getIssueParsedText(r))}</b><br><span class="muted">${escapeHtml(getIssueOriginalText(r))}</span></td>
+                <td>${escapeHtml(r.reason)}${r.autoMatchReason ? `<br><span class="muted">${escapeHtml(r.autoMatchReason)} · ${Math.round(Number(r.autoMatchConfidence || 0) * 100)}%</span>` : ''}</td>
+                <td>${productSelect('issue', i, r.productName, r.action)}</td>
+                <td><input type="number" min="1" value="${escapeAttr(r.quantity)}" data-type="issue" data-idx="${i}" data-field="quantity" oninput="updateEditableRow(this)" style="width:80px;"></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function productSelect(type, idx, selected, action) {
+    if (type === 'issue' && action === 'past_order') {
+      return `
+        <select data-type="${type}" data-idx="${idx}" data-field="productName" disabled>
+          <option value="">상품명은 자동 선택됩니다.</option>
+        </select>
+      `;
+    }
+
+    return `
+      <select data-type="${type}" data-idx="${idx}" data-field="productName" onchange="updateEditableRow(this)">
+        <option value="">상품 선택</option>
+        ${(currentProducts || []).map(p => `<option value="${escapeAttr(p)}" ${p === selected ? 'selected' : ''}>${escapeHtml(formatProductOptionLabel(p))}</option>`).join('')}
+      </select>
+    `;
+  }
+
+  function issueActionSelect(idx, selected) {
+    const options = [
+      ['include', '✅ 주문입력에 반영'],
+      ['past_order', '⚠️ 지난 공구주문'],
+      ['soldout_closed', '⚠️ 품절 마감 상품'],
+      ['exclude_review', '❌ 일단 제외/추후 확인']
+    ];
+
+    return `
+      <select class="smallSelect" data-type="issue" data-idx="${idx}" data-field="action" onchange="updateEditableRow(this)">
+        ${options.map(o => `<option value="${o[0]}" ${o[0] === selected ? 'selected' : ''}>${o[1]}</option>`).join('')}
+      </select>
+    `;
+  }
+
+  function updateEditableRow(el) {
+    const type = el.dataset.type;
+    const idx = Number(el.dataset.idx);
+    const field = el.dataset.field;
+    const list = type === 'issue' ? issueRows : editableRows;
+    const row = list[idx];
+    if (!row) return;
+
+    if (field === 'include') row.include = !!el.checked;
+    else if (field === 'quantity') row.quantity = Number(el.value) || 0;
+    else row[field] = el.value;
+
+    if (type === 'issue' && field === 'action') {
+      if (el.value === 'past_order') {
+        row.productName = '';
+      }
+
+      if (el.value === 'soldout_closed' && !row.productName) {
+        const byRule = findSoldOutProductForIssue(row);
+        if (byRule) row.productName = byRule;
+      }
+
+      syncIssueCardUi(idx);
+      renderIssueScrollMarkers();
+    }
+
+    if (type === 'issue' && field === 'productName' && el.value && !['include', 'soldout_closed'].includes(row.action)) {
+      row.action = 'include';
+      const actionEl = document.querySelector(`select[data-type="issue"][data-idx="${idx}"][data-field="action"]`);
+      if (actionEl) actionEl.value = 'include';
+      syncIssueCardUi(idx);
+      renderIssueScrollMarkers();
+    }
+
+    renderWriteSummary();
+    saveReviewState();
+  }
+
+  function syncIssueCardUi(idx) {
+    const row = issueRows[idx];
+    if (!row) return;
+
+    const card = document.querySelector(`.miniOrderCard.issueCard[data-issue-idx="${idx}"]`);
+    if (card) {
+      card.classList.remove('action-include', 'action-past_order', 'action-soldout_closed', 'action-exclude_review');
+      card.classList.add(`action-${row.action || 'include'}`);
+    }
+
+    const productEl = document.querySelector(`select[data-type="issue"][data-idx="${idx}"][data-field="productName"]`);
+    if (productEl) {
+      if (row.action === 'past_order') {
+        row.productName = '';
+        productEl.innerHTML = '<option value="">상품명은 자동 선택됩니다.</option>';
+        productEl.value = '';
+        productEl.disabled = true;
+      } else {
+        productEl.disabled = false;
+        const currentValue = row.productName || productEl.value || '';
+        productEl.innerHTML =
+          '<option value="">상품 선택</option>' +
+          (currentProducts || []).map(p => `<option value="${escapeAttr(p)}" ${p === currentValue ? 'selected' : ''}>${escapeHtml(p)}</option>`).join('');
+        productEl.value = currentProducts.includes(currentValue) ? currentValue : '';
+      }
+    }
+  }
+
+  function buildFinalRows() {
+    const rows = [];
+    const customMap = makeCustomProductMapClient();
+
+    function normalizeProductAndQuantity(row) {
+      const manual = String(row.manualProductName || '').trim();
+      let productName = manual || String(row.productName || '').trim();
+      let quantity = Number(row.quantity) || 0;
+
+      if (manual) {
+        const split = splitManualProductNameAndQuantityClient(manual);
+        if (split.productName) productName = split.productName;
+        if (split.quantity) quantity = split.quantity;
+      }
+
+      const customMeta = customMap[normalizeKo(productName)] || null;
+
+      return {
+        productName,
+        quantity,
+        // 기본값은 서버로 직접 보내지 않습니다.
+        // Raw_주문입력 B/C/J 자동수식이 상품명+주문일자를 보고 채우는 것이 우선입니다.
+        // 기본값과 다르게 수동 수정한 값만 override로 전달합니다.
+        price: row.price || (customMeta ? customMeta.priceOverride : ''),
+        imageUrl: row.imageUrl || (customMeta ? customMeta.imageUrlOverride : ''),
+        pickupDate: row.pickupDate || (customMeta ? customMeta.pickupDateOverride : ''),
+        customMeta
+      };
+    }
+
+    editableRows.forEach(r => {
+      if (!r.include) return;
+      const normalized = normalizeProductAndQuantity(r);
+      if (normalized.customMeta && normalized.customMeta.includeInOrder === false) return;
+
+      rows.push({
+        clientId: r.id || '',
+        clientType: 'ai',
+        orderDateText: r.orderDateText,
+        customer: r.customer,
+        productName: r.action === 'past_order' ? String(r.productName || '').trim() : normalized.productName,
+        manualProductName: r.manualProductName || '',
+        quantity: Number(normalized.quantity),
+        sourceIndex: r.sourceIndex,
+        csvRowNumber: r.csvRowNumber,
+        dateRaw: r.dateRaw,
+        action: 'include',
+        allowBlankProduct: false,
+        rawName: r.rawExpression || r.rawName || '',
+        message: r.message || '',
+        memo: r.memo || '',
+        price: normalized.price,
+        imageUrl: normalized.imageUrl,
+        pickupDate: normalized.pickupDate,
+        rowType: r.sourceType === 'ai_promoted' ? 'AI 최종검토 승격 후보' : 'AI 주문 후보'
+      });
+    });
+
+    issueRows.forEach(r => {
+      if (!['include', 'past_order', 'soldout_closed'].includes(r.action)) return;
+      const normalized = normalizeProductAndQuantity(r);
+      if (normalized.customMeta && normalized.customMeta.includeInOrder === false) return;
+
+      rows.push({
+        clientId: r.id || '',
+        clientType: 'issue',
+        orderDateText: r.orderDateText,
+        customer: r.customer,
+        productName: normalized.productName,
+        manualProductName: r.manualProductName || '',
+        quantity: Number(normalized.quantity),
+        sourceIndex: r.sourceIndex,
+        csvRowNumber: r.csvRowNumber,
+        dateRaw: r.dateRaw,
+        action: r.action,
+        allowBlankProduct: r.action === 'past_order',
+        soldOutClosed: r.action === 'soldout_closed',
+        rawName: r.rawName || r.rawExpression || r.message || '',
+        message: r.message || '',
+        memo: r.memo || '',
+        price: normalized.price,
+        imageUrl: normalized.imageUrl,
+        pickupDate: normalized.pickupDate,
+        rowType: r.action === 'past_order' ? '지난 공구주문' : (r.action === 'soldout_closed' ? '품절마감 상품' : '확인 필요 주문 후보')
+      });
+    });
+
+    return rows.sort((a, b) => getCandidateOrder(a) - getCandidateOrder(b));
+  }
+
+  function findInvalidRows(rows) {
+    return rows.filter(r => {
+      if (!r.orderDateText || !r.customer || !Number(r.quantity) || Number(r.quantity) < 1) return true;
+      if (r.action === 'past_order' || r.allowBlankProduct === true) return false;
+      return !r.productName;
+    });
+  }
+
+  function renderWriteSummary() {
+    let rows = buildFinalRows();
+    const invalid = findInvalidRows(rows);
+    const msg = `최종 입력 예정: ${rows.length}줄${invalid.length ? ` · 확인 필요 ${invalid.length}줄` : ''}`;
+
+    const top = document.getElementById('writeSummary');
+    const bottom = document.getElementById('writeSummaryBottom');
+
+    if (top) top.textContent = msg;
+    if (bottom) bottom.textContent = msg;
+  }
+
+  
+  async function runMissingOrderReview() {
+    if (!currentResult) return alert('먼저 CSV 분석을 완료해주세요.');
+    if (!lastCommittedRows.length) return alert('먼저 최종 주문입력 시트에 입력하기를 완료한 뒤 누락 검토를 진행해주세요.');
+    if (!sourceMessagesForReview.length) return alert('원본 CSV 메시지 정보가 없어 누락 검토를 할 수 없습니다. CSV 분석을 다시 실행해주세요.');
+
+    const ok = confirm('누락 주문 마지막 검토를 진행할까요?\n토큰 절약을 위해 주문 가능성이 있는 짧은 메시지만 선별해서 검사합니다.');
+    if (!ok) return;
+
+    log('누락 주문 마지막 검토 시작 · OpenAI 없이 닉네임/원문별 주문 수를 대조합니다...');
+    try {
+      const res = await gasRun('reviewMissingOrdersWithAI', {
+        productNames: currentProducts,
+        sourceMessages: sourceMessagesForReview,
+        processedRows: lastCommittedRows,
+        orderDateText: currentResult.orderDateText
+      });
+
+      const missed = res.missedItems || [];
+      if (!missed.length) {
+        log(`누락 검토 완료: 누락 의심 주문 없음 · CSV ${res.checkedMessageCount || 0}개 / 처리 ${res.processedLineCount || 0}줄`);
+        alert('누락 검토 완료!\n누락 의심 주문이 없습니다.');
+        return;
+      }
+
+      const addedRows = missed.map((m, i) => ({
+        id: `missing_${Date.now()}_${i}_${m.sourceIndex || ''}`,
+        sourceType: 'missing_review',
+        action: 'include',
+        orderDateText: currentResult.orderDateText,
+        customer: m.user || '',
+        productName: currentProducts.includes(m.suggestedProductName) ? m.suggestedProductName : '',
+        autoMatchConfidence: Number(m.confidence || 0),
+        autoMatchReason: `로컬 누락검토 · ${m.reason || ''}`,
+        quantity: Number(m.quantity) > 0 ? Number(m.quantity) : 1,
+        rawName: m.rawName || m.message || '',
+        message: m.message || '',
+        memo: m.memo || '',
+        dateRaw: m.dateRaw || '',
+        csvRowNumber: m.csvRowNumber || '',
+        sourceIndex: Number(m.sourceIndex) || 999999999,
+        reason: `누락 의심 주문: ${m.reason || ''}`,
+        written: false
+      }));
+
+      issueRows = issueRows.concat(addedRows);
+      issueRows = dedupeIssueRowsAgainstAi(issueRows, editableRows).sort((a, b) => getCandidateOrder(a) - getCandidateOrder(b));
+      renderResultView(currentResult);
+      saveReviewState();
+
+      log(`누락 검토 완료: 누락 의심 ${addedRows.length}건을 확인필요 주문후보에 추가했습니다.`);
+      alert(`누락 의심 주문 ${addedRows.length}건을 확인필요 주문후보에 추가했습니다.\n확인 후 다시 최종 입력 버튼으로 추가 입력하세요.`);
+    } catch (err) {
+      showError(err);
+    }
+  }
+
+
+
+  function clearInvalidRowHighlights() {
+    document.querySelectorAll('.miniOrderCard.invalidCard').forEach(el => el.classList.remove('invalidCard'));
+  }
+
+  function focusInvalidRows(invalidRows) {
+    clearInvalidRowHighlights();
+    const invalidIds = (invalidRows || []).map(r => String(r.clientId || '')).filter(Boolean);
+    let firstCard = null;
+
+    invalidIds.forEach(id => {
+      const card = findCardByRowId(id);
+      if (!card) return;
+      card.classList.add('invalidCard');
+      if (!firstCard) firstCard = card;
+    });
+
+    if (!firstCard) return;
+
+    const wrap = document.getElementById('timelineWrap');
+    if (wrap) {
+      const cardTop = firstCard.offsetTop;
+      wrap.scrollTo({ top: Math.max(0, cardTop - 80), behavior: 'smooth' });
+      setTimeout(renderIssueScrollMarkers, 350);
+    } else {
+      firstCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  function findCardByRowId(id) {
+    const cards = document.querySelectorAll('.miniOrderCard[data-row-id]');
+    for (const card of cards) {
+      if (String(card.dataset.rowId || '') === String(id)) return card;
+    }
+    return null;
+  }
+
+
+  function setFinalWriteLoading(show) {
+    const overlay = document.getElementById('finalWriteOverlay');
+    if (overlay) overlay.classList.toggle('show', !!show);
+    document.body.classList.toggle('finalWriteBusy', !!show);
+    document.querySelectorAll('button[onclick="commitFinalRows()"]')
+      .forEach(btn => {
+        btn.disabled = !!show;
+        btn.textContent = show ? '입력중...' : '최종 주문입력 시트에 입력하기';
+      });
+  }
+
+  function updateFinalWriteProgress(options) {
+    const title = document.getElementById('finalWriteTitle');
+    const desc = document.getElementById('finalWriteDesc');
+    const bar = document.getElementById('finalWriteProgressInner');
+    const detail = document.getElementById('finalWriteProgressDetail');
+
+    const percent = Math.max(0, Math.min(100, Number(options?.percent || 0)));
+    if (title && options?.title) title.textContent = options.title;
+    if (desc && options?.desc) desc.innerHTML = options.desc;
+    if (bar) bar.style.width = `${percent}%`;
+    if (detail) detail.textContent = options?.detail || '';
+  }
+
+  function sleepMs(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  function getRowsNeedingPastResolve(rows, previousDaySetForWrite) {
+    return (rows || [])
+      .map((row, index) => ({ row, index }))
+      .filter(x => {
+        const isPast = x.row.action === 'past_order' || x.row.allowBlankProduct === true;
+        if (!isPast) return false;
+        if (x.row.pastOrderAiChecked === true || x.row.pastOrderFastResolved === true || String(x.row.pastOrderMemo || '').trim()) return false;
+        return true;
+      });
+  }
+
+  async function resolvePastRowsBeforeFinalWrite(rows, previousDaySetForWrite) {
+    const targets = getRowsNeedingPastResolve(rows, previousDaySetForWrite);
+    if (!targets.length) return rows;
+
+    const total = targets.length;
+    const batchSize = 20;
+    const resolvedRows = rows.map(r => ({ ...r }));
+
+    log(`지난공구주문 사전 매칭 시작: ${total}건 · ${batchSize}건씩 처리`);
+
+    for (let offset = 0; offset < total; offset += batchSize) {
+      const batchTargets = targets.slice(offset, offset + batchSize);
+      const startNo = offset + 1;
+      const endNo = offset + batchTargets.length;
+
+      updateFinalWriteProgress({
+        title: '지난 공구주문 확인중',
+        desc: '입력 중 반복 AI 확인을 막기 위해 먼저 한 번에 매칭합니다.<br>이 단계가 끝나면 구글시트 입력은 훨씬 빨라집니다.',
+        percent: Math.round((offset / total) * 100),
+        detail: `지난공구주문 ${total}건 중 ${startNo}~${endNo}번째 확인중\n작업: 하루전공구 비고 생성 + 과거 상품명 빠른매칭 + 필요한 건만 AI 매칭`
+      });
+
+      const payloadRows = batchTargets.map(x => ({ ...x.row, __originalIndex: x.index }));
+      const res = await gasRun('resolvePastOrderRowsForWrite', {
+        dateStr: currentResult.dateStr || document.getElementById('dateInput').value,
+        rows: payloadRows,
+        customProducts: getActiveCustomProducts(),
+        productNames: currentResult.productNames || currentProducts || [],
+        baseProductNames: currentResult.baseProductNames || lastProducts || [],
+        previousDayProductNames: currentResult.previousDayProductNames || previousDayProducts || [],
+        previousDayProductRecords: currentResult.previousDayProductRecords || previousDayProductRecords || []
+      });
+
+      (res.rows || []).forEach((resolved, localIdx) => {
+        const originalIndex = batchTargets[localIdx]?.index;
+        if (Number.isFinite(originalIndex)) {
+          const copy = { ...resolved };
+          delete copy.__originalIndex;
+          resolvedRows[originalIndex] = copy;
+        }
+      });
+
+      log(`지난공구주문 사전 매칭 ${Math.ceil(endNo / batchSize)}묶음 완료: ${startNo}~${endNo}/${total}건 · 빠른매칭 ${res.fastResolvedCount || 0}건 · AI확인 ${res.aiCheckedCount || 0}건`);
+    }
+
+    updateFinalWriteProgress({
+      title: '지난 공구주문 확인 완료',
+      desc: '이제 Raw_주문입력에 나눠서 입력합니다.',
+      percent: 100,
+      detail: `지난공구주문 ${total}건 사전 확인 완료`
+    });
+
+    return resolvedRows;
+  }
+
+  async function commitFinalRows() {
+    if (!currentResult) return alert('먼저 CSV 분석을 완료해주세요.');
+
+    let rows = buildFinalRows();
+    const invalid = findInvalidRows(rows);
+    if (invalid.length) {
+      focusInvalidRows(invalid);
+      alert(`상품명/고객명/수량이 비어 있는 행이 ${invalid.length}개 있습니다.
+빨간 테두리로 표시된 주문카드를 먼저 수정해주세요.`);
+      return;
+    }
+
+    if (!rows.length) return alert('입력할 주문 라인이 없습니다.');
+
+    const startRow = Number(currentResult.startRow || document.getElementById('startRowInput').value);
+    if (!startRow || startRow < 1) return alert('Raw_주문입력 시작 행을 확인해주세요.');
+
+    const previousDaySetForWrite = new Set((currentResult.previousDayProductNames || previousDayProducts || []).map(normalizeForCompare).filter(Boolean));
+    const pastOrderCount = rows.filter(r => r.action === 'past_order' || r.allowBlankProduct === true).length;
+    const slowPastAiCount = rows.filter(r => {
+      const isPast = r.action === 'past_order' || r.allowBlankProduct === true;
+      if (!isPast) return false;
+      const selected = normalizeForCompare(r.productName || '');
+      const manual = String(r.manualProductName || '').trim();
+      return !!manual || !selected || !previousDaySetForWrite.has(selected);
+    }).length;
+    let confirmText = `Raw_주문입력 ${startRow}행부터 ${rows.length}개 주문 라인을 시간순으로 입력할까요?`;
+    confirmText += `
+
+시간초과 방지를 위해 자동으로 나눠서 입력합니다.`;
+    confirmText += `
+브라우저 창을 닫지 않으면 ${rows.length}개가 끝날 때까지 계속 진행됩니다.`;
+    if (pastOrderCount > 0) {
+      confirmText += `
+
+지난 공구주문 ${pastOrderCount}건 중 ${slowPastAiCount}건만 OpenAI 재확인이 필요합니다.`;
+      confirmText += `
+하루 전 상품이 이미 정확히 선택된 건은 AI 재확인 없이 I열 비고만 남겨 빠르게 입력합니다.`;
+    }
+    confirmText += '\n\n계속할까요?';
+    if (!confirm(confirmText)) return;
+
+    setFinalWriteLoading(true);
+
+    try {
+      rows = await resolvePastRowsBeforeFinalWrite(rows, previousDaySetForWrite);
+    } catch (resolveErr) {
+      setFinalWriteLoading(false);
+      const msg = resolveErr && resolveErr.message ? resolveErr.message : String(resolveErr || '알 수 없는 오류');
+      alert('지난 공구주문 사전 매칭 중 오류가 났습니다.\n\n' + msg);
+      throw resolveErr;
+    }
+
+    // 지난공구 AI 매칭은 위에서 한 번에 끝냈으므로 Raw 입력은 더 크게 묶어도 안전합니다.
+    let chunkSize = 25;
+    let cursor = 0;
+    let currentStartRow = startRow;
+    let chunkNo = 1;
+    const totalRows = rows.length;
+    const combined = {
+      ok: true,
+      startRow,
+      lastRow: startRow - 1,
+      writtenLineCount: 0,
+      allyBufferLineCount: 0,
+      pastOrderLineCount: 0,
+      soldOutClosedLineCount: 0,
+      customProductLineCount: 0,
+      previousDayLineCount: 0
+    };
+
+    log(`최종 입력 시작: ${totalRows}줄 · ${chunkSize}줄씩 자동 분할 입력`);
+
+    try {
+      while (cursor < totalRows) {
+        const batch = rows.slice(cursor, cursor + chunkSize);
+        const batchStartNo = cursor + 1;
+        const batchEndNo = cursor + batch.length;
+        const batchPastCount = batch.filter(r => r.action === 'past_order' || r.allowBlankProduct === true).length;
+        const batchSlowPastAiCount = 0;
+        const batchSoldOutCount = batch.filter(r => r.action === 'soldout_closed' || r.soldOutClosed === true).length;
+
+        updateFinalWriteProgress({
+          title: '주문을 입력하고 있습니다',
+          desc: '시간초과 방지를 위해 여러 묶음으로 나눠 입력합니다.<br>창을 닫지 말고 기다려주세요.',
+          percent: Math.round((cursor / totalRows) * 100),
+          detail: `전체 ${totalRows}줄 중 ${batchStartNo}~${batchEndNo}번째 처리중\n현재 묶음 ${chunkNo} · ${batch.length}줄 · 시작 행 ${currentStartRow}\n작업: ${batchSlowPastAiCount ? '지난 공구주문 AI 확인 ' + batchSlowPastAiCount + '건 + ' : ''}${batchPastCount && !batchSlowPastAiCount ? '하루전공구 I열 비고 + ' : ''}Raw_주문입력 D/E/F/G 입력${batchSoldOutCount ? ' + 품절메모' : ''}`
+        });
+        log(`구글시트 입력 ${chunkNo}묶음 시작: 전체 ${batchStartNo}~${batchEndNo}/${totalRows}줄 · 시작행 ${currentStartRow}`);
+
+        try {
+          const res = await gasRun('writeFinalRows', {
+            dateStr: currentResult.dateStr || document.getElementById('dateInput').value,
+            holidayStartStr: currentResult.holidayStartStr || document.getElementById('holidayStartInput')?.value || '',
+            holidayEndStr: currentResult.holidayEndStr || document.getElementById('holidayEndInput')?.value || '',
+            startRow: currentStartRow,
+            rows: batch,
+            allyNames,
+            customProducts: getActiveCustomProducts(),
+            baseProductNames: currentResult.baseProductNames || lastProducts || [],
+            previousDayProductNames: currentResult.previousDayProductNames || previousDayProducts || [],
+            previousDayProductRecords: currentResult.previousDayProductRecords || previousDayProductRecords || [],
+            productNames: currentResult.productNames || currentProducts || [],
+            skipPastOrderAi: true
+          });
+
+          combined.writtenLineCount += Number(res.writtenLineCount || 0);
+          combined.allyBufferLineCount += Number(res.allyBufferLineCount || 0);
+          combined.pastOrderLineCount += Number(res.pastOrderLineCount || 0);
+          combined.soldOutClosedLineCount += Number(res.soldOutClosedLineCount || 0);
+          combined.customProductLineCount += Number(res.customProductLineCount || 0);
+          combined.previousDayLineCount = Number(combined.previousDayLineCount || 0) + Number(res.previousDayLineCount || 0);
+          combined.lastRow = Number(res.lastRow || (currentStartRow + batch.length - 1));
+
+          log(`구글시트 입력 ${chunkNo}묶음 완료: ${res.writtenLineCount || batch.length}줄 · ${res.startRow}~${res.lastRow}행`);
+          currentStartRow = combined.lastRow + 1;
+          cursor += batch.length;
+          chunkNo += 1;
+
+          updateFinalWriteProgress({
+            title: '주문을 입력하고 있습니다',
+            desc: '현재 묶음 입력 완료 · 다음 묶음을 준비합니다.',
+            percent: Math.round((cursor / totalRows) * 100),
+            detail: `완료 ${cursor}/${totalRows}줄\n마지막 입력 행: ${combined.lastRow}`
+          });
+          await sleepMs(120);
+        } catch (err) {
+          const message = err && err.message ? err.message : String(err || '알 수 없는 오류');
+          setFinalWriteLoading(false);
+
+          if (chunkSize > 1) {
+            const nextSize = Math.max(1, Math.floor(chunkSize / 2));
+            const keepGoing = confirm(
+              `현재 묶음 입력 중 오류가 났습니다.\n\n${message}\n\n` +
+              `이미 완료된 앞 묶음은 유지됩니다.\n` +
+              `현재 묶음을 ${nextSize}줄씩 더 작게 나눠서 계속할까요?`
+            );
+            if (!keepGoing) throw err;
+            chunkSize = nextSize;
+            log(`입력 오류 발생 · 묶음 크기를 ${chunkSize}줄로 줄여서 계속합니다: ${message}`);
+            setFinalWriteLoading(true);
+            continue;
+          }
+
+          const retryOne = confirm(
+            `1줄 입력 중 오류가 났습니다.\n\n${message}\n\n` +
+            `이 1줄을 다시 시도할까요?\n취소하면 여기서 중단됩니다.`
+          );
+          if (!retryOne) throw err;
+          log(`1줄 입력 재시도: ${message}`);
+          setFinalWriteLoading(true);
+        }
+      }
+
+      updateFinalWriteProgress({
+        title: '입력 완료',
+        desc: '모든 주문 입력이 완료되었습니다.',
+        percent: 100,
+        detail: `총 ${combined.writtenLineCount}줄 입력 완료\n입력 범위: ${combined.startRow}~${combined.lastRow}행`
+      });
+
+      setFinalWriteLoading(false);
+      log(`최종 입력 전체 완료: ${combined.writtenLineCount}줄 / ${combined.startRow}~${combined.lastRow}행 · 아군버퍼 ${combined.allyBufferLineCount || 0}줄 · 지난공구 ${combined.pastOrderLineCount || 0}줄 · 하루전공구 ${combined.previousDayLineCount || 0}줄 · 품절마감 ${combined.soldOutClosedLineCount || 0}줄 · 임의상품 ${combined.customProductLineCount || 0}줄`);
+      alert(`입력 완료!\nRaw_주문입력 ${combined.startRow}~${combined.lastRow}행에 ${combined.writtenLineCount}줄 입력했습니다.\n아군 버퍼 I열 기입: ${combined.allyBufferLineCount || 0}줄\n지난 공구주문 I열 기입: ${combined.pastOrderLineCount || 0}줄\n하루전 공구상품 I열 기입: ${combined.previousDayLineCount || 0}줄\n품절마감 I열 기입: ${combined.soldOutClosedLineCount || 0}줄\n임의상품/추가상품: ${combined.customProductLineCount || 0}줄`);
+
+      lastCommittedRows = rows;
+      lastWriteResult = combined;
+      currentResult.startRow = Number(combined.lastRow || startRow) + 1;
+
+      editableRows = editableRows.filter(r => !r.include);
+      issueRows = issueRows.filter(r => !['include', 'past_order', 'soldout_closed'].includes(r.action));
+
+      clearSavedReviewStateForDate(currentResult.dateStr || document.getElementById('dateInput').value);
+      renderResultView(currentResult);
+      log('입력 완료 후 누락 검토가 필요하면 “누락 주문 마지막 검토” 버튼을 눌러주세요.');
+    } catch (err) {
+      setFinalWriteLoading(false);
+      showError(err);
+    }
+  }
+
+  function renderReadableReport(report) {
+    return `
+      <div class="report">
+        ${renderCorrectionLogs(report.correctionLogs || [])}
+        ${renderSoldOutPossible(report.soldOutPossibleOrders || [])}
+        ${renderChunkNotes(report.chunkNotes || [])}
+      </div>
+    `;
+  }
+
+  function renderCorrectionLogs(arr) {
+    if (!arr.length) return '<h3>정정/총주문/취소 처리 내역</h3><p class="muted">없음</p>';
+
+    return `
+      <h3>정정/총주문/취소 처리 내역 <span class="warn">${arr.length}</span></h3>
+      <div class="previewBox">
+        <table>
+          <thead><tr><th>유형</th><th>시간/행</th><th>고객명</th><th>원문</th><th>반영 내역</th></tr></thead>
+          <tbody>${arr.map(x => `
+            <tr>
+              <td>${escapeHtml(x.eventType)}</td>
+              <td>${escapeHtml(x.dateRaw)}<br><span class="muted">row ${escapeHtml(x.csvRowNumber)}</span></td>
+              <td>${escapeHtml(x.user)}</td>
+              <td>${escapeHtml(x.message)}</td>
+              <td>${(x.items || []).map(it => `${escapeHtml(it.productName)} × ${escapeHtml(it.quantity)}`).join('<br>') || '-'}</td>
+            </tr>
+          `).join('')}</tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function renderSoldOutPossible(arr) {
+    if (!arr.length) return '<h3>품절 공지 이후 주문 가능성</h3><p class="muted">없음</p>';
+
+    return `
+      <h3>품절 공지 이후 주문 가능성 <span class="warn">${arr.length}</span></h3>
+      <div class="previewBox">
+        <table>
+          <thead><tr><th>시간/행</th><th>고객명</th><th>원문</th><th>사유</th></tr></thead>
+          <tbody>${arr.map(x => `
+            <tr><td>${escapeHtml(x.dateRaw)}<br>row ${escapeHtml(x.csvRowNumber)}</td><td>${escapeHtml(x.user)}</td><td>${escapeHtml(x.message)}</td><td>${escapeHtml(x.reason)}</td></tr>
+          `).join('')}</tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function renderChunkNotes(arr) {
+    if (!arr.length) return '<h3>AI 처리 참고 메모</h3><p class="muted">없음</p>';
+    return `<h3>AI 처리 참고 메모</h3><div class="previewBox">${arr.map(x => `<div>• ${escapeHtml(x)}</div>`).join('')}</div>`;
+  }
+
+
+  function normalizeEditableCandidate(r, i) {
+    if (Array.isArray(r)) {
+      return {
+        id: `main_${i}`,
+        sourceType: 'ai',
+        include: true,
+        orderDateText: r[0],
+        customer: r[1],
+        productName: r[2],
+        quantity: Number(r[3]) || 1,
+        sourceIndex: 999999000 + i,
+        csvRowNumber: '',
+        dateRaw: '',
+        rawExpression: '',
+        message: '',
+        memo: '',
+        manualProductName: '',
+        written: false
+      };
+    }
+
+    return {
+      id: r.id || r.lineKey || `main_${i}`,
+      sourceType: r.sourceType || 'ai',
+      include: r.include !== false,
+      orderDateText: r.orderDateText || currentResult?.orderDateText || '',
+      customer: r.customer || '',
+      productName: r.productName || '',
+      quantity: Number(r.quantity) || 1,
+      sourceIndex: Number(r.sourceIndex || r.firstSourceIndex) || 999999000 + i,
+      csvRowNumber: r.csvRowNumber || '',
+      dateRaw: r.dateRaw || '',
+      rawExpression: r.rawExpression || '',
+      rawName: r.rawName || '',
+      message: r.message || '',
+      memo: r.memo || '',
+      manualProductName: r.manualProductName || '',
+      written: !!r.written
+    };
+  }
+
+  function getCandidateOrder(row) {
+    const source = Number(row.sourceIndex || row.firstSourceIndex);
+    if (Number.isFinite(source) && source > 0) return source;
+    const csv = Number(row.csvRowNumber);
+    if (Number.isFinite(csv) && csv > 0) return csv;
+    return 999999999;
+  }
+
+  function makeCandidateDedupKey(row) {
+    return [
+      row.sourceIndex || '',
+      row.csvRowNumber || '',
+      normalizeKo(row.customer || ''),
+      normalizeKo(row.productName || ''),
+      Number(row.quantity) || '',
+      normalizeKo(row.rawName || row.rawExpression || row.message || '').slice(0, 40)
+    ].join('|');
+  }
+
+  function guessBestProductName(text) {
+    return guessBestProductNameInfo(text).productName;
+  }
+
+  function guessBestProductNameInfo(text) {
+    const direct = suggestProduct(text);
+    if (direct) return { productName: direct, score: 1000, reason: 'alias_rule' };
+
+    const t = normalizeKo(stripSpecs(text));
+    let bestProduct = '';
+    let bestScore = -1;
+    let bestReason = '';
+    const rawTokens = makeSearchTokens(text);
+
+    (currentProducts || []).forEach(product => {
+      const p = normalizeKo(stripSpecs(product));
+      const productTokens = makeSearchTokens(product);
+      let score = 0;
+      let reasons = [];
+
+      rawTokens.forEach(token => {
+        if (token.length >= 2 && p.includes(token)) {
+          score += token.length * 4;
+          reasons.push(`raw:${token}`);
+        }
+      });
+
+      productTokens.forEach(token => {
+        if (token.length >= 2 && t.includes(token)) {
+          score += token.length * 3;
+          reasons.push(`product:${token}`);
+        }
+      });
+
+      if (p && t && (p.includes(t) || t.includes(p))) {
+        score += 50;
+        reasons.push('substring');
+      }
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestProduct = product;
+        bestReason = reasons.join(',');
+      }
+    });
+
+    if (bestScore < 0) bestScore = 0;
+    return {
+      productName: bestProduct || (currentProducts && currentProducts[0]) || '',
+      score: bestScore,
+      reason: bestReason || 'fallback'
+    };
+  }
+
+  function stripSpecs(value) {
+    return String(value || '')
+      .replace(/\[[^\]]+\]/g, ' ')
+      .replace(/\([^)]*\)/g, ' ')
+      .replace(/[0-9]+(?:g|G|kg|KG|ml|mL|L|개입|매|팩|봉|세트|인분|년|월|일)/g, ' ')
+      .replace(/[0-9]+/g, ' ')
+      .replace(/[+/"'“”‘’.,]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function makeSearchTokens(value) {
+    return stripSpecs(value)
+      .split(/[\s·,_\-\/]+/)
+      .map(v => normalizeKo(v))
+      .filter(v => v.length >= 2 && !/^\d+$/.test(v));
+  }
+
+  function makeIssueLooseKey(row) {
+    return [
+      row.sourceIndex || '',
+      row.csvRowNumber || '',
+      normalizeKo(row.customer || ''),
+      normalizeKo(row.productName || guessBestProductName(row.rawName || row.message || row.rawExpression || '')),
+      Number(row.quantity) || ''
+    ].join('|');
+  }
+
+
+
+
+  function mergeProductNameArrays(primary, secondary) {
+    const out = [];
+    const seen = new Set();
+    [primary || [], secondary || []].forEach(list => {
+      (list || []).forEach(name => {
+        const value = String(name || '').trim();
+        const key = normalizeKo(value);
+        if (!value || seen.has(key)) return;
+        seen.add(key);
+        out.push(value);
+      });
+    });
+    return out;
+  }
+
+  function isPreviousDayProduct(productName) {
+    const key = normalizeKo(productName || '');
+    if (!key) return false;
+    const todaySet = new Set((lastProducts || []).map(p => normalizeKo(p)));
+    if (todaySet.has(key)) return false;
+    return (previousDayProducts || []).some(p => normalizeKo(p) === key);
+  }
+
+  function formatProductOptionLabel(productName) {
+    const value = String(productName || '').trim();
+    if (!value) return '';
+    if (isPreviousDayProduct(value)) return `어제공구 · ${value}`;
+    const custom = (customProducts || []).some(p => normalizeKo(p.productName) === normalizeKo(value));
+    if (custom) return `추가상품 · ${value}`;
+    return value;
+  }
+
+  function customProductStorageKey(dateStr) {
+    return `manman_custom_products_${dateStr || document.getElementById('dateInput').value || 'unknown'}`;
+  }
+
+  function loadCustomProductsForDate(dateStr) {
+    try {
+      customProducts = JSON.parse(localStorage.getItem(customProductStorageKey(dateStr)) || '[]');
+      if (!Array.isArray(customProducts)) customProducts = [];
+    } catch (e) {
+      customProducts = [];
+    }
+  }
+
+  function saveCustomProductsForDate() {
+    const dateStr = document.getElementById('dateInput').value || currentResult?.dateStr || '';
+    localStorage.setItem(customProductStorageKey(dateStr), JSON.stringify(customProducts || []));
+  }
+
+  function cleanTextForCustom(value) {
+    return String(value == null ? '' : value).trim();
+  }
+
+  function getCustomEffectiveValue(p, key) {
+    if (!p) return '';
+    const upper = key.charAt(0).toUpperCase() + key.slice(1);
+    return cleanTextForCustom(p[`${key}Override`] || p[`default${upper}`] || p[key] || '');
+  }
+
+  function getActiveCustomProducts() {
+    return (customProducts || [])
+      .filter(p => p && String(p.productName || '').trim())
+      .map(p => {
+        const productName = cleanTextForCustom(p.productName);
+
+        const defaultPrice = cleanTextForCustom(p.defaultPrice || '');
+        const defaultImageUrl = cleanTextForCustom(p.defaultImageUrl || '');
+        const defaultPickupDate = cleanTextForCustom(p.defaultPickupDate || '');
+
+        const priceOverride = cleanTextForCustom(p.priceOverride || '');
+        const imageUrlOverride = cleanTextForCustom(p.imageUrlOverride || '');
+        const pickupDateOverride = cleanTextForCustom(p.pickupDateOverride || '');
+
+        return {
+          productName,
+          includeInOrder: p.includeInOrder !== false,
+
+          defaultPrice,
+          defaultImageUrl,
+          defaultPickupDate,
+
+          priceOverride,
+          imageUrlOverride,
+          pickupDateOverride,
+
+          // 서버에는 최종 적용값도 같이 보냅니다.
+          // 추가상품 주문 입력 시 이 값이 Raw_주문입력 B/C/J에 들어갑니다.
+          price: priceOverride || defaultPrice || cleanTextForCustom(p.price || ''),
+          imageUrl: imageUrlOverride || defaultImageUrl || cleanTextForCustom(p.imageUrl || ''),
+          pickupDate: pickupDateOverride || defaultPickupDate || cleanTextForCustom(p.pickupDate || ''),
+          fromIndex: p.fromIndex === true || p.isIndexProduct === true || !!cleanTextForCustom(p.indexDateKey || p.dateKey || p.indexRowNumber || '')
+        };
+      });
+  }
+
+  function mergeCurrentProducts(baseProducts, customList) {
+    const out = [];
+    const seen = new Set();
+    (baseProducts || []).forEach(p => {
+      const value = String(p || '').trim();
+      if (!value || seen.has(value)) return;
+      seen.add(value);
+      out.push(value);
+    });
+    (customList || []).forEach(p => {
+      const value = String(p.productName || '').trim();
+      if (!value || seen.has(value)) return;
+      seen.add(value);
+      out.push(value);
+    });
+    return out;
+  }
+
+  function refreshCurrentProductsWithCustom() {
+    currentProducts = mergeCurrentProducts(mergeProductNameArrays(lastProducts || [], previousDayProducts || []), customProducts || []);
+  }
+
+  function makeCustomProductMapClient() {
+    const map = {};
+    getActiveCustomProducts().forEach(p => {
+      map[normalizeKo(p.productName)] = p;
+    });
+    return map;
+  }
+
+  function splitManualProductNameAndQuantityClient(value) {
+    const original = String(value || '').trim();
+    if (!original) return { productName: '', quantity: 0 };
+
+    if ((currentProducts || []).includes(original)) {
+      return { productName: original, quantity: 0 };
+    }
+
+    const m = original.match(/^(.+?)[\s]*([0-9]+|ㅣ)\s*(개|팩|봉|세트|병|통)?$/);
+    if (!m) return { productName: original, quantity: 0 };
+
+    const candidateName = String(m[1] || '').trim();
+    const qty = m[2] === 'ㅣ' ? 1 : Number(m[2]);
+
+    if (!candidateName || !Number.isFinite(qty) || qty < 1) {
+      return { productName: original, quantity: 0 };
+    }
+
+    if ((currentProducts || []).includes(candidateName) || !(currentProducts || []).includes(original)) {
+      return { productName: candidateName, quantity: qty };
+    }
+
+    return { productName: original, quantity: 0 };
+  }
+
+  function setCustomProductDefaultMeta(item) {
+    if (!item || !item.productName) {
+      customProductDefaultMeta = null;
+      return;
+    }
+
+    customProductDefaultMeta = {
+      productName: cleanTextForCustom(item.productName),
+      defaultPrice: cleanTextForCustom(item.price || item.defaultPrice || ''),
+      defaultImageUrl: cleanTextForCustom(item.imageUrl || item.defaultImageUrl || ''),
+      defaultPickupDate: cleanTextForCustom(item.pickupDate || item.defaultPickupDate || ''),
+      dateText: cleanTextForCustom(item.dateText || ''),
+      dateKey: cleanTextForCustom(item.dateKey || '')
+    };
+  }
+
+  function defaultMetaMatchesProductName(productName) {
+    return customProductDefaultMeta &&
+      normalizeKo(customProductDefaultMeta.productName) === normalizeKo(productName);
+  }
+
+  function fillCustomInputsFromDefaultMeta(overwriteAll) {
+    if (!customProductDefaultMeta) return;
+
+    const priceEl = document.getElementById('customPriceInput');
+    const imageEl = document.getElementById('customImageInput');
+    const pickupEl = document.getElementById('customPickupInput');
+
+    // 상품명으로 자동 조회된 기본값을 먼저 채웁니다.
+    // 이미 사용자가 기본값과 다른 값을 입력한 상태라면 overwriteAll=false일 때는 덮지 않습니다.
+    if (priceEl && (overwriteAll || !priceEl.value)) priceEl.value = customProductDefaultMeta.defaultPrice || '';
+    if (imageEl && (overwriteAll || !imageEl.value)) imageEl.value = customProductDefaultMeta.defaultImageUrl || '';
+    if (pickupEl && (overwriteAll || !pickupEl.value)) pickupEl.value = customProductDefaultMeta.defaultPickupDate || '';
+  }
+
+  async function autoFillCustomProductDefaultsByName() {
+    const nameEl = document.getElementById('customProductNameInput');
+    const productName = cleanTextForCustom(nameEl?.value || '');
+    if (!productName) {
+      customProductDefaultMeta = null;
+      return null;
+    }
+
+    // 이미 같은 상품의 기본값을 가지고 있으면 다시 조회하지 않습니다.
+    if (defaultMetaMatchesProductName(productName)) {
+      fillCustomInputsFromDefaultMeta(false);
+      return customProductDefaultMeta;
+    }
+
+    try {
+      const res = await gasRun('searchIndexProductsForUi', { query: productName });
+      const items = res.items || [];
+      if (!items.length) {
+        customProductDefaultMeta = null;
+        return null;
+      }
+
+      const exact = items.find(item => normalizeKo(item.productName) === normalizeKo(productName));
+      const item = exact || items[0];
+
+      // 직접 입력한 상품명이 Index의 정식 상품명과 약간 다르면, 정식 상품명으로 교정합니다.
+      if (item && item.productName) {
+        nameEl.value = item.productName;
+      }
+
+      setCustomProductDefaultMeta(item);
+      fillCustomInputsFromDefaultMeta(false);
+      return customProductDefaultMeta;
+    } catch (err) {
+      log(`추가상품 기본값 자동조회 실패: ${err.message || err}`);
+      return null;
+    }
+  }
+
+  function renderCustomProductManager() {
+    const box = document.getElementById('customProductBox');
+    if (!box) return;
+
+    refreshCurrentProductsWithCustom();
+
+    if (!customProducts.length) {
+      box.innerHTML = '추가된 임의 공구상품이 없습니다.';
+      return;
+    }
+
+    box.innerHTML = customProducts.map((p, i) => {
+      const price = getCustomEffectiveValue(p, 'price');
+      const imageUrl = getCustomEffectiveValue(p, 'imageUrl');
+      const pickupDate = getCustomEffectiveValue(p, 'pickupDate');
+      const hasOverride =
+        cleanTextForCustom(p.priceOverride) ||
+        cleanTextForCustom(p.imageUrlOverride) ||
+        cleanTextForCustom(p.pickupDateOverride);
+
+      return `
+        <div class="customProductListRow">
+          <div>
+            <span class="customProductBadge">${hasOverride ? '수동수정' : '자동값'}</span>
+            <b>${escapeHtml(p.productName || '')}</b>
+          </div>
+          <div>${p.includeInOrder === false ? '<span class="danger">입력 안 함</span>' : '<span style="color:#087a43;font-weight:900;">입력함</span>'}</div>
+          <div>${escapeHtml(price || '-')}</div>
+          <div>${imageUrl ? `<span title="${escapeAttr(imageUrl)}">이미지 있음</span>` : '-'}</div>
+          <div>${escapeHtml(pickupDate || '-')}</div>
+          <div style="display:flex;gap:6px;justify-content:flex-end;">
+            <button class="miniBtn" onclick="editCustomProduct(${i})">수정</button>
+            <button class="miniBtn dangerBtn" onclick="deleteCustomProduct(${i})">삭제</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  async function searchIndexProductsForCustom() {
+    const query = document.getElementById('customSearchInput')?.value || '';
+    const select = document.getElementById('customSearchResultSelect');
+    if (!select) return;
+
+    select.innerHTML = '<option value="">조회 중...</option>';
+
+    try {
+      const res = await gasRun('searchIndexProductsForUi', { query });
+      indexSearchResults = res.items || [];
+      if (!indexSearchResults.length) {
+        select.innerHTML = '<option value="">검색 결과 없음</option>';
+        return;
+      }
+
+      select.innerHTML = '<option value="">선택하세요</option>' + indexSearchResults.map((item, i) => {
+        const label = `${item.productName}${item.price ? ' / ' + item.price : ''}${item.pickupDate ? ' / 픽업 ' + item.pickupDate : ''}${item.dateText ? ' / ' + item.dateText : ''}`;
+        return `<option value="${i}">${escapeHtml(label)}</option>`;
+      }).join('');
+    } catch (err) {
+      select.innerHTML = '<option value="">조회 실패</option>';
+      log(`상품 조회 실패: ${err.message || err}`);
+    }
+  }
+
+  function applySelectedIndexProduct() {
+    const select = document.getElementById('customSearchResultSelect');
+    const idx = Number(select && select.value);
+    if (!Number.isFinite(idx) || idx < 0) return;
+
+    const item = indexSearchResults[idx];
+    if (!item) return;
+
+    document.getElementById('customProductNameInput').value = item.productName || '';
+    setCustomProductDefaultMeta(item);
+
+    // 조회 결과를 선택한 경우에는 기본값을 즉시 채웁니다.
+    // 이후 담당자가 값을 고치면 그 값만 수동수정값으로 저장됩니다.
+    fillCustomInputsFromDefaultMeta(true);
+  }
+
+  async function addOrUpdateCustomProduct() {
+    const nameEl = document.getElementById('customProductNameInput');
+    let productName = cleanTextForCustom(nameEl?.value || '');
+    if (!productName) return alert('상품명을 입력해주세요.');
+
+    // 등록 버튼을 눌렀을 때도 한 번 더 Index를 조회합니다.
+    // 그래서 조회 버튼을 안 누르고 상품명만 입력해도 기본 가격/이미지/픽업일이 자동으로 잡힙니다.
+    await autoFillCustomProductDefaultsByName();
+
+    productName = cleanTextForCustom(nameEl?.value || productName);
+    const defaultMeta = defaultMetaMatchesProductName(productName)
+      ? customProductDefaultMeta
+      : null;
+
+    const defaultPrice = cleanTextForCustom(defaultMeta?.defaultPrice || '');
+    const defaultImageUrl = cleanTextForCustom(defaultMeta?.defaultImageUrl || '');
+    const defaultPickupDate = cleanTextForCustom(defaultMeta?.defaultPickupDate || '');
+
+    const priceInput = cleanTextForCustom(document.getElementById('customPriceInput')?.value || '');
+    const imageInput = cleanTextForCustom(document.getElementById('customImageInput')?.value || '');
+    const pickupInput = cleanTextForCustom(document.getElementById('customPickupInput')?.value || '');
+
+    // 기본값과 같은 값은 수동수정으로 보지 않습니다.
+    // 기본값이 없을 때 입력한 값은 수동수정값으로 저장합니다.
+    const priceOverride = defaultPrice ? (priceInput && priceInput !== defaultPrice ? priceInput : '') : priceInput;
+    const imageUrlOverride = defaultImageUrl ? (imageInput && imageInput !== defaultImageUrl ? imageInput : '') : imageInput;
+    const pickupDateOverride = defaultPickupDate ? (pickupInput && pickupInput !== defaultPickupDate ? pickupInput : '') : pickupInput;
+
+    const product = {
+      productName,
+      includeInOrder: document.getElementById('customIncludeInput')?.value !== 'no',
+
+      defaultPrice,
+      defaultImageUrl,
+      defaultPickupDate,
+      fromIndex: !!defaultMeta,
+      indexDateKey: cleanTextForCustom(defaultMeta?.dateKey || ''),
+      indexRowNumber: cleanTextForCustom(defaultMeta?.rowNumber || ''),
+
+      priceOverride,
+      imageUrlOverride,
+      pickupDateOverride,
+
+      // 화면 표시와 서버 호환용 최종 적용값
+      price: priceOverride || defaultPrice,
+      imageUrl: imageUrlOverride || defaultImageUrl,
+      pickupDate: pickupDateOverride || defaultPickupDate
+    };
+
+    const key = normalizeKo(productName);
+    const idx = customProducts.findIndex(p => normalizeKo(p.productName) === key);
+    if (idx >= 0) customProducts[idx] = product;
+    else customProducts.push(product);
+
+    saveCustomProductsForDate();
+    refreshCurrentProductsWithCustom();
+    renderCustomProductManager();
+    renderSoldOutManager();
+    renderWriteSummary();
+    saveReviewState();
+
+    resetCustomProductForm();
+  }
+
+  function resetCustomProductForm() {
+    customProductDefaultMeta = null;
+    document.getElementById('customProductNameInput').value = '';
+    document.getElementById('customPriceInput').value = '';
+    document.getElementById('customImageInput').value = '';
+    document.getElementById('customPickupInput').value = '';
+    document.getElementById('customIncludeInput').value = 'yes';
+
+    const select = document.getElementById('customSearchResultSelect');
+    if (select) select.value = '';
+  }
+
+  function editCustomProduct(idx) {
+    const p = customProducts[idx];
+    if (!p) return;
+
+    const defaultPrice = cleanTextForCustom(p.defaultPrice || '');
+    const defaultImageUrl = cleanTextForCustom(p.defaultImageUrl || '');
+    const defaultPickupDate = cleanTextForCustom(p.defaultPickupDate || '');
+
+    customProductDefaultMeta = {
+      productName: cleanTextForCustom(p.productName || ''),
+      defaultPrice,
+      defaultImageUrl,
+      defaultPickupDate,
+      dateText: cleanTextForCustom(p.dateText || ''),
+      dateKey: cleanTextForCustom(p.dateKey || p.indexDateKey || ''),
+      rowNumber: cleanTextForCustom(p.indexRowNumber || ''),
+      fromIndex: p.fromIndex === true || !!cleanTextForCustom(p.indexDateKey || p.dateKey || p.indexRowNumber || '')
+    };
+
+    document.getElementById('customProductNameInput').value = p.productName || '';
+    document.getElementById('customIncludeInput').value = p.includeInOrder === false ? 'no' : 'yes';
+    document.getElementById('customPriceInput').value = cleanTextForCustom(p.priceOverride || defaultPrice || p.price || '');
+    document.getElementById('customImageInput').value = cleanTextForCustom(p.imageUrlOverride || defaultImageUrl || p.imageUrl || '');
+    document.getElementById('customPickupInput').value = cleanTextForCustom(p.pickupDateOverride || defaultPickupDate || p.pickupDate || '');
+  }
+
+  function deleteCustomProduct(idx) {
+    const p = customProducts[idx];
+    if (!p) return;
+    if (!confirm(`${p.productName} 추가상품을 삭제할까요?`)) return;
+
+    customProducts.splice(idx, 1);
+    saveCustomProductsForDate();
+    refreshCurrentProductsWithCustom();
+    renderCustomProductManager();
+    renderSoldOutManager();
+    renderWriteSummary();
+    saveReviewState();
+  }
+
+  function soldOutStorageKey(dateStr) {
+    return `manman_soldout_rules_${dateStr || document.getElementById('dateInput').value || 'no_date'}`;
+  }
+
+  function loadSoldOutRulesForDate(dateStr) {
+    try {
+      soldOutRules = JSON.parse(localStorage.getItem(soldOutStorageKey(dateStr)) || '[]');
+      if (!Array.isArray(soldOutRules)) soldOutRules = [];
+    } catch (e) {
+      soldOutRules = [];
+    }
+  }
+
+  function saveSoldOutRules() {
+    const dateStr = document.getElementById('dateInput').value;
+    localStorage.setItem(soldOutStorageKey(dateStr), JSON.stringify(soldOutRules));
+  }
+
+  function getActiveSoldOutRules() {
+    return (soldOutRules || [])
+      .filter(r => r && r.productName && r.cutoffDateTime)
+      .map(r => ({
+        id: r.id,
+        productName: r.productName,
+        cutoffDateTime: r.cutoffDateTime
+      }));
+  }
+
+  function defaultSoldOutDateTimeValue() {
+    const dateStr = document.getElementById('dateInput').value || new Date().toISOString().slice(0, 10);
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    return `${dateStr}T${hh}:${mm}`;
+  }
+
+  function renderSoldOutManager() {
+    const productSelectEl = document.getElementById('soldOutProductInput');
+    const timeEl = document.getElementById('soldOutTimeInput');
+    if (!productSelectEl || !timeEl) return;
+
+    productSelectEl.innerHTML = '<option value="">품절 상품 선택</option>' +
+      (currentProducts || []).map(p => `<option value="${escapeAttr(p)}">${escapeHtml(p)}</option>`).join('');
+
+    if (!timeEl.value) timeEl.value = defaultSoldOutDateTimeValue();
+
+    const box = document.getElementById('soldOutBox');
+    if (!soldOutRules.length) {
+      box.innerHTML = '<span class="muted">등록된 품절마감 상품이 없습니다.</span>';
+      return;
+    }
+
+    box.innerHTML = soldOutRules.map((rule, i) => `
+      <div class="soldoutRow">
+        <select data-soldout-idx="${i}" data-field="productName" onchange="updateSoldOutRule(this)">
+          <option value="">상품 선택</option>
+          ${(currentProducts || []).map(p => `<option value="${escapeAttr(p)}" ${p === rule.productName ? 'selected' : ''}>${escapeHtml(p)}</option>`).join('')}
+        </select>
+        <input type="datetime-local" value="${escapeAttr(rule.cutoffDateTime || '')}" data-soldout-idx="${i}" data-field="cutoffDateTime" onchange="updateSoldOutRule(this)">
+        <button class="secondary" onclick="deleteSoldOutRule(${i})">삭제</button>
+      </div>
+    `).join('');
+  }
+
+  function addSoldOutRule() {
+    const productName = document.getElementById('soldOutProductInput').value;
+    const cutoffDateTime = document.getElementById('soldOutTimeInput').value;
+    if (!productName) return alert('품절 상품을 선택해주세요.');
+    if (!cutoffDateTime) return alert('품절공지 시각을 입력해주세요.');
+
+    soldOutRules.push({
+      id: `soldout_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+      productName,
+      cutoffDateTime
+    });
+
+    saveSoldOutRules();
+    renderSoldOutManager();
+  }
+
+  function updateSoldOutRule(el) {
+    const idx = Number(el.dataset.soldoutIdx);
+    const field = el.dataset.field;
+    if (!soldOutRules[idx]) return;
+    soldOutRules[idx][field] = el.value;
+    saveSoldOutRules();
+    renderSoldOutManager();
+  }
+
+  function deleteSoldOutRule(idx) {
+    soldOutRules.splice(idx, 1);
+    saveSoldOutRules();
+    renderSoldOutManager();
+  }
+
+  function findSoldOutProductForIssue(row) {
+    const sourceMs = parseClientDateMs(row.dateRaw);
+    const candidates = (soldOutRules || []).filter(rule => {
+      if (!rule.productName || !rule.cutoffDateTime) return false;
+      if (row.productName && row.productName === rule.productName) return true;
+      const cutoffMs = new Date(rule.cutoffDateTime).getTime();
+      if (!sourceMs || !cutoffMs || sourceMs < cutoffMs) return false;
+      const text = normalizeKo((row.rawName || '') + ' ' + (row.message || ''));
+      const productText = normalizeKo(rule.productName);
+      return productText.includes(text) || text.includes(productText.slice(0, Math.min(6, productText.length)));
+    });
+
+    return candidates.length ? candidates[0].productName : '';
+  }
+
+  function parseClientDateMs(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return 0;
+    const m = raw.match(/(\d{4})[.\-/]\s*(\d{1,2})[.\-/]\s*(\d{1,2})\s+(\d{1,2}):(\d{2})/);
+    if (!m) return 0;
+    return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4]), Number(m[5]), 0, 0).getTime();
+  }
+
+  function loadAllyNicknames() {
+    const localNames = loadLocalAllyNicknames();
+    if (localNames.length) {
+      allyNames = localNames;
+      renderAllyBox();
+    }
+
+    gasRun('getAllyNicknames')
+      .then(res => {
+        const serverNames = Array.isArray(res) ? res : (res.names || []);
+        allyNames = serverNames.length ? serverNames : allyNames;
+        saveLocalAllyNicknames(allyNames);
+        renderAllyBox();
+      })
+      .catch(err => {
+        if (localNames.length) return;
+        document.getElementById('allyBox').innerHTML = `<span class="danger">아군 목록을 불러오지 못했습니다: ${escapeHtml(err.message || err)}</span>`;
+      });
+  }
+
+  function addAllyName() {
+    const input = document.getElementById('allyNameInput');
+    const name = String(input.value || '').trim();
+    if (!name) return alert('아군 닉네임을 입력해주세요.');
+    if (!allyNames.some(v => normalizeAllyName(v) === normalizeAllyName(name))) {
+      allyNames.push(name);
+    }
+    input.value = '';
+    persistAllyNicknames();
+  }
+
+  function editAllyName(index) {
+    const oldName = allyNames[index] || '';
+    const name = prompt('아군 닉네임 수정', oldName);
+    if (name === null) return;
+    const cleaned = String(name || '').trim();
+    if (!cleaned) return alert('빈 닉네임으로 수정할 수 없습니다. 삭제를 이용해주세요.');
+    allyNames[index] = cleaned;
+    allyNames = dedupeAllyNames(allyNames);
+    persistAllyNicknames();
+  }
+
+  function removeAllyName(index) {
+    allyNames.splice(index, 1);
+    persistAllyNicknames();
+  }
+
+  function persistAllyNicknames() {
+    allyNames = dedupeAllyNames(allyNames);
+    saveLocalAllyNicknames(allyNames);
+    renderAllyBox();
+    document.getElementById('allySaveStatus').textContent = '저장중...';
+    gasRun('saveAllyNicknames', { names: allyNames })
+      .then(res => {
+        allyNames = res.names || allyNames;
+        saveLocalAllyNicknames(allyNames);
+        document.getElementById('allySaveStatus').textContent = '저장 완료';
+        renderAllyBox();
+        setTimeout(() => { document.getElementById('allySaveStatus').textContent = ''; }, 1200);
+      })
+      .catch(showError);
+  }
+
+  function loadLocalAllyNicknames() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(ALLY_NICKNAMES_LOCAL_KEY) || '[]');
+      return Array.isArray(parsed) ? dedupeAllyNames(parsed) : [];
+    } catch (err) {
+      return [];
+    }
+  }
+
+  function saveLocalAllyNicknames(names) {
+    localStorage.setItem(ALLY_NICKNAMES_LOCAL_KEY, JSON.stringify(dedupeAllyNames(names || [])));
+  }
+
+  function renderAllyBox() {
+    const box = document.getElementById('allyBox');
+    if (!box) return;
+    if (!allyNames.length) {
+      box.innerHTML = '<span class="muted">등록된 아군 닉네임이 없습니다.</span>';
+      return;
+    }
+    box.innerHTML = allyNames.map((name, i) => `
+      <span class="allyChip">
+        ${escapeHtml(name)}
+        <button onclick="editAllyName(${i})">수정</button>
+        <button onclick="removeAllyName(${i})">삭제</button>
+      </span>
+    `).join('');
+  }
+
+  function dedupeAllyNames(names) {
+    const seen = new Set();
+    const out = [];
+    (names || []).forEach(name => {
+      const cleaned = String(name || '').trim();
+      const key = normalizeAllyName(cleaned);
+      if (!cleaned || seen.has(key)) return;
+      seen.add(key);
+      out.push(cleaned);
+    });
+    return out;
+  }
+
+  function normalizeAllyName(value) {
+    return String(value || '').trim().replace(/\s+/g, ' ').toLowerCase();
+  }
+
+  function getReviewStorageKey(dateStr) {
+    return `manman_order_review_state_${dateStr || ''}`;
+  }
+
+  function saveReviewState() {
+    if (!currentResult || !currentResult.dateStr) return;
+    try {
+      localStorage.setItem(getReviewStorageKey(currentResult.dateStr), JSON.stringify({
+        savedAt: new Date().toISOString(),
+        currentResult: {
+          ...currentResult,
+          holidayStartStr: currentResult.holidayStartStr || document.getElementById('holidayStartInput')?.value || '',
+          holidayEndStr: currentResult.holidayEndStr || document.getElementById('holidayEndInput')?.value || '',
+          rows: [],
+          rowsPreview: [],
+          sourceMessages: [],
+          report: currentResult.report || {}
+        },
+        currentProducts,
+        lastProducts,
+        previousDayProducts,
+        previousDayProductRecords,
+        customProducts,
+        sourceMessagesForReview,
+        lastCommittedRows,
+        lastWriteResult,
+        editableRows,
+        issueRows
+      }));
+    } catch (e) {
+      console.warn('review state save failed', e);
+    }
+  }
+
+  function clearSavedReviewStateForDate(dateStr) {
+    try {
+      localStorage.removeItem(getReviewStorageKey(dateStr));
+    } catch (e) {}
+  }
+
+  function tryRestoreReviewState(dateStr) {
+    try {
+      const raw = localStorage.getItem(getReviewStorageKey(dateStr));
+      if (!raw) return false;
+      const saved = JSON.parse(raw);
+      if (!saved || !saved.currentResult) return false;
+
+      currentResult = saved.currentResult;
+      if (currentResult.holidayStartStr) document.getElementById('holidayStartInput').value = currentResult.holidayStartStr;
+      if (currentResult.holidayEndStr) document.getElementById('holidayEndInput').value = currentResult.holidayEndStr;
+      if (currentResult.endDateStr) document.getElementById('endDateInput').value = currentResult.endDateStr;
+      if (currentResult.endTime) document.getElementById('endTimeInput').value = currentResult.endTime;
+      customProducts = saved.customProducts || [];
+      currentProducts = saved.currentProducts || saved.currentResult.productNames || [];
+      lastProducts = saved.lastProducts || saved.currentResult.baseProductNames || [];
+      previousDayProducts = saved.previousDayProducts || saved.currentResult.previousDayProductNames || [];
+      previousDayProductRecords = saved.previousDayProductRecords || saved.currentResult.previousDayProductRecords || [];
+      if (!lastProducts.length && !previousDayProducts.length && currentProducts.length) {
+        const customSet = new Set((customProducts || []).map(c => normalizeKo(c.productName || '')));
+        lastProducts = (currentProducts || []).filter(p => !customSet.has(normalizeKo(p)));
+      }
+      refreshCurrentProductsWithCustom();
+      renderCustomProductManager();
+      sourceMessagesForReview = saved.sourceMessagesForReview || saved.currentResult.sourceMessages || [];
+      lastCommittedRows = saved.lastCommittedRows || [];
+      lastWriteResult = saved.lastWriteResult || null;
+      editableRows = saved.editableRows || [];
+      issueRows = saved.issueRows || [];
+
+      renderResultView(currentResult);
+      log(`저장된 검수 상태를 불러왔습니다. AI 후보 ${editableRows.length}줄 / 확인 필요 ${issueRows.length}줄`);
+      return true;
+    } catch (e) {
+      console.warn('review state restore failed', e);
+      return false;
+    }
+  }
+
+  function clearCurrentReviewView() {
+    currentResult = null;
+    editableRows = [];
+    issueRows = [];
+    sourceMessagesForReview = [];
+    lastCommittedRows = [];
+    lastWriteResult = null;
+    document.getElementById('resultBox').innerHTML = '<span class="muted">아직 결과가 없습니다.</span>';
+  }
+
+
+  function showError(err) {
+    const msg = err && err.message ? err.message : String(err);
+    log(`오류: ${msg}`);
+    alert(msg);
+  }
+
+  function escapeAttr(v) {
+    return escapeHtml(v).replace(/`/g, '&#096;');
+  }
+
+
+  function normalizeForCompare(value) {
+    return String(value == null ? '' : value)
+      .trim()
+      .replace(/\s+/g, '')
+      .toLowerCase();
+  }
+
+  function escapeHtml(v) {
+    return String(v ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+</script>
+</body>
+</html>

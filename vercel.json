@@ -8,9 +8,17 @@
     {
       "source": "/",
       "destination": "/index.html"
+    },
+    {
+      "source": "/order-collector",
+      "destination": "/order-collector.html"
     }
   ],
   "functions": {
+    "api/order-collector.js": {
+      "regions": ["icn1"],
+      "maxDuration": 300
+    },
     "api/search-orders.js": {
       "regions": ["icn1"]
     },
