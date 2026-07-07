@@ -6,23 +6,42 @@
   <title>만만마켓 자동 주문수집</title>
   <style>
     :root {
-      --bg: #f4f6f8;
-      --card: #ffffff;
-      --card-soft: #f8fafc;
-      --text: #111827;
-      --muted: #667085;
-      --line: #d9e0ea;
-      --line-strong: #c3ccd9;
-      --accent: #0f9f6e;
-      --accent-strong: #067647;
-      --accent-soft: #e8f7f0;
-      --danger: #d92d20;
-      --warning: #b54708;
-      --info: #2563eb;
-      --shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 8px 24px rgba(16, 24, 40, .06);
+      --background: 210 24% 97%;
+      --foreground: 222 47% 11%;
+      --surface: 0 0% 100%;
+      --surface-foreground: 222 47% 11%;
+      --muted-token: 210 24% 94%;
+      --muted-foreground: 215 16% 43%;
+      --primary: 158 76% 32%;
+      --primary-foreground: 0 0% 100%;
+      --secondary-token: 210 24% 95%;
+      --secondary-foreground: 222 30% 18%;
+      --destructive: 0 72% 51%;
+      --destructive-foreground: 0 0% 100%;
+      --warning-token: 32 95% 44%;
+      --warning-foreground: 24 95% 24%;
+      --border-token: 214 22% 87%;
+      --input-token: 214 22% 84%;
+      --ring-token: 158 76% 32%;
+      --bg: hsl(var(--background));
+      --card: hsl(var(--surface));
+      --card-soft: hsl(var(--muted-token));
+      --text: hsl(var(--foreground));
+      --muted: hsl(var(--muted-foreground));
+      --line: hsl(var(--border-token));
+      --line-strong: hsl(214 20% 76%);
+      --accent: hsl(var(--primary));
+      --accent-strong: hsl(158 82% 24%);
+      --accent-soft: hsl(158 76% 95%);
+      --danger: hsl(var(--destructive));
+      --warning: hsl(var(--warning-foreground));
+      --info: hsl(217 91% 48%);
+      --shadow: 0 1px 2px hsl(222 47% 11% / .04), 0 8px 24px hsl(222 47% 11% / .05);
+      --shadow-sm: 0 1px 2px hsl(222 47% 11% / .05);
+      --shadow-md: 0 10px 24px hsl(222 47% 11% / .08);
       --radius: 8px;
       --radius-sm: 6px;
-      --focus: 0 0 0 3px rgba(15, 159, 110, .18);
+      --focus: 0 0 0 3px hsl(var(--ring-token) / .18);
     }
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
@@ -530,6 +549,396 @@
     }
     .ghostBtn:hover { background: #f9fafb !important; box-shadow: none !important; }
 
+    /* shadcn-style component layer for the standalone collector */
+    body {
+      background: hsl(var(--background));
+      color: hsl(var(--foreground));
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    .wrap { max-width: 1600px; padding-top: 16px; }
+    .hero {
+      align-items: center;
+      margin-top: -16px;
+      background: hsl(var(--background) / .92);
+      border-bottom-color: hsl(var(--border-token));
+      box-shadow: 0 1px 0 hsl(var(--surface) / .72);
+    }
+    h1 {
+      color: hsl(var(--foreground));
+      font-size: 23px;
+      font-weight: 850;
+    }
+    .sub {
+      color: hsl(var(--muted-foreground));
+      font-size: 13px;
+    }
+    .badge {
+      height: 34px;
+      border: 1px solid hsl(var(--border-token));
+      background: hsl(var(--surface));
+      color: hsl(var(--foreground));
+      box-shadow: var(--shadow-sm);
+      font-weight: 800;
+    }
+    .badge.ready {
+      border-color: hsl(var(--primary) / .24);
+      background: hsl(var(--primary) / .10);
+      color: hsl(var(--primary));
+    }
+    .badge.dangerBadge {
+      border-color: hsl(var(--destructive) / .24);
+      background: hsl(var(--destructive) / .10);
+      color: hsl(var(--destructive));
+    }
+    .statusStrip { gap: 10px; }
+    .statusItem {
+      position: relative;
+      overflow: hidden;
+      border-color: hsl(var(--border-token));
+      background: hsl(var(--surface));
+      box-shadow: var(--shadow-sm);
+      transition: border-color .16s ease, background-color .16s ease, box-shadow .16s ease;
+    }
+    .statusItem span {
+      color: hsl(var(--muted-foreground));
+      letter-spacing: .01em;
+    }
+    .statusItem strong {
+      color: hsl(var(--foreground));
+      font-weight: 850;
+    }
+    .statusItem[data-state="working"] {
+      border-color: hsl(var(--primary) / .32);
+      background: hsl(var(--primary) / .06);
+    }
+    .statusItem[data-state="done"] {
+      border-color: hsl(var(--primary) / .28);
+      background: hsl(var(--primary) / .09);
+    }
+    .statusItem[data-state="error"] {
+      border-color: hsl(var(--destructive) / .32);
+      background: hsl(var(--destructive) / .08);
+    }
+    .statusItem[data-state="attention"] {
+      border-color: hsl(var(--warning-token) / .36);
+      background: hsl(var(--warning-token) / .09);
+    }
+    .workflowBar {
+      gap: 4px;
+      padding: 4px;
+      border: 1px solid hsl(var(--border-token));
+      border-radius: calc(var(--radius) + 2px);
+      background: hsl(var(--muted-token));
+    }
+    .workflowStep {
+      min-height: 52px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: hsl(var(--muted-foreground));
+      box-shadow: none;
+    }
+    .workflowStep:hover {
+      border-color: hsl(var(--border-token));
+      background: hsl(var(--surface));
+      box-shadow: var(--shadow-sm);
+      transform: none;
+    }
+    .workflowStep .stepNo {
+      background: hsl(var(--surface));
+      color: hsl(var(--muted-foreground));
+      box-shadow: inset 0 0 0 1px hsl(var(--border-token));
+    }
+    .workflowStep.active {
+      border-color: hsl(var(--border-token));
+      background: hsl(var(--surface));
+      color: hsl(var(--foreground));
+      box-shadow: var(--shadow-sm);
+    }
+    .workflowStep.active .stepNo {
+      background: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+      box-shadow: none;
+    }
+    .workflowStep.complete .stepNo {
+      background: hsl(var(--primary) / .12);
+      color: hsl(var(--primary));
+      box-shadow: inset 0 0 0 1px hsl(var(--primary) / .18);
+    }
+    .grid { gap: 16px; }
+    .card {
+      border-color: hsl(var(--border-token));
+      background: hsl(var(--surface));
+      box-shadow: var(--shadow-sm);
+      padding: 20px;
+    }
+    .card:hover { box-shadow: var(--shadow); }
+    .card h2 {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: hsl(var(--foreground));
+      font-size: 15px;
+      font-weight: 900;
+    }
+    .card h2::before {
+      content: "";
+      width: 3px;
+      height: 16px;
+      border-radius: 999px;
+      background: hsl(var(--primary));
+      flex: 0 0 auto;
+    }
+    label {
+      color: hsl(var(--foreground));
+      font-weight: 800;
+    }
+    input,
+    select,
+    textarea,
+    .orderMemoInput {
+      border-color: hsl(var(--input-token));
+      background: hsl(var(--surface));
+      color: hsl(var(--foreground));
+      box-shadow: 0 1px 1px hsl(var(--foreground) / .02);
+      transition: border-color .16s ease, box-shadow .16s ease, background-color .16s ease;
+    }
+    input:hover,
+    select:hover,
+    textarea:hover,
+    .orderMemoInput:hover {
+      border-color: hsl(214 18% 72%);
+    }
+    input:focus,
+    select:focus,
+    textarea:focus,
+    .orderMemoInput:focus {
+      border-color: hsl(var(--ring-token));
+      box-shadow: var(--focus);
+    }
+    input::placeholder { color: hsl(var(--muted-foreground) / .72); }
+    input[type="file"] {
+      background: hsl(var(--muted-token) / .52);
+      border-style: dashed;
+    }
+    input[type="checkbox"] {
+      accent-color: hsl(var(--primary));
+      box-shadow: none;
+    }
+    button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      border-color: hsl(var(--primary));
+      background: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+      box-shadow: var(--shadow-sm);
+      font-weight: 850;
+      line-height: 1.1;
+    }
+    button:hover {
+      background: hsl(158 82% 25%);
+      border-color: hsl(158 82% 25%);
+      box-shadow: var(--shadow-md);
+      transform: none;
+    }
+    button.secondary {
+      border-color: hsl(var(--border-token));
+      background: hsl(var(--surface));
+      color: hsl(var(--foreground));
+    }
+    button.secondary:hover {
+      border-color: hsl(214 18% 74%);
+      background: hsl(var(--muted-token));
+      box-shadow: var(--shadow-sm);
+    }
+    button.green {
+      border-color: hsl(var(--primary));
+      background: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+    }
+    button.green:hover {
+      border-color: hsl(158 82% 25%);
+      background: hsl(158 82% 25%);
+    }
+    .ghostBtn {
+      border-color: transparent !important;
+      background: transparent !important;
+      color: hsl(var(--muted-foreground)) !important;
+    }
+    .ghostBtn:hover {
+      background: hsl(var(--muted-token)) !important;
+      color: hsl(var(--foreground)) !important;
+    }
+    .checkline {
+      align-items: flex-start;
+      border: 1px solid hsl(var(--primary) / .20);
+      border-radius: var(--radius);
+      background: hsl(var(--primary) / .07);
+      color: hsl(var(--foreground));
+      padding: 10px 12px;
+    }
+    .hint,
+    .muted {
+      color: hsl(var(--muted-foreground));
+    }
+    .productBox,
+    .previewBox {
+      border-color: hsl(var(--border-token));
+      background: hsl(var(--muted-token) / .44);
+      color: hsl(var(--foreground));
+    }
+    .logBox {
+      border-color: hsl(222 47% 11%);
+      background: hsl(222 47% 9%);
+      color: hsl(210 24% 92%);
+      box-shadow: inset 0 1px 0 hsl(0 0% 100% / .04);
+    }
+    .pill,
+    .allyChip,
+    .soldoutBadge,
+    .customProductBadge {
+      border: 1px solid hsl(var(--border-token));
+      background: hsl(var(--surface));
+      color: hsl(var(--foreground));
+      box-shadow: var(--shadow-sm);
+    }
+    .pill {
+      border-color: hsl(var(--primary) / .20);
+      background: hsl(var(--primary) / .08);
+      color: hsl(var(--primary));
+    }
+    .soldoutBadge {
+      border-color: hsl(var(--destructive) / .20);
+      background: hsl(var(--destructive) / .08);
+      color: hsl(var(--destructive));
+    }
+    .customProductBadge {
+      border-color: hsl(var(--warning-token) / .24);
+      background: hsl(var(--warning-token) / .10);
+      color: hsl(var(--warning-foreground));
+    }
+    .stats { gap: 12px; }
+    .stat {
+      border-color: hsl(var(--border-token));
+      background: hsl(var(--surface));
+      box-shadow: var(--shadow-sm);
+    }
+    .stat b {
+      color: hsl(var(--foreground));
+      font-size: 25px;
+      font-weight: 900;
+    }
+    .stat span { color: hsl(var(--muted-foreground)); }
+    th,
+    td {
+      border-bottom-color: hsl(var(--border-token));
+    }
+    th {
+      background: hsl(var(--muted-token));
+      color: hsl(var(--foreground));
+      font-weight: 900;
+    }
+    .progressOuter,
+    .finalWriteProgressOuter {
+      background: hsl(var(--muted-token));
+    }
+    .progressInner,
+    .finalWriteProgressInner {
+      background: hsl(var(--primary));
+    }
+    .reviewColumn,
+    .timelineWrap,
+    .miniOrderCard,
+    .finalWritePanel {
+      border-color: hsl(var(--border-token));
+      background: hsl(var(--surface));
+      box-shadow: var(--shadow-sm);
+    }
+    .reviewColumnHeader {
+      background: hsl(var(--surface) / .94);
+      color: hsl(var(--foreground));
+    }
+    .timelineRow { border-bottom-color: hsl(var(--border-token)); }
+    .timelineCell.issueCell {
+      border-right-color: hsl(var(--border-token));
+      background: hsl(var(--warning-token) / .06);
+    }
+    .timelineCell.aiCell {
+      background: hsl(217 91% 97%);
+    }
+    .miniOrderCard {
+      box-shadow: none;
+    }
+    .miniOrderCard:hover {
+      border-color: hsl(214 18% 76%);
+      box-shadow: var(--shadow-sm);
+    }
+    .miniTime {
+      color: hsl(var(--foreground));
+      font-weight: 900;
+    }
+    .miniDate,
+    .miniMeta,
+    .miniGrid label {
+      color: hsl(var(--muted-foreground));
+    }
+    .miniBtn {
+      border-color: hsl(var(--border-token));
+      background: hsl(var(--secondary-token));
+      color: hsl(var(--secondary-foreground));
+      box-shadow: none;
+    }
+    .miniBtn:hover {
+      border-color: hsl(214 18% 74%);
+      background: hsl(var(--surface));
+      box-shadow: var(--shadow-sm);
+    }
+    .miniBtn.dangerBtn {
+      border-color: hsl(var(--destructive) / .20);
+      background: hsl(var(--destructive) / .08);
+      color: hsl(var(--destructive));
+    }
+    .miniOrderCard.issueCard.action-include {
+      border-color: hsl(var(--primary) / .30);
+      background: hsl(var(--primary) / .07);
+    }
+    .miniOrderCard.issueCard.action-past_order {
+      border-color: hsl(var(--warning-token) / .34);
+      background: hsl(var(--warning-token) / .09);
+    }
+    .miniOrderCard.issueCard.action-soldout_closed {
+      border-color: hsl(var(--destructive) / .32);
+      background: hsl(var(--destructive) / .08);
+    }
+    .miniOrderCard.issueCard.action-exclude_review {
+      border-color: hsl(var(--border-token));
+      background: hsl(var(--muted-token));
+      opacity: .92;
+    }
+    .orderMemoDetails {
+      border-top-color: hsl(var(--border-token));
+    }
+    .orderMemoDetails summary {
+      color: hsl(var(--muted-foreground));
+    }
+    .soldoutRow,
+    .customProductListRow {
+      border-bottom-color: hsl(var(--border-token));
+    }
+    .finalWriteOverlay {
+      background: hsl(var(--foreground) / .48);
+    }
+    .finalWritePanel {
+      border: 1px solid hsl(var(--border-token));
+      border-radius: var(--radius);
+    }
+    .finalWriteSpinner {
+      border-color: hsl(var(--muted-token));
+      border-top-color: hsl(var(--primary));
+    }
+
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: .01ms !important;
@@ -802,8 +1211,9 @@
       document.getElementById('timeInput').value = data.defaultStartTime || '08:00';
       document.getElementById('chunkInput').value = data.defaultChunkSize || 15;
       document.getElementById('chunkInput').max = data.maxChunkSize || 25;
-      document.getElementById('apiBadge').textContent = data.hasApiKey ? `API 준비됨 · ${data.model}` : 'API Key 필요';
-      document.getElementById('apiBadge').style.background = data.hasApiKey ? '#111827' : '#ef4444';
+      const apiBadge = document.getElementById('apiBadge');
+      apiBadge.textContent = data.hasApiKey ? `API 준비됨 · ${data.model}` : 'API Key 필요';
+      apiBadge.className = `badge ${data.hasApiKey ? 'ready' : 'dangerBadge'}`;
       setStatusText('analysisStatusText', data.hasApiKey ? '준비됨' : 'API Key 필요');
       loadCustomProductsForDate(data.today);
       renderCustomProductManager();
@@ -958,7 +1368,26 @@
 
   function setStatusText(id, text) {
     const el = document.getElementById(id);
-    if (el) el.textContent = text;
+    if (!el) return;
+    el.textContent = text;
+    const statusItem = el.closest('.statusItem');
+    if (!statusItem) return;
+
+    const normalized = String(text || '');
+    let state = 'idle';
+    if (/중|준비중|읽는|불러오는|업로드|입력중|분석중|묶음|%/.test(normalized)) {
+      state = 'working';
+    }
+    if (/완료|준비됨|복구됨|개 메시지|오늘|AI \d+/.test(normalized)) {
+      state = 'done';
+    }
+    if (/실패|오류|없음/.test(normalized)) {
+      state = 'error';
+    }
+    if (/필요|대기|건너뜀|검수/.test(normalized)) {
+      state = 'attention';
+    }
+    statusItem.dataset.state = state;
   }
 
   function setWorkflowStage(stage) {
