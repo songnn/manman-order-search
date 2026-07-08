@@ -484,7 +484,7 @@ async function handleKakaoCsvUpload() {
         fileName: file.name,
         fileSize: file.size,
         mimeType: file.type || 'text/plain',
-        storeName: '전농래미안크레시티점',
+        storeName: '잠원메이플자이점',
         orderDate,
         startAt: `${orderDate} ${startTime}`,
         endAt: `${nextInputDate(orderDate)} 00:00`,

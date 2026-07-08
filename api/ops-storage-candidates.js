@@ -1,7 +1,7 @@
 import { findCustomerCandidatesByDigits, normalizeInventoryRowProductFields } from '../lib/opsData.js';
 import { supabaseAdmin } from '../lib/supabaseAdmin.js';
 
-const STORE_NAME = process.env.STORE_NAME || '전농래미안크레시티점';
+const STORE_NAME = process.env.STORE_NAME || '잠원메이플자이점';
 const INVENTORY_PRODUCT_CODE_HEADERS = ['상품코드', '상품 코드', '제품코드', '제품 코드', '품목코드', '품목 코드', '코드'];
 
 export default async function handler(req, res) {

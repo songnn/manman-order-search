@@ -48,7 +48,7 @@ export default async function handler(req, res) {
     let deleteQuery = supabaseAdmin
       .from('order_cache')
       .delete()
-      .eq('store_name', process.env.STORE_NAME || '전농래미안크레시티점')
+      .eq('store_name', process.env.STORE_NAME || '잠원메이플자이점')
       .neq('sync_run_id', syncRunId);
 
     if (syncedSourceSheetNames.length) {
@@ -109,7 +109,7 @@ function toOrderCacheRecord_(row, syncRunId) {
   const orderDateValue = dateTextToNumber_(row.orderDate);
 
   return {
-    store_name: process.env.STORE_NAME || '전농래미안크레시티점',
+    store_name: process.env.STORE_NAME || '잠원메이플자이점',
     source_sheet_name: row.sourceSheetName || process.env.RAW_SHEET_NAME || 'Raw_주문입력',
     source_row_number: row.sourceRowNumber,
 

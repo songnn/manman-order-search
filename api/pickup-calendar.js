@@ -1,6 +1,6 @@
 import { searchOrders } from '../lib/orders.js';
 
-const STORE_DISPLAY_NAME = '만만마켓 전농래미안크레시티점';
+const STORE_DISPLAY_NAME = '만만마켓 잠원메이플자이점';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
