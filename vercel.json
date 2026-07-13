@@ -19,6 +19,10 @@
       "regions": ["icn1"],
       "maxDuration": 300
     },
+    "api/sync-ops-data.js": {
+      "regions": ["icn1"],
+      "maxDuration": 300
+    },
     "api/search-orders.js": {
       "regions": ["icn1"]
     },

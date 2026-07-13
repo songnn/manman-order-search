@@ -24,11 +24,19 @@ export default async function handler(req, res) {
     const wantsSettlement = String(req.query?.settlement || '') === '1';
     const wantsSettlementOnly = wantsSettlement && String(req.query?.settlementOnly || '') === '1';
     const forceRefresh = String(req.query?.refresh || '') === '1';
-    const data = wantsSettlementOnly
+    let data = wantsSettlementOnly
       ? await getOperationsSettlementReviewData({ force: forceRefresh })
       : await getOperationsDashboardData({
           includeSettlement: wantsSettlement
         });
+
+    if (!wantsSettlementOnly && !forceRefresh && !data.inboundAllItems?.length) {
+      await syncInventorySheets();
+      data = await getOperationsDashboardData({
+        includeSettlement: wantsSettlement
+      });
+    }
+
     return res.status(200).json(data);
   } catch (error) {
     console.error('buffer-dashboard error:', error);
