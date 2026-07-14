@@ -1,6 +1,10 @@
 import crypto from 'node:crypto';
 import { syncProductCategoryCache } from '../lib/dashboard/productCategories.js';
 import { reanalyzeKakaoCsvMatches } from '../lib/kakaoCsvProcessing.js';
+import {
+  evaluateOrderCacheSnapshot,
+  orderCacheGuardOptionsFromEnv
+} from '../lib/orderCacheGuard.js';
 import { supabaseAdmin } from '../lib/supabaseAdmin.js';
 import { readUnifiedRowsWithRowNumbers_ } from '../lib/orders.js';
 
@@ -39,11 +43,33 @@ export default async function handler(req, res) {
       });
     }
 
-    await upsertInChunks_(records, 500);
-
     const syncedSourceSheetNames = [...new Set(records
       .map(record => record.source_sheet_name)
       .filter(Boolean))];
+    const cachedRecords = await readCachedRecords_(syncedSourceSheetNames);
+    const guard = evaluateOrderCacheSnapshot({
+      nextRecords: records,
+      cachedRecords,
+      options: orderCacheGuardOptionsFromEnv()
+    });
+
+    if (!guard.ok && process.env.ORDER_CACHE_GUARD_DISABLED !== '1') {
+      console.warn('order cache auto-freeze:', JSON.stringify({
+        reasons: guard.reasons,
+        metrics: guard.metrics
+      }));
+
+      return res.status(200).json({
+        ok: true,
+        skipped: true,
+        frozen: true,
+        autoFrozen: true,
+        message: '구글시트 데이터 이상을 감지해 최근 정상 주문 캐시를 유지합니다.',
+        guard
+      });
+    }
+
+    await upsertInChunks_(records, 500);
 
     let deleteQuery = supabaseAdmin
       .from('order_cache')
@@ -83,6 +109,9 @@ export default async function handler(req, res) {
       ok: true,
       count: records.length,
       syncRunId,
+      frozen: false,
+      autoFrozen: false,
+      guard,
       productCategorySync,
       kakaoCsvReanalysis
     });
@@ -145,6 +174,41 @@ async function upsertInChunks_(records, chunkSize = 500) {
 
     if (error) throw error;
   }
+}
+
+async function readCachedRecords_(sourceSheetNames, pageSize = 1000) {
+  if (!sourceSheetNames.length) return [];
+
+  const records = [];
+  const storeName = process.env.STORE_NAME || '전농래미안크레시티점';
+
+  for (let start = 0; ; start += pageSize) {
+    const { data, error } = await supabaseAdmin
+      .from('order_cache')
+      .select([
+        'source_sheet_name',
+        'source_row_number',
+        'customer_label',
+        'product_name',
+        'quantity',
+        'price',
+        'image_url',
+        'order_date_text',
+        'pickup_date_text'
+      ].join(','))
+      .eq('store_name', storeName)
+      .in('source_sheet_name', sourceSheetNames)
+      .order('source_sheet_name', { ascending: true })
+      .order('source_row_number', { ascending: true })
+      .range(start, start + pageSize - 1);
+
+    if (error) throw error;
+
+    records.push(...(data || []));
+    if (!data || data.length < pageSize) break;
+  }
+
+  return records;
 }
 
 function normalizeDisplayCustomerLabel_(value) {

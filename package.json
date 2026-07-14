@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test": "node --test",
     "discount:assets": "node scripts/generate-discount-assets.mjs",
     "discount:snapshot": "node scripts/generate-discount-snapshot.mjs"
   },
