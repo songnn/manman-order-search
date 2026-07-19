@@ -483,7 +483,7 @@ img {
   min-height: 0;
   padding: 3px;
   display: grid;
-  grid-template-rows: 42px minmax(0, 1fr);
+  grid-template-rows: 62px minmax(0, 1fr);
   flex-grow: var(--zone-columns);
   flex-shrink: 1;
   flex-basis: 0;
@@ -510,9 +510,11 @@ img {
 
 .zone-header {
   min-width: 0;
-  padding: 3px 4px;
-  display: flex;
-  align-items: center;
+  padding: 5px 7px;
+  display: grid;
+  grid-template-rows: 29px 18px;
+  align-content: center;
+  gap: 3px;
   overflow: hidden;
   border-radius: 10px;
   color: var(--navy);
@@ -532,16 +534,15 @@ img {
 
 .zone-title {
   min-width: 0;
-  width: 100%;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   overflow: hidden;
 }
 
 .zone-title img {
-  width: 20px;
-  height: 20px;
+  width: 26px;
+  height: 26px;
   flex: 0 0 auto;
   object-fit: contain;
   filter: drop-shadow(0 2px 4px #00000024);
@@ -550,26 +551,33 @@ img {
 .zone-title strong {
   overflow: hidden;
   font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
-  flex: 0 0 auto;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.zone-location {
+.zone-title em {
   margin-left: auto;
-  min-width: 0;
-  flex: 1 1 auto;
-  overflow: hidden;
-  font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  padding: 2px 5px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #ffffff66;
+  font-family: Arial, 'Apple SD Gothic Neo', sans-serif;
   font-size: 11px;
-  font-weight: 800;
-  line-height: 13px;
-  letter-spacing: -1px;
-  text-align: right;
-  white-space: normal;
-  word-break: keep-all;
+  font-style: normal;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.zone-direction {
+  font-family: 'Apple SD Gothic Neo', sans-serif;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 18px;
+  letter-spacing: -0.5px;
+  text-shadow: 0 1px 1px #ffffff80;
+  white-space: nowrap;
 }
 
 .product-grid {

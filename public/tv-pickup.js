@@ -13,20 +13,23 @@ const STORAGE_ASSETS = Object.freeze({
     dark: '/storage-dark-ambient.svg',
     white: '/storage-ambient.webp',
     zoneId: 'ambientZone',
-    elementId: 'ambientProducts'
+    elementId: 'ambientProducts',
+    countId: 'ambientCount'
   },
   '냉장': {
     dark: '/storage-dark-refrigerated.svg',
     white: '/storage-refrigerated-a2ca1185.webp',
     compactWhite: '/storage-refrigerated-78e338ae.webp',
     zoneId: 'chilledZone',
-    elementId: 'chilledProducts'
+    elementId: 'chilledProducts',
+    countId: 'chilledCount'
   },
   '냉동': {
     dark: '/storage-dark-frozen-v3-electric.svg',
     white: '/storage-frozen.webp',
     zoneId: 'frozenZone',
-    elementId: 'frozenProducts'
+    elementId: 'frozenProducts',
+    countId: 'frozenCount'
   }
 });
 const STORAGE_TYPES = ['상온', '냉장', '냉동'];
@@ -127,7 +130,7 @@ function renderBoard() {
 
   const grouped = groupItems(data.items || []);
   STORAGE_TYPES.forEach(storageType => {
-    renderZone(storageType, grouped[storageType] || []);
+    renderZone(storageType, grouped[storageType] || [], data.summary || {});
   });
 
   elements.pageIndicator.hidden = state.pageCount <= 1;
@@ -143,16 +146,22 @@ function renderHeader(data) {
   elements.updateTime.classList.toggle('is-stale', Boolean(data.stale));
 }
 
-function renderZone(storageType, items) {
+function renderZone(storageType, items, summary) {
   const config = STORAGE_ASSETS[storageType];
   const zone = document.getElementById(config.zoneId);
   const grid = document.getElementById(config.elementId);
+  const count = document.getElementById(config.countId);
+  const total = Number(summary.byStorage?.[storageType] || 0);
+  const ready = Number(summary.readyByStorage?.[storageType] || 0);
   const columns = Math.max(1, state.zoneColumns[storageType] || 1);
   const capacity = Math.max(1, state.zoneCapacities[storageType] || 1);
   const start = state.pageIndex * capacity;
   const visibleItems = items.slice(start, start + capacity);
 
   zone.style.setProperty('--zone-columns', String(columns));
+  count.textContent = ready === total
+    ? `${number(total)}종`
+    : `${number(ready)}/${number(total)}종`;
   grid.classList.remove('is-changing');
 
   if (visibleItems.length) {
@@ -514,6 +523,10 @@ function formatUpdateTime(value) {
 function safeImageUrl(value) {
   const url = String(value || '').trim();
   return /^(?:https?:\/\/|\/(?!\/))/i.test(url) ? url : IMAGE_FALLBACK_URL;
+}
+
+function number(value) {
+  return new Intl.NumberFormat('ko-KR').format(Number(value || 0));
 }
 
 function escapeHtml(value) {
