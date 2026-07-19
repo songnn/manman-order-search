@@ -262,95 +262,11 @@ img {
 
 .guide-shot img {
   position: absolute;
+  top: 0;
   left: 0;
   width: 100%;
   height: auto;
   max-width: none;
-}
-
-.guide-shot--step1 img {
-  top: -8px;
-}
-
-.guide-shot--step2 img {
-  top: -93px;
-}
-
-.guide-shot--step3 img {
-  top: -41px;
-}
-
-.guide-shot--step4 img {
-  top: -151px;
-}
-
-.guide-focus {
-  position: absolute;
-  z-index: 2;
-  border: 4px solid #ffd600;
-  border-radius: 14px;
-  box-shadow: 0 0 0 999px #0f172a3d, 0 5px 14px #6d560038;
-}
-
-.guide-shot--step1 .guide-focus {
-  top: 11px;
-  right: 9px;
-  left: 9px;
-  height: 44px;
-}
-
-.guide-shot--step2 .guide-focus {
-  top: 65px;
-  right: 10px;
-  left: 10px;
-  height: 38px;
-}
-
-.guide-shot--step3 .guide-focus {
-  top: 81px;
-  right: 20px;
-  left: 20px;
-  height: 51px;
-  border-radius: 26px;
-}
-
-.guide-shot--step4 .guide-focus {
-  top: 54px;
-  right: 10px;
-  left: 10px;
-  height: 115px;
-}
-
-.guide-arrow {
-  position: absolute;
-  z-index: 3;
-  right: 5px;
-  top: 5px;
-  width: 34px;
-  height: 34px;
-  display: grid;
-  place-items: center;
-  border: 2px solid #fff;
-  border-radius: 50%;
-  background: #ffd600;
-  color: #111827;
-  font-family: var(--font-base);
-  font-size: 20px;
-  font-weight: 800;
-  box-shadow: 0 4px 10px #6d56004d;
-}
-
-.guide-shot--step2 .guide-arrow {
-  top: 59px;
-}
-
-.guide-shot--step3 .guide-arrow {
-  top: 76px;
-  right: 14px;
-}
-
-.guide-shot--step4 .guide-arrow {
-  top: 48px;
 }
 
 .guide-step > p {
@@ -461,11 +377,11 @@ img {
 
 .manager-contact {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr) 43px;
-  column-gap: 8px;
+  grid-template-columns: 38px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) 54px;
+  column-gap: 6px;
   align-items: center;
-  padding: 10px;
+  padding: 6px 8px 5px;
   border: 2px solid #c9dcf0;
   border-radius: 14px;
   background: #f8fbff;
@@ -473,15 +389,15 @@ img {
 
 .contact-icon {
   grid-row: 1;
-  width: 38px;
-  height: 38px;
+  width: 32px;
+  height: 32px;
   display: grid;
   place-items: center;
   border-radius: 11px;
   color: #fff;
   background: var(--brand);
   font-family: var(--font-base);
-  font-size: 22px;
+  font-size: 19px;
 }
 
 .contact-copy {
@@ -510,10 +426,10 @@ img {
   color: var(--brand);
   text-align: center;
   font-family: var(--font-highlight);
-  font-size: 36px;
+  font-size: 44px;
   font-weight: 900;
   line-height: 1;
-  letter-spacing: 2px;
+  letter-spacing: 1px;
 }
 
 .board-column {
