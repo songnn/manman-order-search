@@ -11,15 +11,15 @@
   --line: #cbd5e1;
   --brand: #0051a0;
   --brand-bright: #0871cc;
-  --ambient: #d85a06;
-  --ambient-dark: #b84704;
-  --ambient-soft: #fff7ed;
-  --chilled: #0797ad;
-  --chilled-dark: #077f93;
-  --chilled-soft: #ecfeff;
-  --frozen: #4c4edb;
-  --frozen-dark: #3d3bbd;
-  --frozen-soft: #eef2ff;
+  --ambient: #FFB13B;
+  --ambient-dark: #FF7A3D;
+  --ambient-soft: #FFF3C4;
+  --chilled: #21D4E8;
+  --chilled-dark: #00B4E8;
+  --chilled-soft: #E8FFFD;
+  --frozen: #38B6FF;
+  --frozen-dark: #63A5FF;
+  --frozen-soft: #F4FAFF;
   --zone-layout-gap: 4px;
   --zone-inline-chrome: 10px;
   --product-grid-gap: 4px;
@@ -565,17 +565,17 @@ img {
 }
 
 .zone--ambient {
-  border-color: #ff9d4d;
+  border-color: var(--ambient);
   background: var(--ambient-soft);
 }
 
 .zone--chilled {
-  border-color: #55d5e4;
+  border-color: var(--chilled);
   background: var(--chilled-soft);
 }
 
 .zone--frozen {
-  border-color: #9296ff;
+  border-color: var(--frozen);
   background: var(--frozen-soft);
 }
 
@@ -588,7 +588,7 @@ img {
   gap: 3px;
   overflow: hidden;
   border-radius: 10px;
-  color: #fff;
+  color: var(--navy);
 }
 
 .zone--ambient .zone-header {
@@ -621,7 +621,9 @@ img {
 
 .zone-title strong {
   overflow: hidden;
+  font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
   font-size: 20px;
+  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -631,7 +633,7 @@ img {
   padding: 2px 5px;
   flex: 0 0 auto;
   border-radius: 999px;
-  background: #ffffff2c;
+  background: #ffffff66;
   font-family: Arial, 'Apple SD Gothic Neo', sans-serif;
   font-size: 11px;
   font-style: normal;
@@ -645,7 +647,7 @@ img {
   font-weight: 900;
   line-height: 18px;
   letter-spacing: -0.5px;
-  text-shadow: 0 1px 2px #00000026;
+  text-shadow: 0 1px 1px #ffffff80;
   white-space: nowrap;
 }
 
