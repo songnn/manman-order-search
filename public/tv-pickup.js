@@ -10,7 +10,7 @@ const STORAGE_ASSETS = Object.freeze({
   '상온': {
     dark: '/storage-dark-ambient.svg',
     white: '/storage-ambient.webp',
-    capacity: 15,
+    zoneId: 'ambientZone',
     elementId: 'ambientProducts',
     countId: 'ambientCount'
   },
@@ -18,14 +18,14 @@ const STORAGE_ASSETS = Object.freeze({
     dark: '/storage-dark-refrigerated.svg',
     white: '/storage-refrigerated-a2ca1185.webp',
     compactWhite: '/storage-refrigerated-78e338ae.webp',
-    capacity: 2,
+    zoneId: 'chilledZone',
     elementId: 'chilledProducts',
     countId: 'chilledCount'
   },
   '냉동': {
     dark: '/storage-dark-frozen-v3-electric.svg',
     white: '/storage-frozen.webp',
-    capacity: 5,
+    zoneId: 'frozenZone',
     elementId: 'frozenProducts',
     countId: 'frozenCount'
   }
@@ -38,8 +38,11 @@ const state = {
   pageIndex: 0,
   pageCount: 1,
   pageTimer: 0,
+  layoutFrame: 0,
   refreshTimer: 0,
   tenOClockTimer: 0,
+  zoneRows: 5,
+  zoneCapacities: { '상온': 40, '냉장': 40, '냉동': 40 },
   loading: false
 };
 
@@ -64,6 +67,11 @@ function fillViewport() {
   elements.canvas.style.setProperty('--tv-canvas-width', `${logicalWidth}px`);
   elements.canvas.style.setProperty('--tv-canvas-height', `${logicalHeight}px`);
   elements.canvas.style.setProperty('--tv-canvas-scale', String(scale));
+}
+
+function handleViewportChange() {
+  fillViewport();
+  scheduleZoneLayout();
 }
 
 async function loadBoardData(options = {}) {
@@ -125,6 +133,7 @@ function renderBoard() {
 
   elements.pageIndicator.hidden = state.pageCount <= 1;
   elements.pageIndicator.textContent = `${state.pageIndex + 1}/${state.pageCount}`;
+  scheduleZoneLayout();
 }
 
 function renderHeader(data) {
@@ -161,17 +170,19 @@ function renderSummary(summary) {
 
 function renderZone(storageType, items, summary) {
   const config = STORAGE_ASSETS[storageType];
+  const zone = document.getElementById(config.zoneId);
   const grid = document.getElementById(config.elementId);
   const count = document.getElementById(config.countId);
   const total = Number(summary.byStorage?.[storageType] || 0);
   const ready = Number(summary.readyByStorage?.[storageType] || 0);
-  const start = state.pageIndex * config.capacity;
-  const visibleItems = items.slice(start, start + config.capacity);
+  const capacity = Math.max(1, state.zoneCapacities[storageType] || 1);
+  const start = state.pageIndex * capacity;
+  const visibleItems = items.slice(start, start + capacity);
 
+  zone.style.setProperty('--zone-weight', String(getZoneWeight(items.length, state.zoneRows)));
   count.textContent = ready === total
     ? `${number(total)}종`
-    : `${number(ready)}/${number(total)}종 준비`;
-  grid.classList.toggle('is-single', visibleItems.length === 1);
+    : `${number(ready)}/${number(total)}종`;
   grid.classList.remove('is-changing');
 
   if (visibleItems.length) {
@@ -216,9 +227,69 @@ function getPageCount(items) {
   return Math.max(
     1,
     ...STORAGE_TYPES.map(storageType =>
-      Math.ceil(grouped[storageType].length / STORAGE_ASSETS[storageType].capacity)
+      Math.ceil(grouped[storageType].length / Math.max(1, state.zoneCapacities[storageType] || 1))
     )
   );
+}
+
+function getZoneWeight(itemCount, visibleRows = 5) {
+  const rows = Math.max(1, Number(visibleRows || 0));
+  return Math.max(1, Math.ceil(Number(itemCount || 0) / rows));
+}
+
+function calculateGridShape(gridWidth, gridHeight, cardWidth, cardHeight, gridGap) {
+  const columns = Math.max(1, Math.floor((gridWidth + gridGap) / (cardWidth + gridGap)));
+  const rows = Math.max(1, Math.floor((gridHeight + gridGap) / (cardHeight + gridGap)));
+  return { columns, rows, capacity: columns * rows };
+}
+
+function calculateGridCapacity(gridWidth, gridHeight, cardWidth, cardHeight, gridGap) {
+  return calculateGridShape(gridWidth, gridHeight, cardWidth, cardHeight, gridGap).capacity;
+}
+
+function scheduleZoneLayout() {
+  if (state.layoutFrame) window.cancelAnimationFrame(state.layoutFrame);
+  state.layoutFrame = window.requestAnimationFrame(() => {
+    state.layoutFrame = 0;
+    refreshZoneCapacities();
+  });
+}
+
+function refreshZoneCapacities() {
+  if (!state.data) return;
+
+  const styles = window.getComputedStyle(elements.canvas);
+  const cardWidth = parseFloat(styles.getPropertyValue('--product-card-width')) || 120;
+  const cardHeight = parseFloat(styles.getPropertyValue('--product-card-height')) || 164;
+  const gridGap = parseFloat(styles.getPropertyValue('--product-grid-gap')) || 8;
+  const nextCapacities = {};
+  let nextZoneRows = Infinity;
+  let changed = false;
+
+  STORAGE_TYPES.forEach(storageType => {
+    const grid = document.getElementById(STORAGE_ASSETS[storageType].elementId);
+    const shape = calculateGridShape(
+      grid.clientWidth,
+      grid.clientHeight,
+      cardWidth,
+      cardHeight,
+      gridGap
+    );
+    nextCapacities[storageType] = shape.capacity;
+    nextZoneRows = Math.min(nextZoneRows, shape.rows);
+    if (shape.capacity !== state.zoneCapacities[storageType]) changed = true;
+  });
+
+  nextZoneRows = Number.isFinite(nextZoneRows) ? nextZoneRows : 1;
+  if (nextZoneRows !== state.zoneRows) changed = true;
+  if (!changed) return;
+
+  state.zoneRows = nextZoneRows;
+  state.zoneCapacities = nextCapacities;
+  state.pageCount = getPageCount(state.data.items || []);
+  if (state.pageIndex >= state.pageCount) state.pageIndex = 0;
+  renderBoard();
+  startPageRotation();
 }
 
 function startPageRotation() {
@@ -351,9 +422,9 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
-fillViewport();
-window.addEventListener('resize', fillViewport, { passive: true });
-window.visualViewport?.addEventListener('resize', fillViewport, { passive: true });
+handleViewportChange();
+window.addEventListener('resize', handleViewportChange, { passive: true });
+window.visualViewport?.addEventListener('resize', handleViewportChange, { passive: true });
 window.addEventListener('focus', () => loadBoardData().catch(() => {}));
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) loadBoardData().catch(() => {});

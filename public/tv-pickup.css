@@ -20,6 +20,9 @@
   --frozen: #4c4edb;
   --frozen-dark: #3d3bbd;
   --frozen-soft: #eef2ff;
+  --product-card-width: 120px;
+  --product-card-height: 164px;
+  --product-grid-gap: 8px;
 }
 
 * {
@@ -53,10 +56,10 @@ img {
   left: 0;
   width: var(--tv-canvas-width, 100vw);
   height: var(--tv-canvas-height, 100vh);
-  padding: 28px;
+  padding: 18px;
   display: grid;
-  grid-template-columns: 31fr 69fr;
-  gap: 16px;
+  grid-template-columns: 25fr 75fr;
+  gap: 12px;
   overflow: hidden;
   background:
     radial-gradient(circle at 100% 0, #dbeafe 0, transparent 34%),
@@ -73,16 +76,16 @@ img {
 
 .guide-column {
   display: grid;
-  grid-template-rows: 92px minmax(0, 1fr);
-  gap: 14px;
+  grid-template-rows: 72px minmax(0, 1fr);
+  gap: 8px;
 }
 
 .brand-panel {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 18px;
-  padding: 14px 22px;
+  gap: 12px;
+  padding: 10px 16px;
   overflow: hidden;
   color: #fff;
   border-radius: 18px;
@@ -104,16 +107,16 @@ img {
 .brand-mark {
   position: relative;
   z-index: 1;
-  width: 56px;
-  height: 56px;
+  width: 46px;
+  height: 46px;
   display: grid;
   place-items: center;
   flex: 0 0 auto;
-  border-radius: 15px;
+  border-radius: 12px;
   color: var(--brand);
   background: #fff;
   font-family: Arial, sans-serif;
-  font-size: 29px;
+  font-size: 24px;
   font-weight: 900;
   box-shadow: 0 4px 14px #00396b36;
 }
@@ -128,23 +131,23 @@ img {
 
 .brand-copy small {
   font-family: 'Apple SD Gothic Neo', sans-serif;
-  font-size: 15px;
+  font-size: 12px;
   font-weight: 800;
   opacity: 0.92;
 }
 
 .brand-copy strong {
-  font-size: 31px;
+  font-size: 25px;
   line-height: 1;
   letter-spacing: -1px;
 }
 
 .guide-panel {
   min-height: 0;
-  padding: 16px;
+  padding: 10px;
   display: grid;
-  grid-template-rows: 68px minmax(0, 1fr) 56px 126px;
-  gap: 10px;
+  grid-template-rows: 56px minmax(0, 1fr) 44px 112px;
+  gap: 7px;
   border: 1px solid #d7e0ea;
   border-radius: 18px;
   background: #fff;
@@ -157,16 +160,16 @@ img {
 }
 
 .guide-heading h1 {
-  font-size: 27px;
+  font-size: 23px;
   line-height: 1.18;
   letter-spacing: -1px;
 }
 
 .guide-heading p {
-  margin-top: 6px;
+  margin-top: 4px;
   color: var(--muted);
   font-family: 'Apple SD Gothic Neo', sans-serif;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
 }
 
@@ -175,7 +178,7 @@ img {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-template-rows: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 7px;
 }
 
 .guide-step {
@@ -183,7 +186,7 @@ img {
   min-height: 0;
   margin: 0;
   display: grid;
-  grid-template-rows: minmax(0, 1fr) 68px;
+  grid-template-rows: minmax(0, 1fr) 56px;
   overflow: hidden;
   border: 1px solid #cbd8e6;
   border-radius: 14px;
@@ -299,22 +302,22 @@ img {
 
 .guide-step > p {
   margin: 0;
-  padding: 9px 10px;
+  padding: 7px 8px;
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 7px;
   background: #fff;
   color: #0f172a;
   font-family: 'Apple SD Gothic Neo', sans-serif;
-  font-size: 17px;
+  font-size: 14px;
   font-weight: 800;
   line-height: 1.25;
   letter-spacing: -1px;
 }
 
 .guide-step > p b {
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   display: grid;
   place-items: center;
   flex: 0 0 auto;
@@ -322,7 +325,7 @@ img {
   color: #fff;
   background: var(--brand);
   font-family: Arial, sans-serif;
-  font-size: 19px;
+  font-size: 16px;
 }
 
 .guide-step > p strong {
@@ -333,28 +336,28 @@ img {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 13px;
+  gap: 8px;
   border-radius: 13px;
   color: #fff;
   background: linear-gradient(135deg, #0871cc, #0051a0);
-  font-size: 19px;
+  font-size: 15px;
   letter-spacing: -1px;
 }
 
 .pickup-flow span {
   color: #ffd55f;
   font-family: Arial, sans-serif;
-  font-size: 26px;
+  font-size: 21px;
   font-weight: 900;
 }
 
 .manager-contact {
   display: grid;
-  grid-template-columns: 54px minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr) 43px;
-  column-gap: 12px;
+  grid-template-columns: 44px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) 36px;
+  column-gap: 8px;
   align-items: center;
-  padding: 12px 14px 10px;
+  padding: 8px 10px 7px;
   border: 2px solid #c9dcf0;
   border-radius: 14px;
   background: #f8fbff;
@@ -362,15 +365,15 @@ img {
 
 .contact-icon {
   grid-row: 1;
-  width: 48px;
-  height: 48px;
+  width: 38px;
+  height: 38px;
   display: grid;
   place-items: center;
-  border-radius: 14px;
+  border-radius: 11px;
   color: #fff;
   background: var(--brand);
   font-family: Arial, sans-serif;
-  font-size: 27px;
+  font-size: 22px;
 }
 
 .contact-copy {
@@ -382,73 +385,73 @@ img {
 
 .contact-copy small {
   color: var(--brand);
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 900;
 }
 
 .contact-copy strong {
-  font-size: 16px;
+  font-size: 13px;
   line-height: 1.25;
 }
 
 .contact-phone {
   grid-column: 1 / -1;
   align-self: end;
-  padding-top: 6px;
+  padding-top: 4px;
   border-top: 1px solid #d7e3ef;
   color: var(--brand);
   text-align: center;
   font-family: Arial, 'Apple SD Gothic Neo', sans-serif;
-  font-size: 29px;
+  font-size: 23px;
   font-weight: 900;
   letter-spacing: 1px;
 }
 
 .contact-phone small {
-  margin-right: 8px;
+  margin-right: 6px;
   font-family: 'Apple SD Gothic Neo', sans-serif;
-  font-size: 16px;
+  font-size: 13px;
   letter-spacing: 0;
 }
 
 .board-column {
   display: grid;
-  grid-template-rows: 92px minmax(0, 1fr) 294px 48px;
-  gap: 12px;
+  grid-template-rows: 72px minmax(0, 1fr) 34px;
+  gap: 8px;
 }
 
 .board-header {
   min-width: 0;
-  padding: 12px 16px 12px 24px;
+  padding: 8px 12px 8px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  gap: 14px;
   border: 1px solid #cfdbe7;
-  border-radius: 18px;
+  border-radius: 14px;
   background: #fff;
   box-shadow: 0 10px 26px #264d7312;
 }
 
 .date-block {
-  min-width: 330px;
+  min-width: 300px;
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: end;
-  column-gap: 16px;
+  column-gap: 12px;
 }
 
 .date-block small {
   grid-column: 1 / -1;
   color: var(--brand);
   font-family: Arial, sans-serif;
-  font-size: 15px;
+  font-size: 12px;
   font-weight: 900;
   letter-spacing: 1px;
 }
 
 .date-block strong {
-  font-size: 35px;
+  font-size: 29px;
   line-height: 1.08;
   letter-spacing: -2px;
   white-space: nowrap;
@@ -458,7 +461,7 @@ img {
   align-self: center;
   color: var(--muted);
   font-family: 'Apple SD Gothic Neo', sans-serif;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 800;
   white-space: nowrap;
 }
@@ -471,27 +474,27 @@ img {
   min-width: 0;
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 6px;
 }
 
 .summary-card {
-  min-width: 108px;
-  height: 65px;
-  padding: 7px 12px;
+  min-width: 86px;
+  height: 52px;
+  padding: 5px 8px;
   display: grid;
-  grid-template-columns: 30px auto;
+  grid-template-columns: 24px auto;
   grid-template-rows: auto auto;
   align-items: center;
   justify-content: center;
-  column-gap: 6px;
+  column-gap: 4px;
   overflow: hidden;
-  border-radius: 14px;
+  border-radius: 11px;
   color: #073463;
   background: #eff6fd;
 }
 
 .summary-card--total {
-  min-width: 150px;
+  min-width: 130px;
   grid-template-columns: auto;
   color: #fff;
   background: linear-gradient(135deg, #0871cc, #0051a0);
@@ -499,21 +502,21 @@ img {
 
 .summary-card img {
   grid-row: 1 / -1;
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
   object-fit: contain;
 }
 
 .summary-card strong {
   font-family: Arial, 'JalnanGothic', sans-serif;
-  font-size: 25px;
+  font-size: 21px;
   line-height: 1;
   text-align: center;
 }
 
 .summary-card span {
   font-family: 'Apple SD Gothic Neo', sans-serif;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 900;
   line-height: 1;
   text-align: center;
@@ -528,22 +531,34 @@ img {
 .summary-card--total em {
   color: #ffe08a;
   font-family: 'Apple SD Gothic Neo', sans-serif;
-  font-size: 12px;
+  font-size: 10px;
   font-style: normal;
   font-weight: 900;
   text-align: center;
 }
 
-.zone {
+.zones-layout {
   min-width: 0;
   min-height: 0;
-  padding: 10px;
+  display: flex;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.zone {
+  --zone-weight: 1;
+  min-width: 150px;
+  min-height: 0;
+  padding: 6px;
   display: grid;
-  grid-template-rows: 49px minmax(0, 1fr);
-  gap: 9px;
+  grid-template-rows: 52px minmax(0, 1fr);
+  flex-grow: var(--zone-weight);
+  flex-shrink: 1;
+  flex-basis: 0;
+  gap: 6px;
   overflow: hidden;
   border: 2px solid;
-  border-radius: 18px;
+  border-radius: 14px;
 }
 
 .zone--ambient {
@@ -563,12 +578,13 @@ img {
 
 .zone-header {
   min-width: 0;
-  padding: 0 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  border-radius: 12px;
+  padding: 5px 8px;
+  display: grid;
+  grid-template-rows: 24px 14px;
+  align-content: center;
+  gap: 2px;
+  overflow: hidden;
+  border-radius: 10px;
   color: #fff;
 }
 
@@ -588,37 +604,45 @@ img {
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 5px;
+  overflow: hidden;
 }
 
 .zone-title img {
-  width: 30px;
-  height: 30px;
+  width: 22px;
+  height: 22px;
   flex: 0 0 auto;
   object-fit: contain;
   filter: drop-shadow(0 2px 4px #00000024);
 }
 
 .zone-title strong {
-  font-size: 25px;
+  overflow: hidden;
+  font-size: 17px;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .zone-title em {
-  padding: 5px 9px;
+  margin-left: auto;
+  padding: 2px 5px;
+  flex: 0 0 auto;
   border-radius: 999px;
   background: #ffffff2c;
   font-family: Arial, 'Apple SD Gothic Neo', sans-serif;
-  font-size: 14px;
+  font-size: 10px;
   font-style: normal;
   font-weight: 900;
   white-space: nowrap;
 }
 
 .zone-direction {
+  overflow: hidden;
   font-family: 'Apple SD Gothic Neo', sans-serif;
-  font-size: 20px;
+  font-size: 11px;
   font-weight: 900;
+  line-height: 14px;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -626,172 +650,78 @@ img {
   min-width: 0;
   min-height: 0;
   display: grid;
-  gap: 9px;
-}
-
-.product-grid--ambient {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  grid-template-rows: repeat(3, minmax(0, 1fr));
-}
-
-.lower-zones {
-  min-width: 0;
-  min-height: 0;
-  display: grid;
-  grid-template-columns: 29fr 71fr;
-  gap: 12px;
-}
-
-.lower-zones .zone {
-  grid-template-rows: 45px minmax(0, 1fr);
-  gap: 8px;
-  padding: 8px;
-}
-
-.lower-zones .zone-header {
-  padding: 0 12px;
-  border-radius: 11px;
-}
-
-.lower-zones .zone-title img {
-  width: 27px;
-  height: 27px;
-}
-
-.lower-zones .zone-title strong {
-  font-size: 21px;
-}
-
-.lower-zones .zone-title em {
-  padding: 4px 7px;
-  font-size: 12px;
-}
-
-.lower-zones .zone-direction {
-  font-size: 16px;
-}
-
-.product-grid--chilled {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-template-rows: minmax(0, 1fr);
-}
-
-.product-grid--chilled.is-single {
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr);
-}
-
-.product-grid--frozen {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  grid-template-rows: minmax(0, 1fr);
-}
-
-.zone--chilled .zone-header {
-  padding: 0 8px;
-  gap: 5px;
-}
-
-.zone--chilled .zone-title {
-  gap: 5px;
-}
-
-.zone--chilled .zone-title img {
-  width: 24px;
-  height: 24px;
-}
-
-.zone--chilled .zone-title strong {
-  font-size: 18px;
-}
-
-.zone--chilled .zone-title em {
-  padding: 3px 5px;
-  font-size: 11px;
-}
-
-.zone--chilled .zone-direction {
-  font-size: 13px;
-  letter-spacing: -1px;
+  grid-template-columns: repeat(auto-fill, var(--product-card-width));
+  grid-auto-rows: var(--product-card-height);
+  justify-content: center;
+  align-content: start;
+  gap: var(--product-grid-gap);
+  overflow: hidden;
 }
 
 .product-card {
+  width: var(--product-card-width);
+  height: var(--product-card-height);
   min-width: 0;
   min-height: 0;
   margin: 0;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   border: 1px solid #c7d2df;
-  border-radius: 13px;
+  border-radius: 11px;
   background: #fff;
   box-shadow: 0 3px 10px #264d7312;
-}
-
-.product-grid--ambient .product-card {
-  padding: 9px;
-  display: grid;
-  grid-template-columns: 106px minmax(0, 1fr);
-  align-items: center;
-  gap: 11px;
 }
 
 .product-card__image {
   display: block;
   width: 100%;
-  height: 100%;
-  min-height: 0;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  flex: 0 0 auto;
   object-fit: cover;
-  border-radius: 10px;
+  border-radius: 10px 10px 0 0;
   background: #f1f5f9;
-}
-
-.product-grid--ambient .product-card__image {
-  width: 106px;
-  height: 106px;
 }
 
 .product-card__name {
   min-width: 0;
+  min-height: 0;
   margin: 0;
+  padding: 4px 6px;
   display: -webkit-box;
+  flex: 1 1 auto;
   overflow: hidden;
   color: #0f172a;
   font-family: 'Apple SD Gothic Neo', sans-serif;
-  font-size: 20px;
+  font-size: 14px;
   font-weight: 900;
-  line-height: 1.24;
+  line-height: 1.22;
   letter-spacing: -1px;
-  text-overflow: ellipsis;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-}
-
-.lower-zones .product-card {
-  padding: 7px;
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) 50px;
-  gap: 6px;
-}
-
-.lower-zones .product-card__name {
-  align-self: center;
-  font-size: 16px;
-  line-height: 1.2;
   text-align: center;
+  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+  -webkit-box-orient: vertical;
+  -webkit-box-pack: center;
   -webkit-line-clamp: 2;
 }
 
 .product-empty {
   grid-column: 1 / -1;
   grid-row: 1 / -1;
-  min-height: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
   display: grid;
   place-items: center;
-  padding: 20px;
+  padding: 12px;
   border: 2px dashed #94a3b866;
   border-radius: 13px;
   color: #64748b;
   background: #ffffff8c;
   font-family: 'Apple SD Gothic Neo', sans-serif;
-  font-size: 19px;
+  font-size: 14px;
   font-weight: 900;
   text-align: center;
 }
@@ -814,18 +744,18 @@ img {
 
 .board-footer {
   min-width: 0;
-  padding: 0 18px;
+  padding: 0 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 7px;
   overflow: hidden;
   border: 1px solid #e8bd4a;
-  border-radius: 13px;
+  border-radius: 10px;
   color: #684915;
   background: #fff8db;
   font-family: 'Apple SD Gothic Neo', sans-serif;
-  font-size: 15px;
+  font-size: 12px;
   font-weight: 800;
   white-space: nowrap;
 }
@@ -836,7 +766,7 @@ img {
 
 .board-footer em {
   margin-left: auto;
-  padding: 4px 9px;
+  padding: 3px 7px;
   border-radius: 999px;
   color: #fff;
   background: var(--brand);

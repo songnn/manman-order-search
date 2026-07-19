@@ -89,39 +89,39 @@
         <div class="summary-cards" id="summaryCards" aria-label="픽업 상품 요약"></div>
       </header>
 
-      <section class="zone zone--ambient" aria-labelledby="ambientTitle">
-        <header class="zone-header">
-          <span class="zone-title">
-            <img src="/storage-dark-ambient.svg" alt="">
-            <strong id="ambientTitle">상온 픽업존</strong>
-            <em id="ambientCount">0종</em>
-          </span>
-          <span class="zone-direction">↓ 이 TV 바로 아래</span>
-        </header>
-        <div class="product-grid product-grid--ambient" id="ambientProducts"></div>
-      </section>
+      <div class="zones-layout" id="zonesLayout">
+        <section class="zone zone--ambient" id="ambientZone" aria-labelledby="ambientTitle">
+          <header class="zone-header">
+            <span class="zone-title">
+              <img src="/storage-dark-ambient.svg" alt="">
+              <strong id="ambientTitle">상온</strong>
+              <em id="ambientCount">0종</em>
+            </span>
+            <span class="zone-direction">↓ TV 바로 아래</span>
+          </header>
+          <div class="product-grid product-grid--ambient" id="ambientProducts"></div>
+        </section>
 
-      <div class="lower-zones">
-        <section class="zone zone--chilled" aria-labelledby="chilledTitle">
+        <section class="zone zone--chilled" id="chilledZone" aria-labelledby="chilledTitle">
           <header class="zone-header">
             <span class="zone-title">
               <img src="/storage-dark-refrigerated.svg" alt="">
-              <strong id="chilledTitle">냉장 픽업존</strong>
+              <strong id="chilledTitle">냉장</strong>
               <em id="chilledCount">0종</em>
             </span>
-            <span class="zone-direction">→ TV를 보고 맨 오른쪽</span>
+            <span class="zone-direction">→ TV 오른쪽 끝</span>
           </header>
           <div class="product-grid product-grid--chilled" id="chilledProducts"></div>
         </section>
 
-        <section class="zone zone--frozen" aria-labelledby="frozenTitle">
+        <section class="zone zone--frozen" id="frozenZone" aria-labelledby="frozenTitle">
           <header class="zone-header">
             <span class="zone-title">
               <img src="/storage-dark-frozen-v3-electric.svg" alt="">
-              <strong id="frozenTitle">냉동 픽업존</strong>
+              <strong id="frozenTitle">냉동</strong>
               <em id="frozenCount">0종</em>
             </span>
-            <span class="zone-direction">↘ 오른쪽 뒤편 · 5시 방향</span>
+            <span class="zone-direction">↘ 오른쪽 뒤 5시 방향</span>
           </header>
           <div class="product-grid product-grid--frozen" id="frozenProducts"></div>
         </section>
