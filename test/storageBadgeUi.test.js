@@ -15,7 +15,7 @@ const whiteStorageAssets = [
 const darkStorageAssets = [
   'storage-dark-refrigerated.svg',
   'storage-dark-ambient.svg',
-  'storage-dark-frozen-v2.svg'
+  'storage-dark-frozen-v3-electric.svg'
 ];
 
 test('화이트 보관방법 아이콘은 실제 WebP 파일로 보존된다', async () => {
@@ -51,7 +51,7 @@ test('주문 이미지의 세 렌더 경로에 선택된 보관방법 배지가 
   assert.match(html, /const STORAGE_METHOD_BADGE_THEME = 'dark';/);
   assert.match(html, /'냉장':[\s\S]*?white:[\s\S]*?storage-refrigerated-a2ca1185\.webp[\s\S]*?storage-refrigerated-78e338ae\.webp[\s\S]*?dark:[\s\S]*?storage-dark-refrigerated\.svg/);
   assert.match(html, /'상온':[\s\S]*?white:[\s\S]*?storage-ambient\.webp[\s\S]*?dark:[\s\S]*?storage-dark-ambient\.svg/);
-  assert.match(html, /'냉동':[\s\S]*?white:[\s\S]*?storage-frozen\.webp[\s\S]*?dark:[\s\S]*?storage-dark-frozen-v2\.svg/);
+  assert.match(html, /'냉동':[\s\S]*?white:[\s\S]*?storage-frozen\.webp[\s\S]*?dark:[\s\S]*?storage-dark-frozen-v3-electric\.svg/);
   assert.match(html, /storageStatus && storageStatus !== 'confirmed'/);
   assert.match(html, /const activeTheme = config\.themes\[STORAGE_METHOD_BADGE_THEME\][\s\S]*?: 'white';/);
   assert.match(html, /const iconUrl = context === 'compact'[\s\S]*?themeConfig\.compactIconUrl \|\| themeConfig\.iconUrl/);
