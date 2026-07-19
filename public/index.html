@@ -928,13 +928,16 @@
     .storage-method-badge {
       top: 8px;
       left: 8px;
-      min-height: 32px;
+      height: 26px;
+      min-height: 0;
       max-width: calc(100% - 16px);
       gap: 2px;
-      padding: 2px 8px 2px 3px;
-      border-width: 1.5px;
-      box-shadow: 0 3px 9px rgba(18, 55, 94, 0.17);
-      font-size: 16px;
+      padding: 0 7px 0 0;
+      border-width: 0;
+      box-shadow:
+        inset 0 0 0 1px var(--storage-accent),
+        0 2px 7px rgba(18, 55, 94, 0.17);
+      font-size: 13px;
     }
 
     .storage-method-badge__icon {
@@ -946,12 +949,16 @@
     .orders-section.show-all .storage-method-badge {
       top: 5px;
       left: 5px;
-      min-height: 24px;
+      height: 20px;
+      min-height: 0;
       max-width: calc(100% - 10px);
       gap: 1px;
-      padding: 1px 5px 1px 2px;
-      border-width: 1px;
-      font-size: 11px;
+      padding: 0 4px 0 0;
+      border-width: 0;
+      box-shadow:
+        inset 0 0 0 1px var(--storage-accent),
+        0 2px 6px rgba(18, 55, 94, 0.17);
+      font-size: 9px;
     }
 
     .orders-section.show-all .storage-method-badge__icon {
@@ -3391,6 +3398,19 @@ body.schedule-modal-open .page > :not(.schedule-modal) {
   width: 18px;
   height: 18px;
   flex-basis: 18px;
+}
+
+@media (max-width: 640px) {
+  .schedule-product-thumb-wrap .storage-method-badge {
+    height: 18px;
+    min-height: 0;
+    padding: 0 4px 0 0;
+    border-width: 0;
+    box-shadow:
+      inset 0 0 0 1px var(--storage-accent),
+      0 1px 5px rgba(18, 55, 94, 0.16);
+    font-size: 8px;
+  }
 }
 
 .schedule-product-info {

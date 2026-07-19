@@ -32,3 +32,14 @@ test('주문 이미지의 세 렌더 경로에 좌측 보관방법 배지가 연
   assert.match(html, /'냉동':[\s\S]*?storage-frozen\.webp/);
   assert.match(html, /storageStatus && storageStatus !== 'confirmed'/);
 });
+
+test('모바일 배지만 정수 크기로 축소하고 아이콘 크기는 유지한다', async () => {
+  const html = await readFile(indexPath, 'utf8');
+
+  assert.match(html, /@media \(max-width: 640px\)[\s\S]*?\.storage-method-badge\s*\{[\s\S]*?height:\s*26px;[\s\S]*?font-size:\s*13px;/);
+  assert.match(html, /@media \(max-width: 640px\)[\s\S]*?\.storage-method-badge__icon\s*\{[\s\S]*?width:\s*26px;[\s\S]*?height:\s*26px;/);
+  assert.match(html, /\.orders-section\.show-all \.storage-method-badge\s*\{[\s\S]*?height:\s*20px;[\s\S]*?font-size:\s*9px;/);
+  assert.match(html, /\.orders-section\.show-all \.storage-method-badge__icon\s*\{[\s\S]*?width:\s*20px;[\s\S]*?height:\s*20px;/);
+  assert.match(html, /@media \(max-width: 640px\)\s*\{\s*\.schedule-product-thumb-wrap \.storage-method-badge\s*\{[\s\S]*?height:\s*18px;[\s\S]*?font-size:\s*8px;/);
+  assert.match(html, /\.schedule-product-thumb-wrap \.storage-method-badge__icon\s*\{[\s\S]*?width:\s*18px;[\s\S]*?height:\s*18px;/);
+});
