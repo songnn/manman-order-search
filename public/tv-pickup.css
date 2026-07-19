@@ -161,9 +161,10 @@ img {
 }
 
 .guide-heading h1 {
-  font-size: 23px;
+  font-size: 20px;
   line-height: 1.18;
   letter-spacing: -1px;
+  white-space: nowrap;
 }
 
 .guide-heading p {
@@ -385,36 +386,28 @@ img {
 }
 
 .contact-copy small {
-  color: var(--brand);
-  font-size: 14px;
-  font-weight: 900;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .contact-copy strong {
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1.3;
+  color: var(--brand);
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1.15;
 }
 
 .contact-phone {
   grid-column: 1 / -1;
   align-self: end;
-  padding-top: 4px;
-  border-top: 1px solid #d7e3ef;
   color: var(--brand);
   text-align: center;
-  font-family: Arial, 'Apple SD Gothic Neo', sans-serif;
-  font-size: 29px;
+  font-family: 'JalnanGothic', Arial, 'Apple SD Gothic Neo', sans-serif;
+  font-size: 36px;
   font-weight: 900;
-  letter-spacing: 1px;
-}
-
-.contact-phone small {
-  margin-right: 6px;
-  font-family: 'Apple SD Gothic Neo', sans-serif;
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 0;
+  line-height: 1;
+  letter-spacing: 2px;
 }
 
 .board-column {
