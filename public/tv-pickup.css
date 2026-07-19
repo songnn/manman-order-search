@@ -48,11 +48,11 @@ img {
 }
 
 .tv-canvas {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 1920px;
-  height: 1152px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--tv-canvas-width, 100vw);
+  height: var(--tv-canvas-height, 100vh);
   padding: 28px;
   display: grid;
   grid-template-columns: 31fr 69fr;
@@ -61,8 +61,8 @@ img {
   background:
     radial-gradient(circle at 100% 0, #dbeafe 0, transparent 34%),
     #f3f6f9;
-  transform: translate(-50%, -50%) scale(1);
-  transform-origin: center;
+  transform: scale(var(--tv-canvas-scale, 1));
+  transform-origin: top left;
 }
 
 .guide-column,

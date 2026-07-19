@@ -6,13 +6,51 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-test('TV 픽업 페이지는 1920×1152와 31:69 고정 레이아웃을 사용한다', async () => {
+test('TV 픽업 페이지는 1920×1152를 기준 비율로만 사용하고 실제 화면을 빈틈없이 채운다', async () => {
   const css = await readFile(path.join(root, 'public', 'tv-pickup.css'), 'utf8');
+  const js = await readFile(path.join(root, 'public', 'tv-pickup.js'), 'utf8');
 
-  assert.match(css, /\.tv-canvas\s*\{[\s\S]*?width:\s*1920px;[\s\S]*?height:\s*1152px;/);
+  assert.match(css, /\.tv-canvas\s*\{[\s\S]*?position:\s*fixed;[\s\S]*?top:\s*0;[\s\S]*?left:\s*0;/);
+  assert.match(css, /width:\s*var\(--tv-canvas-width,\s*100vw\);/);
+  assert.match(css, /height:\s*var\(--tv-canvas-height,\s*100vh\);/);
+  assert.match(css, /transform:\s*scale\(var\(--tv-canvas-scale,\s*1\)\);/);
+  assert.doesNotMatch(css, /\.tv-canvas\s*\{[\s\S]*?width:\s*1920px;/);
+  assert.doesNotMatch(css, /\.tv-canvas\s*\{[\s\S]*?height:\s*1152px;/);
   assert.match(css, /grid-template-columns:\s*31fr 69fr;/);
   assert.match(css, /html,[\s\S]*?body\s*\{[\s\S]*?overflow:\s*hidden;/);
   assert.match(css, /\.product-grid--ambient\s*\{[\s\S]*?repeat\(5,/);
+
+  assert.match(js, /const DESIGN_WIDTH\s*=\s*1920;/);
+  assert.match(js, /const DESIGN_HEIGHT\s*=\s*1152;/);
+  assert.match(js, /function fillViewport\(\)/);
+  assert.match(js, /logicalWidth\s*=\s*Math\.ceil\(viewportWidth\s*\/\s*scale\)/);
+  assert.match(js, /logicalHeight\s*=\s*Math\.ceil\(viewportHeight\s*\/\s*scale\)/);
+  assert.match(js, /setProperty\('--tv-canvas-width'/);
+  assert.match(js, /setProperty\('--tv-canvas-height'/);
+  assert.match(js, /setProperty\('--tv-canvas-scale'/);
+  assert.doesNotMatch(js, /translate\(-50%,\s*-50%\)/);
+});
+
+test('여러 TV 화면비에서도 캔버스가 레터박스 없이 뷰포트를 덮는다', () => {
+  for (const [viewportWidth, viewportHeight] of [
+    [1920, 1152],
+    [1920, 1080],
+    [1920, 1200],
+    [1600, 900],
+    [2560, 1080],
+    [1280, 1024]
+  ]) {
+    const scale = Math.min(viewportWidth / 1920, viewportHeight / 1152);
+    const logicalWidth = Math.ceil(viewportWidth / scale);
+    const logicalHeight = Math.ceil(viewportHeight / scale);
+    const renderedWidth = logicalWidth * scale;
+    const renderedHeight = logicalHeight * scale;
+
+    assert.ok(renderedWidth >= viewportWidth);
+    assert.ok(renderedHeight >= viewportHeight);
+    assert.ok(renderedWidth - viewportWidth < scale + Number.EPSILON);
+    assert.ok(renderedHeight - viewportHeight < scale + Number.EPSILON);
+  }
 });
 
 test('주문조회 네 단계 캡처와 점장 전화번호가 QR 없이 표시된다', async () => {

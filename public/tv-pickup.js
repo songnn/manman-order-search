@@ -51,12 +51,19 @@ const elements = {
   pageIndicator: document.getElementById('pageIndicator')
 };
 
-function fitCanvas() {
+function fillViewport() {
+  const viewportWidth = Math.max(1, window.innerWidth);
+  const viewportHeight = Math.max(1, window.innerHeight);
   const scale = Math.min(
-    window.innerWidth / DESIGN_WIDTH,
-    window.innerHeight / DESIGN_HEIGHT
+    viewportWidth / DESIGN_WIDTH,
+    viewportHeight / DESIGN_HEIGHT
   );
-  elements.canvas.style.transform = `translate(-50%, -50%) scale(${scale})`;
+  const logicalWidth = Math.ceil(viewportWidth / scale);
+  const logicalHeight = Math.ceil(viewportHeight / scale);
+
+  elements.canvas.style.setProperty('--tv-canvas-width', `${logicalWidth}px`);
+  elements.canvas.style.setProperty('--tv-canvas-height', `${logicalHeight}px`);
+  elements.canvas.style.setProperty('--tv-canvas-scale', String(scale));
 }
 
 async function loadBoardData(options = {}) {
@@ -344,8 +351,9 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
-fitCanvas();
-window.addEventListener('resize', fitCanvas, { passive: true });
+fillViewport();
+window.addEventListener('resize', fillViewport, { passive: true });
+window.visualViewport?.addEventListener('resize', fillViewport, { passive: true });
 window.addEventListener('focus', () => loadBoardData().catch(() => {}));
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) loadBoardData().catch(() => {});
