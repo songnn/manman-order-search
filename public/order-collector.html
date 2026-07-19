@@ -2061,25 +2061,75 @@
     return adminToken;
   }
 
+  const ORDER_COLLECTOR_GZIP_ENCODING = 'gzip-base64-v1';
+  const ORDER_COLLECTOR_COMPRESS_THRESHOLD_BYTES = 3 * 1024 * 1024;
+  const ORDER_COLLECTOR_MAX_ENVELOPE_BYTES = 4 * 1024 * 1024;
+
+  function bytesToBase64(bytes) {
+    let binary = '';
+    const chunkSize = 32768;
+
+    for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+      binary += String.fromCharCode(...bytes.subarray(offset, offset + chunkSize));
+    }
+
+    return btoa(binary);
+  }
+
+  async function makeOrderCollectorRequestBody(fnName, payload) {
+    const jsonBody = JSON.stringify({
+      action: fnName,
+      payload: payload || {}
+    });
+    const jsonBytes = new TextEncoder().encode(jsonBody).byteLength;
+
+    if (jsonBytes < ORDER_COLLECTOR_COMPRESS_THRESHOLD_BYTES) {
+      return jsonBody;
+    }
+
+    if (typeof CompressionStream !== 'function') {
+      throw new Error('업로드 파일이 큽니다. 최신 Chrome 또는 Safari에서 다시 시도해주세요.');
+    }
+
+    const compressedStream = new Blob([jsonBody])
+      .stream()
+      .pipeThrough(new CompressionStream('gzip'));
+    const compressedBytes = new Uint8Array(await new Response(compressedStream).arrayBuffer());
+    const envelope = JSON.stringify({
+      encoding: ORDER_COLLECTOR_GZIP_ENCODING,
+      data: bytesToBase64(compressedBytes)
+    });
+    const envelopeBytes = new TextEncoder().encode(envelope).byteLength;
+
+    if (envelopeBytes > ORDER_COLLECTOR_MAX_ENVELOPE_BYTES) {
+      throw new Error('압축 후에도 업로드 파일이 너무 큽니다. 카카오톡 CSV 범위를 줄여 다시 저장해주세요.');
+    }
+
+    log(`큰 요청 자동 압축: ${Math.ceil(jsonBytes / 1024)}KB → ${Math.ceil(envelopeBytes / 1024)}KB`);
+    return envelope;
+  }
+
   async function gasRun(fnName, payload) {
     const token = ensureAdminToken();
+    const requestBody = await makeOrderCollectorRequestBody(fnName, payload);
     const res = await fetch(ORDER_COLLECTOR_API, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-admin-token': token
       },
-      body: JSON.stringify({
-        action: fnName,
-        payload: payload || {}
-      })
+      body: requestBody
     });
 
-    let data = {};
+    const responseText = await res.text();
+    let data;
     try {
-      data = await res.json();
+      data = responseText ? JSON.parse(responseText) : {};
     } catch (err) {
-      data = { ok: false, error: '서버 응답을 JSON으로 읽지 못했습니다.' };
+      const errorMessage = res.status === 413
+        ? '업로드 데이터가 서버 전송 한도를 넘었습니다. 페이지를 새로고침한 뒤 다시 시도해주세요.'
+        : `서버가 올바른 응답을 보내지 못했습니다. (HTTP ${res.status})`;
+      throw new Error(errorMessage);
     }
 
     if (res.status === 401) {

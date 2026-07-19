@@ -2,6 +2,7 @@ import {
   isOrderCollectorAuthorized,
   runOrderCollectorAction
 } from '../lib/orderCollector.js';
+import { parseOrderCollectorRequestBody } from '../lib/orderCollectorTransport.js';
 
 export default async function handler(req, res) {
   try {
@@ -20,9 +21,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const body = req.body && typeof req.body === 'object'
-      ? req.body
-      : JSON.parse(req.body || '{}');
+    const body = parseOrderCollectorRequestBody(req.body);
     const action = String(body.action || '').trim();
 
     if (!action) {
