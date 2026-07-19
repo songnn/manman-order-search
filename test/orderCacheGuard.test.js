@@ -28,6 +28,29 @@ test('정상 스냅샷과 새 주문은 동기화를 허용한다', () => {
   assert.equal(result.metrics.addedRows, 2);
 });
 
+test('시트 행 삭제로 뒤 주문의 행번호가 이동해도 실제 내용 기준으로 동기화한다', () => {
+  const cachedRecords = Array.from({ length: 200 }, (_, index) => record(index + 1));
+  const shiftedRecords = cachedRecords.slice(101).map((item, index) => ({
+    ...item,
+    source_row_number: 101 + index
+  }));
+  const nextRecords = [
+    ...cachedRecords.slice(0, 100),
+    ...shiftedRecords,
+    record(200, { customer_label: '신규 고객 A', product_name: '신규 상품 A' }),
+    record(201, { customer_label: '신규 고객 B', product_name: '신규 상품 B' })
+  ];
+
+  const result = evaluateOrderCacheSnapshot({ nextRecords, cachedRecords });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.frozen, false);
+  assert.equal(result.metrics.contentMatchedRows, 199);
+  assert.equal(result.metrics.addedRows, 2);
+  assert.equal(result.metrics.removedRows, 1);
+  assert.equal(result.metrics.changedExistingRows, 1);
+});
+
 test('기존 주문이 한꺼번에 변하면 최근 정상 캐시로 자동 동결한다', () => {
   const cachedRecords = Array.from({ length: 1000 }, (_, index) => record(index + 1));
   const nextRecords = cachedRecords.map((item, index) =>
@@ -49,6 +72,18 @@ test('시트 행이 급감하면 자동 동결한다', () => {
 
   assert.equal(result.ok, false);
   assert.ok(result.reasons.some(reason => reason.code === 'source_row_count_dropped'));
+});
+
+test('행수 비율 허용 범위 안이어도 기존 주문이 안전 기준보다 많이 사라지면 동결한다', () => {
+  const cachedRecords = Array.from({ length: 1000 }, (_, index) => record(index + 1));
+  const nextRecords = cachedRecords.slice(0, 970);
+
+  const result = evaluateOrderCacheSnapshot({ nextRecords, cachedRecords });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.metrics.changedExistingRows, 0);
+  assert.equal(result.metrics.removedRows, 30);
+  assert.ok(result.reasons.some(reason => reason.code === 'too_many_rows_removed'));
 });
 
 test('구글시트 오류값이 있으면 자동 동결한다', () => {

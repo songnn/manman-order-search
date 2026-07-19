@@ -59,8 +59,9 @@ export default async function handler(req, res) {
         metrics: guard.metrics
       }));
 
-      return res.status(200).json({
-        ok: true,
+      res.setHeader('Retry-After', '300');
+      return res.status(503).json({
+        ok: false,
         skipped: true,
         frozen: true,
         autoFrozen: true,
