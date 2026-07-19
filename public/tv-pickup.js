@@ -53,6 +53,7 @@ const elements = {
   canvas: document.getElementById('tvCanvas'),
   pickupDate: document.getElementById('pickupDate'),
   updateTime: document.getElementById('updateTime'),
+  summaryCards: document.getElementById('summaryCards'),
   zonesLayout: document.getElementById('zonesLayout'),
   pageIndicator: document.getElementById('pageIndicator')
 };
@@ -127,6 +128,7 @@ function renderBoard() {
   if (!data) return;
 
   renderHeader(data);
+  renderSummary(data.summary || {});
 
   const grouped = groupItems(data.items || []);
   STORAGE_TYPES.forEach(storageType => {
@@ -144,6 +146,26 @@ function renderHeader(data) {
   const staleLabel = data.stale ? ' · 마지막 정상 정보' : '';
   elements.updateTime.textContent = `${updateLabel}${staleLabel}`;
   elements.updateTime.classList.toggle('is-stale', Boolean(data.stale));
+}
+
+function renderSummary(summary) {
+  const total = Number(summary.totalProducts || 0);
+  const byStorage = summary.byStorage || {};
+
+  elements.summaryCards.innerHTML = [
+    `<span class="summary-card summary-card--total">
+      <strong>${number(total)}종</strong>
+      <span>총 픽업상품</span>
+    </span>`,
+    ...STORAGE_TYPES.map(storageType => {
+      const asset = STORAGE_ASSETS[storageType];
+      return `<span class="summary-card">
+        <img src="${asset.white}" alt="">
+        <strong>${number(byStorage[storageType] || 0)}종</strong>
+        <span>${storageType}</span>
+      </span>`;
+    })
+  ].join('');
 }
 
 function renderZone(storageType, items, summary) {

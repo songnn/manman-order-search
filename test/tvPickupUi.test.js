@@ -71,9 +71,10 @@ test('주문조회 네 단계 캡처와 점장 전화번호가 QR 없이 표시�
   assert.match(html, /나의 주문, 휴대폰으로 지금 확인해보세요!/);
   assert.match(html, /무인픽업에 어려움이 있으신가요\?/);
   assert.match(html, /언제든지 아래 번호로 연락해 주세요\./);
+  assert.match(html, /주문조회를 위해 카톡에서 아래 순서대로 진행해주시기 바랍니다\./);
   assert.doesNotMatch(html, /점장 연락처/);
   assert.doesNotMatch(html, /QR|qr-code|qrcode/i);
-  assert.match(html, /내 주문 확인[\s\S]*?픽업존 수령[\s\S]*?키오스크 결제/);
+  assert.match(html, /📱[\s\S]*?내 주문 확인[\s\S]*?🛍️[\s\S]*?픽업존 수량[\s\S]*?💳[\s\S]*?키오스크 결제/);
   assert.match(html, /카톡방에서 상단[\s\S]*?🎈 필독[\s\S]*?눌러주세요\./);
   assert.match(html, /공구상품 주문조회[\s\S]*?눌러주세요\./);
   assert.match(html, /휴대폰 번호[\s\S]*?뒤 4자리[\s\S]*?입력해주세요\./);
@@ -118,17 +119,62 @@ test('픽업존 헤더는 보관방법·수량을 붙이고 위치 안내를 오
   const css = await readFile(path.join(root, 'public', 'tv-pickup.css'), 'utf8');
   const js = await readFile(path.join(root, 'public', 'tv-pickup.js'), 'utf8');
 
-  assert.doesNotMatch(html, /summaryCards|zone-location/);
+  assert.doesNotMatch(html, /zone-location/);
   assert.match(html, /상온[\s\S]*?ambientCount[\s\S]*?↓ TV 바로 아래/);
   assert.match(html, /냉장[\s\S]*?chilledCount[\s\S]*?→ TV 오른쪽 끝/);
   assert.match(html, /냉동[\s\S]*?frozenCount[\s\S]*?↘ 뒤쪽 5시 방향/);
-  assert.match(css, /\.board-column\s*\{[\s\S]*?grid-template-rows:\s*50px minmax\(0,\s*1fr\) 34px;/);
-  assert.match(css, /\.zone\s*\{[\s\S]*?grid-template-rows:\s*62px minmax\(0,\s*1fr\);/);
+  assert.match(css, /\.board-column\s*\{[\s\S]*?grid-template-rows:\s*var\(--top-header-height\) minmax\(0,\s*1fr\) 34px;/);
+  assert.match(css, /\.zone\s*\{[\s\S]*?grid-template-rows:\s*var\(--zone-header-height\) minmax\(0,\s*1fr\);/);
   assert.match(css, /\.zone-header\s*\{[\s\S]*?display:\s*grid;[\s\S]*?grid-template-columns:\s*max-content minmax\(0,\s*1fr\);[\s\S]*?grid-template-rows:\s*1fr;/);
   assert.match(css, /\.zone-title em\s*\{[\s\S]*?margin-left:\s*0;/);
   assert.match(css, /\.zone-direction\s*\{[\s\S]*?justify-self:\s*end;[\s\S]*?font-size:\s*18px;[\s\S]*?text-align:\s*right;/);
   assert.match(js, /readyByStorage/);
-  assert.doesNotMatch(js, /renderSummary|입고 대기|입고 확인 중/);
+  assert.doesNotMatch(js, /입고 대기|입고 확인 중/);
+});
+
+test('좌우 상단과 안내·보관 헤더는 같은 높이와 시작선을 공유한다', async () => {
+  const html = await readFile(path.join(root, 'public', 'tv-pickup.html'), 'utf8');
+  const css = await readFile(path.join(root, 'public', 'tv-pickup.css'), 'utf8');
+
+  assert.match(css, /--top-header-height:\s*72px;/);
+  assert.match(css, /--zone-header-height:\s*62px;/);
+  assert.match(css, /\.guide-column\s*\{[\s\S]*?grid-template-rows:\s*var\(--top-header-height\) minmax\(0,\s*1fr\);[\s\S]*?gap:\s*8px;/);
+  assert.match(css, /\.board-column\s*\{[\s\S]*?grid-template-rows:\s*var\(--top-header-height\) minmax\(0,\s*1fr\) 34px;[\s\S]*?gap:\s*8px;/);
+  assert.match(css, /\.guide-panel\s*\{[\s\S]*?padding:\s*4px 10px 10px;[\s\S]*?grid-template-rows:\s*var\(--zone-header-height\)/);
+  assert.match(html, /id="pickupDate"[\s\S]*?TODAY'S PICK UP[\s\S]*?id="updateTime"[\s\S]*?id="summaryCards"/);
+});
+
+test('실제 만만 로고와 작은 총·보관방법별 상품 요약을 표시한다', async () => {
+  const html = await readFile(path.join(root, 'public', 'tv-pickup.html'), 'utf8');
+  const css = await readFile(path.join(root, 'public', 'tv-pickup.css'), 'utf8');
+  const js = await readFile(path.join(root, 'public', 'tv-pickup.js'), 'utf8');
+  const logo = await readFile(path.join(root, 'public', 'manman-logo-white.svg'), 'utf8');
+
+  assert.match(html, /class="brand-logo" src="\/manman-logo-white\.svg"/);
+  assert.doesNotMatch(html, /class="brand-mark"/);
+  assert.match(html, /오늘의 픽업 안내[\s\S]*?만만마켓 전농래미안크레시티점/);
+  assert.match(logo, /viewBox="0 0 156 137"/);
+  assert.equal((logo.match(/<path\b/g) || []).length, 6);
+  assert.equal((logo.match(/fill="#FFFFFF"/g) || []).length, 6);
+  assert.doesNotMatch(logo, /<script|foreignObject|<image\b|(?:xlink:)?href=|on\w+=|@import/i);
+  assert.match(css, /\.summary-card\s*\{[\s\S]*?height:\s*44px;/);
+  assert.match(js, /function renderSummary\(summary\)/);
+  assert.match(js, /summary\.totalProducts/);
+  assert.match(js, /summary\.byStorage/);
+  assert.match(js, /총 픽업상품/);
+  assert.doesNotMatch(js, /입고 대기/);
+});
+
+test('안내 단계·수령 흐름·문의 영역은 현대적인 카드와 균일한 패딩을 사용한다', async () => {
+  const html = await readFile(path.join(root, 'public', 'tv-pickup.html'), 'utf8');
+  const css = await readFile(path.join(root, 'public', 'tv-pickup.css'), 'utf8');
+
+  assert.match(css, /\.guide-step\s*\{[\s\S]*?border-radius:\s*16px;[\s\S]*?box-shadow:/);
+  assert.match(css, /\.guide-step > p b\s*\{[\s\S]*?border-radius:\s*10px;[\s\S]*?linear-gradient/);
+  assert.match(css, /\.guide-step > p b::before\s*\{[\s\S]*?content:\s*'STEP';/);
+  assert.match(css, /\.pickup-flow\s*\{[\s\S]*?grid-template-columns:/);
+  assert.match(html, /pickup-flow__icon/);
+  assert.match(css, /\.manager-contact\s*\{[\s\S]*?padding:\s*10px;/);
 });
 
 test('상온·냉장·냉동 픽업존은 한 상품판에서 상품 수에 따라 유동적으로 넓어진다', async () => {

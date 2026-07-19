@@ -14,17 +14,17 @@
   <main class="tv-canvas" id="tvCanvas" aria-live="polite">
     <aside class="guide-column" aria-label="휴대폰 주문조회 안내">
       <header class="brand-panel">
-        <span class="brand-mark" aria-hidden="true">M</span>
+        <img class="brand-logo" src="/manman-logo-white.svg" alt="만만마켓">
         <span class="brand-copy">
-          <small>만만마켓 전농래미안크레시티점</small>
           <strong>오늘의 픽업 안내</strong>
+          <small>만만마켓 전농래미안크레시티점</small>
         </span>
       </header>
 
       <section class="guide-panel">
         <div class="guide-heading">
           <h1>나의 주문, 휴대폰으로 지금 확인해보세요!</h1>
-          <p>카톡에서 아래 순서대로 따라 해주세요.</p>
+          <p>주문조회를 위해 카톡에서 아래 순서대로 진행해주시기 바랍니다.</p>
         </div>
 
         <div class="guide-steps">
@@ -66,7 +66,11 @@
         </div>
 
         <div class="pickup-flow" aria-label="수령 순서">
-          <strong>내 주문 확인</strong><span>→</span><strong>픽업존 수령</strong><span>→</span><strong>키오스크 결제</strong>
+          <strong><span class="pickup-flow__icon" aria-hidden="true">📱</span>내 주문 확인</strong>
+          <span class="pickup-flow__arrow" aria-hidden="true">›</span>
+          <strong><span class="pickup-flow__icon" aria-hidden="true">🛍️</span>픽업존 수량</strong>
+          <span class="pickup-flow__arrow" aria-hidden="true">›</span>
+          <strong><span class="pickup-flow__icon" aria-hidden="true">💳</span>키오스크 결제</strong>
         </div>
 
         <div class="manager-contact">
@@ -83,10 +87,13 @@
     <section class="board-column" aria-label="오늘의 픽업 상품판">
       <header class="board-header">
         <div class="date-block">
-          <small>TODAY'S PICKUP</small>
           <strong id="pickupDate">픽업일 확인 중</strong>
-          <span id="updateTime">입고 데이터 연결 중</span>
+          <span class="date-meta">
+            <small>TODAY'S PICK UP</small>
+            <span id="updateTime">입고 데이터 연결 중</span>
+          </span>
         </div>
+        <div class="summary-cards" id="summaryCards" aria-label="픽업 상품 요약"></div>
       </header>
 
       <div class="zones-layout" id="zonesLayout">
