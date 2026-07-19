@@ -5,6 +5,7 @@ import {
   evaluateOrderCacheSnapshot,
   orderCacheGuardOptionsFromEnv
 } from '../lib/orderCacheGuard.js';
+import { findStaleOrderCacheRecords } from '../lib/orderCacheSync.js';
 import { supabaseAdmin } from '../lib/supabaseAdmin.js';
 import { readUnifiedRowsWithRowNumbers_ } from '../lib/orders.js';
 
@@ -29,12 +30,13 @@ export default async function handler(req, res) {
     }
 
     const syncRunId = crypto.randomUUID();
+    const syncStartedAt = new Date().toISOString();
 
     const rows = await readUnifiedRowsWithRowNumbers_();
 
     const records = rows
       .filter(row => row.customerName && row.productName)
-      .map(row => toOrderCacheRecord_(row, syncRunId));
+      .map(row => toOrderCacheRecord_(row, syncRunId, syncStartedAt));
 
     if (!records.length) {
       return res.status(500).json({
@@ -71,20 +73,8 @@ export default async function handler(req, res) {
     }
 
     await upsertInChunks_(records, 500);
-
-    let deleteQuery = supabaseAdmin
-      .from('order_cache')
-      .delete()
-      .eq('store_name', process.env.STORE_NAME || '전농래미안크레시티점')
-      .neq('sync_run_id', syncRunId);
-
-    if (syncedSourceSheetNames.length) {
-      deleteQuery = deleteQuery.in('source_sheet_name', syncedSourceSheetNames);
-    }
-
-    const { error: deleteError } = await deleteQuery;
-
-    if (deleteError) throw deleteError;
+    const staleRecords = findStaleOrderCacheRecords(cachedRecords, records);
+    await deleteStaleRecords_(staleRecords, syncStartedAt);
 
     const includeAnalytics = isTruthy_(req.query?.analytics ?? req.body?.analytics);
     let productCategorySync = { ok: false, skipped: true };
@@ -109,6 +99,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       count: records.length,
+      staleCandidateCount: staleRecords.length,
       syncRunId,
       frozen: false,
       autoFrozen: false,
@@ -130,7 +121,7 @@ function isTruthy_(value) {
   return ['1', 'true', 'yes', 'y'].includes(String(value || '').trim().toLowerCase());
 }
 
-function toOrderCacheRecord_(row, syncRunId) {
+function toOrderCacheRecord_(row, syncRunId, syncedAt) {
   const customerLabel = normalizeDisplayCustomerLabel_(row.customerName);
   const digits = customerLabel.replace(/\D/g, '');
   const customerDigits4 = digits ? digits.slice(-4) : null;
@@ -159,7 +150,7 @@ function toOrderCacheRecord_(row, syncRunId) {
 
     visible_until: getVisibleUntilDate_(row.pickupDate),
     sync_run_id: syncRunId,
-    synced_at: new Date().toISOString()
+    synced_at: syncedAt
   };
 }
 
@@ -195,7 +186,9 @@ async function readCachedRecords_(sourceSheetNames, pageSize = 1000) {
         'price',
         'image_url',
         'order_date_text',
-        'pickup_date_text'
+        'pickup_date_text',
+        'sync_run_id',
+        'synced_at'
       ].join(','))
       .eq('store_name', storeName)
       .in('source_sheet_name', sourceSheetNames)
@@ -210,6 +203,43 @@ async function readCachedRecords_(sourceSheetNames, pageSize = 1000) {
   }
 
   return records;
+}
+
+async function deleteStaleRecords_(records, syncStartedAt, chunkSize = 500) {
+  const storeName = process.env.STORE_NAME || '전농래미안크레시티점';
+  const groups = new Map();
+
+  records.forEach(record => {
+    const source = clean_(record.source_sheet_name);
+    const syncRunId = clean_(record.sync_run_id);
+    if (!source) return;
+
+    const key = `${source}::${syncRunId || '(null)'}`;
+    const group = groups.get(key) || { source, syncRunId, rows: [] };
+    group.rows.push(Number(record.source_row_number));
+    groups.set(key, group);
+  });
+
+  for (const group of groups.values()) {
+    const rowNumbers = [...new Set(group.rows.filter(Number.isInteger))];
+
+    for (let i = 0; i < rowNumbers.length; i += chunkSize) {
+      let query = supabaseAdmin
+        .from('order_cache')
+        .delete()
+        .eq('store_name', storeName)
+        .eq('source_sheet_name', group.source)
+        .in('source_row_number', rowNumbers.slice(i, i + chunkSize));
+
+      query = group.syncRunId
+        ? query.eq('sync_run_id', group.syncRunId)
+        : query.is('sync_run_id', null);
+      query = query.lt('synced_at', syncStartedAt);
+
+      const { error } = await query;
+      if (error) throw error;
+    }
+  }
 }
 
 function normalizeDisplayCustomerLabel_(value) {
