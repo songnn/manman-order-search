@@ -15,7 +15,7 @@ const whiteStorageAssets = [
 const darkStorageAssets = [
   'storage-dark-refrigerated.svg',
   'storage-dark-ambient.svg',
-  'storage-dark-frozen.svg'
+  'storage-dark-frozen-v2.svg'
 ];
 
 test('화이트 보관방법 아이콘은 실제 WebP 파일로 보존된다', async () => {
@@ -51,7 +51,7 @@ test('주문 이미지의 세 렌더 경로에 선택된 보관방법 배지가 
   assert.match(html, /const STORAGE_METHOD_BADGE_THEME = 'dark';/);
   assert.match(html, /'냉장':[\s\S]*?white:[\s\S]*?storage-refrigerated-a2ca1185\.webp[\s\S]*?storage-refrigerated-78e338ae\.webp[\s\S]*?dark:[\s\S]*?storage-dark-refrigerated\.svg/);
   assert.match(html, /'상온':[\s\S]*?white:[\s\S]*?storage-ambient\.webp[\s\S]*?dark:[\s\S]*?storage-dark-ambient\.svg/);
-  assert.match(html, /'냉동':[\s\S]*?white:[\s\S]*?storage-frozen\.webp[\s\S]*?dark:[\s\S]*?storage-dark-frozen\.svg/);
+  assert.match(html, /'냉동':[\s\S]*?white:[\s\S]*?storage-frozen\.webp[\s\S]*?dark:[\s\S]*?storage-dark-frozen-v2\.svg/);
   assert.match(html, /storageStatus && storageStatus !== 'confirmed'/);
   assert.match(html, /const activeTheme = config\.themes\[STORAGE_METHOD_BADGE_THEME\][\s\S]*?: 'white';/);
   assert.match(html, /const iconUrl = context === 'compact'[\s\S]*?themeConfig\.compactIconUrl \|\| themeConfig\.iconUrl/);
@@ -77,10 +77,11 @@ test('다크 배지는 세 카드 경로에서 우측 반투명 사각 태그로
   const html = await readFile(indexPath, 'utf8');
   const darkBadgeBlocks = [...html.matchAll(/(?:^|\n)\s*[^\n{]*\.storage-method-badge\.storage-method-badge--theme-dark\s*\{([^}]*)\}/g)];
 
-  assert.match(html, /\.storage-method-badge\.storage-method-badge--theme-dark\s*\{[\s\S]*?left:\s*auto;[\s\S]*?right:\s*12px;[\s\S]*?max-width:\s*none;[\s\S]*?border-radius:\s*8px;[\s\S]*?background:\s*#0f1216c2;[\s\S]*?color:\s*#fff;/);
-  assert.match(html, /@media \(max-width: 640px\)[\s\S]*?\.storage-method-badge\.storage-method-badge--theme-dark\s*\{[\s\S]*?right:\s*8px;[\s\S]*?height:\s*26px;[\s\S]*?font-size:\s*13px;/);
-  assert.match(html, /\.orders-section\.show-all \.storage-method-badge\.storage-method-badge--theme-dark\s*\{[\s\S]*?right:\s*5px;[\s\S]*?height:\s*20px;[\s\S]*?max-width:\s*none;[\s\S]*?border-radius:\s*5px;/);
-  assert.match(html, /\.schedule-product-thumb-wrap \.storage-method-badge\.storage-method-badge--theme-dark\s*\{[\s\S]*?right:\s*4px;[\s\S]*?min-height:\s*22px;[\s\S]*?max-width:\s*none;[\s\S]*?border-radius:\s*6px;/);
+  assert.match(html, /\.storage-method-badge\.storage-method-badge--theme-dark\s*\{[\s\S]*?left:\s*auto;[\s\S]*?right:\s*12px;[\s\S]*?max-width:\s*none;[\s\S]*?gap:\s*2px;[\s\S]*?padding:\s*0 9px 0 5px;[\s\S]*?border-radius:\s*9px;[\s\S]*?background:\s*#0f1216c2;[\s\S]*?color:\s*#fff;[\s\S]*?font-size:\s*12px;[\s\S]*?font-weight:\s*600;/);
+  assert.match(html, /@media \(max-width: 640px\)[\s\S]*?\.storage-method-badge\.storage-method-badge--theme-dark\s*\{[\s\S]*?right:\s*8px;[\s\S]*?height:\s*26px;[\s\S]*?gap:\s*2px;[\s\S]*?padding:\s*0 9px 0 5px;[\s\S]*?border-radius:\s*9px;[\s\S]*?font-size:\s*12px;/);
+  assert.match(html, /\.orders-section\.show-all \.storage-method-badge\.storage-method-badge--theme-dark\s*\{[\s\S]*?right:\s*5px;[\s\S]*?height:\s*20px;[\s\S]*?max-width:\s*none;[\s\S]*?gap:\s*1px;[\s\S]*?padding:\s*0 8px 0 4px;[\s\S]*?border-radius:\s*7px;[\s\S]*?font-size:\s*9px;/);
+  assert.match(html, /\.schedule-product-thumb-wrap \.storage-method-badge\.storage-method-badge--theme-dark\s*\{[\s\S]*?right:\s*4px;[\s\S]*?min-height:\s*22px;[\s\S]*?max-width:\s*none;[\s\S]*?gap:\s*1px;[\s\S]*?padding:\s*0 8px 0 4px;[\s\S]*?border-radius:\s*7px;[\s\S]*?font-size:\s*9px;/);
+  assert.match(html, /@media \(max-width: 640px\)\s*\{\s*\.schedule-product-thumb-wrap \.storage-method-badge\.storage-method-badge--theme-dark\s*\{[\s\S]*?height:\s*18px;[\s\S]*?gap:\s*1px;[\s\S]*?padding:\s*0 8px 0 4px;[\s\S]*?border-radius:\s*7px;[\s\S]*?font-size:\s*9px;/);
   assert.match(html, /\.storage-method-badge\.storage-method-badge--theme-dark \.storage-method-badge__icon\s*\{[\s\S]*?width:\s*24px;/);
   assert.match(html, /\.storage-method-badge\.storage-method-badge--theme-dark \.storage-method-badge__label\s*\{[\s\S]*?flex:\s*0 0 auto;[\s\S]*?overflow:\s*visible;[\s\S]*?text-overflow:\s*clip;/);
   assert.doesNotMatch(html, /storage-method-badge--theme-dark[^{]*\{[^}]*border-radius:\s*999px;/);

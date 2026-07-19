@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" role="img" aria-labelledby="manman-frozen-v2-title manman-frozen-v2-desc" data-version="2026-07-19-v2" shape-rendering="geometricPrecision">
+  <title id="manman-frozen-v2-title">냉동 보관</title>
+  <desc id="manman-frozen-v2-desc">22픽셀 다크 태그 전용 순수 아이스블루 6방향 눈송이</desc>
+  <metadata>Manman Market Frozen Snowflake / standalone expanded-path edition / 2026-07-19 v2</metadata>
+
+  <defs>
+    <linearGradient id="manman-frozen-v2-stroke" x1="5.2" y1="3.1" x2="19.2" y2="20.8" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#EFF6FF"/>
+      <stop offset="0.3" stop-color="#BFDBFE"/>
+      <stop offset="0.68" stop-color="#93C5FD"/>
+      <stop offset="1" stop-color="#60A5FA"/>
+    </linearGradient>
+    <radialGradient id="manman-frozen-v2-tip" cx="0" cy="0" r="1" gradientTransform="translate(11.7 11.6) rotate(45) scale(2.15)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.42" stop-color="#DCEBFF"/>
+      <stop offset="1" stop-color="#7DB7FC"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Three continuous axes: the center is drawn only once, so it cannot become a blob. -->
+  <path d="M12 2.75V21.25 M3.989 7.375L20.011 16.625 M3.989 16.625L20.011 7.375" stroke="url(#manman-frozen-v2-stroke)" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Six independent outward-facing structural forks. No symbol/use references. -->
+  <g stroke="url(#manman-frozen-v2-stroke)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 8.15L9.65 5.95 M12 8.15L14.35 5.95"/>
+    <path d="M12 8.15L9.65 5.95 M12 8.15L14.35 5.95" transform="rotate(60 12 12)"/>
+    <path d="M12 8.15L9.65 5.95 M12 8.15L14.35 5.95" transform="rotate(120 12 12)"/>
+    <path d="M12 8.15L9.65 5.95 M12 8.15L14.35 5.95" transform="rotate(180 12 12)"/>
+    <path d="M12 8.15L9.65 5.95 M12 8.15L14.35 5.95" transform="rotate(240 12 12)"/>
+    <path d="M12 8.15L9.65 5.95 M12 8.15L14.35 5.95" transform="rotate(300 12 12)"/>
+  </g>
+
+  <!-- Fine second-stage crystal forks remain visible on Retina displays at 22px. -->
+  <g stroke="url(#manman-frozen-v2-stroke)" stroke-width="0.65" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 5.75L10.75 4.55 M12 5.75L13.25 4.55"/>
+    <path d="M12 5.75L10.75 4.55 M12 5.75L13.25 4.55" transform="rotate(60 12 12)"/>
+    <path d="M12 5.75L10.75 4.55 M12 5.75L13.25 4.55" transform="rotate(120 12 12)"/>
+    <path d="M12 5.75L10.75 4.55 M12 5.75L13.25 4.55" transform="rotate(180 12 12)"/>
+    <path d="M12 5.75L10.75 4.55 M12 5.75L13.25 4.55" transform="rotate(240 12 12)"/>
+    <path d="M12 5.75L10.75 4.55 M12 5.75L13.25 4.55" transform="rotate(300 12 12)"/>
+  </g>
+
+  <!-- Six explicit terminal crystals; there is deliberately no center circle. -->
+  <g fill="url(#manman-frozen-v2-tip)" stroke="#EFF8FF" stroke-opacity="0.72" stroke-width="0.34">
+    <circle cx="12" cy="2.75" r="0.62"/>
+    <circle cx="20.011" cy="7.375" r="0.62"/>
+    <circle cx="20.011" cy="16.625" r="0.62"/>
+    <circle cx="12" cy="21.25" r="0.62"/>
+    <circle cx="3.989" cy="16.625" r="0.62"/>
+    <circle cx="3.989" cy="7.375" r="0.62"/>
+  </g>
+</svg>
