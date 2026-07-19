@@ -5,6 +5,8 @@ const REFRESH_INTERVAL_MS = 30 * 1000;
 const PAGE_INTERVAL_MS = 18 * 1000;
 const CACHE_KEY = 'manman-tv-pickup-v1';
 const CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+const MAX_VISIBLE_PRODUCTS = 40;
+const MAX_LAYOUT_ROWS = 8;
 const IMAGE_FALLBACK_URL = '/store-purchase-icon.png';
 const STORAGE_ASSETS = Object.freeze({
   '상온': {
@@ -41,8 +43,9 @@ const state = {
   layoutFrame: 0,
   refreshTimer: 0,
   tenOClockTimer: 0,
-  zoneRows: 5,
-  zoneCapacities: { '상온': 40, '냉장': 40, '냉동': 40 },
+  zoneRows: 4,
+  zoneColumns: { '상온': 1, '냉장': 1, '냉동': 1 },
+  zoneCapacities: { '상온': 4, '냉장': 4, '냉동': 4 },
   loading: false
 };
 
@@ -51,6 +54,7 @@ const elements = {
   pickupDate: document.getElementById('pickupDate'),
   updateTime: document.getElementById('updateTime'),
   summaryCards: document.getElementById('summaryCards'),
+  zonesLayout: document.getElementById('zonesLayout'),
   pageIndicator: document.getElementById('pageIndicator')
 };
 
@@ -139,9 +143,8 @@ function renderBoard() {
 function renderHeader(data) {
   elements.pickupDate.textContent = data.effectiveDateLabel || data.effectiveDate || '픽업일 확인 중';
   const updateLabel = formatUpdateTime(data.updatedAt || data.generatedAt);
-  const fallbackLabel = data.isFallbackDate ? ' · 직전 영업일 유지' : '';
   const staleLabel = data.stale ? ' · 마지막 정상 정보' : '';
-  elements.updateTime.textContent = `${updateLabel}${fallbackLabel}${staleLabel}`;
+  elements.updateTime.textContent = `${updateLabel}${staleLabel}`;
   elements.updateTime.classList.toggle('is-stale', Boolean(data.stale));
 }
 
@@ -175,11 +178,12 @@ function renderZone(storageType, items, summary) {
   const count = document.getElementById(config.countId);
   const total = Number(summary.byStorage?.[storageType] || 0);
   const ready = Number(summary.readyByStorage?.[storageType] || 0);
+  const columns = Math.max(1, state.zoneColumns[storageType] || 1);
   const capacity = Math.max(1, state.zoneCapacities[storageType] || 1);
   const start = state.pageIndex * capacity;
   const visibleItems = items.slice(start, start + capacity);
 
-  zone.style.setProperty('--zone-weight', String(getZoneWeight(items.length, state.zoneRows)));
+  zone.style.setProperty('--zone-columns', String(columns));
   count.textContent = ready === total
     ? `${number(total)}종`
     : `${number(ready)}/${number(total)}종`;
@@ -197,7 +201,10 @@ function renderZone(storageType, items, summary) {
     grid.innerHTML = `<div class="product-empty">${escapeHtml(message)}</div>`;
   }
 
-  window.requestAnimationFrame(() => grid.classList.add('is-changing'));
+  window.requestAnimationFrame(() => {
+    clampProductNames(grid);
+    grid.classList.add('is-changing');
+  });
 }
 
 function renderProductCard(item) {
@@ -210,7 +217,13 @@ function renderProductCard(item) {
       referrerpolicy="no-referrer"
       onerror="this.onerror=null;this.src='${IMAGE_FALLBACK_URL}'"
     >
-    <h2 class="product-card__name">${escapeHtml(item.displayName)}</h2>
+    <h2 class="product-card__name">
+      <span
+        class="product-card__name-text"
+        data-full-name="${escapeHtml(item.displayName)}"
+        title="${escapeHtml(item.displayName)}"
+      >${escapeHtml(item.displayName)}</span>
+    </h2>
   </article>`;
 }
 
@@ -232,19 +245,122 @@ function getPageCount(items) {
   );
 }
 
-function getZoneWeight(itemCount, visibleRows = 5) {
+function getZoneColumnCount(itemCount, visibleRows = 4) {
   const rows = Math.max(1, Number(visibleRows || 0));
   return Math.max(1, Math.ceil(Number(itemCount || 0) / rows));
 }
 
-function calculateGridShape(gridWidth, gridHeight, cardWidth, cardHeight, gridGap) {
-  const columns = Math.max(1, Math.floor((gridWidth + gridGap) / (cardWidth + gridGap)));
-  const rows = Math.max(1, Math.floor((gridHeight + gridGap) / (cardHeight + gridGap)));
-  return { columns, rows, capacity: columns * rows };
+function limitLayoutItemCounts(itemCounts, maxTotal = MAX_VISIBLE_PRODUCTS) {
+  const counts = Object.fromEntries(
+    STORAGE_TYPES.map(storageType => [storageType, Math.max(0, Number(itemCounts[storageType] || 0))])
+  );
+  const total = STORAGE_TYPES.reduce((sum, storageType) => sum + counts[storageType], 0);
+  if (total <= maxTotal) return counts;
+
+  const positiveTypes = STORAGE_TYPES.filter(storageType => counts[storageType] > 0);
+  const limited = Object.fromEntries(STORAGE_TYPES.map(storageType => [storageType, 0]));
+  positiveTypes.forEach(storageType => {
+    limited[storageType] = 1;
+  });
+
+  const remaining = Math.max(0, maxTotal - positiveTypes.length);
+  const shares = positiveTypes.map(storageType => {
+    const exact = counts[storageType] / total * remaining;
+    const base = Math.floor(exact);
+    limited[storageType] += base;
+    return { storageType, remainder: exact - base };
+  }).sort((a, b) => b.remainder - a.remainder);
+  const allocated = STORAGE_TYPES.reduce((sum, storageType) => sum + limited[storageType], 0);
+
+  for (let index = 0; index < maxTotal - allocated; index += 1) {
+    limited[shares[index % shares.length].storageType] += 1;
+  }
+
+  return limited;
 }
 
-function calculateGridCapacity(gridWidth, gridHeight, cardWidth, cardHeight, gridGap) {
-  return calculateGridShape(gridWidth, gridHeight, cardWidth, cardHeight, gridGap).capacity;
+function calculateZoneLayoutCandidate(itemCounts, visibleRows, layoutWidth, gridHeight, metrics) {
+  const columns = {};
+  const capacities = {};
+  const cardWidths = {};
+  const requiredHeights = {};
+  const zoneGap = Number(metrics.zoneGap || 0);
+  const gridGap = Number(metrics.gridGap || 0);
+  const zoneInlineChrome = Number(metrics.zoneInlineChrome || 0);
+  const productNameHeight = Number(metrics.productNameHeight || 0);
+
+  STORAGE_TYPES.forEach(storageType => {
+    columns[storageType] = getZoneColumnCount(itemCounts[storageType], visibleRows);
+    capacities[storageType] = columns[storageType] * visibleRows;
+  });
+
+  const totalColumns = STORAGE_TYPES.reduce(
+    (sum, storageType) => sum + columns[storageType],
+    0
+  );
+  const usableLayoutWidth = Math.max(1, layoutWidth - zoneGap * (STORAGE_TYPES.length - 1));
+  let score = Number.POSITIVE_INFINITY;
+  let overflow = 0;
+
+  STORAGE_TYPES.forEach(storageType => {
+    const columnCount = columns[storageType];
+    const zoneWidth = usableLayoutWidth * columnCount / totalColumns;
+    const gridWidth = Math.max(1, zoneWidth - zoneInlineChrome);
+    const cardWidth = Math.max(
+      1,
+      (gridWidth - gridGap * Math.max(0, columnCount - 1)) / columnCount
+    );
+    const itemCount = Number(itemCounts[storageType] || 0);
+    const actualRows = itemCount > 0 ? Math.ceil(itemCount / columnCount) : 0;
+    const requiredHeight = actualRows > 0
+      ? actualRows * (cardWidth + productNameHeight) + (actualRows - 1) * gridGap
+      : 0;
+
+    cardWidths[storageType] = cardWidth;
+    requiredHeights[storageType] = requiredHeight;
+    score = Math.min(score, cardWidth);
+    overflow = Math.max(overflow, requiredHeight - gridHeight);
+  });
+
+  return {
+    rows: visibleRows,
+    columns,
+    capacities,
+    cardWidths,
+    requiredHeights,
+    score,
+    overflow,
+    fits: overflow <= 0.5
+  };
+}
+
+function chooseZoneLayout(itemCounts, layoutWidth, gridHeight, metrics) {
+  const limitedCounts = limitLayoutItemCounts(itemCounts);
+  let bestFit = null;
+  let bestFallback = null;
+
+  for (let rows = 1; rows <= MAX_LAYOUT_ROWS; rows += 1) {
+    const candidate = calculateZoneLayoutCandidate(
+      limitedCounts,
+      rows,
+      layoutWidth,
+      gridHeight,
+      metrics
+    );
+
+    if (candidate.fits && (!bestFit || candidate.score > bestFit.score + 0.5)) {
+      bestFit = candidate;
+    }
+    if (
+      !bestFallback ||
+      candidate.overflow < bestFallback.overflow - 0.5 ||
+      (Math.abs(candidate.overflow - bestFallback.overflow) <= 0.5 && candidate.score > bestFallback.score)
+    ) {
+      bestFallback = candidate;
+    }
+  }
+
+  return bestFit || bestFallback;
 }
 
 function scheduleZoneLayout() {
@@ -259,37 +375,64 @@ function refreshZoneCapacities() {
   if (!state.data) return;
 
   const styles = window.getComputedStyle(elements.canvas);
-  const cardWidth = parseFloat(styles.getPropertyValue('--product-card-width')) || 120;
-  const cardHeight = parseFloat(styles.getPropertyValue('--product-card-height')) || 164;
-  const gridGap = parseFloat(styles.getPropertyValue('--product-grid-gap')) || 8;
-  const nextCapacities = {};
-  let nextZoneRows = Infinity;
-  let changed = false;
+  const grids = STORAGE_TYPES.map(storageType =>
+    document.getElementById(STORAGE_ASSETS[storageType].elementId)
+  );
+  const layoutWidth = elements.zonesLayout.clientWidth;
+  const gridHeight = Math.min(...grids.map(grid => grid.clientHeight));
+  if (layoutWidth <= 0 || gridHeight <= 0) return;
 
-  STORAGE_TYPES.forEach(storageType => {
-    const grid = document.getElementById(STORAGE_ASSETS[storageType].elementId);
-    const shape = calculateGridShape(
-      grid.clientWidth,
-      grid.clientHeight,
-      cardWidth,
-      cardHeight,
-      gridGap
-    );
-    nextCapacities[storageType] = shape.capacity;
-    nextZoneRows = Math.min(nextZoneRows, shape.rows);
-    if (shape.capacity !== state.zoneCapacities[storageType]) changed = true;
+  const grouped = groupItems(state.data.items || []);
+  const itemCounts = Object.fromEntries(
+    STORAGE_TYPES.map(storageType => [storageType, grouped[storageType].length])
+  );
+  const layout = chooseZoneLayout(itemCounts, layoutWidth, gridHeight, {
+    zoneGap: parseFloat(styles.getPropertyValue('--zone-layout-gap')) || 4,
+    gridGap: parseFloat(styles.getPropertyValue('--product-grid-gap')) || 4,
+    zoneInlineChrome: parseFloat(styles.getPropertyValue('--zone-inline-chrome')) || 10,
+    productNameHeight: parseFloat(styles.getPropertyValue('--product-name-height')) || 42
   });
+  if (!layout) return;
 
-  nextZoneRows = Number.isFinite(nextZoneRows) ? nextZoneRows : 1;
-  if (nextZoneRows !== state.zoneRows) changed = true;
-  if (!changed) return;
+  const changed = layout.rows !== state.zoneRows || STORAGE_TYPES.some(storageType =>
+    layout.columns[storageType] !== state.zoneColumns[storageType] ||
+    layout.capacities[storageType] !== state.zoneCapacities[storageType]
+  );
+  if (!changed) {
+    clampProductNames();
+    return;
+  }
 
-  state.zoneRows = nextZoneRows;
-  state.zoneCapacities = nextCapacities;
+  state.zoneRows = layout.rows;
+  state.zoneColumns = layout.columns;
+  state.zoneCapacities = layout.capacities;
   state.pageCount = getPageCount(state.data.items || []);
   if (state.pageIndex >= state.pageCount) state.pageIndex = 0;
   renderBoard();
   startPageRotation();
+}
+
+function clampProductNames(root = document) {
+  root.querySelectorAll('.product-card__name-text').forEach(element => {
+    const fullName = element.dataset.fullName || element.textContent || '';
+    const characters = Array.from(fullName);
+    element.textContent = fullName;
+
+    const fits = () =>
+      element.scrollHeight <= element.clientHeight + 1 &&
+      element.scrollWidth <= element.clientWidth + 1;
+    if (fits()) return;
+
+    let low = 0;
+    let high = characters.length;
+    while (low < high) {
+      const middle = Math.ceil((low + high) / 2);
+      element.textContent = `${characters.slice(0, middle).join('').trimEnd()}…`;
+      if (fits()) low = middle;
+      else high = middle - 1;
+    }
+    element.textContent = `${characters.slice(0, low).join('').trimEnd()}…`;
+  });
 }
 
 function startPageRotation() {
@@ -435,3 +578,7 @@ if (cachedPayload) applyPayload({ ...cachedPayload, stale: true }, { force: true
 loadBoardData({ force: true }).catch(() => {});
 startAutoRefresh();
 scheduleTenOClockRefresh();
+document.fonts?.ready.then(() => {
+  clampProductNames();
+  scheduleZoneLayout();
+}).catch(() => {});

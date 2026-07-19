@@ -20,9 +20,10 @@
   --frozen: #4c4edb;
   --frozen-dark: #3d3bbd;
   --frozen-soft: #eef2ff;
-  --product-card-width: 120px;
-  --product-card-height: 164px;
-  --product-grid-gap: 8px;
+  --zone-layout-gap: 4px;
+  --zone-inline-chrome: 10px;
+  --product-grid-gap: 4px;
+  --product-name-height: 42px;
 }
 
 * {
@@ -146,7 +147,7 @@ img {
   min-height: 0;
   padding: 10px;
   display: grid;
-  grid-template-rows: 56px minmax(0, 1fr) 44px 112px;
+  grid-template-rows: 56px minmax(0, 1fr) 44px 128px;
   gap: 7px;
   border: 1px solid #d7e0ea;
   border-radius: 18px;
@@ -354,7 +355,7 @@ img {
 .manager-contact {
   display: grid;
   grid-template-columns: 44px minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr) 36px;
+  grid-template-rows: minmax(0, 1fr) 43px;
   column-gap: 8px;
   align-items: center;
   padding: 8px 10px 7px;
@@ -385,13 +386,14 @@ img {
 
 .contact-copy small {
   color: var(--brand);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 900;
 }
 
 .contact-copy strong {
   font-size: 13px;
-  line-height: 1.25;
+  font-weight: 700;
+  line-height: 1.3;
 }
 
 .contact-phone {
@@ -402,7 +404,7 @@ img {
   color: var(--brand);
   text-align: center;
   font-family: Arial, 'Apple SD Gothic Neo', sans-serif;
-  font-size: 23px;
+  font-size: 29px;
   font-weight: 900;
   letter-spacing: 1px;
 }
@@ -410,7 +412,8 @@ img {
 .contact-phone small {
   margin-right: 6px;
   font-family: 'Apple SD Gothic Neo', sans-serif;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 800;
   letter-spacing: 0;
 }
 
@@ -541,21 +544,21 @@ img {
   min-width: 0;
   min-height: 0;
   display: flex;
-  gap: 8px;
+  gap: var(--zone-layout-gap);
   overflow: hidden;
 }
 
 .zone {
-  --zone-weight: 1;
-  min-width: 150px;
+  --zone-columns: 1;
+  min-width: 0;
   min-height: 0;
-  padding: 6px;
+  padding: 3px;
   display: grid;
-  grid-template-rows: 52px minmax(0, 1fr);
-  flex-grow: var(--zone-weight);
+  grid-template-rows: 62px minmax(0, 1fr);
+  flex-grow: var(--zone-columns);
   flex-shrink: 1;
   flex-basis: 0;
-  gap: 6px;
+  gap: 3px;
   overflow: hidden;
   border: 2px solid;
   border-radius: 14px;
@@ -578,11 +581,11 @@ img {
 
 .zone-header {
   min-width: 0;
-  padding: 5px 8px;
+  padding: 5px 7px;
   display: grid;
-  grid-template-rows: 24px 14px;
+  grid-template-rows: 29px 18px;
   align-content: center;
-  gap: 2px;
+  gap: 3px;
   overflow: hidden;
   border-radius: 10px;
   color: #fff;
@@ -609,8 +612,8 @@ img {
 }
 
 .zone-title img {
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   flex: 0 0 auto;
   object-fit: contain;
   filter: drop-shadow(0 2px 4px #00000024);
@@ -618,7 +621,7 @@ img {
 
 .zone-title strong {
   overflow: hidden;
-  font-size: 17px;
+  font-size: 20px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -630,19 +633,19 @@ img {
   border-radius: 999px;
   background: #ffffff2c;
   font-family: Arial, 'Apple SD Gothic Neo', sans-serif;
-  font-size: 10px;
+  font-size: 11px;
   font-style: normal;
   font-weight: 900;
   white-space: nowrap;
 }
 
 .zone-direction {
-  overflow: hidden;
   font-family: 'Apple SD Gothic Neo', sans-serif;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 900;
-  line-height: 14px;
-  text-overflow: ellipsis;
+  line-height: 18px;
+  letter-spacing: -0.5px;
+  text-shadow: 0 1px 2px #00000026;
   white-space: nowrap;
 }
 
@@ -650,17 +653,17 @@ img {
   min-width: 0;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, var(--product-card-width));
-  grid-auto-rows: var(--product-card-height);
-  justify-content: center;
+  grid-template-columns: repeat(var(--zone-columns), minmax(0, 1fr));
+  grid-auto-rows: max-content;
+  justify-content: stretch;
   align-content: start;
   gap: var(--product-grid-gap);
   overflow: hidden;
 }
 
 .product-card {
-  width: var(--product-card-width);
-  height: var(--product-card-height);
+  width: 100%;
+  height: auto;
   min-width: 0;
   min-height: 0;
   margin: 0;
@@ -685,26 +688,38 @@ img {
 }
 
 .product-card__name {
+  width: 100%;
+  height: var(--product-name-height);
+  max-height: var(--product-name-height);
   min-width: 0;
   min-height: 0;
   margin: 0;
-  padding: 4px 6px;
-  display: -webkit-box;
-  flex: 1 1 auto;
+  padding: 5px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 var(--product-name-height);
   overflow: hidden;
   color: #0f172a;
   font-family: 'Apple SD Gothic Neo', sans-serif;
-  font-size: 14px;
-  font-weight: 900;
-  line-height: 1.22;
-  letter-spacing: -1px;
+}
+
+.product-card__name-text {
+  width: 100%;
+  max-width: 100%;
+  max-height: 32px;
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  letter-spacing: -0.5px;
   text-align: center;
   text-overflow: ellipsis;
   overflow-wrap: anywhere;
   word-break: keep-all;
   -webkit-box-orient: vertical;
-  -webkit-box-pack: center;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .product-empty {
