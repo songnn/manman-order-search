@@ -13,23 +13,20 @@ const STORAGE_ASSETS = Object.freeze({
     dark: '/storage-dark-ambient.svg',
     white: '/storage-ambient.webp',
     zoneId: 'ambientZone',
-    elementId: 'ambientProducts',
-    countId: 'ambientCount'
+    elementId: 'ambientProducts'
   },
   '냉장': {
     dark: '/storage-dark-refrigerated.svg',
     white: '/storage-refrigerated-a2ca1185.webp',
     compactWhite: '/storage-refrigerated-78e338ae.webp',
     zoneId: 'chilledZone',
-    elementId: 'chilledProducts',
-    countId: 'chilledCount'
+    elementId: 'chilledProducts'
   },
   '냉동': {
     dark: '/storage-dark-frozen-v3-electric.svg',
     white: '/storage-frozen.webp',
     zoneId: 'frozenZone',
-    elementId: 'frozenProducts',
-    countId: 'frozenCount'
+    elementId: 'frozenProducts'
   }
 });
 const STORAGE_TYPES = ['상온', '냉장', '냉동'];
@@ -53,7 +50,6 @@ const elements = {
   canvas: document.getElementById('tvCanvas'),
   pickupDate: document.getElementById('pickupDate'),
   updateTime: document.getElementById('updateTime'),
-  summaryCards: document.getElementById('summaryCards'),
   zonesLayout: document.getElementById('zonesLayout'),
   pageIndicator: document.getElementById('pageIndicator')
 };
@@ -128,11 +124,10 @@ function renderBoard() {
   if (!data) return;
 
   renderHeader(data);
-  renderSummary(data.summary || {});
 
   const grouped = groupItems(data.items || []);
   STORAGE_TYPES.forEach(storageType => {
-    renderZone(storageType, grouped[storageType] || [], data.summary || {});
+    renderZone(storageType, grouped[storageType] || []);
   });
 
   elements.pageIndicator.hidden = state.pageCount <= 1;
@@ -148,45 +143,16 @@ function renderHeader(data) {
   elements.updateTime.classList.toggle('is-stale', Boolean(data.stale));
 }
 
-function renderSummary(summary) {
-  const total = Number(summary.totalProducts || 0);
-  const ready = Number(summary.readyProducts || 0);
-  const pending = Number(summary.pendingProducts || 0);
-  const byStorage = summary.byStorage || {};
-
-  elements.summaryCards.innerHTML = [
-    `<span class="summary-card summary-card--total">
-      <strong>${number(total)}종</strong>
-      <span>오늘 픽업 상품</span>
-      <em>${pending > 0 ? `입고 대기 ${number(pending)}종` : `${number(ready)}종 준비 완료`}</em>
-    </span>`,
-    ...STORAGE_TYPES.map(storageType => {
-      const asset = STORAGE_ASSETS[storageType];
-      return `<span class="summary-card">
-        <img src="${asset.white}" alt="">
-        <strong>${number(byStorage[storageType] || 0)}</strong>
-        <span>${storageType}</span>
-      </span>`;
-    })
-  ].join('');
-}
-
-function renderZone(storageType, items, summary) {
+function renderZone(storageType, items) {
   const config = STORAGE_ASSETS[storageType];
   const zone = document.getElementById(config.zoneId);
   const grid = document.getElementById(config.elementId);
-  const count = document.getElementById(config.countId);
-  const total = Number(summary.byStorage?.[storageType] || 0);
-  const ready = Number(summary.readyByStorage?.[storageType] || 0);
   const columns = Math.max(1, state.zoneColumns[storageType] || 1);
   const capacity = Math.max(1, state.zoneCapacities[storageType] || 1);
   const start = state.pageIndex * capacity;
   const visibleItems = items.slice(start, start + capacity);
 
   zone.style.setProperty('--zone-columns', String(columns));
-  count.textContent = ready === total
-    ? `${number(total)}종`
-    : `${number(ready)}/${number(total)}종`;
   grid.classList.remove('is-changing');
 
   if (visibleItems.length) {
@@ -195,9 +161,7 @@ function renderZone(storageType, items, summary) {
     const isAnotherPage = items.length > 0 && state.pageIndex > 0;
     const message = isAnotherPage
       ? '이 보관존 상품은 이전 화면에 있습니다.'
-      : total > ready
-        ? `입고 확인 중 · 대기 ${number(total - ready)}종`
-        : '오늘 해당 보관 상품이 없습니다.';
+      : '오늘 해당 보관 상품이 없습니다.';
     grid.innerHTML = `<div class="product-empty">${escapeHtml(message)}</div>`;
   }
 
@@ -550,10 +514,6 @@ function formatUpdateTime(value) {
 function safeImageUrl(value) {
   const url = String(value || '').trim();
   return /^(?:https?:\/\/|\/(?!\/))/i.test(url) ? url : IMAGE_FALLBACK_URL;
-}
-
-function number(value) {
-  return new Intl.NumberFormat('ko-KR').format(Number(value || 0));
 }
 
 function escapeHtml(value) {

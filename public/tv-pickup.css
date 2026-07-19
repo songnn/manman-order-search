@@ -419,17 +419,16 @@ img {
 
 .board-column {
   display: grid;
-  grid-template-rows: 72px minmax(0, 1fr) 34px;
-  gap: 8px;
+  grid-template-rows: 50px minmax(0, 1fr) 34px;
+  gap: 6px;
 }
 
 .board-header {
   min-width: 0;
-  padding: 8px 12px 8px 18px;
+  padding: 5px 14px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 14px;
+  gap: 10px;
   border: 1px solid #cfdbe7;
   border-radius: 14px;
   background: #fff;
@@ -437,107 +436,37 @@ img {
 }
 
 .date-block {
-  min-width: 300px;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: end;
-  column-gap: 12px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .date-block small {
-  grid-column: 1 / -1;
   color: var(--brand);
   font-family: Arial, sans-serif;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 900;
   letter-spacing: 1px;
 }
 
 .date-block strong {
-  font-size: 29px;
-  line-height: 1.08;
-  letter-spacing: -2px;
+  font-size: 26px;
+  line-height: 1;
+  letter-spacing: -1px;
   white-space: nowrap;
 }
 
 .date-block > span {
-  align-self: center;
   color: var(--muted);
   font-family: 'Apple SD Gothic Neo', sans-serif;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   white-space: nowrap;
 }
 
 .date-block > span.is-stale {
   color: #b45309;
-}
-
-.summary-cards {
-  min-width: 0;
-  display: flex;
-  justify-content: flex-end;
-  gap: 6px;
-}
-
-.summary-card {
-  min-width: 86px;
-  height: 52px;
-  padding: 5px 8px;
-  display: grid;
-  grid-template-columns: 24px auto;
-  grid-template-rows: auto auto;
-  align-items: center;
-  justify-content: center;
-  column-gap: 4px;
-  overflow: hidden;
-  border-radius: 11px;
-  color: #073463;
-  background: #eff6fd;
-}
-
-.summary-card--total {
-  min-width: 130px;
-  grid-template-columns: auto;
-  color: #fff;
-  background: linear-gradient(135deg, #0871cc, #0051a0);
-}
-
-.summary-card img {
-  grid-row: 1 / -1;
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
-}
-
-.summary-card strong {
-  font-family: Arial, 'JalnanGothic', sans-serif;
-  font-size: 21px;
-  line-height: 1;
-  text-align: center;
-}
-
-.summary-card span {
-  font-family: 'Apple SD Gothic Neo', sans-serif;
-  font-size: 11px;
-  font-weight: 900;
-  line-height: 1;
-  text-align: center;
-  white-space: nowrap;
-}
-
-.summary-card--total span {
-  margin-top: 2px;
-  color: #dceeff;
-}
-
-.summary-card--total em {
-  color: #ffe08a;
-  font-family: 'Apple SD Gothic Neo', sans-serif;
-  font-size: 10px;
-  font-style: normal;
-  font-weight: 900;
-  text-align: center;
 }
 
 .zones-layout {
@@ -554,7 +483,7 @@ img {
   min-height: 0;
   padding: 3px;
   display: grid;
-  grid-template-rows: 62px minmax(0, 1fr);
+  grid-template-rows: 42px minmax(0, 1fr);
   flex-grow: var(--zone-columns);
   flex-shrink: 1;
   flex-basis: 0;
@@ -581,11 +510,9 @@ img {
 
 .zone-header {
   min-width: 0;
-  padding: 5px 7px;
-  display: grid;
-  grid-template-rows: 29px 18px;
-  align-content: center;
-  gap: 3px;
+  padding: 3px 4px;
+  display: flex;
+  align-items: center;
   overflow: hidden;
   border-radius: 10px;
   color: var(--navy);
@@ -605,15 +532,16 @@ img {
 
 .zone-title {
   min-width: 0;
+  width: 100%;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   overflow: hidden;
 }
 
 .zone-title img {
-  width: 26px;
-  height: 26px;
+  width: 20px;
+  height: 20px;
   flex: 0 0 auto;
   object-fit: contain;
   filter: drop-shadow(0 2px 4px #00000024);
@@ -622,33 +550,26 @@ img {
 .zone-title strong {
   overflow: hidden;
   font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
+  flex: 0 0 auto;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.zone-title em {
+.zone-location {
   margin-left: auto;
-  padding: 2px 5px;
-  flex: 0 0 auto;
-  border-radius: 999px;
-  background: #ffffff66;
-  font-family: Arial, 'Apple SD Gothic Neo', sans-serif;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
   font-size: 11px;
-  font-style: normal;
-  font-weight: 900;
-  white-space: nowrap;
-}
-
-.zone-direction {
-  font-family: 'Apple SD Gothic Neo', sans-serif;
-  font-size: 14px;
-  font-weight: 900;
-  line-height: 18px;
-  letter-spacing: -0.5px;
-  text-shadow: 0 1px 1px #ffffff80;
-  white-space: nowrap;
+  font-weight: 800;
+  line-height: 13px;
+  letter-spacing: -1px;
+  text-align: right;
+  white-space: normal;
+  word-break: keep-all;
 }
 
 .product-grid {
