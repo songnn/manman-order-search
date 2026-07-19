@@ -37,6 +37,8 @@
   --line: #cbd5e1;
   --brand: #0051a0;
   --brand-bright: #0871cc;
+  --font-base: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  --font-highlight: 'The Jamsil', 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
   --ambient: #d85a06;
   --ambient-dark: #b84704;
   --ambient-soft: #fff7ed;
@@ -68,7 +70,7 @@ body {
 }
 
 body {
-  font-family: 'The Jamsil', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  font-family: var(--font-base);
   color: var(--navy);
   -webkit-font-smoothing: antialiased;
 }
@@ -156,7 +158,7 @@ img {
 }
 
 .brand-copy small {
-  font-family: 'The Jamsil', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  font-family: var(--font-base);
   font-size: 10px;
   font-weight: 700;
   text-align: right;
@@ -165,6 +167,7 @@ img {
 }
 
 .brand-copy strong {
+  font-family: var(--font-highlight);
   font-size: 24px;
   line-height: 1;
   letter-spacing: -1px;
@@ -201,6 +204,7 @@ img {
 }
 
 .guide-heading h1 {
+  font-family: var(--font-highlight);
   font-size: 20px;
   line-height: 1.18;
   letter-spacing: -1px;
@@ -210,7 +214,7 @@ img {
 .guide-heading p {
   margin-top: 3px;
   color: var(--muted);
-  font-family: 'The Jamsil', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  font-family: var(--font-base);
   font-size: 11px;
   font-weight: 500;
   letter-spacing: -1px;
@@ -328,7 +332,7 @@ img {
   border-radius: 50%;
   background: #ffd600;
   color: #111827;
-  font-family: 'The Jamsil', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  font-family: var(--font-base);
   font-size: 20px;
   font-weight: 800;
   box-shadow: 0 4px 10px #6d56004d;
@@ -356,7 +360,7 @@ img {
   border-top: 1px solid #e6eef6;
   background: linear-gradient(180deg, #fff, #f8fbff);
   color: #0f172a;
-  font-family: 'The Jamsil', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  font-family: var(--font-base);
   font-size: 14px;
   font-weight: 500;
   line-height: 1.35;
@@ -375,7 +379,7 @@ img {
   border-radius: 10px;
   color: #fff;
   background: linear-gradient(145deg, var(--brand-bright), var(--brand));
-  font-family: 'The Jamsil', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  font-family: var(--font-highlight);
   font-size: 13px;
   font-weight: 700;
   line-height: 1;
@@ -474,7 +478,7 @@ img {
   border-radius: 11px;
   color: #fff;
   background: var(--brand);
-  font-family: 'The Jamsil', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  font-family: var(--font-base);
   font-size: 22px;
 }
 
@@ -482,7 +486,7 @@ img {
   min-width: 0;
   display: grid;
   gap: 3px;
-  font-family: 'The Jamsil', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  font-family: var(--font-base);
 }
 
 .contact-copy small {
@@ -503,7 +507,7 @@ img {
   align-self: end;
   color: var(--brand);
   text-align: center;
-  font-family: 'The Jamsil', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  font-family: var(--font-highlight);
   font-size: 36px;
   font-weight: 900;
   line-height: 1;
@@ -544,13 +548,14 @@ img {
 
 .date-meta small {
   color: var(--brand);
-  font-family: 'The Jamsil', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  font-family: var(--font-base);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 1px;
 }
 
 .date-block strong {
+  font-family: var(--font-highlight);
   font-size: 25px;
   line-height: 1;
   letter-spacing: -1px;
@@ -559,7 +564,7 @@ img {
 
 .date-meta > span {
   color: var(--muted);
-  font-family: 'The Jamsil', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  font-family: var(--font-base);
   font-size: 10px;
   font-weight: 700;
   white-space: nowrap;
@@ -610,6 +615,7 @@ img {
 }
 
 .summary-card strong {
+  font-family: var(--font-highlight);
   font-size: 16px;
   font-weight: 800;
   line-height: 1;
@@ -712,7 +718,7 @@ img {
 
 .zone-title strong {
   overflow: hidden;
-  font-family: 'The Jamsil', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  font-family: var(--font-highlight);
   font-size: 20px;
   font-weight: 600;
   text-overflow: ellipsis;
@@ -725,7 +731,7 @@ img {
   flex: 0 0 auto;
   border-radius: 999px;
   background: #ffffff2c;
-  font-family: 'The Jamsil', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  font-family: var(--font-base);
   font-size: 11px;
   font-style: normal;
   font-weight: 900;
@@ -735,7 +741,7 @@ img {
 .zone-direction {
   min-width: 0;
   justify-self: end;
-  font-family: 'The Jamsil', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  font-family: var(--font-highlight);
   font-size: 18px;
   font-weight: 800;
   line-height: 1.15;
@@ -797,7 +803,7 @@ img {
   flex: 0 0 var(--product-name-height);
   overflow: hidden;
   color: #0f172a;
-  font-family: 'The Jamsil', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  font-family: var(--font-base);
 }
 
 .product-card__name-text {
@@ -832,7 +838,7 @@ img {
   border-radius: 13px;
   color: #64748b;
   background: #ffffff8c;
-  font-family: 'The Jamsil', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  font-family: var(--font-base);
   font-size: 14px;
   font-weight: 900;
   text-align: center;
@@ -866,7 +872,7 @@ img {
   border-radius: 10px;
   color: #684915;
   background: #fff8db;
-  font-family: 'The Jamsil', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  font-family: var(--font-base);
   font-size: 12px;
   font-weight: 800;
   white-space: nowrap;
@@ -882,7 +888,7 @@ img {
   border-radius: 999px;
   color: #fff;
   background: var(--brand);
-  font-family: 'The Jamsil', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  font-family: var(--font-base);
   font-style: normal;
   font-weight: 900;
 }
