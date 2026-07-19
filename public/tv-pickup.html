@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#f3f6f9">
+  <title>만만마켓 오늘의 픽업 안내</title>
+  <link rel="preconnect" href="https://ecimg.cafe24img.com">
+  <link rel="stylesheet" href="/tv-pickup.css">
+</head>
+<body>
+  <main class="tv-canvas" id="tvCanvas" aria-live="polite">
+    <aside class="guide-column" aria-label="휴대폰 주문조회 안내">
+      <header class="brand-panel">
+        <span class="brand-mark" aria-hidden="true">M</span>
+        <span class="brand-copy">
+          <small>만만마켓 전농래미안크레시티점</small>
+          <strong>오늘의 픽업 안내</strong>
+        </span>
+      </header>
+
+      <section class="guide-panel">
+        <div class="guide-heading">
+          <h1>내 주문, 휴대폰으로 확인하세요</h1>
+          <p>카톡에서 아래 순서대로 따라 해주세요.</p>
+        </div>
+
+        <div class="guide-steps">
+          <article class="guide-step">
+            <div class="guide-shot guide-shot--step1">
+              <img src="/tv-guide-step1.jpeg" alt="카카오톡 상단 필독 안내 화면">
+              <span class="guide-focus" aria-hidden="true"></span>
+              <span class="guide-arrow" aria-hidden="true">↙</span>
+            </div>
+            <p><b>1</b><span>카톡방 위쪽 <strong>📢 필독</strong>을 누르세요</span></p>
+          </article>
+
+          <article class="guide-step">
+            <div class="guide-shot guide-shot--step2">
+              <img src="/tv-guide-step2.jpeg" alt="공구상품 주문조회 링크 안내 화면">
+              <span class="guide-focus" aria-hidden="true"></span>
+              <span class="guide-arrow" aria-hidden="true">↙</span>
+            </div>
+            <p><b>2</b><span><strong>공구상품 주문조회</strong>를 누르세요</span></p>
+          </article>
+
+          <article class="guide-step">
+            <div class="guide-shot guide-shot--step3">
+              <img src="/tv-guide-step3.jpeg" alt="휴대폰 번호 뒤 네 자리 입력 화면">
+              <span class="guide-focus" aria-hidden="true"></span>
+              <span class="guide-arrow" aria-hidden="true">↙</span>
+            </div>
+            <p><b>3</b><span>휴대폰 번호 <strong>뒤 4자리</strong>를 입력하세요</span></p>
+          </article>
+
+          <article class="guide-step">
+            <div class="guide-shot guide-shot--step4">
+              <img src="/tv-guide-step4.png" alt="오늘 날짜의 픽업 상품 확인 화면">
+              <span class="guide-focus" aria-hidden="true"></span>
+              <span class="guide-arrow" aria-hidden="true">↙</span>
+            </div>
+            <p><b>4</b><span>오늘 상품의 <strong>수량·보관표시</strong>를 확인하세요</span></p>
+          </article>
+        </div>
+
+        <div class="pickup-flow" aria-label="수령 순서">
+          <strong>내 주문 확인</strong><span>→</span><strong>카운터 결제</strong><span>→</span><strong>픽업존 수령</strong>
+        </div>
+
+        <div class="manager-contact">
+          <span class="contact-icon" aria-hidden="true">☎</span>
+          <span class="contact-copy">
+            <small>상품이 없거나 수량이 다르세요?</small>
+            <strong>픽업 전에 점장에게 전화 또는 문자로 문의해 주세요.</strong>
+          </span>
+          <span class="contact-phone"><small>점장 문의</small> 010-9394-9071</span>
+        </div>
+      </section>
+    </aside>
+
+    <section class="board-column" aria-label="오늘의 픽업 상품판">
+      <header class="board-header">
+        <div class="date-block">
+          <small>TODAY'S PICKUP</small>
+          <strong id="pickupDate">픽업일 확인 중</strong>
+          <span id="updateTime">입고 데이터 연결 중</span>
+        </div>
+        <div class="summary-cards" id="summaryCards" aria-label="픽업 상품 요약"></div>
+      </header>
+
+      <section class="zone zone--ambient" aria-labelledby="ambientTitle">
+        <header class="zone-header">
+          <span class="zone-title">
+            <img src="/storage-dark-ambient.svg" alt="">
+            <strong id="ambientTitle">상온 픽업존</strong>
+            <em id="ambientCount">0종</em>
+          </span>
+          <span class="zone-direction">↓ 이 TV 바로 아래</span>
+        </header>
+        <div class="product-grid product-grid--ambient" id="ambientProducts"></div>
+      </section>
+
+      <div class="lower-zones">
+        <section class="zone zone--chilled" aria-labelledby="chilledTitle">
+          <header class="zone-header">
+            <span class="zone-title">
+              <img src="/storage-dark-refrigerated.svg" alt="">
+              <strong id="chilledTitle">냉장 픽업존</strong>
+              <em id="chilledCount">0종</em>
+            </span>
+            <span class="zone-direction">→ TV를 보고 맨 오른쪽</span>
+          </header>
+          <div class="product-grid product-grid--chilled" id="chilledProducts"></div>
+        </section>
+
+        <section class="zone zone--frozen" aria-labelledby="frozenTitle">
+          <header class="zone-header">
+            <span class="zone-title">
+              <img src="/storage-dark-frozen-v3-electric.svg" alt="">
+              <strong id="frozenTitle">냉동 픽업존</strong>
+              <em id="frozenCount">0종</em>
+            </span>
+            <span class="zone-direction">↘ 오른쪽 뒤편 · 5시 방향</span>
+          </header>
+          <div class="product-grid product-grid--frozen" id="frozenProducts"></div>
+        </section>
+      </div>
+
+      <footer class="board-footer">
+        <span>▤</span>
+        <strong>이전 픽업 예정 상품도 오늘까지 보관합니다.</strong>
+        <span>내 상품과 보관 위치는 휴대폰 주문조회에서 확인해 주세요.</span>
+        <em id="pageIndicator" hidden></em>
+      </footer>
+    </section>
+  </main>
+
+  <script src="/tv-pickup.js" defer></script>
+</body>
+</html>

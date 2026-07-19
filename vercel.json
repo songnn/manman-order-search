@@ -12,6 +12,10 @@
     {
       "source": "/order-collector",
       "destination": "/order-collector.html"
+    },
+    {
+      "source": "/tv/pickup",
+      "destination": "/tv-pickup.html"
     }
   ],
   "functions": {
@@ -33,6 +37,9 @@
       "regions": ["icn1"]
     },
     "api/admin-dashboard-kakao-user.js": {
+      "regions": ["icn1"]
+    },
+    "api/tv-pickup.js": {
       "regions": ["icn1"]
     }
   },
