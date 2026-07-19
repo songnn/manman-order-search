@@ -101,6 +101,15 @@ create table if not exists public.operations_inventory_raw_rows (
   sync_run_id uuid
 );
 
+create index if not exists operations_inventory_raw_rows_product_idx
+  on public.operations_inventory_raw_rows(
+    store_name,
+    source_sheet_name,
+    product_key,
+    outbound_date desc,
+    source_row_number desc
+  );
+
 create table if not exists public.operations_buffer_notes (
   stable_id text primary key,
   store_name text not null,
