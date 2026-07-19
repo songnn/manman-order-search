@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" aria-labelledby="frozen-title frozen-desc" shape-rendering="geometricPrecision">
+  <title id="frozen-title">냉동 보관</title>
+  <desc id="frozen-desc">다크 태그 위에 사용하는 아이스블루·페리윙클 그라데이션 6갈래 눈송이 아이콘</desc>
+  <defs>
+    <linearGradient id="frozen-stroke" x1="4" y1="3" x2="20" y2="21" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#D0E8FF"/>
+      <stop offset="0.5" stop-color="#93B5FF"/>
+      <stop offset="1" stop-color="#AD94FF"/>
+    </linearGradient>
+    <radialGradient id="frozen-core" cx="0" cy="0" r="1" gradientTransform="translate(10.4 9.6) rotate(45) scale(6.3)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8FBFF"/>
+      <stop offset="0.48" stop-color="#B7CCFF"/>
+      <stop offset="1" stop-color="#AD94FF"/>
+    </radialGradient>
+    <path id="frozen-arm" d="M12 12V3.35M12 5.65 9.85 7.8M12 5.65l2.15 2.15"/>
+    <circle id="frozen-tip" cx="12" cy="3.35" r="0.62"/>
+  </defs>
+
+  <!-- Exact radial construction: one arm rotated six times -->
+  <g stroke="url(#frozen-stroke)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <use href="#frozen-arm"/>
+    <use href="#frozen-arm" transform="rotate(60 12 12)"/>
+    <use href="#frozen-arm" transform="rotate(120 12 12)"/>
+    <use href="#frozen-arm" transform="rotate(180 12 12)"/>
+    <use href="#frozen-arm" transform="rotate(240 12 12)"/>
+    <use href="#frozen-arm" transform="rotate(300 12 12)"/>
+  </g>
+
+  <!-- Rounded terminal crystals -->
+  <g fill="url(#frozen-stroke)">
+    <use href="#frozen-tip"/>
+    <use href="#frozen-tip" transform="rotate(60 12 12)"/>
+    <use href="#frozen-tip" transform="rotate(120 12 12)"/>
+    <use href="#frozen-tip" transform="rotate(180 12 12)"/>
+    <use href="#frozen-tip" transform="rotate(240 12 12)"/>
+    <use href="#frozen-tip" transform="rotate(300 12 12)"/>
+    <circle cx="12" cy="12" r="1.05" fill="url(#frozen-core)"/>
+  </g>
+
+  <!-- Fine internal sheen; remains subordinate at 16px -->
+  <g stroke="#FFFFFF" stroke-opacity="0.28" stroke-width="0.45" stroke-linecap="round">
+    <path d="M11.55 10.2V4.4"/>
+    <path d="M13.35 13.4 18.3 16.25"/>
+  </g>
+</svg>

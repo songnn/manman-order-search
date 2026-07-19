@@ -3413,6 +3413,110 @@ body.schedule-modal-open .page > :not(.schedule-modal) {
   }
 }
 
+.storage-method-badge.storage-method-badge--theme-dark {
+  left: auto;
+  right: 12px;
+  box-sizing: border-box;
+  min-height: 38px;
+  gap: 5px;
+  padding: 0 10px 0 7px;
+  border: 1px solid #ffffff24;
+  border-radius: 8px;
+  background: #0f1216c2;
+  box-shadow: 0 3px 10px #0000003d;
+  color: #fff;
+  font-size: 18px;
+  letter-spacing: -1px;
+  -webkit-backdrop-filter: blur(6px) saturate(110%);
+  backdrop-filter: blur(6px) saturate(110%);
+}
+
+.storage-method-badge.storage-method-badge--theme-dark .storage-method-badge__icon {
+  width: 24px;
+  height: 24px;
+  flex-basis: 24px;
+}
+
+@media (max-width: 640px) {
+  .storage-method-badge.storage-method-badge--theme-dark {
+    top: 8px;
+    left: auto;
+    right: 8px;
+    height: 26px;
+    min-height: 0;
+    gap: 4px;
+    padding: 0 8px 0 6px;
+    border-width: 1px;
+    border-radius: 7px;
+    box-shadow: 0 2px 7px #00000038;
+    font-size: 13px;
+  }
+
+  .storage-method-badge.storage-method-badge--theme-dark .storage-method-badge__icon {
+    width: 16px;
+    height: 16px;
+    flex-basis: 16px;
+  }
+
+  .orders-section.show-all .storage-method-badge.storage-method-badge--theme-dark {
+    top: 5px;
+    left: auto;
+    right: 5px;
+    height: 20px;
+    min-height: 0;
+    gap: 2px;
+    padding: 0 5px 0 4px;
+    border-width: 1px;
+    border-radius: 5px;
+    box-shadow: 0 1px 5px #00000038;
+    font-size: 9px;
+  }
+
+  .orders-section.show-all .storage-method-badge.storage-method-badge--theme-dark .storage-method-badge__icon {
+    width: 12px;
+    height: 12px;
+    flex-basis: 12px;
+  }
+}
+
+.schedule-product-thumb-wrap .storage-method-badge.storage-method-badge--theme-dark {
+  top: 4px;
+  left: auto;
+  right: 4px;
+  min-height: 22px;
+  gap: 2px;
+  padding: 0 6px 0 4px;
+  border-width: 1px;
+  border-radius: 6px;
+  box-shadow: 0 1px 5px #00000038;
+  font-size: 10px;
+}
+
+.schedule-product-thumb-wrap .storage-method-badge.storage-method-badge--theme-dark .storage-method-badge__icon {
+  width: 14px;
+  height: 14px;
+  flex-basis: 14px;
+}
+
+@media (max-width: 640px) {
+  .schedule-product-thumb-wrap .storage-method-badge.storage-method-badge--theme-dark {
+    height: 18px;
+    min-height: 0;
+    gap: 2px;
+    padding: 0 4px 0 3px;
+    border-width: 1px;
+    border-radius: 4px;
+    box-shadow: 0 1px 4px #00000038;
+    font-size: 8px;
+  }
+
+  .schedule-product-thumb-wrap .storage-method-badge.storage-method-badge--theme-dark .storage-method-badge__icon {
+    width: 11px;
+    height: 11px;
+    flex-basis: 11px;
+  }
+}
+
 .schedule-product-info {
   padding: 5px 1px 0;
 }
@@ -6056,19 +6160,43 @@ function getImageErrorHandler(index) {
   return `this.onerror=null;this.src='${getFallbackImageUrl(index)}';`;
 }
 
+// Change only this value to 'white' to restore the saved white badge design.
+const STORAGE_METHOD_BADGE_THEME = 'dark';
+
 const STORAGE_METHOD_BADGE_CONFIG = Object.freeze({
   '냉장': {
     className: 'refrigerated',
-    iconUrl: '/storage-refrigerated-a2ca1185.webp',
-    compactIconUrl: '/storage-refrigerated-78e338ae.webp'
+    themes: {
+      white: {
+        iconUrl: '/storage-refrigerated-a2ca1185.webp',
+        compactIconUrl: '/storage-refrigerated-78e338ae.webp'
+      },
+      dark: {
+        iconUrl: '/storage-dark-refrigerated.svg'
+      }
+    }
   },
   '상온': {
     className: 'ambient',
-    iconUrl: '/storage-ambient.webp'
+    themes: {
+      white: {
+        iconUrl: '/storage-ambient.webp'
+      },
+      dark: {
+        iconUrl: '/storage-dark-ambient.svg'
+      }
+    }
   },
   '냉동': {
     className: 'frozen',
-    iconUrl: '/storage-frozen.webp'
+    themes: {
+      white: {
+        iconUrl: '/storage-frozen.webp'
+      },
+      dark: {
+        iconUrl: '/storage-dark-frozen.svg'
+      }
+    }
   }
 });
 
@@ -6079,13 +6207,17 @@ function renderStorageMethodBadge(item, context = 'default') {
 
   if (!config || (storageStatus && storageStatus !== 'confirmed')) return '';
 
+  const activeTheme = config.themes[STORAGE_METHOD_BADGE_THEME]
+    ? STORAGE_METHOD_BADGE_THEME
+    : 'white';
+  const themeConfig = config.themes[activeTheme];
   const iconUrl = context === 'compact'
-    ? (config.compactIconUrl || config.iconUrl)
-    : config.iconUrl;
+    ? (themeConfig.compactIconUrl || themeConfig.iconUrl)
+    : themeConfig.iconUrl;
 
   return `
     <div
-      class="storage-method-badge storage-method-badge--${config.className}"
+      class="storage-method-badge storage-method-badge--${config.className} storage-method-badge--theme-${activeTheme}"
       role="img"
       aria-label="${escapeHtml(`보관방법: ${storageMethod}`)}"
     >

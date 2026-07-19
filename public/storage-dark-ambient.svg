@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" aria-labelledby="ambient-title ambient-desc" shape-rendering="geometricPrecision">
+  <title id="ambient-title">상온 보관</title>
+  <desc id="ambient-desc">다크 태그 위에 사용하는 앰버·오렌지 그라데이션 집과 온도계 아이콘</desc>
+  <defs>
+    <linearGradient id="ambient-stroke" x1="3.5" y1="3" x2="20.5" y2="21" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFE279"/>
+      <stop offset="0.52" stop-color="#FFB13B"/>
+      <stop offset="1" stop-color="#FF7A3D"/>
+    </linearGradient>
+    <linearGradient id="ambient-fill" x1="7" y1="6" x2="17" y2="20" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFF3C4" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#FF7A3D" stop-opacity="0.04"/>
+    </linearGradient>
+  </defs>
+
+  <!-- House: enclosed indoor environment, never sun or heat -->
+  <path d="M3.5 10.25 12 3.45l8.5 6.8v8.2a2.05 2.05 0 0 1-2.05 2.05H5.55a2.05 2.05 0 0 1-2.05-2.05v-8.2Z" fill="url(#ambient-fill)" stroke="url(#ambient-stroke)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Neutral thermometer -->
+  <path d="M13.65 15.15V9.35a1.65 1.65 0 0 0-3.3 0v5.8a2.85 2.85 0 1 0 3.3 0Z" stroke="url(#ambient-stroke)" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M12 11.8v5.2" stroke="url(#ambient-stroke)" stroke-width="1.35" stroke-linecap="round"/>
+  <circle cx="12" cy="17.35" r="1.25" fill="url(#ambient-stroke)"/>
+
+  <!-- Small scale ticks provide detail without implying heat -->
+  <path d="M15.35 9.7h1.25M15.35 11.85h1.65M15.35 14h1.25" stroke="url(#ambient-stroke)" stroke-width="0.9" stroke-linecap="round"/>
+
+  <!-- Precision highlight -->
+  <path d="m4.55 10.25 7.45-5.9 7.45 5.9" stroke="#FFFFFF" stroke-opacity="0.28" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
