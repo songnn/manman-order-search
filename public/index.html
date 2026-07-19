@@ -6059,7 +6059,8 @@ function getImageErrorHandler(index) {
 const STORAGE_METHOD_BADGE_CONFIG = Object.freeze({
   '냉장': {
     className: 'refrigerated',
-    iconUrl: '/storage-refrigerated-a2ca1185.webp'
+    iconUrl: '/storage-refrigerated-a2ca1185.webp',
+    compactIconUrl: '/storage-refrigerated-78e338ae.webp'
   },
   '상온': {
     className: 'ambient',
@@ -6071,12 +6072,16 @@ const STORAGE_METHOD_BADGE_CONFIG = Object.freeze({
   }
 });
 
-function renderStorageMethodBadge(item) {
+function renderStorageMethodBadge(item, context = 'default') {
   const storageMethod = String(item?.storageMethod || '').trim();
   const storageStatus = String(item?.storageMethodStatus || '').trim();
   const config = STORAGE_METHOD_BADGE_CONFIG[storageMethod];
 
   if (!config || (storageStatus && storageStatus !== 'confirmed')) return '';
+
+  const iconUrl = context === 'compact'
+    ? (config.compactIconUrl || config.iconUrl)
+    : config.iconUrl;
 
   return `
     <div
@@ -6086,7 +6091,7 @@ function renderStorageMethodBadge(item) {
     >
       <img
         class="storage-method-badge__icon"
-        src="${config.iconUrl}"
+        src="${iconUrl}"
         alt=""
         aria-hidden="true"
         decoding="async"
@@ -8658,7 +8663,7 @@ function renderScheduleProductCard(item, index) {
           decoding="async"
           onerror="${getImageErrorHandler(index)}"
         >
-        ${renderStorageMethodBadge(item)}
+        ${renderStorageMethodBadge(item, 'compact')}
       </div>
       <div class="schedule-product-info">
         <div class="schedule-product-name">${escapeHtml(item.productName || '')}</div>
@@ -9220,7 +9225,7 @@ function syncScheduleFromScroll() {
                     fetchpriority="low"
                     onerror="${getImageErrorHandler(index)}"
                   >
-                  ${renderStorageMethodBadge(item)}
+                  ${renderStorageMethodBadge(item, 'compact')}
                   <div class="order-overlay">${escapeHtml(formatPickupLabel(item))}</div>
                 </div>
 
