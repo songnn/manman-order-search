@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const indexPath = path.join(repoRoot, 'public', 'index.html');
 const storageAssets = [
-  'storage-refrigerated.webp',
+  'storage-refrigerated-a2ca1185.webp',
   'storage-ambient.webp',
   'storage-frozen.webp'
 ];
@@ -27,7 +27,7 @@ test('주문 이미지의 세 렌더 경로에 좌측 보관방법 배지가 연
 
   assert.equal(renderCalls.length, 3);
   assert.match(html, /\.storage-method-badge\s*\{[\s\S]*?left:\s*12px;/);
-  assert.match(html, /'냉장':[\s\S]*?storage-refrigerated\.webp/);
+  assert.match(html, /'냉장':[\s\S]*?storage-refrigerated-a2ca1185\.webp/);
   assert.match(html, /'상온':[\s\S]*?storage-ambient\.webp/);
   assert.match(html, /'냉동':[\s\S]*?storage-frozen\.webp/);
   assert.match(html, /storageStatus && storageStatus !== 'confirmed'/);
