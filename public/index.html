@@ -3418,6 +3418,7 @@ body.schedule-modal-open .page > :not(.schedule-modal) {
   right: 12px;
   box-sizing: border-box;
   min-height: 38px;
+  max-width: none;
   gap: 5px;
   padding: 0 10px 0 7px;
   border: 1px solid #ffffff24;
@@ -3435,6 +3436,12 @@ body.schedule-modal-open .page > :not(.schedule-modal) {
   width: 24px;
   height: 24px;
   flex-basis: 24px;
+}
+
+.storage-method-badge.storage-method-badge--theme-dark .storage-method-badge__label {
+  flex: 0 0 auto;
+  overflow: visible;
+  text-overflow: clip;
 }
 
 @media (max-width: 640px) {
@@ -3464,6 +3471,7 @@ body.schedule-modal-open .page > :not(.schedule-modal) {
     right: 5px;
     height: 20px;
     min-height: 0;
+    max-width: none;
     gap: 2px;
     padding: 0 5px 0 4px;
     border-width: 1px;
@@ -3484,6 +3492,7 @@ body.schedule-modal-open .page > :not(.schedule-modal) {
   left: auto;
   right: 4px;
   min-height: 22px;
+  max-width: none;
   gap: 2px;
   padding: 0 6px 0 4px;
   border-width: 1px;
