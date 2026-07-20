@@ -503,10 +503,10 @@ img {
 
 .summary-card {
   min-width: 76px;
-  height: 44px;
+  height: 52px;
   padding: 4px 7px;
   display: grid;
-  grid-template-columns: 24px auto;
+  grid-template-columns: 44px auto;
   grid-template-rows: auto auto;
   align-items: center;
   justify-content: center;
@@ -528,22 +528,22 @@ img {
 
 .summary-card img {
   grid-row: 1 / -1;
-  width: 24px;
-  height: 24px;
+  width: 44px;
+  height: 44px;
   object-fit: contain;
 }
 
 .summary-card strong {
   font-family: var(--font-highlight);
-  font-size: 18px;
-  font-weight: 800;
+  font-size: 24px;
+  font-weight: 600;
   line-height: 1;
   text-align: center;
   white-space: nowrap;
 }
 
 .summary-card span {
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 700;
   line-height: 1;
   text-align: center;
