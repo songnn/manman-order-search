@@ -117,8 +117,8 @@ img {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 9px 14px;
+  gap: 8px;
+  padding: 7px 10px;
   overflow: hidden;
   color: #fff;
   border-radius: 18px;
@@ -156,12 +156,12 @@ img {
   align-items: center;
   justify-content: space-between;
   flex: 1 1 auto;
-  gap: 10px;
+  gap: 6px;
 }
 
 .brand-copy small {
   font-family: var(--font-base);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   text-align: right;
   white-space: nowrap;
@@ -170,7 +170,7 @@ img {
 
 .brand-copy strong {
   font-family: var(--font-highlight);
-  font-size: 24px;
+  font-size: 28px;
   line-height: 1;
   letter-spacing: -1px;
   white-space: nowrap;
@@ -207,7 +207,7 @@ img {
 
 .guide-heading h1 {
   font-family: var(--font-highlight);
-  font-size: 20px;
+  font-size: 22px;
   line-height: 1.18;
   letter-spacing: -1px;
   white-space: nowrap;
@@ -217,7 +217,7 @@ img {
   margin-top: 3px;
   color: var(--muted);
   font-family: var(--font-base);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: -1px;
   white-space: nowrap;
@@ -279,9 +279,9 @@ img {
   background: linear-gradient(180deg, #fff, #f8fbff);
   color: #0f172a;
   font-family: var(--font-base);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
-  line-height: 1.35;
+  line-height: 1.3;
   letter-spacing: -1px;
 }
 
@@ -409,13 +409,13 @@ img {
 
 .contact-copy small {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
 }
 
 .contact-copy strong {
   color: var(--brand);
-  font-size: 17px;
+  font-size: 20px;
   font-weight: 900;
   line-height: 1.15;
 }
@@ -467,14 +467,14 @@ img {
 .date-meta small {
   color: var(--brand);
   font-family: var(--font-base);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 1px;
 }
 
 .date-block strong {
   font-family: var(--font-highlight);
-  font-size: 25px;
+  font-size: 30px;
   line-height: 1;
   letter-spacing: -1px;
   white-space: nowrap;
@@ -483,7 +483,7 @@ img {
 .date-meta > span {
   color: var(--muted);
   font-family: var(--font-base);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -501,11 +501,11 @@ img {
 }
 
 .summary-card {
-  min-width: 72px;
+  min-width: 76px;
   height: 44px;
   padding: 4px 7px;
   display: grid;
-  grid-template-columns: 22px auto;
+  grid-template-columns: 24px auto;
   grid-template-rows: auto auto;
   align-items: center;
   justify-content: center;
@@ -527,14 +527,14 @@ img {
 
 .summary-card img {
   grid-row: 1 / -1;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   object-fit: contain;
 }
 
 .summary-card strong {
   font-family: var(--font-highlight);
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 800;
   line-height: 1;
   text-align: center;
@@ -542,7 +542,7 @@ img {
 }
 
 .summary-card span {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   line-height: 1;
   text-align: center;
@@ -598,12 +598,12 @@ img {
 
 .zone-header {
   min-width: 0;
-  padding: 5px 7px;
+  padding: 2px 5px;
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
   grid-template-rows: 1fr;
   align-items: center;
-  gap: 8px;
+  gap: 5px;
   overflow: hidden;
   border-radius: 10px;
   color: #fff;
@@ -630,8 +630,8 @@ img {
 }
 
 .zone-title img {
-  width: 26px;
-  height: 26px;
+  width: 32px;
+  height: 32px;
   flex: 0 0 auto;
   object-fit: contain;
   filter: drop-shadow(0 2px 4px #00000024);
@@ -640,7 +640,7 @@ img {
 .zone-title strong {
   overflow: hidden;
   font-family: var(--font-highlight);
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -653,7 +653,7 @@ img {
   border-radius: 999px;
   background: #ffffff2c;
   font-family: var(--font-base);
-  font-size: 11px;
+  font-size: 12px;
   font-style: normal;
   font-weight: 900;
   white-space: nowrap;
@@ -663,7 +663,7 @@ img {
   min-width: 0;
   justify-self: end;
   font-family: var(--font-highlight);
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 800;
   line-height: 1.15;
   letter-spacing: -0.5px;
@@ -733,7 +733,7 @@ img {
   max-height: 32px;
   display: -webkit-box;
   overflow: hidden;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   line-height: 16px;
   letter-spacing: -0.5px;
