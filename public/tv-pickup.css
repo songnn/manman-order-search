@@ -299,19 +299,10 @@ img {
   color: #fff;
   background: linear-gradient(145deg, var(--brand-bright), var(--brand));
   font-family: var(--font-highlight);
-  font-size: 13px;
+  font-size: 20px;
   font-weight: 700;
   line-height: 1;
   box-shadow: 0 4px 10px #0051a02e;
-}
-
-.guide-step > p b::before {
-  content: 'STEP';
-  margin-bottom: 2px;
-  font-size: 6px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  opacity: 0.76;
 }
 
 .guide-step > p strong {
