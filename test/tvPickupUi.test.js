@@ -159,7 +159,7 @@ test('픽업존 헤더는 보관방법·수량을 붙이고 위치 안내를 오
   assert.match(css, /\.board-column\s*\{[\s\S]*?grid-template-rows:\s*var\(--top-header-height\) minmax\(0,\s*1fr\) 34px;/);
   assert.match(css, /\.zone\s*\{[\s\S]*?grid-template-rows:\s*var\(--zone-header-height\) minmax\(0,\s*1fr\);/);
   assert.match(css, /\.zone-header\s*\{[\s\S]*?display:\s*grid;[\s\S]*?grid-template-columns:\s*max-content minmax\(0,\s*1fr\);[\s\S]*?grid-template-rows:\s*1fr;/);
-  assert.match(css, /\.zone-title em\s*\{[\s\S]*?margin-left:\s*0;/);
+  assert.match(css, /\.zone-title em\s*\{[\s\S]*?margin-left:\s*3px;[\s\S]*?font-size:\s*24px;/);
   assert.match(css, /\.zone-header\s*\{[\s\S]*?padding:\s*2px 18px;/);
   assert.match(css, /\.zone-title img\s*\{[\s\S]*?width:\s*40px;[\s\S]*?height:\s*40px;/);
   assert.match(css, /\.zone-title strong\s*\{[\s\S]*?font-size:\s*32px;/);
@@ -178,8 +178,9 @@ test('좌우 상단과 안내·보관 헤더는 같은 높이와 시작선을 �
   assert.match(css, /\.board-column\s*\{[\s\S]*?grid-template-rows:\s*var\(--top-header-height\) minmax\(0,\s*1fr\) 34px;[\s\S]*?gap:\s*8px;/);
   assert.match(css, /\.guide-panel\s*\{[\s\S]*?padding:\s*4px 10px 10px;[\s\S]*?grid-template-rows:\s*var\(--zone-header-height\)/);
   assert.match(html, /id="pickupDate"[\s\S]*?TODAY'S PICK UP[\s\S]*?id="updateTime"[\s\S]*?id="summaryCards"/);
-  assert.match(css, /\.brand-copy strong\s*\{[\s\S]*?font-size:\s*28px;/);
-  assert.match(css, /\.date-block strong\s*\{[\s\S]*?font-size:\s*30px;/);
+  assert.match(css, /\.brand-copy small\s*\{[\s\S]*?font-size:\s*14px;/);
+  assert.match(css, /\.brand-copy strong\s*\{[\s\S]*?padding-left:\s*4px;[\s\S]*?font-size:\s*32px;/);
+  assert.match(css, /\.date-block strong\s*\{[\s\S]*?font-size:\s*36px;/);
   assert.match(css, /\.date-meta small\s*\{[\s\S]*?font-size:\s*12px;/);
   assert.match(css, /\.summary-card strong\s*\{[\s\S]*?font-size:\s*18px;/);
 });
@@ -212,8 +213,8 @@ test('안내 단계·수령 흐름·문의 영역은 현대적인 카드와 균�
   assert.match(css, /\.guide-step\s*\{[\s\S]*?border-radius:\s*16px;[\s\S]*?box-shadow:/);
   assert.match(css, /\.guide-step > p b\s*\{[\s\S]*?border-radius:\s*10px;[\s\S]*?linear-gradient/);
   assert.match(css, /\.guide-step > p b::before\s*\{[\s\S]*?content:\s*'STEP';/);
-  assert.match(css, /\.guide-heading h1\s*\{[\s\S]*?font-size:\s*22px;/);
-  assert.match(css, /\.guide-step > p\s*\{[\s\S]*?font-size:\s*15px;/);
+  assert.match(css, /\.guide-heading h1\s*\{[\s\S]*?font-size:\s*26px;/);
+  assert.match(css, /\.guide-step > p\s*\{[\s\S]*?font-size:\s*17px;/);
   assert.match(css, /\.pickup-flow\s*\{[\s\S]*?grid-template-columns:/);
   assert.match(html, /pickup-flow__icon/);
   assert.match(css, /\.manager-contact\s*\{[\s\S]*?padding:\s*6px 8px 5px;/);

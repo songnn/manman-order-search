@@ -161,7 +161,7 @@ img {
 
 .brand-copy small {
   font-family: var(--font-base);
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
   text-align: right;
   white-space: nowrap;
@@ -170,7 +170,8 @@ img {
 
 .brand-copy strong {
   font-family: var(--font-highlight);
-  font-size: 28px;
+  padding-left: 4px;
+  font-size: 32px;
   line-height: 1;
   letter-spacing: -1px;
   white-space: nowrap;
@@ -207,7 +208,7 @@ img {
 
 .guide-heading h1 {
   font-family: var(--font-highlight);
-  font-size: 22px;
+  font-size: 26px;
   line-height: 1.18;
   letter-spacing: -1px;
   white-space: nowrap;
@@ -279,7 +280,7 @@ img {
   background: linear-gradient(180deg, #fff, #f8fbff);
   color: #0f172a;
   font-family: var(--font-base);
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 500;
   line-height: 1.3;
   letter-spacing: -1px;
@@ -474,7 +475,7 @@ img {
 
 .date-block strong {
   font-family: var(--font-highlight);
-  font-size: 30px;
+  font-size: 36px;
   line-height: 1;
   letter-spacing: -1px;
   white-space: nowrap;
@@ -647,13 +648,13 @@ img {
 }
 
 .zone-title em {
-  margin-left: 0;
+  margin-left: 3px;
   padding: 2px 5px;
   flex: 0 0 auto;
   border-radius: 999px;
   background: #ffffff2c;
   font-family: var(--font-base);
-  font-size: 12px;
+  font-size: 24px;
   font-style: normal;
   font-weight: 900;
   white-space: nowrap;
