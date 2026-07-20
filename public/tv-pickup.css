@@ -598,7 +598,7 @@ img {
 
 .zone-header {
   min-width: 0;
-  padding: 2px 5px;
+  padding: 2px 18px;
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
   grid-template-rows: 1fr;
@@ -630,8 +630,8 @@ img {
 }
 
 .zone-title img {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   flex: 0 0 auto;
   object-fit: contain;
   filter: drop-shadow(0 2px 4px #00000024);
@@ -640,7 +640,7 @@ img {
 .zone-title strong {
   overflow: hidden;
   font-family: var(--font-highlight);
-  font-size: 24px;
+  font-size: 32px;
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -663,7 +663,7 @@ img {
   min-width: 0;
   justify-self: end;
   font-family: var(--font-highlight);
-  font-size: 22px;
+  font-size: 32px;
   font-weight: 800;
   line-height: 1.15;
   letter-spacing: -0.5px;

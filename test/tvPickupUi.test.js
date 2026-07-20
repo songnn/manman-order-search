@@ -160,10 +160,10 @@ test('픽업존 헤더는 보관방법·수량을 붙이고 위치 안내를 오
   assert.match(css, /\.zone\s*\{[\s\S]*?grid-template-rows:\s*var\(--zone-header-height\) minmax\(0,\s*1fr\);/);
   assert.match(css, /\.zone-header\s*\{[\s\S]*?display:\s*grid;[\s\S]*?grid-template-columns:\s*max-content minmax\(0,\s*1fr\);[\s\S]*?grid-template-rows:\s*1fr;/);
   assert.match(css, /\.zone-title em\s*\{[\s\S]*?margin-left:\s*0;/);
-  assert.match(css, /\.zone-header\s*\{[\s\S]*?padding:\s*2px 5px;/);
-  assert.match(css, /\.zone-title img\s*\{[\s\S]*?width:\s*32px;[\s\S]*?height:\s*32px;/);
-  assert.match(css, /\.zone-title strong\s*\{[\s\S]*?font-size:\s*24px;/);
-  assert.match(css, /\.zone-direction\s*\{[\s\S]*?justify-self:\s*end;[\s\S]*?font-size:\s*22px;[\s\S]*?text-align:\s*right;/);
+  assert.match(css, /\.zone-header\s*\{[\s\S]*?padding:\s*2px 18px;/);
+  assert.match(css, /\.zone-title img\s*\{[\s\S]*?width:\s*40px;[\s\S]*?height:\s*40px;/);
+  assert.match(css, /\.zone-title strong\s*\{[\s\S]*?font-size:\s*32px;/);
+  assert.match(css, /\.zone-direction\s*\{[\s\S]*?justify-self:\s*end;[\s\S]*?font-size:\s*32px;[\s\S]*?text-align:\s*right;/);
   assert.match(js, /readyByStorage/);
   assert.doesNotMatch(js, /입고 대기|입고 확인 중/);
 });
