@@ -425,9 +425,9 @@ img {
   grid-column: 1 / -1;
   align-self: end;
   color: var(--brand);
-  text-align: center;
+  text-align: left;
   font-family: var(--font-highlight);
-  font-size: 44px;
+  font-size: 48px;
   font-weight: 900;
   line-height: 1;
   letter-spacing: 1px;
