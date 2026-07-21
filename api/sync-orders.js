@@ -6,6 +6,7 @@ import {
   orderCacheGuardOptionsFromEnv
 } from '../lib/orderCacheGuard.js';
 import { findStaleOrderCacheRecords } from '../lib/orderCacheSync.js';
+import { decideOrderCacheSync } from '../lib/orderCacheSyncPolicy.js';
 import { supabaseAdmin } from '../lib/supabaseAdmin.js';
 import { readUnifiedRowsWithRowNumbers_ } from '../lib/orders.js';
 
@@ -17,15 +18,6 @@ export default async function handler(req, res) {
       return res.status(401).json({
         ok: false,
         message: 'Unauthorized'
-      });
-    }
-
-    if (process.env.ORDER_CACHE_FREEZE === '1') {
-      return res.status(200).json({
-        ok: true,
-        skipped: true,
-        frozen: true,
-        message: '주문 캐시 freeze 중이라 구글시트 동기화를 건너뜁니다.'
       });
     }
 
@@ -54,10 +46,15 @@ export default async function handler(req, res) {
       cachedRecords,
       options: orderCacheGuardOptionsFromEnv()
     });
+    const syncPolicy = decideOrderCacheSync({
+      guard,
+      manualCleanupFreeze: process.env.ORDER_CACHE_FREEZE === '1',
+      guardDisabled: process.env.ORDER_CACHE_GUARD_DISABLED === '1'
+    });
 
-    if (!guard.ok && process.env.ORDER_CACHE_GUARD_DISABLED !== '1') {
-      console.warn('order cache auto-freeze:', JSON.stringify({
-        reasons: guard.reasons,
+    if (!syncPolicy.allowUpsert) {
+      console.warn('order cache hard rejection:', JSON.stringify({
+        reasons: syncPolicy.hardReasons,
         metrics: guard.metrics
       }));
 
@@ -67,14 +64,24 @@ export default async function handler(req, res) {
         skipped: true,
         frozen: true,
         autoFrozen: true,
-        message: '구글시트 데이터 이상을 감지해 최근 정상 주문 캐시를 유지합니다.',
+        syncMode: syncPolicy.mode,
+        message: '구글시트 오류값 또는 중복행을 감지해 이번 실행만 재시도합니다.',
         guard
       });
     }
 
+    if (syncPolicy.mode === 'continuous-safe') {
+      console.warn('order cache continuous safe sync:', JSON.stringify({
+        reasons: guard.reasons,
+        metrics: guard.metrics
+      }));
+    }
+
     await upsertInChunks_(records, 500);
     const staleRecords = findStaleOrderCacheRecords(cachedRecords, records);
-    await deleteStaleRecords_(staleRecords, syncStartedAt);
+    if (syncPolicy.allowStaleDeletion) {
+      await deleteStaleRecords_(staleRecords, syncStartedAt);
+    }
 
     const includeAnalytics = isTruthy_(req.query?.analytics ?? req.body?.analytics);
     let productCategorySync = { ok: false, skipped: true };
@@ -100,9 +107,12 @@ export default async function handler(req, res) {
       ok: true,
       count: records.length,
       staleCandidateCount: staleRecords.length,
+      staleDeletedCount: syncPolicy.allowStaleDeletion ? staleRecords.length : 0,
       syncRunId,
       frozen: false,
       autoFrozen: false,
+      syncMode: syncPolicy.mode,
+      cleanupFrozen: !syncPolicy.allowStaleDeletion,
       guard,
       productCategorySync,
       kakaoCsvReanalysis
