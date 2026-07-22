@@ -2,6 +2,9 @@ const TOKEN_KEY = 'mm_admin_dashboard_token';
 const ALLY_CUSTOMERS_KEY = 'mm_admin_dashboard_ally_customers';
 const ALLY_CUSTOMERS_VERSION_KEY = 'mm_admin_dashboard_ally_customers_version';
 const ALLY_CUSTOMERS_DEFAULT_VERSION = '2026-06-03-v2';
+const KAKAO_CSV_GZIP_ENCODING = 'gzip-base64-v1';
+const KAKAO_CSV_COMPRESS_THRESHOLD_BYTES = 3 * 1024 * 1024;
+const KAKAO_CSV_MAX_ENVELOPE_BYTES = 4 * 1024 * 1024;
 const DEFAULT_ALLY_CUSTOMERS = [
   '로지4298',
   '로지4739',
@@ -472,6 +475,19 @@ async function handleKakaoCsvUpload() {
 
   try {
     const fileContent = await readFileAsText(file);
+    const requestBody = await makeKakaoCsvRequestBody({
+      fileContent,
+      fileName: file.name,
+      fileSize: file.size,
+      mimeType: file.type || 'text/plain',
+      storeName: '전농래미안크레시티점',
+      orderDate,
+      startAt: `${orderDate} ${startTime}`,
+      endAt: `${nextInputDate(orderDate)} 00:00`,
+      uploadedAt: formatLocalDateTime(new Date()),
+      source: 'admin_dashboard_manual_upload',
+      fullSync: true
+    });
     const response = await fetch('/api/kakao-csv-uploads', {
       method: 'POST',
       headers: {
@@ -479,21 +495,19 @@ async function handleKakaoCsvUpload() {
         'x-admin-token': state.token,
         'x-kakao-csv-token': state.token
       },
-      body: JSON.stringify({
-        fileContent,
-        fileName: file.name,
-        fileSize: file.size,
-        mimeType: file.type || 'text/plain',
-        storeName: '전농래미안크레시티점',
-        orderDate,
-        startAt: `${orderDate} ${startTime}`,
-        endAt: `${nextInputDate(orderDate)} 00:00`,
-        uploadedAt: formatLocalDateTime(new Date()),
-        source: 'admin_dashboard_manual_upload',
-        fullSync: true
-      })
+      body: requestBody
     });
-    const data = await response.json();
+    const responseText = await response.text();
+    let data;
+
+    try {
+      data = responseText ? JSON.parse(responseText) : {};
+    } catch (error) {
+      const message = response.status === 413
+        ? '업로드 데이터가 서버 전송 한도를 넘었습니다. 최신 Chrome 또는 Safari에서 다시 시도해주세요.'
+        : `서버가 올바른 응답을 보내지 못했습니다. (HTTP ${response.status})`;
+      throw new Error(message);
+    }
 
     if (!response.ok || !data.ok) {
       throw new Error(data.detail || data.error || 'CSV 업로드에 실패했습니다.');
@@ -512,6 +526,50 @@ async function handleKakaoCsvUpload() {
     state.kakaoUploading = false;
     els.kakaoUploadButton.disabled = false;
   }
+}
+
+function bytesToBase64(bytes) {
+  let binary = '';
+  const chunkSize = 32768;
+
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + chunkSize));
+  }
+
+  return btoa(binary);
+}
+
+async function makeKakaoCsvRequestBody(payload) {
+  const jsonBody = JSON.stringify(payload || {});
+  const jsonBytes = new TextEncoder().encode(jsonBody).byteLength;
+
+  if (jsonBytes < KAKAO_CSV_COMPRESS_THRESHOLD_BYTES) {
+    return jsonBody;
+  }
+
+  if (typeof CompressionStream !== 'function') {
+    throw new Error('CSV 파일이 큽니다. 최신 Chrome 또는 Safari에서 다시 시도해주세요.');
+  }
+
+  setKakaoUploadStatus('큰 CSV를 압축하는 중...');
+  const compressedStream = new Blob([jsonBody])
+    .stream()
+    .pipeThrough(new CompressionStream('gzip'));
+  const compressedBytes = new Uint8Array(await new Response(compressedStream).arrayBuffer());
+  const envelope = JSON.stringify({
+    encoding: KAKAO_CSV_GZIP_ENCODING,
+    data: bytesToBase64(compressedBytes)
+  });
+  const envelopeBytes = new TextEncoder().encode(envelope).byteLength;
+
+  if (envelopeBytes > KAKAO_CSV_MAX_ENVELOPE_BYTES) {
+    throw new Error('압축 후에도 CSV 파일이 너무 큽니다. 카카오톡 대화 저장 범위를 줄여주세요.');
+  }
+
+  setKakaoUploadStatus(
+    `압축 완료 · ${Math.ceil(jsonBytes / 1024)}KB → ${Math.ceil(envelopeBytes / 1024)}KB · 업로드 중...`
+  );
+  return envelope;
 }
 
 async function handleKakaoUserSearch(event) {

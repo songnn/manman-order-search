@@ -2,6 +2,7 @@ import {
   ingestKakaoCsvUpload,
   isKakaoCsvUploadAuthorized
 } from '../lib/kakaoCsvProcessing.js';
+import { parseGzipJsonRequestBody } from '../lib/gzipJsonTransport.js';
 
 export default async function handler(req, res) {
   try {
@@ -19,7 +20,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const body = await readJsonBody(req);
+    const body = parseGzipJsonRequestBody(await readJsonBody(req));
     const result = await ingestKakaoCsvUpload(body);
 
     return res.status(200).json({
