@@ -49,6 +49,7 @@
   --frozen-dark: #3d3bbd;
   --frozen-soft: #eef2ff;
   --top-header-height: 72px;
+  --help-ticker-height: 64px;
   --zone-header-height: 62px;
   --zone-layout-gap: 4px;
   --zone-inline-chrome: 10px;
@@ -426,7 +427,7 @@ img {
 
 .board-column {
   display: grid;
-  grid-template-rows: var(--top-header-height) minmax(0, 1fr);
+  grid-template-rows: var(--top-header-height) minmax(0, 1fr) var(--help-ticker-height);
   gap: 8px;
 }
 
@@ -566,6 +567,163 @@ img {
 .summary-card--total span {
   margin-top: 2px;
   color: #dceeff;
+}
+
+.pickup-help-ticker {
+  position: relative;
+  min-width: 0;
+  height: var(--help-ticker-height);
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  overflow: hidden;
+  border: 2px solid #ffc928;
+  border-radius: 14px;
+  color: #fff;
+  background: #071d35;
+  box-shadow: 0 8px 22px #102c4a2e, inset 0 1px 0 #ffffff1f;
+}
+
+.pickup-help-ticker__label {
+  position: relative;
+  z-index: 3;
+  min-width: 0;
+  padding: 5px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #111827;
+  background: linear-gradient(135deg, #ffe66b, #ffbd1b);
+  box-shadow: 10px 0 24px #020b1666;
+}
+
+.pickup-help-ticker__icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 2px solid #ffffff70;
+  border-radius: 50%;
+  color: #ffe66b;
+  background: #0b3158;
+  font-family: var(--font-base);
+  font-size: 27px;
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: 0 4px 10px #61470036;
+}
+
+.pickup-help-ticker__label-copy {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+  text-align: left;
+}
+
+.pickup-help-ticker__label-copy small {
+  font-family: var(--font-base);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 1.4px;
+}
+
+.pickup-help-ticker__label-copy strong {
+  font-family: var(--font-highlight);
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -1px;
+}
+
+.pickup-help-ticker__window {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  background: linear-gradient(90deg, #071d35, #0a2a4b 50%, #071d35);
+}
+
+.pickup-help-ticker__window::before,
+.pickup-help-ticker__window::after {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  bottom: 0;
+  width: 34px;
+  pointer-events: none;
+}
+
+.pickup-help-ticker__window::before {
+  left: 0;
+  background: linear-gradient(90deg, #071d35, transparent);
+}
+
+.pickup-help-ticker__window::after {
+  right: 0;
+  background: linear-gradient(270deg, #071d35, transparent);
+}
+
+.pickup-help-ticker__track {
+  width: max-content;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  will-change: transform;
+  animation: pickup-help-marquee 24s linear infinite;
+}
+
+.pickup-help-ticker__group {
+  min-width: calc(var(--tv-canvas-width, 100vw) - 230px);
+  height: 100%;
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 34px;
+  flex: 0 0 auto;
+}
+
+.pickup-help-ticker__message {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  flex: 0 0 auto;
+  color: #f8fafc;
+  font-family: var(--font-base);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.7px;
+  white-space: nowrap;
+}
+
+.pickup-help-ticker__message strong {
+  color: #ffe45c;
+  font-family: var(--font-highlight);
+  font-size: 44px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 10px #0009, 0 0 14px #ffc92840;
+}
+
+.pickup-help-ticker__separator {
+  flex: 0 0 auto;
+  color: #44d7ff;
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+@keyframes pickup-help-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
 }
 
 .zones-layout {
@@ -838,6 +996,15 @@ img {
 @media (prefers-reduced-motion: reduce) {
   .zone-direction__arrow {
     animation: none;
+  }
+
+  .pickup-help-ticker__track {
+    transform: none;
+    animation: none;
+  }
+
+  .pickup-help-ticker__group--clone {
+    display: none;
   }
 }
 
