@@ -709,6 +709,15 @@ img {
   font-weight: 800;
 }
 
+.zone-direction__divider {
+  margin: 0 4px;
+  color: #ffffffb8;
+  font-family: var(--font-base);
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -3px;
+}
+
 .zone-direction__number {
   width: 29px;
   height: 29px;

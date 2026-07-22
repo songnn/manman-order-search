@@ -118,16 +118,17 @@ test('요청한 이전 상품 보관 문구와 하단 안내판은 완전히 제
   assert.doesNotMatch(html, /board-footer/);
 });
 
-test('냉동 픽업 위치는 냉동1과 냉동2 상단 3칸을 함께 명확히 안내한다', async () => {
+test('냉동1 픽업존과 냉동2 상단 3칸을 구분해 안내한다', async () => {
   const [html, css] = await pickupFiles();
 
   assert.match(html, /TV 우측[\s\S]*?선반대 픽업존/);
   assert.match(html, /TV 오른쪽 끝[\s\S]*?냉장[\s\S]*?zone-direction__number">1<[\s\S]*?픽업존/);
   assert.match(
     html,
-    /TV 뒤쪽 4시 방향[\s\S]*?냉동[\s\S]*?zone-direction__number">1<[\s\S]*?냉동[\s\S]*?zone-direction__number">2<[\s\S]*?상단 3칸 픽업존/
+    /TV 뒤쪽 4시 방향[\s\S]*?냉동[\s\S]*?zone-direction__number">1<[\s\S]*?픽업존[\s\S]*?zone-direction__divider"[^>]*>\/\/<[\s\S]*?냉동[\s\S]*?zone-direction__number">2<[\s\S]*?상단 3칸/
   );
   assert.match(css, /\.zone-direction__spot\s*\{[\s\S]*?font-size:\s*28px;/);
+  assert.match(css, /\.zone-direction__divider\s*\{[\s\S]*?font-size:\s*22px;/);
   assert.match(css, /\.zone-direction__number\s*\{[\s\S]*?width:\s*29px;[\s\S]*?height:\s*29px;/);
 });
 
