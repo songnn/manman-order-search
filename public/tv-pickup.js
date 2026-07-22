@@ -1,3 +1,11 @@
+import {
+  MAX_VISIBLE_PRODUCTS,
+  STORAGE_TYPES,
+  buildProductPages,
+  chooseZoneLayout,
+  splitItemsIntoRows
+} from './tv-pickup-layout.js';
+
 const DESIGN_WIDTH = 1920;
 const DESIGN_HEIGHT = 1152;
 const API_URL = '/api/tv-pickup';
@@ -5,8 +13,6 @@ const REFRESH_INTERVAL_MS = 30 * 1000;
 const PAGE_INTERVAL_MS = 18 * 1000;
 const CACHE_KEY = 'manman-tv-pickup-v1';
 const CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
-const MAX_VISIBLE_PRODUCTS = 40;
-const MAX_LAYOUT_COLUMNS = MAX_VISIBLE_PRODUCTS;
 const IMAGE_FALLBACK_URL = '/store-purchase-icon.png';
 const STORAGE_ASSETS = Object.freeze({
   '상온': {
@@ -32,20 +38,17 @@ const STORAGE_ASSETS = Object.freeze({
     countId: 'frozenCount'
   }
 });
-const STORAGE_TYPES = ['상온', '냉장', '냉동'];
-
 const state = {
   data: null,
   fingerprint: '',
   pageIndex: 0,
   pageCount: 1,
+  productPages: [{ '상온': [], '냉장': [], '냉동': [] }],
   pageTimer: 0,
   layoutFrame: 0,
   refreshTimer: 0,
   tenOClockTimer: 0,
   zoneRows: { '상온': 1, '냉장': 1, '냉동': 1 },
-  zoneColumns: { '상온': 1, '냉장': 1, '냉동': 1 },
-  zoneCapacities: { '상온': 4, '냉장': 4, '냉동': 4 },
   zoneWeights: { '상온': 1, '냉장': 1, '냉동': 1 },
   loading: false
 };
@@ -115,7 +118,8 @@ function applyPayload(payload, options = {}) {
   if (changed) {
     state.fingerprint = fingerprint;
     state.pageIndex = 0;
-    state.pageCount = getPageCount(payload.items || []);
+    state.productPages = buildProductPages(payload.items || [], MAX_VISIBLE_PRODUCTS);
+    state.pageCount = state.productPages.length;
     renderBoard();
     startPageRotation();
     return;
@@ -131,7 +135,7 @@ function renderBoard() {
   renderHeader(data);
   renderSummary(data.summary || {});
 
-  const grouped = groupItems(data.items || []);
+  const grouped = state.productPages[state.pageIndex] || state.productPages[0] || groupItems([]);
   STORAGE_TYPES.forEach(storageType => {
     renderZone(storageType, grouped[storageType] || [], data.summary || {});
   });
@@ -176,13 +180,14 @@ function renderZone(storageType, items, summary) {
   const count = document.getElementById(config.countId);
   const total = Number(summary.byStorage?.[storageType] || 0);
   const ready = Number(summary.readyByStorage?.[storageType] || 0);
-  const columns = Math.max(1, state.zoneColumns[storageType] || 1);
   const weight = Math.max(1, state.zoneWeights[storageType] || 1);
-  const capacity = Math.max(1, state.zoneCapacities[storageType] || 1);
-  const start = state.pageIndex * capacity;
-  const visibleItems = items.slice(start, start + capacity);
+  const plannedRows = Math.max(1, state.zoneRows[storageType] || 1);
+  const visibleItems = items;
+  const visibleRows = visibleItems.length
+    ? Math.max(1, Math.min(visibleItems.length, plannedRows))
+    : 1;
 
-  zone.style.setProperty('--zone-columns', String(columns));
+  zone.style.setProperty('--zone-rows', String(visibleRows));
   zone.style.setProperty('--zone-weight', String(weight));
   count.textContent = ready === total
     ? `${number(total)}종`
@@ -190,11 +195,28 @@ function renderZone(storageType, items, summary) {
   grid.classList.remove('is-changing');
 
   if (visibleItems.length) {
-    grid.innerHTML = visibleItems.map(renderProductCard).join('');
+    const rows = splitItemsIntoRows(visibleItems, visibleRows);
+    const gridGap = parseFloat(window.getComputedStyle(grid).gap) || 4;
+    const rowHeight = Math.max(
+      1,
+      (grid.clientHeight - gridGap * Math.max(0, rows.length - 1)) / rows.length
+    );
+    grid.innerHTML = rows
+      .map(row => {
+        const cardWidth = Math.max(
+          1,
+          (grid.clientWidth - gridGap * Math.max(0, row.length - 1)) / row.length
+        );
+        const wideClass = cardWidth >= rowHeight * 1.45 ? ' product-row--wide' : '';
+        return `<div class="product-row${wideClass}" style="--row-columns: ${row.length}">
+        ${row.map(renderProductCard).join('')}
+      </div>`;
+      })
+      .join('');
   } else {
-    const isAnotherPage = items.length > 0 && state.pageIndex > 0;
-    const message = isAnotherPage
-      ? '이 보관존 상품은 이전 화면에 있습니다.'
+    const isOnAnotherPage = total > 0 && state.pageCount > 1;
+    const message = isOnAnotherPage
+      ? '이 보관존 상품은 다른 화면에 있습니다.'
       : '오늘 해당 보관 상품이 없습니다.';
     grid.innerHTML = `<div class="product-empty">${escapeHtml(message)}</div>`;
   }
@@ -233,178 +255,23 @@ function groupItems(items) {
   return grouped;
 }
 
-function getPageCount(items) {
-  const grouped = groupItems(items);
-  return Math.max(
-    1,
-    ...STORAGE_TYPES.map(storageType =>
-      Math.ceil(grouped[storageType].length / Math.max(1, state.zoneCapacities[storageType] || 1))
-    )
-  );
-}
-
-function getZoneRowCount(itemCount, columnCount) {
-  const count = Math.max(0, Number(itemCount || 0));
-  const columns = Math.max(1, Number(columnCount || 0));
-  return count > 0 ? Math.ceil(count / columns) : 0;
-}
-
-function limitLayoutItemCounts(itemCounts, maxTotal = MAX_VISIBLE_PRODUCTS) {
-  const counts = Object.fromEntries(
-    STORAGE_TYPES.map(storageType => [storageType, Math.max(0, Number(itemCounts[storageType] || 0))])
-  );
-  const total = STORAGE_TYPES.reduce((sum, storageType) => sum + counts[storageType], 0);
-  if (total <= maxTotal) return counts;
-
-  const positiveTypes = STORAGE_TYPES.filter(storageType => counts[storageType] > 0);
-  const limited = Object.fromEntries(STORAGE_TYPES.map(storageType => [storageType, 0]));
-  positiveTypes.forEach(storageType => {
-    limited[storageType] = 1;
-  });
-
-  const remaining = Math.max(0, maxTotal - positiveTypes.length);
-  const shares = positiveTypes.map(storageType => {
-    const exact = counts[storageType] / total * remaining;
-    const base = Math.floor(exact);
-    limited[storageType] += base;
-    return { storageType, remainder: exact - base };
-  }).sort((a, b) => b.remainder - a.remainder);
-  const allocated = STORAGE_TYPES.reduce((sum, storageType) => sum + limited[storageType], 0);
-
-  for (let index = 0; index < maxTotal - allocated; index += 1) {
-    limited[shares[index % shares.length].storageType] += 1;
-  }
-
-  return limited;
-}
-
-function calculateZoneLayoutCandidate(itemCounts, columnCount, layoutWidth, layoutHeight, metrics) {
-  const rows = {};
-  const columns = {};
-  const capacities = {};
-  const cardWidths = {};
-  const requiredHeights = {};
-  const zoneWeights = {};
-  const zoneGap = Number(metrics.zoneGap || 0);
-  const gridGap = Number(metrics.gridGap || 0);
-  const zoneInlineChrome = Number(metrics.zoneInlineChrome || 0);
-  const zoneBlockChrome = Number(metrics.zoneBlockChrome || 0);
-  const emptyZoneContentHeight = Number(metrics.emptyZoneContentHeight || 0);
-  const productNameHeight = Number(metrics.productNameHeight || 0);
-  const safeColumnCount = Math.max(1, Number(columnCount || 0));
-  const gridWidth = Math.max(1, layoutWidth - zoneInlineChrome);
-  const cardWidth = Math.max(
-    1,
-    (gridWidth - gridGap * Math.max(0, safeColumnCount - 1)) / safeColumnCount
-  );
-  const cardHeight = cardWidth + productNameHeight;
-  const totalGapHeight = zoneGap * (STORAGE_TYPES.length - 1);
-  let totalZoneHeight = 0;
-
-  STORAGE_TYPES.forEach(storageType => {
-    const itemCount = Number(itemCounts[storageType] || 0);
-    const rowCount = getZoneRowCount(itemCount, safeColumnCount);
-    const contentHeight = rowCount > 0
-      ? rowCount * cardHeight + (rowCount - 1) * gridGap
-      : emptyZoneContentHeight;
-    const requiredHeight = zoneBlockChrome + contentHeight;
-
-    rows[storageType] = rowCount;
-    columns[storageType] = safeColumnCount;
-    capacities[storageType] = safeColumnCount * Math.max(1, rowCount);
-    cardWidths[storageType] = cardWidth;
-    requiredHeights[storageType] = requiredHeight;
-    zoneWeights[storageType] = Math.ceil(requiredHeight);
-    totalZoneHeight += zoneWeights[storageType];
-  });
-
-  const availableZoneHeight = Math.max(1, Math.floor(layoutHeight - totalGapHeight));
-  const remainingHeight = Math.max(0, availableZoneHeight - totalZoneHeight);
-  const totalItems = STORAGE_TYPES.reduce(
-    (sum, storageType) => sum + Math.max(0, Number(itemCounts[storageType] || 0)),
-    0
-  );
-  const heightShares = STORAGE_TYPES.map((storageType, index) => {
-    const ratio = totalItems > 0
-      ? Math.max(0, Number(itemCounts[storageType] || 0)) / totalItems
-      : 1 / STORAGE_TYPES.length;
-    const exact = ratio * remainingHeight;
-    const base = Math.floor(exact);
-    zoneWeights[storageType] += base;
-    return { storageType, index, remainder: exact - base };
-  }).sort((a, b) => b.remainder - a.remainder || a.index - b.index);
-  const allocatedHeight = STORAGE_TYPES.reduce(
-    (sum, storageType) => sum + zoneWeights[storageType],
-    0
-  );
-  const undistributedHeight = Math.max(0, availableZoneHeight - allocatedHeight);
-  for (let index = 0; index < undistributedHeight; index += 1) {
-    zoneWeights[heightShares[index % heightShares.length].storageType] += 1;
-  }
-
-  const totalRequiredHeight = totalZoneHeight + totalGapHeight;
-  const overflow = totalRequiredHeight - layoutHeight;
-
-  return {
-    rows,
-    columns,
-    capacities,
-    cardWidths,
-    requiredHeights,
-    zoneWeights,
-    totalRequiredHeight,
-    score: cardWidth,
-    overflow,
-    fits: overflow <= 0.5
-  };
-}
-
-function chooseZoneLayout(itemCounts, layoutWidth, layoutHeight, metrics) {
-  const limitedCounts = limitLayoutItemCounts(itemCounts);
-  let bestFit = null;
-  let bestFallback = null;
-
-  for (let columns = 1; columns <= MAX_LAYOUT_COLUMNS; columns += 1) {
-    const candidate = calculateZoneLayoutCandidate(
-      limitedCounts,
-      columns,
-      layoutWidth,
-      layoutHeight,
-      metrics
-    );
-
-    if (candidate.fits && (!bestFit || candidate.score > bestFit.score + 0.5)) {
-      bestFit = candidate;
-    }
-    if (
-      !bestFallback ||
-      candidate.overflow < bestFallback.overflow - 0.5 ||
-      (Math.abs(candidate.overflow - bestFallback.overflow) <= 0.5 && candidate.score > bestFallback.score)
-    ) {
-      bestFallback = candidate;
-    }
-  }
-
-  return bestFit || bestFallback;
-}
-
 function scheduleZoneLayout() {
   if (state.layoutFrame) window.cancelAnimationFrame(state.layoutFrame);
   state.layoutFrame = window.requestAnimationFrame(() => {
     state.layoutFrame = 0;
-    refreshZoneCapacities();
+    refreshZoneLayout();
   });
 }
 
-function refreshZoneCapacities() {
-  if (!state.data) return;
+function refreshZoneLayout() {
+  if (!state.data) return false;
 
   const styles = window.getComputedStyle(elements.canvas);
   const layoutWidth = elements.zonesLayout.clientWidth;
   const layoutHeight = elements.zonesLayout.clientHeight;
-  if (layoutWidth <= 0 || layoutHeight <= 0) return;
+  if (layoutWidth <= 0 || layoutHeight <= 0) return false;
 
-  const grouped = groupItems(state.data.items || []);
+  const grouped = state.productPages[state.pageIndex] || state.productPages[0] || groupItems([]);
   const itemCounts = Object.fromEntries(
     STORAGE_TYPES.map(storageType => [storageType, grouped[storageType].length])
   );
@@ -415,28 +282,22 @@ function refreshZoneCapacities() {
     zoneBlockChrome: parseFloat(styles.getPropertyValue('--zone-block-chrome')) || 75,
     emptyZoneContentHeight: parseFloat(styles.getPropertyValue('--empty-zone-content-height')) || 24,
     productNameHeight: parseFloat(styles.getPropertyValue('--product-name-height')) || 42
-  });
-  if (!layout) return;
+  }, MAX_VISIBLE_PRODUCTS);
+  if (!layout) return false;
 
   const changed = STORAGE_TYPES.some(storageType =>
     layout.rows[storageType] !== state.zoneRows[storageType] ||
-    layout.columns[storageType] !== state.zoneColumns[storageType] ||
-    layout.capacities[storageType] !== state.zoneCapacities[storageType] ||
     layout.zoneWeights[storageType] !== state.zoneWeights[storageType]
   );
   if (!changed) {
     clampProductNames();
-    return;
+    return false;
   }
 
   state.zoneRows = layout.rows;
-  state.zoneColumns = layout.columns;
-  state.zoneCapacities = layout.capacities;
   state.zoneWeights = layout.zoneWeights;
-  state.pageCount = getPageCount(state.data.items || []);
-  if (state.pageIndex >= state.pageCount) state.pageIndex = 0;
   renderBoard();
-  startPageRotation();
+  return true;
 }
 
 function clampProductNames(root = document) {
@@ -469,7 +330,7 @@ function startPageRotation() {
 
   state.pageTimer = window.setInterval(() => {
     state.pageIndex = (state.pageIndex + 1) % state.pageCount;
-    renderBoard();
+    if (!refreshZoneLayout()) renderBoard();
   }, PAGE_INTERVAL_MS);
 }
 

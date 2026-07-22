@@ -1,0 +1,77 @@
+<!--
+  TV 픽업 화면 휴대폰 주문조회 안내 패널 보관본
+  보관일: 2026-07-22
+
+  복구 방법
+  1. 아래 aside 전체를 public/tv-pickup.html의 #tvCanvas 첫 번째 자식으로 붙여 넣습니다.
+  2. public/tv-pickup.css의 .tv-canvas에서
+     grid-template-columns: minmax(0, 1fr); 을
+     grid-template-columns: 25fr 75fr; 로 되돌립니다.
+  3. 같은 .tv-canvas의 padding: 12px;은 padding: 18px;로,
+     gap: 0;은 gap: 12px;로 되돌립니다.
+  4. guide-column부터 contact-phone까지의 스타일과 이미지·로고 파일은
+     빠른 복구를 위해 public/tv-pickup.css 및 public/에 그대로 보존되어 있습니다.
+-->
+<aside class="guide-column" aria-label="휴대폰 주문조회 안내">
+  <header class="brand-panel">
+    <img class="brand-logo" src="/manman-logo-white.svg" alt="만만마켓">
+    <span class="brand-copy">
+      <strong>오늘의 픽업 안내</strong>
+      <small>만만마켓 전농래미안크레시티점</small>
+    </span>
+  </header>
+
+  <section class="guide-panel">
+    <div class="guide-heading">
+      <h1>나의 주문, 휴대폰으로 지금 확인해보세요!</h1>
+      <p>주문조회를 위해 카톡에서 아래 순서대로 진행해주시기 바랍니다.</p>
+    </div>
+
+    <div class="guide-steps">
+      <article class="guide-step">
+        <div class="guide-shot guide-shot--step1">
+          <img src="/tv-guide-step1-v2.png" alt="카카오톡 상단 필독 안내 화면">
+        </div>
+        <p><b>1</b><span>카톡방에서 상단 <strong>🎈 필독</strong>을 눌러주세요.</span></p>
+      </article>
+
+      <article class="guide-step">
+        <div class="guide-shot guide-shot--step2">
+          <img src="/tv-guide-step2-v2.png" alt="공구상품 주문조회 링크 안내 화면">
+        </div>
+        <p><b>2</b><span><strong>공구상품 주문조회</strong>를 눌러주세요.</span></p>
+      </article>
+
+      <article class="guide-step">
+        <div class="guide-shot guide-shot--step3">
+          <img src="/tv-guide-step3-v2.png" alt="휴대폰 번호 뒤 네 자리 입력 화면">
+        </div>
+        <p><b>3</b><span>휴대폰 번호 <strong>뒤 4자리</strong>를 입력해주세요.</span></p>
+      </article>
+
+      <article class="guide-step">
+        <div class="guide-shot guide-shot--step4">
+          <img src="/tv-guide-step4-v2.png" alt="오늘 날짜의 픽업 상품 확인 화면">
+        </div>
+        <p><b>4</b><span>오늘의 픽업 상품 목록을 확인하실 수 있습니다.</span></p>
+      </article>
+    </div>
+
+    <div class="pickup-flow" aria-label="수령 순서">
+      <strong><span class="pickup-flow__icon" aria-hidden="true">📱</span>내 주문 확인</strong>
+      <span class="pickup-flow__arrow" aria-hidden="true">›</span>
+      <strong><span class="pickup-flow__icon" aria-hidden="true">🛍️</span>픽업존 수량</strong>
+      <span class="pickup-flow__arrow" aria-hidden="true">›</span>
+      <strong><span class="pickup-flow__icon" aria-hidden="true">💳</span>키오스크 결제</strong>
+    </div>
+
+    <div class="manager-contact">
+      <span class="contact-icon" aria-hidden="true">☎</span>
+      <span class="contact-copy">
+        <strong>무인픽업에 어려움이 있으신가요?</strong>
+        <small>언제든지 아래 번호로 연락해 주세요.</small>
+      </span>
+      <span class="contact-phone">010-9394-9071</span>
+    </div>
+  </section>
+</aside>
