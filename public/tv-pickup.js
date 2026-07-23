@@ -217,7 +217,11 @@ function renderZone(storageType, items, summary, pageLayout) {
   zone.dataset.compactHeader = String(Boolean(zoneLayout?.compactHeader));
   count.textContent = ready === total
     ? `${number(total)}종`
-    : `${number(ready)}/${number(total)}종`;
+    : `준비 ${number(ready)}/${number(total)}`;
+  count.setAttribute(
+    'aria-label',
+    `${storageType} 준비 완료 상품 ${number(ready)}개, 전체 ${number(total)}개`
+  );
   grid.classList.remove('is-changing');
   grid.classList.toggle('is-empty', !visibleItems.length);
 
@@ -292,7 +296,7 @@ function readLayoutMetrics() {
     zoneInlineChrome: parseFloat(styles.getPropertyValue('--zone-inline-chrome')) || 10,
     zoneBlockChrome: parseFloat(styles.getPropertyValue('--zone-block-chrome')) || 75,
     compactZoneBlockChrome:
-      parseFloat(styles.getPropertyValue('--zone-compact-block-chrome')) || 139,
+      parseFloat(styles.getPropertyValue('--zone-compact-block-chrome')) || 101,
     zoneGridTracks: parseFloat(styles.getPropertyValue('--zone-grid-tracks')) || 12,
     minZoneTrackSpan:
       parseFloat(styles.getPropertyValue('--zone-min-track-span')) || 3,
