@@ -136,6 +136,7 @@ function renderBoard() {
   const pageLayout = state.productPlan?.pageLayouts[state.pageIndex]
     || state.productPlan?.pageLayouts[0]
     || null;
+  applyPageLayout(pageLayout);
   elements.canvas.style.setProperty(
     '--product-card-size',
     `${Math.max(0, state.productPlan?.cardSize || 0)}px`
@@ -176,6 +177,19 @@ function renderSummary(summary) {
   ].join('');
 }
 
+function applyPageLayout(pageLayout) {
+  const trackCount = Math.max(1, Number(pageLayout?.trackCount || 12));
+  const rowHeights = Array.isArray(pageLayout?.rowHeights)
+    ? pageLayout.rowHeights
+    : [Math.max(1, elements.zonesLayout.clientHeight)];
+
+  elements.zonesLayout.style.setProperty('--zone-grid-tracks', String(trackCount));
+  elements.zonesLayout.style.gridTemplateRows = rowHeights
+    .map(height => `${Math.max(1, Number(height || 0))}px`)
+    .join(' ');
+  elements.zonesLayout.dataset.layoutTemplate = pageLayout?.templateKey || 'stacked';
+}
+
 function renderZone(storageType, items, summary, pageLayout) {
   const config = STORAGE_ASSETS[storageType];
   const zone = document.getElementById(config.zoneId);
@@ -184,12 +198,23 @@ function renderZone(storageType, items, summary, pageLayout) {
   const total = Number(summary.byStorage?.[storageType] || 0);
   const ready = Number(summary.readyByStorage?.[storageType] || 0);
   const visibleItems = items;
-  const columns = Math.max(1, Number(pageLayout?.columns || 1));
+  const zoneLayout = pageLayout?.zones?.[storageType] || null;
+  const columns = Math.max(1, Number(zoneLayout?.columns || 1));
   const fallbackZoneHeight = Math.max(1, elements.zonesLayout.clientHeight / STORAGE_TYPES.length);
-  const zoneHeights = pageLayout?.zoneHeights || {};
-  const zoneHeight = Math.max(1, Number(zoneHeights[storageType] || fallbackZoneHeight));
+  const zoneHeight = Math.max(1, Number(zoneLayout?.height || fallbackZoneHeight));
+  const cardSize = Math.max(
+    0,
+    Number(zoneLayout?.cardSize || state.productPlan?.cardSize || 0)
+  );
+  const fallbackRow = STORAGE_TYPES.indexOf(storageType) + 1;
 
   zone.style.setProperty('--zone-height', `${zoneHeight}px`);
+  zone.style.setProperty('--zone-card-size', `${cardSize}px`);
+  zone.style.gridColumn = zoneLayout
+    ? `${zoneLayout.columnStart} / span ${zoneLayout.columnSpan}`
+    : '1 / -1';
+  zone.style.gridRow = String(zoneLayout?.row || fallbackRow);
+  zone.dataset.compactHeader = String(Boolean(zoneLayout?.compactHeader));
   count.textContent = ready === total
     ? `${number(total)}종`
     : `${number(ready)}/${number(total)}종`;
@@ -266,6 +291,11 @@ function readLayoutMetrics() {
     gridGap: parseFloat(styles.getPropertyValue('--product-grid-gap')) || 4,
     zoneInlineChrome: parseFloat(styles.getPropertyValue('--zone-inline-chrome')) || 10,
     zoneBlockChrome: parseFloat(styles.getPropertyValue('--zone-block-chrome')) || 75,
+    compactZoneBlockChrome:
+      parseFloat(styles.getPropertyValue('--zone-compact-block-chrome')) || 139,
+    zoneGridTracks: parseFloat(styles.getPropertyValue('--zone-grid-tracks')) || 12,
+    minZoneTrackSpan:
+      parseFloat(styles.getPropertyValue('--zone-min-track-span')) || 3,
     emptyZoneContentHeight: parseFloat(styles.getPropertyValue('--empty-zone-content-height')) || 24,
     productNameHeight: parseFloat(styles.getPropertyValue('--product-name-height')) || 42
   };
@@ -289,9 +319,21 @@ function refreshProductLayout() {
     cardSize: productPlan.cardSize,
     pageCounts: productPlan.pageCounts,
     pageLayouts: productPlan.pageLayouts.map(layout => ({
-      columns: layout.columns,
-      rows: layout.rows,
-      zoneHeights: layout.zoneHeights
+      templateKey: layout.templateKey,
+      rowHeights: layout.rowHeights,
+      zones: Object.fromEntries(STORAGE_TYPES.map(storageType => {
+        const zone = layout.zones[storageType];
+        return [storageType, {
+          row: zone.row,
+          columnStart: zone.columnStart,
+          columnSpan: zone.columnSpan,
+          columns: zone.columns,
+          rows: zone.rows,
+          cardSize: zone.cardSize,
+          height: zone.height,
+          compactHeader: zone.compactHeader
+        }];
+      }))
     }))
   });
   const changed = layoutSignature !== state.layoutSignature;
@@ -310,8 +352,12 @@ function clampProductNames(root = document) {
     const characters = Array.from(fullName);
     element.textContent = fullName;
 
+    const maximumTextHeight = Math.max(
+      element.clientHeight,
+      parseFloat(window.getComputedStyle(element).maxHeight) || 0
+    );
     const fits = () =>
-      element.scrollHeight <= element.clientHeight + 1 &&
+      element.scrollHeight <= maximumTextHeight + 4 &&
       element.scrollWidth <= element.clientWidth + 1;
     if (fits()) return;
 
