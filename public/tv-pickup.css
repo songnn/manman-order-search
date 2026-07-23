@@ -428,7 +428,7 @@ img {
 
 .board-column {
   display: grid;
-  grid-template-rows: var(--top-header-height) minmax(0, 1fr) var(--help-ticker-height);
+  grid-template-rows: var(--help-ticker-height) minmax(0, 1fr);
   gap: 8px;
 }
 
@@ -443,6 +443,10 @@ img {
   border-radius: 14px;
   background: #fff;
   box-shadow: 0 10px 26px #264d7312;
+}
+
+.board-header[hidden] {
+  display: none;
 }
 
 .date-block {

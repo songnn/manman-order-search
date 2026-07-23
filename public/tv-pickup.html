@@ -15,7 +15,58 @@
 <body>
   <main class="tv-canvas" id="tvCanvas" aria-live="polite">
     <section class="board-column" aria-label="오늘의 픽업 상품판">
-      <header class="board-header">
+      <aside
+        class="pickup-help-ticker"
+        role="note"
+        aria-label="픽업에 어려움이 있으시면 010.9394.9071로 연락해 주세요."
+      >
+        <div class="pickup-help-ticker__label" aria-hidden="true">
+          <span class="pickup-help-ticker__icon">☎</span>
+          <span class="pickup-help-ticker__label-copy">
+            <small>PICKUP HELP</small>
+            <strong>픽업 문의</strong>
+          </span>
+        </div>
+        <div class="pickup-help-ticker__window" aria-hidden="true">
+          <div class="pickup-help-ticker__track">
+            <div class="pickup-help-ticker__group">
+              <span class="pickup-help-ticker__message">
+                <span>픽업에 어려움이 있으시면</span>
+                <strong>010.9394.9071</strong>
+                <span>로 바로 연락주세요</span>
+              </span>
+              <span class="pickup-help-ticker__separator">◆</span>
+              <span class="pickup-help-ticker__message">
+                <span>픽업에 어려움이 있으시면</span>
+                <strong>010.9394.9071</strong>
+                <span>로 바로 연락주세요</span>
+              </span>
+              <span class="pickup-help-ticker__separator">◆</span>
+            </div>
+            <div class="pickup-help-ticker__group pickup-help-ticker__group--clone">
+              <span class="pickup-help-ticker__message">
+                <span>픽업에 어려움이 있으시면</span>
+                <strong>010.9394.9071</strong>
+                <span>로 바로 연락주세요</span>
+              </span>
+              <span class="pickup-help-ticker__separator">◆</span>
+              <span class="pickup-help-ticker__message">
+                <span>픽업에 어려움이 있으시면</span>
+                <strong>010.9394.9071</strong>
+                <span>로 바로 연락주세요</span>
+              </span>
+              <span class="pickup-help-ticker__separator">◆</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- 복구용 보관: 날짜·상품 요약·페이지 표시를 다시 쓸 때 hidden 속성만 제거하세요. -->
+      <header
+        class="board-header"
+        hidden
+        data-restore-note="날짜·상품 요약·페이지 표시 헤더 복구용"
+      >
         <div class="date-block">
           <strong id="pickupDate">픽업일 확인 중</strong>
           <span class="date-meta">
@@ -86,52 +137,6 @@
           <div class="product-grid product-grid--frozen" id="frozenProducts"></div>
         </section>
       </div>
-
-      <footer
-        class="pickup-help-ticker"
-        role="note"
-        aria-label="픽업에 어려움이 있으시면 010.9394.9071로 연락해 주세요."
-      >
-        <div class="pickup-help-ticker__label" aria-hidden="true">
-          <span class="pickup-help-ticker__icon">☎</span>
-          <span class="pickup-help-ticker__label-copy">
-            <small>PICKUP HELP</small>
-            <strong>픽업 문의</strong>
-          </span>
-        </div>
-        <div class="pickup-help-ticker__window" aria-hidden="true">
-          <div class="pickup-help-ticker__track">
-            <div class="pickup-help-ticker__group">
-              <span class="pickup-help-ticker__message">
-                <span>픽업에 어려움이 있으시면</span>
-                <strong>010.9394.9071</strong>
-                <span>로 바로 연락주세요</span>
-              </span>
-              <span class="pickup-help-ticker__separator">◆</span>
-              <span class="pickup-help-ticker__message">
-                <span>픽업에 어려움이 있으시면</span>
-                <strong>010.9394.9071</strong>
-                <span>로 바로 연락주세요</span>
-              </span>
-              <span class="pickup-help-ticker__separator">◆</span>
-            </div>
-            <div class="pickup-help-ticker__group pickup-help-ticker__group--clone">
-              <span class="pickup-help-ticker__message">
-                <span>픽업에 어려움이 있으시면</span>
-                <strong>010.9394.9071</strong>
-                <span>로 바로 연락주세요</span>
-              </span>
-              <span class="pickup-help-ticker__separator">◆</span>
-              <span class="pickup-help-ticker__message">
-                <span>픽업에 어려움이 있으시면</span>
-                <strong>010.9394.9071</strong>
-                <span>로 바로 연락주세요</span>
-              </span>
-              <span class="pickup-help-ticker__separator">◆</span>
-            </div>
-          </div>
-        </div>
-      </footer>
     </section>
   </main>
 
