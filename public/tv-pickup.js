@@ -17,23 +17,20 @@ const STORAGE_ASSETS = Object.freeze({
     dark: '/storage-dark-ambient.svg',
     white: '/storage-ambient.webp',
     zoneId: 'ambientZone',
-    elementId: 'ambientProducts',
-    countId: 'ambientCount'
+    elementId: 'ambientProducts'
   },
   '냉장': {
     dark: '/storage-dark-refrigerated.svg',
     white: '/storage-refrigerated-a2ca1185.webp',
     compactWhite: '/storage-refrigerated-78e338ae.webp',
     zoneId: 'chilledZone',
-    elementId: 'chilledProducts',
-    countId: 'chilledCount'
+    elementId: 'chilledProducts'
   },
   '냉동': {
     dark: '/storage-dark-frozen-v3-electric.svg',
     white: '/storage-frozen.webp',
     zoneId: 'frozenZone',
-    elementId: 'frozenProducts',
-    countId: 'frozenCount'
+    elementId: 'frozenProducts'
   }
 });
 const state = {
@@ -194,9 +191,7 @@ function renderZone(storageType, items, summary, pageLayout) {
   const config = STORAGE_ASSETS[storageType];
   const zone = document.getElementById(config.zoneId);
   const grid = document.getElementById(config.elementId);
-  const count = document.getElementById(config.countId);
   const total = Number(summary.byStorage?.[storageType] || 0);
-  const ready = Number(summary.readyByStorage?.[storageType] || 0);
   const visibleItems = items;
   const zoneLayout = pageLayout?.zones?.[storageType] || null;
   const columns = Math.max(1, Number(zoneLayout?.columns || 1));
@@ -215,13 +210,6 @@ function renderZone(storageType, items, summary, pageLayout) {
     : '1 / -1';
   zone.style.gridRow = String(zoneLayout?.row || fallbackRow);
   zone.dataset.compactHeader = String(Boolean(zoneLayout?.compactHeader));
-  count.textContent = ready === total
-    ? `${number(total)}종`
-    : `준비 ${number(ready)}/${number(total)}`;
-  count.setAttribute(
-    'aria-label',
-    `${storageType} 준비 완료 상품 ${number(ready)}개, 전체 ${number(total)}개`
-  );
   grid.classList.remove('is-changing');
   grid.classList.toggle('is-empty', !visibleItems.length);
 

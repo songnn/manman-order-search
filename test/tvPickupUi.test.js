@@ -256,8 +256,9 @@ test('세 보관존 위치를 폭에 맞춰 변하는 고대비 안내 레일로
   assert.match(css, /\.zone\[data-compact-header='true'\] \.zone-header\s*\{[\s\S]*?grid-template-rows:\s*32px 44px;/);
   assert.match(css, /@container\s+pickup-zone\s+\(min-width:\s*720px\)/);
   assert.doesNotMatch(css, /pickup-location-pulse/);
-  assert.match(js, /`준비 \$\{number\(ready\)\}\/\$\{number\(total\)\}`/);
-  assert.match(js, /준비 완료 상품 \$\{number\(ready\)\}개,\s*전체 \$\{number\(total\)\}개/);
+  assert.doesNotMatch(html, /id="(?:ambient|chilled|frozen)Count"/);
+  assert.doesNotMatch(css, /\.zone-title em/);
+  assert.doesNotMatch(js, /countId|준비 완료 상품|`준비 /);
 });
 
 test('날짜·상품 요약·페이지 헤더는 화면에서 숨기고 복구 가능한 상태로 보존한다', async () => {
@@ -292,7 +293,7 @@ test('상품판은 Pretendard를 기본으로 하고 핵심 숫자와 제목만 
     assert.match(css, new RegExp(`${escaped}\\s*\\{[\\s\\S]*?font-family:\\s*var\\(--font-highlight\\);`));
   }
 
-  for (const selector of ['.date-meta > span', '.zone-title em', '.product-card__name', '.product-empty']) {
+  for (const selector of ['.date-meta > span', '.product-card__name', '.product-empty']) {
     const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     assert.match(css, new RegExp(`${escaped}\\s*\\{[\\s\\S]*?font-family:\\s*var\\(--font-base\\);`));
   }

@@ -829,22 +829,6 @@ img {
   white-space: nowrap;
 }
 
-.zone-title em {
-  margin-left: 3px;
-  padding: 3px 7px;
-  flex: 0 0 auto;
-  border-radius: 999px;
-  color: var(--zone-sign);
-  background: #fff;
-  font-family: var(--font-base);
-  font-size: 22px;
-  font-style: normal;
-  font-variant-numeric: tabular-nums;
-  font-weight: 800;
-  line-height: 1;
-  white-space: nowrap;
-}
-
 .zone-direction {
   display: contents;
 }
@@ -1006,11 +990,6 @@ img {
 
 .zone[data-compact-header='true'] .zone-title strong {
   font-size: 26px;
-}
-
-.zone[data-compact-header='true'] .zone-title em {
-  padding: 3px 6px;
-  font-size: 18px;
 }
 
 .zone[data-compact-header='true'] .zone-direction__route {
