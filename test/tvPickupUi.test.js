@@ -4,11 +4,11 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
-  MAX_VISIBLE_PRODUCTS,
+  MAX_PRODUCT_PAGES,
   STORAGE_TYPES,
-  buildProductPages,
-  chooseZoneLayout,
-  splitItemsIntoRows
+  buildAdaptiveProductPlan,
+  chooseUniformPageLayout,
+  chunkItemsIntoRows
 } from '../public/tv-pickup-layout.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -32,6 +32,24 @@ async function pickupFiles() {
 
 function counts(ambient, chilled, frozen) {
   return { '상온': ambient, '냉장': chilled, '냉동': frozen };
+}
+
+function makeItems(ambient, chilled, frozen) {
+  return [
+    ...Array.from({ length: ambient }, (_, index) => ({ id: `a-${index}`, storageType: '상온' })),
+    ...Array.from({ length: chilled }, (_, index) => ({ id: `c-${index}`, storageType: '냉장' })),
+    ...Array.from({ length: frozen }, (_, index) => ({ id: `f-${index}`, storageType: '냉동' }))
+  ];
+}
+
+function flattenPlanItems(plan) {
+  return plan.pages.flatMap(page =>
+    STORAGE_TYPES.flatMap(storageType => page[storageType] || [])
+  );
+}
+
+function pageTotal(pageCounts) {
+  return STORAGE_TYPES.reduce((sum, storageType) => sum + pageCounts[storageType], 0);
 }
 
 test('TV 픽업 페이지는 실제 화면 전체를 단일 상품판으로 채운다', async () => {
@@ -187,123 +205,207 @@ test('상품판은 Pretendard를 기본으로 하고 핵심 숫자와 제목만 
   }
 });
 
-test('각 보관존의 행은 상품 수에 맞게 따로 계산되고 마지막 행도 빈칸 없이 채운다', async () => {
+test('모든 행은 공통 고정 카드 폭을 쓰고 마지막 행은 늘어나지 않은 채 가운데 정렬된다', async () => {
   const [html, css, js, layoutSource] = await pickupFiles();
+  const productRow = css.match(/\.product-row\s*\{[\s\S]*?\n\}/)?.[0] || '';
 
   assert.match(html, /id="zonesLayout"[\s\S]*?id="ambientZone"[\s\S]*?id="chilledZone"[\s\S]*?id="frozenZone"/);
   assert.match(css, /\.zones-layout\s*\{[\s\S]*?display:\s*flex;[\s\S]*?flex-direction:\s*column;/);
-  assert.match(css, /\.zone\s*\{[\s\S]*?--zone-rows:\s*1;[\s\S]*?flex-grow:\s*var\(--zone-weight\);/);
-  assert.match(css, /\.product-grid\s*\{[\s\S]*?grid-template-rows:\s*repeat\(var\(--zone-rows\),\s*minmax\(0,\s*1fr\)\);[\s\S]*?align-content:\s*stretch;/);
-  assert.match(css, /\.product-row\s*\{[\s\S]*?grid-template-columns:\s*repeat\(var\(--row-columns\),\s*minmax\(0,\s*1fr\)\);/);
-  assert.match(js, /splitItemsIntoRows\(visibleItems,\s*visibleRows\)/);
-  assert.match(js, /class="product-row\$\{wideClass\}"[\s\S]*?--row-columns:/);
-  assert.match(layoutSource, /function chooseZoneLayout\(/);
+  assert.match(productRow, /grid-template-columns:\s*repeat\(var\(--row-columns\),\s*var\(--product-card-size\)\);/);
+  assert.match(productRow, /justify-content:\s*center;/);
+  assert.doesNotMatch(productRow, /minmax\(0,\s*1fr\)/);
+  assert.match(js, /chunkItemsIntoRows\(/);
+  assert.match(js, /--product-card-size/);
+  assert.match(js, /pageLayouts\[state\.pageIndex\]/);
+  assert.match(js, /zoneHeights\[storageType\]/);
+  assert.doesNotMatch(js, /splitItemsIntoRows|wideClass/);
+  assert.match(layoutSource, /function chooseUniformPageLayout\(/);
 
-  assert.deepEqual(splitItemsIntoRows(Array.from({ length: 25 }), 2).map(row => row.length), [13, 12]);
-  assert.deepEqual(splitItemsIntoRows(Array.from({ length: 14 }), 2).map(row => row.length), [7, 7]);
-  assert.deepEqual(splitItemsIntoRows(Array.from({ length: 5 }), 3).map(row => row.length), [2, 2, 1]);
+  assert.deepEqual(chunkItemsIntoRows(Array.from({ length: 25 }), 13).map(row => row.length), [13, 12]);
+  assert.deepEqual(chunkItemsIntoRows(Array.from({ length: 14 }), 7).map(row => row.length), [7, 7]);
+  assert.deepEqual(chunkItemsIntoRows(Array.from({ length: 5 }), 2).map(row => row.length), [2, 2, 1]);
 });
 
-test('카드와 사진은 배정된 행의 가로·세로 공간을 모두 쓰고 사진을 자르지 않는다', async () => {
+test('모든 상품 카드는 같은 정사각 사진 위에 고정 높이 상품명을 항상 하단에 둔다', async () => {
   const [, css, js] = await pickupFiles();
+  const card = css.match(/\.product-card\s*\{[\s\S]*?\n\}/)?.[0] || '';
   const baseImage = css.match(/\.product-card__image\s*\{[\s\S]*?\n\}/)?.[0] || '';
+  const productName = css.match(/\.product-card__name\s*\{[\s\S]*?\n\}/)?.[0] || '';
 
-  assert.match(css, /\.product-card\s*\{[\s\S]*?width:\s*100%;[\s\S]*?height:\s*100%;/);
-  assert.match(baseImage, /width:\s*100%;[\s\S]*?height:\s*0;[\s\S]*?flex:\s*1 1 0;[\s\S]*?object-fit:\s*contain;/);
-  assert.doesNotMatch(baseImage, /object-fit:\s*cover|aspect-ratio:\s*1\s*\/\s*1/);
-  assert.match(css, /\.product-row--wide \.product-card\s*\{[\s\S]*?flex-direction:\s*row;/);
-  assert.match(css, /\.product-row--wide \.product-card__image\s*\{[\s\S]*?height:\s*100%;[\s\S]*?aspect-ratio:\s*1 \/ 1;/);
-  assert.match(js, /cardWidth\s*>=\s*rowHeight \* 1\.45/);
-  assert.match(css, /\.product-card__name\s*\{[\s\S]*?height:\s*var\(--product-name-height\);[\s\S]*?flex:\s*0 0 var\(--product-name-height\);/);
+  assert.match(card, /width:\s*100%;/);
+  assert.match(card, /height:\s*100%;/);
+  assert.match(card, /flex-direction:\s*column;/);
+  assert.match(baseImage, /width:\s*100%;/);
+  assert.match(baseImage, /height:\s*var\(--product-card-size\);/);
+  assert.match(baseImage, /aspect-ratio:\s*1\s*\/\s*1;/);
+  assert.match(baseImage, /flex:\s*0 0 var\(--product-card-size\);/);
+  assert.match(baseImage, /object-fit:\s*contain;/);
+  assert.doesNotMatch(baseImage, /object-fit:\s*cover/);
+  assert.match(productName, /height:\s*var\(--product-name-height\);/);
+  assert.match(productName, /flex:\s*0 0 var\(--product-name-height\);/);
   assert.match(css, /\.product-card__name-text\s*\{[\s\S]*?-webkit-line-clamp:\s*2;/);
+  assert.doesNotMatch(css, /\.product-row--wide\b/);
+  assert.doesNotMatch(js, /product-row--wide|wideClass|cardWidth\s*>=\s*rowHeight/);
   assert.match(js, /class="product-card__image"[\s\S]*?class="product-card__name"[\s\S]*?class="product-card__name-text"/);
   assert.match(js, /function clampProductNames\(/);
 });
 
-test('대표적인 일별 상품 분포마다 사진 크기와 존 높이를 자동 최적화한다', () => {
+test('한 페이지 안에서는 모든 보관존이 하나의 공통 카드 크기로 자동 배치된다', () => {
   const layoutWidth = 1886;
   const layoutHeight = 976;
   const cases = [
-    { input: counts(0, 0, 0), rows: [0, 0, 0] },
-    { input: counts(1, 1, 1), rows: [1, 1, 1] },
-    { input: counts(21, 4, 11), rows: [2, 1, 1] },
-    { input: counts(25, 5, 10), rows: [2, 1, 1] },
-    { input: counts(14, 13, 13), rows: [2, 1, 1] },
-    { input: counts(38, 1, 1), rows: [3, 1, 1] },
-    { input: counts(40, 0, 0), rows: [3, 0, 0] }
+    counts(1, 1, 1),
+    counts(8, 8, 8),
+    counts(10, 10, 10),
+    counts(21, 4, 11),
+    counts(14, 13, 13),
+    counts(38, 1, 1)
   ];
 
-  for (const { input, rows } of cases) {
-    const layout = chooseZoneLayout(
-      input,
-      layoutWidth,
-      layoutHeight,
-      layoutMetrics,
-      MAX_VISIBLE_PRODUCTS
-    );
-    const total = STORAGE_TYPES.reduce((sum, storageType) => sum + input[storageType], 0);
+  for (const input of cases) {
+    const layout = chooseUniformPageLayout(input, layoutWidth, layoutHeight, layoutMetrics);
 
-    assert.ok(layout?.fits, `${JSON.stringify(input)} 배치가 화면을 벗어남`);
-    assert.equal(layout.totalRequiredHeight, layoutHeight);
-    assert.deepEqual(STORAGE_TYPES.map(storageType => layout.rows[storageType]), rows);
+    assert.ok(layout, `${JSON.stringify(input)} 배치를 계산하지 못함`);
+    assert.equal(layout.fits, true);
+    assert.ok(Number.isFinite(layout.cardSize) && layout.cardSize > 0);
+    assert.equal(layout.cardHeight, layout.cardSize + layoutMetrics.productNameHeight);
+    assert.ok(Number.isInteger(layout.columns) && layout.columns > 0);
     assert.equal(
-      STORAGE_TYPES.reduce((sum, storageType) => sum + layout.pageQuotas[storageType], 0),
-      Math.min(total, MAX_VISIBLE_PRODUCTS)
+      layout.totalRows,
+      STORAGE_TYPES.reduce((sum, storageType) => sum + layout.rows[storageType], 0)
     );
+    assert.equal(
+      layout.emptySlots,
+      STORAGE_TYPES.reduce(
+        (sum, storageType) =>
+          sum + Math.max(0, layout.columns * layout.rows[storageType] - input[storageType]),
+        0
+      )
+    );
+    assert.equal(
+      layout.totalRequiredHeight,
+      STORAGE_TYPES.reduce((sum, storageType) => sum + layout.zoneHeights[storageType], 0)
+        + layoutMetrics.zoneGap * (STORAGE_TYPES.length - 1)
+    );
+    assert.ok(layout.totalRequiredHeight <= layoutHeight);
     STORAGE_TYPES.forEach(storageType => {
-      assert.ok(layout.columns[storageType] * Math.max(1, layout.rows[storageType]) >= layout.pageQuotas[storageType]);
+      const rows = Number(layout.rows[storageType] || 0);
+      assert.ok(layout.zoneHeights[storageType] > 0);
+      if (input[storageType] > 0) {
+        assert.ok(rows > 0);
+        assert.equal(rows, Math.ceil(input[storageType] / layout.columns));
+        assert.ok(layout.columns * rows >= input[storageType]);
+      }
     });
-    if (total > 0) assert.ok(layout.minimumPhotoSize > 100);
   }
 
-  const mix = chooseZoneLayout(counts(21, 4, 11), layoutWidth, layoutHeight, layoutMetrics);
-  assert.ok(mix.zoneWeights['상온'] > mix.zoneWeights['냉장']);
-  assert.ok(mix.columns['상온'] > mix.columns['냉장']);
+  const first = chooseUniformPageLayout(counts(21, 4, 11), layoutWidth, layoutHeight, layoutMetrics);
+  const rotated = chooseUniformPageLayout(counts(4, 11, 21), layoutWidth, layoutHeight, layoutMetrics);
+  assert.equal(first.cardSize, rotated.cardSize);
 });
 
-test('같은 수량 분포의 보관방법 순서를 바꿔도 같은 배치가 함께 이동한다', () => {
-  const first = chooseZoneLayout(counts(25, 5, 10), 1886, 1048, layoutMetrics);
-  const rotated = chooseZoneLayout(counts(5, 10, 25), 1886, 1048, layoutMetrics);
+test('상품이 없는 날에도 세 보관존과 빈 상태를 한 화면 안에 유지한다', () => {
+  const plan = buildAdaptiveProductPlan([], 1886, 976, layoutMetrics);
+  const layout = plan.pageLayouts[0];
 
-  assert.deepEqual(
-    [first.rows['상온'], first.rows['냉장'], first.rows['냉동']],
-    [rotated.rows['냉동'], rotated.rows['상온'], rotated.rows['냉장']]
-  );
-  assert.equal(first.minimumPhotoSize, rotated.minimumPhotoSize);
+  assert.equal(plan.pageCount, 1);
+  assert.equal(plan.pages.length, 1);
+  assert.equal(plan.cardSize, 0);
+  assert.equal(layout.columns, 0);
+  assert.deepEqual(layout.rows, counts(0, 0, 0));
+  assert.equal(layout.totalRequiredHeight, 976);
+  STORAGE_TYPES.forEach(storageType => {
+    assert.ok(layout.zoneHeights[storageType] > 0);
+    assert.deepEqual(plan.pages[0][storageType], []);
+  });
 });
 
-test('40종 초과 시 최소 페이지에 최대 40종씩 담고 페이지마다 다시 배치한다', async () => {
+test('상품 수에 따라 한 화면 또는 두 화면을 선택하고 두 화면 모두 같은 카드 크기를 쓴다', async () => {
   const [, , js] = await pickupFiles();
-  const makeItems = (ambient, chilled, frozen) => [
-    ...Array.from({ length: ambient }, (_, index) => ({ id: `a-${index}`, storageType: '상온' })),
-    ...Array.from({ length: chilled }, (_, index) => ({ id: `c-${index}`, storageType: '냉장' })),
-    ...Array.from({ length: frozen }, (_, index) => ({ id: `f-${index}`, storageType: '냉동' }))
+  const cases = [
+    { distribution: [8, 8, 8], pageCount: 1 },
+    { distribution: [10, 10, 10], pageCount: 1 },
+    { distribution: [14, 13, 13], pageCount: 2 },
+    { distribution: [21, 4, 11], pageCount: 2 },
+    { distribution: [38, 1, 1], pageCount: 2 }
   ];
-  const items = makeItems(80, 20, 10);
-  const pages = buildProductPages(items, MAX_VISIBLE_PRODUCTS);
-  const sparsePages = buildProductPages(makeItems(0, 1, 79), MAX_VISIBLE_PRODUCTS);
 
-  assert.equal(pages.length, Math.ceil(items.length / MAX_VISIBLE_PRODUCTS));
-  assert.deepEqual(
-    pages.map(page => STORAGE_TYPES.reduce((sum, storageType) => sum + page[storageType].length, 0)),
-    [40, 40, 30]
-  );
-  assert.deepEqual(
-    sparsePages.map(page => STORAGE_TYPES.reduce((sum, storageType) => sum + page[storageType].length, 0)),
-    [40, 40]
-  );
-  const renderedIds = pages
-    .flatMap(page => STORAGE_TYPES.flatMap(storageType => page[storageType]))
-    .map(item => item.id)
-    .sort();
-  assert.deepEqual(renderedIds, items.map(item => item.id).sort());
+  assert.equal(MAX_PRODUCT_PAGES, 2);
+  for (const { distribution, pageCount } of cases) {
+    const items = makeItems(...distribution);
+    const plan = buildAdaptiveProductPlan(items, 1886, 976, layoutMetrics);
+    const renderedIds = flattenPlanItems(plan).map(item => item.id).sort();
 
-  assert.match(js, /state\.productPages\s*=\s*buildProductPages/);
+    assert.equal(plan.pages.length, pageCount, distribution.join('/'));
+    assert.equal(plan.pageCount, pageCount);
+    assert.equal(plan.pageLayouts.length, pageCount);
+    assert.ok(Number.isFinite(plan.cardSize) && plan.cardSize > 100);
+    if (pageCount === 2) {
+      assert.ok(
+        Math.abs(pageTotal(plan.pageCounts[0]) - pageTotal(plan.pageCounts[1])) <= 1,
+        `${distribution.join('/')} 두 화면의 상품 수가 균등하지 않음`
+      );
+      STORAGE_TYPES.forEach(storageType => {
+        assert.ok(
+          Math.abs(
+            plan.pageCounts[0][storageType] - plan.pageCounts[1][storageType]
+          ) <= 1,
+          `${distribution.join('/')} ${storageType} 상품이 한 화면에 치우침`
+        );
+      });
+    }
+    plan.pageLayouts.forEach(layout => {
+      assert.equal(layout.fits, true);
+      assert.equal(layout.cardSize, plan.cardSize);
+      assert.equal(layout.cardHeight, plan.cardSize + layoutMetrics.productNameHeight);
+      assert.ok(Number.isInteger(layout.columns) && layout.columns > 0);
+      STORAGE_TYPES.forEach(storageType => {
+        assert.ok(layout.zoneHeights[storageType] > 0);
+      });
+    });
+    assert.deepEqual(renderedIds, items.map(item => item.id).sort());
+    assert.equal(new Set(renderedIds).size, items.length);
+  }
+
+  const crowdedItems = makeItems(80, 20, 10);
+  const crowdedPlan = buildAdaptiveProductPlan(crowdedItems, 1886, 976, layoutMetrics);
+  const crowdedIds = flattenPlanItems(crowdedPlan).map(item => item.id);
+  assert.ok(crowdedPlan.pages.length <= MAX_PRODUCT_PAGES);
+  assert.equal(crowdedPlan.pageCount, crowdedPlan.pages.length);
+  assert.equal(crowdedPlan.pageLayouts.length, crowdedPlan.pages.length);
+  assert.equal(crowdedIds.length, crowdedItems.length);
+  assert.equal(new Set(crowdedIds).size, crowdedItems.length);
+  assert.deepEqual([...crowdedIds].sort(), crowdedItems.map(item => item.id).sort());
+
+  const liveCountPlan = buildAdaptiveProductPlan(
+    makeItems(21, 10, 10),
+    1886,
+    976,
+    layoutMetrics
+  );
+  assert.deepEqual(liveCountPlan.pageCounts.map(pageTotal).sort((a, b) => a - b), [20, 21]);
+  STORAGE_TYPES.forEach(storageType => {
+    assert.ok(
+      Math.abs(
+        liveCountPlan.pageCounts[0][storageType]
+          - liveCountPlan.pageCounts[1][storageType]
+      ) <= 1
+    );
+  });
+
+  const skewedPlan = buildAdaptiveProductPlan(
+    makeItems(60, 1, 1),
+    1886,
+    976,
+    layoutMetrics
+  );
+  assert.deepEqual(skewedPlan.pageCounts.map(pageTotal), [31, 31]);
+
+  assert.match(js, /buildAdaptiveProductPlan\(/);
   assert.match(js, /state\.pageCount\s*=\s*state\.productPages\.length/);
   assert.match(js, /state\.productPages\[state\.pageIndex\]/);
-  assert.match(js, /function refreshZoneLayout\(\)/);
   assert.match(js, /state\.pageIndex\s*=\s*\(state\.pageIndex \+ 1\) % state\.pageCount/);
-  assert.match(js, /if \(!refreshZoneLayout\(\)\) renderBoard\(\)/);
+  assert.doesNotMatch(js, /MAX_VISIBLE_PRODUCTS/);
 });
 
 test('보관존 색상·아이콘·요약 카드의 기존 시각 언어를 유지한다', async () => {

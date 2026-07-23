@@ -1,9 +1,7 @@
 import {
-  MAX_VISIBLE_PRODUCTS,
   STORAGE_TYPES,
-  buildProductPages,
-  chooseZoneLayout,
-  splitItemsIntoRows
+  buildAdaptiveProductPlan,
+  chunkItemsIntoRows
 } from './tv-pickup-layout.js';
 
 const DESIGN_WIDTH = 1920;
@@ -44,12 +42,12 @@ const state = {
   pageIndex: 0,
   pageCount: 1,
   productPages: [{ '상온': [], '냉장': [], '냉동': [] }],
+  productPlan: null,
+  layoutSignature: '',
   pageTimer: 0,
   layoutFrame: 0,
   refreshTimer: 0,
   tenOClockTimer: 0,
-  zoneRows: { '상온': 1, '냉장': 1, '냉동': 1 },
-  zoneWeights: { '상온': 1, '냉장': 1, '냉동': 1 },
   loading: false
 };
 
@@ -79,7 +77,7 @@ function fillViewport() {
 
 function handleViewportChange() {
   fillViewport();
-  scheduleZoneLayout();
+  if (state.data) scheduleProductLayout();
 }
 
 async function loadBoardData(options = {}) {
@@ -118,8 +116,7 @@ function applyPayload(payload, options = {}) {
   if (changed) {
     state.fingerprint = fingerprint;
     state.pageIndex = 0;
-    state.productPages = buildProductPages(payload.items || [], MAX_VISIBLE_PRODUCTS);
-    state.pageCount = state.productPages.length;
+    refreshProductLayout();
     renderBoard();
     startPageRotation();
     return;
@@ -136,13 +133,19 @@ function renderBoard() {
   renderSummary(data.summary || {});
 
   const grouped = state.productPages[state.pageIndex] || state.productPages[0] || groupItems([]);
+  const pageLayout = state.productPlan?.pageLayouts[state.pageIndex]
+    || state.productPlan?.pageLayouts[0]
+    || null;
+  elements.canvas.style.setProperty(
+    '--product-card-size',
+    `${Math.max(0, state.productPlan?.cardSize || 0)}px`
+  );
   STORAGE_TYPES.forEach(storageType => {
-    renderZone(storageType, grouped[storageType] || [], data.summary || {});
+    renderZone(storageType, grouped[storageType] || [], data.summary || {}, pageLayout);
   });
 
   elements.pageIndicator.hidden = state.pageCount <= 1;
   elements.pageIndicator.textContent = `${state.pageIndex + 1}/${state.pageCount}`;
-  scheduleZoneLayout();
 }
 
 function renderHeader(data) {
@@ -173,45 +176,32 @@ function renderSummary(summary) {
   ].join('');
 }
 
-function renderZone(storageType, items, summary) {
+function renderZone(storageType, items, summary, pageLayout) {
   const config = STORAGE_ASSETS[storageType];
   const zone = document.getElementById(config.zoneId);
   const grid = document.getElementById(config.elementId);
   const count = document.getElementById(config.countId);
   const total = Number(summary.byStorage?.[storageType] || 0);
   const ready = Number(summary.readyByStorage?.[storageType] || 0);
-  const weight = Math.max(1, state.zoneWeights[storageType] || 1);
-  const plannedRows = Math.max(1, state.zoneRows[storageType] || 1);
   const visibleItems = items;
-  const visibleRows = visibleItems.length
-    ? Math.max(1, Math.min(visibleItems.length, plannedRows))
-    : 1;
+  const columns = Math.max(1, Number(pageLayout?.columns || 1));
+  const fallbackZoneHeight = Math.max(1, elements.zonesLayout.clientHeight / STORAGE_TYPES.length);
+  const zoneHeights = pageLayout?.zoneHeights || {};
+  const zoneHeight = Math.max(1, Number(zoneHeights[storageType] || fallbackZoneHeight));
 
-  zone.style.setProperty('--zone-rows', String(visibleRows));
-  zone.style.setProperty('--zone-weight', String(weight));
+  zone.style.setProperty('--zone-height', `${zoneHeight}px`);
   count.textContent = ready === total
     ? `${number(total)}종`
     : `${number(ready)}/${number(total)}종`;
   grid.classList.remove('is-changing');
+  grid.classList.toggle('is-empty', !visibleItems.length);
 
   if (visibleItems.length) {
-    const rows = splitItemsIntoRows(visibleItems, visibleRows);
-    const gridGap = parseFloat(window.getComputedStyle(grid).gap) || 4;
-    const rowHeight = Math.max(
-      1,
-      (grid.clientHeight - gridGap * Math.max(0, rows.length - 1)) / rows.length
-    );
+    const rows = chunkItemsIntoRows(visibleItems, columns);
     grid.innerHTML = rows
-      .map(row => {
-        const cardWidth = Math.max(
-          1,
-          (grid.clientWidth - gridGap * Math.max(0, row.length - 1)) / row.length
-        );
-        const wideClass = cardWidth >= rowHeight * 1.45 ? ' product-row--wide' : '';
-        return `<div class="product-row${wideClass}" style="--row-columns: ${row.length}">
+      .map(row => `<div class="product-row" style="--row-columns: ${row.length}">
         ${row.map(renderProductCard).join('')}
-      </div>`;
-      })
+      </div>`)
       .join('');
   } else {
     const isOnAnotherPage = total > 0 && state.pageCount > 1;
@@ -255,49 +245,63 @@ function groupItems(items) {
   return grouped;
 }
 
-function scheduleZoneLayout() {
+function scheduleProductLayout() {
   if (state.layoutFrame) window.cancelAnimationFrame(state.layoutFrame);
   state.layoutFrame = window.requestAnimationFrame(() => {
     state.layoutFrame = 0;
-    refreshZoneLayout();
+    const changed = refreshProductLayout();
+    if (changed) {
+      renderBoard();
+      startPageRotation();
+    } else {
+      clampProductNames();
+    }
   });
 }
 
-function refreshZoneLayout() {
-  if (!state.data) return false;
-
+function readLayoutMetrics() {
   const styles = window.getComputedStyle(elements.canvas);
-  const layoutWidth = elements.zonesLayout.clientWidth;
-  const layoutHeight = elements.zonesLayout.clientHeight;
-  if (layoutWidth <= 0 || layoutHeight <= 0) return false;
-
-  const grouped = state.productPages[state.pageIndex] || state.productPages[0] || groupItems([]);
-  const itemCounts = Object.fromEntries(
-    STORAGE_TYPES.map(storageType => [storageType, grouped[storageType].length])
-  );
-  const layout = chooseZoneLayout(itemCounts, layoutWidth, layoutHeight, {
+  return {
     zoneGap: parseFloat(styles.getPropertyValue('--zone-layout-gap')) || 4,
     gridGap: parseFloat(styles.getPropertyValue('--product-grid-gap')) || 4,
     zoneInlineChrome: parseFloat(styles.getPropertyValue('--zone-inline-chrome')) || 10,
     zoneBlockChrome: parseFloat(styles.getPropertyValue('--zone-block-chrome')) || 75,
     emptyZoneContentHeight: parseFloat(styles.getPropertyValue('--empty-zone-content-height')) || 24,
     productNameHeight: parseFloat(styles.getPropertyValue('--product-name-height')) || 42
-  }, MAX_VISIBLE_PRODUCTS);
-  if (!layout) return false;
+  };
+}
 
-  const changed = STORAGE_TYPES.some(storageType =>
-    layout.rows[storageType] !== state.zoneRows[storageType] ||
-    layout.zoneWeights[storageType] !== state.zoneWeights[storageType]
+function refreshProductLayout() {
+  if (!state.data) return false;
+
+  const layoutWidth = elements.zonesLayout.clientWidth;
+  const layoutHeight = elements.zonesLayout.clientHeight;
+  if (layoutWidth <= 0 || layoutHeight <= 0) return false;
+
+  const productPlan = buildAdaptiveProductPlan(
+    state.data.items || [],
+    layoutWidth,
+    layoutHeight,
+    readLayoutMetrics()
   );
-  if (!changed) {
-    clampProductNames();
-    return false;
-  }
+  const layoutSignature = JSON.stringify({
+    pageCount: productPlan.pageCount,
+    cardSize: productPlan.cardSize,
+    pageCounts: productPlan.pageCounts,
+    pageLayouts: productPlan.pageLayouts.map(layout => ({
+      columns: layout.columns,
+      rows: layout.rows,
+      zoneHeights: layout.zoneHeights
+    }))
+  });
+  const changed = layoutSignature !== state.layoutSignature;
 
-  state.zoneRows = layout.rows;
-  state.zoneWeights = layout.zoneWeights;
-  renderBoard();
-  return true;
+  state.productPlan = productPlan;
+  state.productPages = productPlan.pages;
+  state.pageCount = state.productPages.length;
+  state.layoutSignature = layoutSignature;
+  if (state.pageIndex >= state.pageCount) state.pageIndex = 0;
+  return changed;
 }
 
 function clampProductNames(root = document) {
@@ -330,7 +334,7 @@ function startPageRotation() {
 
   state.pageTimer = window.setInterval(() => {
     state.pageIndex = (state.pageIndex + 1) % state.pageCount;
-    if (!refreshZoneLayout()) renderBoard();
+    renderBoard();
   }, PAGE_INTERVAL_MS);
 }
 
@@ -468,5 +472,4 @@ startAutoRefresh();
 scheduleTenOClockRefresh();
 document.fonts?.ready.then(() => {
   clampProductNames();
-  scheduleZoneLayout();
 }).catch(() => {});
