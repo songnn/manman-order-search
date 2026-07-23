@@ -253,6 +253,9 @@ test('세 보관존 위치를 폭에 맞춰 변하는 고대비 안내 레일로
   assert.match(css, /\.zone-header\s*\{[\s\S]*?background:\s*var\(--zone-sign\);/);
   assert.match(css, /\.zone-direction\s*\{[\s\S]*?display:\s*contents;/);
   assert.match(css, /\.zone-direction__spot\s*\{[\s\S]*?background:\s*#fff;[\s\S]*?font-size:\s*22px;/);
+  assert.match(css, /\.zone-direction__divider\s*\{[\s\S]*?position:\s*relative;[\s\S]*?font-size:\s*0;/);
+  assert.match(css, /\.zone-direction__divider::before,[\s\S]*?\.zone-direction__divider::after\s*\{[\s\S]*?width:\s*52%;[\s\S]*?height:\s*2px;[\s\S]*?background:\s*currentColor;/);
+  assert.match(css, /\.zone-direction__divider::after\s*\{[\s\S]*?rotate\(90deg\);/);
   assert.match(css, /\.zone\[data-compact-header='true'\] \.zone-header\s*\{[\s\S]*?grid-template-rows:\s*32px 44px;/);
   assert.match(css, /@container\s+pickup-zone\s+\(min-width:\s*720px\)/);
   assert.doesNotMatch(css, /pickup-location-pulse/);

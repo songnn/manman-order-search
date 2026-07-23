@@ -932,6 +932,7 @@ img {
 }
 
 .zone-direction__divider {
+  position: relative;
   width: 24px;
   height: 24px;
   margin: 0 1px;
@@ -942,11 +943,24 @@ img {
   border-radius: 50%;
   color: var(--zone-sign);
   background: var(--zone-sign-soft);
-  font-family: var(--font-base);
-  font-size: 18px;
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: 0;
+  font-size: 0;
+}
+
+.zone-direction__divider::before,
+.zone-direction__divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 52%;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  transform: translate(-50%, -50%);
+}
+
+.zone-direction__divider::after {
+  transform: translate(-50%, -50%) rotate(90deg);
 }
 
 .zone-direction__number {
@@ -1044,7 +1058,6 @@ img {
   width: 20px;
   height: 20px;
   margin: 0;
-  font-size: 15px;
 }
 
 .zone[data-compact-header='true'] .zone-direction__number {
@@ -1116,7 +1129,6 @@ img {
   .zone[data-compact-header='true'] .zone-direction__divider {
     width: 23px;
     height: 23px;
-    font-size: 17px;
   }
 
   .zone[data-compact-header='true'] .zone-direction__number {
